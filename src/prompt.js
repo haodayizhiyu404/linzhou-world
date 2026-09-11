@@ -78,6 +78,7 @@
   function histText(hist, n, withNames) {
     return hist.slice(-n).map(function (m) {
       var body = msgBody(m);
+      if (m.recalled) body += '（此条已撤回）';
       if (!withNames) return body;
       var who = m.who === 'user' ? me() : m.who;
       return who + '：' + body;
@@ -95,7 +96,8 @@
       '- [语音:要说的话]',
       '- [图片:画面描述]',
       '- [戳一戳]',
-      '- [定位:地点名]'
+      '- [定位:地点名]',
+      '- [撤回]  单独成行：撤回自己刚发的上一条消息（打错字、冲动后悔时用，罕用）'
     ].join('\n');
   }
 

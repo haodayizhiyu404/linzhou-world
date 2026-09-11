@@ -43,13 +43,34 @@
 
     push: function (chatKey, msgs, cap) {
       var r = readRoot();
-      r.history = r.history || {};
-      var h = r.history[chatKey] || [];
-      h = h.concat(msgs);
+      var h = (r.history || {})[chatKey] || [];
+      for (var i = 0; i < msgs.length; i++) {
+        var m = msgs[i];
+        if (m && m.kind === 'recall') {
+          // 撤回标记本身不落库：给该发言人最近一条消息打撤回标
+          for (var j = h.length - 1; j >= 0; j--) {
+            if (h[j].who === m.who) { h[j] = Object.assign({}, h[j], { recalled: true }); break; }
+          }
+          continue;
+        }
+        h.push(m);
+      }
       if (cap && h.length > cap) h = h.slice(-cap);
+      r.history = r.history || {};
       r.history[chatKey] = h;
       writeRoot(r);
       return h;
+    },
+
+    // 按下标删除单条（玩家删除自己的话/清掉异常消息用）
+    removeAt: function (chatKey, index) {
+      var r = readRoot();
+      var h = (r.history || {})[chatKey];
+      if (!h || index < 0 || index >= h.length) return false;
+      h.splice(index, 1);
+      r.history[chatKey] = h;
+      writeRoot(r);
+      return true;
     },
 
     // 从末尾弹出 n 条（重roll用）

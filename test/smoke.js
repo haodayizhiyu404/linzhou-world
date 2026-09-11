@@ -62,6 +62,13 @@ eq('剩余条数', LW.Store.history('周言').length, 1);
 LW.Store.setMeta('周言', { headline: '睡了没', atMainCount: 5 });
 eq('元信息读回', LW.Store.meta('周言').headline, '睡了没');
 eq('会话key列表', LW.Store.historyKeys(), ['周言']);
+LW.Store.push('撤回测试', [{ who: 'user', kind: 'text', text: 'hi' }, { who: '周言', kind: 'text', text: '在的' }], 100);
+LW.Store.push('撤回测试', [{ who: '周言', kind: 'recall', text: '' }], 100);
+const rh = LW.Store.history('撤回测试');
+eq('撤回不打断条数', rh.length, 2);
+eq('撤回标落到上一条', rh[1].recalled, true);
+eq('定点删除', LW.Store.removeAt('撤回测试', 0), true);
+eq('删除后条数', LW.Store.history('撤回测试').length, 1);
 LW.Store.wipeHistory();
 
 // ── 2. 记录块往返 ──
@@ -85,13 +92,14 @@ eq('poke行无冒号参数', /周言：\[戳一戳\]/.test(m[2]), true);
 
 // ── 3. NPC 原始输出解析 ──
 console.log('[NPC输出解析]');
-const npcRaw = '在的\n[表情:探头]\n[语音|明天老地方]\n[戳一戳]\n（思考了一下）';
+const npcRaw = '在的\n[表情:探头]\n[语音|明天老地方]\n[戳一戳]\n[撤回]\n（思考了一下）';
 const parsed = LW.Floor.parseNpcLines(npcRaw, '周言');
-eq('解析条数', parsed.length, 4);
+eq('解析条数', parsed.length, 5);
 eq('文字行', parsed[0], { who: '周言', kind: 'text', text: '在的', time: '' });
 eq('表情同义词解析为白名单名', parsed[1], { who: '周言', kind: 'sticker', text: '偷看', time: '' });
 eq('语音行', parsed[2], { who: '周言', kind: 'voice', text: '明天老地方', time: '' });
 eq('戳一戳行', parsed[3], { who: '周言', kind: 'poke', text: '', time: '' });
+eq('撤回行解析', parsed[4].kind, 'recall');
 eq('括号旁白被丢弃', parsed.some(x => x.text.indexOf('思考') !== -1), false);
 const grpParsed = LW.Floor.parseNpcLines('林溪：啊啊啊\n陆飞：[图片|一张试卷]\n路人甲：围观', null);
 eq('群聊发件人', grpParsed.map(x => x.who), ['林溪', '陆飞', '路人甲']);
@@ -121,6 +129,9 @@ const greq = LW.Prompt.group({ name: '高三（2）班', open: true }, [{ name: 
 eq('群提示词含成员', greq.ordered_prompts[0].content.indexOf('林溪') !== -1, true);
 eq('开放群提示', greq.ordered_prompts[0].content.indexOf('路人') !== -1, true);
 eq('群无user宏残留', greq.ordered_prompts[0].content.indexOf('{{user}}'), -1);
+
+const reqR = LW.Prompt.private({ name: '周言', profile: '' }, [{ who: '周言', kind: 'text', text: '在的', recalled: true }], null, null, null, null);
+eq('撤回标注进记录', reqR.ordered_prompts[0].content.indexOf('（此条已撤回）') !== -1, true);
 
 console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

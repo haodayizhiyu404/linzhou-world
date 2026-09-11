@@ -104,6 +104,12 @@
     '.lzw-locmap:after{content:"📍";position:absolute;left:50%;top:50%;transform:translate(-50%,-60%);font-size:22px}',
     '.lzw-locbox .cap{font-size:13px;font-weight:600;padding:6px 8px}',
     '.lzw-sysrow{text-align:center;font-size:12px;color:#9aa0a8;margin:10px 0}',
+    '.lzw-recallrow{text-align:center;font-size:12px;color:#9aa0a8;margin:10px 0;cursor:pointer}',
+    '.lzw-recallrow:hover{color:#6a7078}',
+    '.lzw-peektg{display:block;font-size:10px;color:#a7abb2;cursor:pointer;margin-bottom:2px}',
+    '.lzw-peektg:hover{color:#6a7078}',
+    '.lzw-msgdel{flex:none;align-self:flex-start;font-size:12px;color:#c3c7cd;cursor:pointer;padding:3px 5px;opacity:0;transition:opacity .15s}',
+    '.lzw-chatrow:hover .lzw-msgdel{opacity:1}',
     // 输入区（底部整体：面板叠加在输入条上方，不挤压聊天内容）
     '.lzw-bottom{flex:none;position:relative;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06)}',
     '.lzw-inputbar{display:flex;gap:8px;align-items:center;padding:8px 10px 4px;position:relative;z-index:3}',
@@ -169,9 +175,14 @@
 
   // ── 手机内气泡行 ──
   // targetName：会话对象显示名（私聊=联系人，群聊=群名），用户戳一戳时显示「你戳了戳 TA」
-  function chatRowHtml(m, userName, contactMap, targetName) {
+  function chatRowHtml(m, userName, contactMap, targetName, idx, peeked) {
     var isUser = m.who === 'user';
     var who = isUser ? userName : m.who;
+    // 撤回未偷看：只留一行可点击的撤回提示
+    if (m.recalled && !peeked) {
+      return '<div class="lzw-recallrow" data-peek="' + idx + '">' + esc(who) + ' 撤回了一条消息 · 偷看</div>';
+    }
+    var peektg = m.recalled ? '<span class="lzw-peektg" data-peek="' + idx + '">已撤回 · 点击隐藏</span>' : '';
     var avatar;
     if (isUser) {
       var uav = window.LZWorld.Engine.userAvatar();
@@ -202,7 +213,17 @@
     } else {
       bub = '<div class="lzw-bub">' + esc(m.text) + '</div>';
     }
-    return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '">' + avatar + bub + '</div>';
+    // 撤回标签注入气泡开口处（sticker 为裸 img，单独包一层）
+    if (peektg) {
+      if (bub.indexOf('<div class="lzw-bub') === 0) {
+        var gt = bub.indexOf('>');
+        bub = bub.slice(0, gt + 1) + peektg + bub.slice(gt + 1);
+      } else {
+        bub = '<div class="lzw-bub" style="padding:6px">' + peektg + bub + '</div>';
+      }
+    }
+    return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '">' + avatar + bub +
+      '<span class="lzw-msgdel" data-del="' + idx + '" title="删除这条">×</span></div>';
   }
 
   // ── 待发区气泡（攒好的消息，小飞机一键全发） ──
@@ -242,6 +263,7 @@
     busy: false,
     staged: [],          // 待发消息 [{kind,text}]，回车攒入，小飞机一起发
     failed: false,        // 上次生成失败（消息已发出但对方没回成）→ 小飞机/↻ 变为重试
+    peek: {},             // 撤回偷看集合：chatKey:index → true
     _placed: false,
 
     inject: function () {
@@ -359,7 +381,9 @@
         } else {
           contactMap[disp] = eng.findContact(disp) || { name: disp, avatar: '' };
         }
-        var rows = hist.map(function (m) { return chatRowHtml(m, userName, contactMap, disp); }).join('');
+        var rows = hist.map(function (m, i) {
+          return chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i]);
+        }, this).join('');
         if (this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角 ↻ 或再点小飞机重试</div>';
         if (this.staged.length) rows += stagedHtml(userName);
         body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
@@ -410,6 +434,17 @@
       ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
       ph.querySelectorAll('[data-act="reroll"]').forEach(function (el) { el.onclick = function () { UI.reroll(); }; });
       // 待发区：点红 ✕ 删一条
+      ph.querySelectorAll('[data-del]').forEach(function (el) {
+        el.onclick = function (ev) {
+          ev.stopPropagation();
+          UI.removeAt(parseInt(el.getAttribute('data-del'), 10));
+        };
+      });
+      ph.querySelectorAll('[data-peek]').forEach(function (el) {
+        el.onclick = function () {
+          UI.togglePeek(parseInt(el.getAttribute('data-peek'), 10));
+        };
+      });
       ph.querySelectorAll('[data-sdel]').forEach(function (el) {
         el.onclick = function (ev) {
           ev.stopPropagation();
@@ -527,6 +562,17 @@
     canReroll: function () {
       var h = window.LZWorld.Store.history(this.chatKey);
       return !!(h.length && h[h.length - 1].who !== 'user');
+    },
+
+    removeAt: function (idx) {
+      if (this.busy) return;
+      if (window.LZWorld.Store.removeAt(this.chatKey, idx)) this.render();
+    },
+
+    togglePeek: function (idx) {
+      var k = this.chatKey + ':' + idx;
+      this.peek[k] = !this.peek[k];
+      this.render();
     },
 
     // 重试条件：上次生成失败，且末尾是我方消息（发出后对方没回成）

@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T13:11:33.062Z
+//  构建时间：2026-09-11T13:38:37.280Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-11 13:11';
+var __LZW_BUILD__ = '2026-09-11 13:38';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -52,13 +52,34 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
     push: function (chatKey, msgs, cap) {
       var r = readRoot();
-      r.history = r.history || {};
-      var h = r.history[chatKey] || [];
-      h = h.concat(msgs);
+      var h = (r.history || {})[chatKey] || [];
+      for (var i = 0; i < msgs.length; i++) {
+        var m = msgs[i];
+        if (m && m.kind === 'recall') {
+          // 撤回标记本身不落库：给该发言人最近一条消息打撤回标
+          for (var j = h.length - 1; j >= 0; j--) {
+            if (h[j].who === m.who) { h[j] = Object.assign({}, h[j], { recalled: true }); break; }
+          }
+          continue;
+        }
+        h.push(m);
+      }
       if (cap && h.length > cap) h = h.slice(-cap);
+      r.history = r.history || {};
       r.history[chatKey] = h;
       writeRoot(r);
       return h;
+    },
+
+    // 按下标删除单条（玩家删除自己的话/清掉异常消息用）
+    removeAt: function (chatKey, index) {
+      var r = readRoot();
+      var h = (r.history || {})[chatKey];
+      if (!h || index < 0 || index >= h.length) return false;
+      h.splice(index, 1);
+      r.history[chatKey] = h;
+      writeRoot(r);
+      return true;
     },
 
     // 从末尾弹出 n 条（重roll用）
@@ -508,6 +529,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   function histText(hist, n, withNames) {
     return hist.slice(-n).map(function (m) {
       var body = msgBody(m);
+      if (m.recalled) body += '（此条已撤回）';
       if (!withNames) return body;
       var who = m.who === 'user' ? me() : m.who;
       return who + '：' + body;
@@ -525,7 +547,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '- [语音:要说的话]',
       '- [图片:画面描述]',
       '- [戳一戳]',
-      '- [定位:地点名]'
+      '- [定位:地点名]',
+      '- [撤回]  单独成行：撤回自己刚发的上一条消息（打错字、冲动后悔时用，罕用）'
     ].join('\n');
   }
 
@@ -889,6 +912,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           if (!gm) return;
           who = gm[1].trim(); body = gm[2].trim();
         }
+        if (/^\[撤回\]$/.test(body)) { out.push({ who: who, kind: 'recall', text: '', time: '' }); return; }
         if (/^\[戳一戳\]$/.test(body)) { out.push({ who: who, kind: 'poke', text: '', time: '' }); return; }
         var typed = body.match(/^\[(表情|语音|图片|定位)(?::|\||｜)([\s\S]*)\]$/);
         if (typed) {
@@ -1027,6 +1051,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-locmap:after{content:"📍";position:absolute;left:50%;top:50%;transform:translate(-50%,-60%);font-size:22px}',
     '.lzw-locbox .cap{font-size:13px;font-weight:600;padding:6px 8px}',
     '.lzw-sysrow{text-align:center;font-size:12px;color:#9aa0a8;margin:10px 0}',
+    '.lzw-recallrow{text-align:center;font-size:12px;color:#9aa0a8;margin:10px 0;cursor:pointer}',
+    '.lzw-recallrow:hover{color:#6a7078}',
+    '.lzw-peektg{display:block;font-size:10px;color:#a7abb2;cursor:pointer;margin-bottom:2px}',
+    '.lzw-peektg:hover{color:#6a7078}',
+    '.lzw-msgdel{flex:none;align-self:flex-start;font-size:12px;color:#c3c7cd;cursor:pointer;padding:3px 5px;opacity:0;transition:opacity .15s}',
+    '.lzw-chatrow:hover .lzw-msgdel{opacity:1}',
     // 输入区（底部整体：面板叠加在输入条上方，不挤压聊天内容）
     '.lzw-bottom{flex:none;position:relative;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06)}',
     '.lzw-inputbar{display:flex;gap:8px;align-items:center;padding:8px 10px 4px;position:relative;z-index:3}',
@@ -1092,9 +1122,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // ── 手机内气泡行 ──
   // targetName：会话对象显示名（私聊=联系人，群聊=群名），用户戳一戳时显示「你戳了戳 TA」
-  function chatRowHtml(m, userName, contactMap, targetName) {
+  function chatRowHtml(m, userName, contactMap, targetName, idx, peeked) {
     var isUser = m.who === 'user';
     var who = isUser ? userName : m.who;
+    // 撤回未偷看：只留一行可点击的撤回提示
+    if (m.recalled && !peeked) {
+      return '<div class="lzw-recallrow" data-peek="' + idx + '">' + esc(who) + ' 撤回了一条消息 · 偷看</div>';
+    }
+    var peektg = m.recalled ? '<span class="lzw-peektg" data-peek="' + idx + '">已撤回 · 点击隐藏</span>' : '';
     var avatar;
     if (isUser) {
       var uav = window.LZWorld.Engine.userAvatar();
@@ -1125,7 +1160,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     } else {
       bub = '<div class="lzw-bub">' + esc(m.text) + '</div>';
     }
-    return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '">' + avatar + bub + '</div>';
+    // 撤回标签注入气泡开口处（sticker 为裸 img，单独包一层）
+    if (peektg) {
+      if (bub.indexOf('<div class="lzw-bub') === 0) {
+        var gt = bub.indexOf('>');
+        bub = bub.slice(0, gt + 1) + peektg + bub.slice(gt + 1);
+      } else {
+        bub = '<div class="lzw-bub" style="padding:6px">' + peektg + bub + '</div>';
+      }
+    }
+    return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '">' + avatar + bub +
+      '<span class="lzw-msgdel" data-del="' + idx + '" title="删除这条">×</span></div>';
   }
 
   // ── 待发区气泡（攒好的消息，小飞机一键全发） ──
@@ -1165,6 +1210,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     busy: false,
     staged: [],          // 待发消息 [{kind,text}]，回车攒入，小飞机一起发
     failed: false,        // 上次生成失败（消息已发出但对方没回成）→ 小飞机/↻ 变为重试
+    peek: {},             // 撤回偷看集合：chatKey:index → true
     _placed: false,
 
     inject: function () {
@@ -1282,7 +1328,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         } else {
           contactMap[disp] = eng.findContact(disp) || { name: disp, avatar: '' };
         }
-        var rows = hist.map(function (m) { return chatRowHtml(m, userName, contactMap, disp); }).join('');
+        var rows = hist.map(function (m, i) {
+          return chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i]);
+        }, this).join('');
         if (this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角 ↻ 或再点小飞机重试</div>';
         if (this.staged.length) rows += stagedHtml(userName);
         body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
@@ -1333,6 +1381,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
       ph.querySelectorAll('[data-act="reroll"]').forEach(function (el) { el.onclick = function () { UI.reroll(); }; });
       // 待发区：点红 ✕ 删一条
+      ph.querySelectorAll('[data-del]').forEach(function (el) {
+        el.onclick = function (ev) {
+          ev.stopPropagation();
+          UI.removeAt(parseInt(el.getAttribute('data-del'), 10));
+        };
+      });
+      ph.querySelectorAll('[data-peek]').forEach(function (el) {
+        el.onclick = function () {
+          UI.togglePeek(parseInt(el.getAttribute('data-peek'), 10));
+        };
+      });
       ph.querySelectorAll('[data-sdel]').forEach(function (el) {
         el.onclick = function (ev) {
           ev.stopPropagation();
@@ -1450,6 +1509,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     canReroll: function () {
       var h = window.LZWorld.Store.history(this.chatKey);
       return !!(h.length && h[h.length - 1].who !== 'user');
+    },
+
+    removeAt: function (idx) {
+      if (this.busy) return;
+      if (window.LZWorld.Store.removeAt(this.chatKey, idx)) this.render();
+    },
+
+    togglePeek: function (idx) {
+      var k = this.chatKey + ':' + idx;
+      this.peek[k] = !this.peek[k];
+      this.render();
     },
 
     // 重试条件：上次生成失败，且末尾是我方消息（发出后对方没回成）
