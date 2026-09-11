@@ -19,7 +19,9 @@ const banner =
   '//  霖州往事 · 数字世界引擎（构建产物，勿手改）\n' +
   '//  源码见 src/ · 构建：node build/build.js\n' +
   `//  构建时间：${new Date().toISOString()}\n` +
-  '// ═══════════════════════════════════════════════════════════\n';
+  '// ═══════════════════════════════════════════════════════════\n' +
+  `var __LZW_BUILD__ = '${new Date().toISOString().slice(0, 16).replace('T', ' ')}';\n` +
+  `try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}\n`;
 
 let out = banner;
 for (const f of ORDER) {

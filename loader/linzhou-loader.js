@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎 —— 装载器（卡片脚本）
 //  自研实现。把本体托管在用户自己的 GitHub 仓库，
-//  经 jsDelivr 三域加载；断网时回退到上次成功的本地缓存。
+//  优先 raw.githubusercontent（实时），jsDelivr 三域备用；断网回退本地缓存。
 //
 //  使用方法：整段粘贴为卡片脚本（酒馆助手 / JS-Slash-Runner）。
 //  ⚠ 使用前把 GH_USER / GH_REPO 改成你自己的仓库。
@@ -83,11 +83,13 @@
     var ref = await resolveRef();
     var code = null, lastErr = null;
 
-    // 源清单：jsDelivr（按解析到的 ref）+ raw.githubusercontent（始终取 main 实时内容）
-    var urls = MIRRORS.map(function (h) {
-      return 'https://' + h + '/gh/' + GH_USER + '/' + GH_REPO + '@' + ref + '/' + FILE;
+    // 源清单：raw（始终实时）优先，jsDelivr 镜像其后。
+    // 原因：jsDelivr 的 @main 有最长12h缓存，API被限流时容易拿到旧版；
+    // raw 永远跟随 main。镜像用于 raw 被墙/故障的备用。
+    var urls = ['https://raw.githubusercontent.com/' + GH_USER + '/' + GH_REPO + '/main/' + FILE];
+    MIRRORS.forEach(function (h) {
+      urls.push('https://' + h + '/gh/' + GH_USER + '/' + GH_REPO + '@' + ref + '/' + FILE);
     });
-    urls.push('https://raw.githubusercontent.com/' + GH_USER + '/' + GH_REPO + '/main/' + FILE);
 
     for (var i = 0; i < urls.length && !code; i++) {
       try {
