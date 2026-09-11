@@ -98,9 +98,12 @@ eq('HTML被剥离', sysPrompt.indexOf('class="x"') !== -1, false);
 eq('status标签剥离', sysPrompt.indexOf('<环境>') !== -1, false);
 eq('静默生成', req.should_silence, true);
 eq('不占用主历史', req.max_chat_history, 0);
+eq('无user宏残留·系统块', sysPrompt.indexOf('{{user}}'), -1);
+eq('无user宏残留·user轮', req.ordered_prompts[1].content.indexOf('{{user}}'), -1);
 const greq = LW.Prompt.group({ name: '高三（2）班', open: true }, [{ name: '林溪', profile: '闺蜜' }], [], null);
 eq('群提示词含成员', greq.ordered_prompts[0].content.indexOf('林溪') !== -1, true);
 eq('开放群提示', greq.ordered_prompts[0].content.indexOf('路人') !== -1, true);
+eq('群无user宏残留', greq.ordered_prompts[0].content.indexOf('{{user}}'), -1);
 
 console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

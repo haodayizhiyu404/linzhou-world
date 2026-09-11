@@ -1,11 +1,12 @@
 // ═══════════════════════════════════════════════════════════
-//  prompt.js —— 数字世界引擎 · 提示词装配（v0，待实测迭代）
+//  prompt.js —— 数字世界引擎 · 提示词装配
 //
-//  框架：AI 不是"扮演角色"，而是数字生活世界的模拟引擎。
-//  引擎不认角色，只认「应用 + 实体 + 资料」——
-//  微信私聊/群聊/未来的论坛，都只是不同的资料与输出契约。
+//  框架：AI 不是"扮演角色"，而是数字生活应用的模拟引擎。
+//  引擎不认角色，只认「应用 + 人 + 资料」——
+//  微信私聊/群聊/未来的论坛，都只是不同的资料与输出要求。
 //
-//  ⚠ 本文件的措辞为 v0 初稿，用户已确认需后续打磨。
+//  ⚠ 提示词不走酒馆宏替换（generateRaw 独立生成），
+//    {{user}} 必须在装配时换成 persona 真名，见 me()。
 // ═══════════════════════════════════════════════════════════
 (function () {
   'use strict';
@@ -15,7 +16,25 @@
   var HIST_PRIVATE = 14;   // 私聊带回几条
   var HIST_GROUP = 18;     // 群聊带回几条
 
-  // ── 主线近貌：最近 N 楼，去 HTML/代码块/思考块，每楼截断 ──
+  // ── persona 真名。generateRaw 不做宏替换，{{user}} 会原文进提示词，
+  //    所以这里自己解析（与 engine.js userName() 同一套回退）。──
+  function me() {
+    try {
+      var W = window.LZWorld;
+      if (W && W.Engine && W.Engine.userName) {
+        var n = W.Engine.userName();
+        if (n && n !== '我') return n;
+      }
+    } catch (e) {}
+    try {
+      var st = window.parent.SillyTavern;
+      var ctx = st && st.getContext && st.getContext();
+      if (ctx && ctx.name1) return String(ctx.name1);
+    } catch (e) {}
+    return '我';
+  }
+
+  // ── 主线近况：最近 N 楼，去 HTML/代码块/思考块，每楼截断 ──
   function mainContext() {
     try {
       var msgs = getChatMessages('0-{{lastMessageId}}');
@@ -28,7 +47,7 @@
           .replace(/\n{2,}/g, '\n')
           .trim();
         if (t.length > PLOT_CAP) t = t.substring(0, PLOT_CAP) + '…';
-        return (m.role === 'user' ? '{{user}}' : '旁白') + '：' + t;
+        return (m.role === 'user' ? me() : '旁白') + '：' + t;
       }).filter(function (l) { return l.length > 4; }).join('\n');
     } catch (e) { return ''; }
   }
@@ -45,37 +64,37 @@
     }
   }
 
-  // ── 应用内记录文本 ──
+  // ── 应用内聊天记录文本（发言人用真名，不再出现 {{user}}） ──
   function histText(hist, n) {
     return hist.slice(-n).map(function (m) {
-      var who = m.who === 'user' ? '{{user}}' : m.who;
+      var who = m.who === 'user' ? me() : m.who;
       return who + '：' + msgBody(m);
     }).join('\n');
   }
 
-  // ── 消息类型语法说明（输出契约的一部分） ──
+  // ── 消息类型语法说明（输出要求的一部分） ──
   function typeSyntax(stickerNames) {
     var stickerLine = (stickerNames && stickerNames.length)
-      ? '[表情:名字]  只可选用图库现有名字，严禁编造：' + stickerNames.join('、')
-      : '[表情:名字]  图库为空，本次请勿发送表情';
+      ? '- [表情:名字]  只可选用图库现有名字，严禁编造：' + stickerNames.join('、')
+      : '- [表情:名字]  图库为空，本次请勿发送表情';
     return [
       '消息类型（按需单独成行，不用则不写）：',
       stickerLine,
-      '[语音:要说的话]',
-      '[图片:画面描述]',
-      '[戳一戳]',
-      '[定位:地点名]'
+      '- [语音:要说的话]',
+      '- [图片:画面描述]',
+      '- [戳一戳]',
+      '- [定位:地点名]'
     ].join('\n');
   }
 
-  // ── 一致性铁律（防开天眼） ──
+  // ── 一致性规则（防开天眼） ──
   function consistencyRules(entityDesc) {
     return [
-      '【一致性铁律】',
-      '- ' + entityDesc + '只知道两类事：①本人在场亲眼所见、亲耳所闻；②对方在本应用内明确告诉它的。',
-      '- 下列内容一律不知：主线中没有本人出场的段落、其他私聊、其他群聊、对方此刻在哪里/在干什么/穿着什么、任何人的心声。',
-      '- 想谈主线里的事但本人不在场？只能用"听说/你今天怎么样"这类不确定方式开口，不得说出细节。',
-      '- 宁可少说，不可全知。违反即出戏。'
+      '## 一致性规则',
+      '- ' + entityDesc + '只知道两类事：①本人亲眼所见、亲耳所闻的；②对方在微信里明确告诉本人的。',
+      '- 以下一律不知：主线中没有本人出场的段落、其他私聊、其他群聊、对方此刻在哪里/在干什么/穿着什么、任何人的内心想法。',
+      '- 想谈本人不在场的事，只能用「听说……」「你今天怎么样」这类不确定的说法开口，不得讲出细节。',
+      '- 宁可少说，不可全知。说漏即出戏。'
     ].join('\n');
   }
 
@@ -86,13 +105,13 @@
       lines.push('当前时间：' + when);
     }
     if (snapshot && snapshot.userPlace) {
-      lines.push('（对方此刻在：' + snapshot.userPlace + '——仅作参考，不代表你的位置）');
+      lines.push(me() + '此刻在：' + snapshot.userPlace + '（仅作参考，不代表你的位置）');
     }
     if (snapshot && snapshot.npc) {
       var bits = [];
       if (snapshot.npc.place) bits.push('位置：' + snapshot.npc.place);
       if (snapshot.npc.posture) bits.push('姿态：' + snapshot.npc.posture);
-      if (bits.length) lines.push('你（实体）此刻：' + bits.join('，'));
+      if (bits.length) lines.push('你（' + (snapshot.npc.name || '本人') + '）此刻：' + bits.join('，'));
     }
     return lines.join('\n');
   }
@@ -102,28 +121,31 @@
     // ── 私聊 ──
     // tail = 本轮最新一批用户消息：不混在系统块里，作为最后的 user 轮单独给出
     private: function (contact, hist, snapshot, stickerNames, tail) {
+      var myName = me();
       var tailLines = (tail && tail.length) ? histText(tail, 8) : '';
       var p = [
-        '【数字世界 · 回应生成】',
-        '你是数字生活世界的模拟引擎。本次任务：生成应用「微信」中，来自「' + contact.name + '」的新消息。',
+        '# 数字世界 · 回应生成',
         '',
-        contact.profile ? '【实体资料】\n' + contact.profile : '【实体资料】（暂无档案，依据对话上下文自然演绎）',
+        '你是一款数字生活应用的模拟引擎。本次任务：生成应用「微信」里，来自「' + contact.name + '」的新消息。',
         '',
-        situationBlock(snapshot) ? '【情境】\n' + situationBlock(snapshot) : '',
+        contact.profile ? '## 人物档案\n' + contact.profile : '## 人物档案\n（暂无档案，依据对话上下文自然演绎）',
         '',
-        mainContext() ? '【主线近貌】（仅作背景，上面的铁律优先）\n' + mainContext() : '',
+        situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
         '',
-        '【应用内记录 · 与{{user}}的微信聊天】（优先承接这里的话题与语气；{{user}}本轮最新发的消息在末尾单独给出）',
+        mainContext() ? '## 主线近况（只作背景，下方规则优先）\n' + mainContext() : '',
+        '',
+        '## 聊天记录 · 与' + myName + '的微信对话',
+        '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         histText(hist, HIST_PRIVATE),
         '',
         consistencyRules('「' + contact.name + '」'),
         '',
-        '【输出契约】',
-        '- 只输出「' + contact.name + '」发出的新消息，1~4 条，按情绪与话题自然增减',
-        '- 每条独立成行，只写消息内容；无前缀、无时间戳、无动作旁白、无括号心理',
-        '- 每条不超过 35 字，像真人打字，不复述对方的话',
+        '## 输出要求',
+        '- 只输出「' + contact.name + '」发来的新消息，1~4 条，按情绪与话题自然增减',
+        '- 每条独立成行，只写消息内容；不要前缀、时间戳、动作描写、括号心理',
+        '- 每条不超过 35 字，像真人打字，不重复对方刚说过的话',
         typeSyntax(stickerNames),
-        '- 直接输出消息本身，严禁以"好的""收到"等寒暄开头'
+        '- 直接输出消息本身，不要以「好的」「收到」这类寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');
 
       return {
@@ -132,8 +154,8 @@
           {
             role: 'user',
             content: tailLines
-              ? '（我刚在微信里发来以下消息。请严格按上方输出契约，只输出「' + contact.name + '」的新消息本身。）\n' + tailLines
-              : '（现在轮到「' + contact.name + '」回复{{user}}在微信里发来的消息。严格按上方输出契约，只输出消息本身。）'
+              ? '（' + myName + '刚在微信里发来以下消息。请严格按上方输出要求，只输出「' + contact.name + '」的新消息本身。）\n' + tailLines
+              : '（现在轮到「' + contact.name + '」回复' + myName + '。请严格按上方输出要求，只输出消息本身。）'
           }
         ],
         should_silence: true,
@@ -143,37 +165,41 @@
 
     // ── 群聊 ──
     group: function (group, members, hist, snapshot, stickerNames, tail) {
+      var myName = me();
       var tailLines2 = (tail && tail.length) ? histText(tail, 8) : '';
       var nameList = members.map(function (m) { return m.name; });
       var voices = members.map(function (m) {
         var brief = m.profile ? String(m.profile).replace(/\s+/g, ' ').slice(0, 500) : '（无档案）';
-        return '· ' + m.name + '：' + brief;
+        return '- ' + m.name + '：' + brief;
       });
 
       var p = [
-        '【数字世界 · 回应生成】',
-        '你是数字生活世界的模拟引擎。本次任务：生成应用「微信」的群「' + group.name + '」中发来的新消息。',
+        '# 数字世界 · 回应生成',
         '',
-        '【群成员】' + nameList.join('、') + '、{{user}}' + (group.open ? '，以及若干未列名的路人（可让其冒泡，用真实昵称）' : ''),
+        '你是一款数字生活应用的模拟引擎。本次任务：生成应用「微信」的群「' + group.name + '」里新来的消息。',
         '',
-        '【成员资料】',
+        '## 群成员',
+        nameList.join('、') + '、' + myName + (group.open ? '，以及若干未具名的路人（可让其冒泡，用真实昵称）' : ''),
+        '',
+        '## 成员档案',
         voices.join('\n'),
         '',
-        situationBlock(snapshot) ? '【情境】\n' + situationBlock(snapshot) : '',
+        situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
         '',
-        mainContext() ? '【主线近貌】（仅作背景，铁律优先）\n' + mainContext() : '',
+        mainContext() ? '## 主线近况（只作背景，下方规则优先）\n' + mainContext() : '',
         '',
-        '【应用内记录 · 群「' + group.name + '」】（优先承接这里的话题与语气；{{user}}本轮最新发的消息在末尾单独给出）',
+        '## 聊天记录 · 群「' + group.name + '」',
+        '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         histText(hist, HIST_GROUP),
         '',
-        consistencyRules('每个群成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，各自独立判断是否知情。',
+        consistencyRules('每名成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。',
         '',
-        '【输出契约】',
+        '## 输出要求',
         '- 输出 3~8 条群消息，每条一行，格式严格为「成员名：消息」',
-        '- 谁会接这句谁说，不必人人开口；可互相接梗拆台',
+        '- 谁接得上这句谁说，不必人人开口；可以互相接梗、拆台',
         '- 每条不超过 35 字，口语',
         typeSyntax(stickerNames),
-        '- 直接输出消息，严禁寒暄开头'
+        '- 直接输出消息，不要以寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');
 
       return {
@@ -182,8 +208,8 @@
           {
             role: 'user',
             content: tailLines2
-              ? '（我刚在群「' + group.name + '」里发来以下消息。请严格按上方输出契约，只输出成员们的新消息本身。）\n' + tailLines2
-              : '（现在轮到群「' + group.name + '」里的成员们继续聊天。严格按上方输出契约，只输出群消息本身。）'
+              ? '（' + myName + '刚在群「' + group.name + '」里发来以下消息。请严格按上方输出要求，只输出成员们的新消息本身。）\n' + tailLines2
+              : '（现在轮到群「' + group.name + '」里的成员们继续聊天。请严格按上方输出要求，只输出群消息本身。）'
           }
         ],
         should_silence: true,
