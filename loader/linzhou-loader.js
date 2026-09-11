@@ -45,7 +45,7 @@
   }
 
   // ── 4. 本地缓存（断网兜底） ──
-  var CACHE_KEY = 'lzw_dist_cache_v2';
+  var CACHE_KEY = 'lzw_dist_cache';
   function readCache() {
     try {
       var raw = localStorage.getItem(CACHE_KEY);
@@ -83,16 +83,22 @@
     var ref = await resolveRef();
     var code = null, lastErr = null;
 
-    for (var i = 0; i < MIRRORS.length && !code; i++) {
+    // 源清单：jsDelivr（按解析到的 ref）+ raw.githubusercontent（始终取 main 实时内容）
+    var urls = MIRRORS.map(function (h) {
+      return 'https://' + h + '/gh/' + GH_USER + '/' + GH_REPO + '@' + ref + '/' + FILE;
+    });
+    urls.push('https://raw.githubusercontent.com/' + GH_USER + '/' + GH_REPO + '/main/' + FILE);
+
+    for (var i = 0; i < urls.length && !code; i++) {
       try {
-        var url = 'https://' + MIRRORS[i] + '/gh/' + GH_USER + '/' + GH_REPO + '@' + ref + '/' + FILE;
-        var r = await timedFetch(url, 10000);
+        var r = await timedFetch(urls[i], 10000);
         if (!r.ok) throw new Error('HTTP ' + r.status);
         var t = await r.text();
         if (!t || t.length < 1000) throw new Error('内容异常(' + (t ? t.length : 0) + ')');
         code = t;
-        log('@' + ref.slice(0, 7) + ' via ' + MIRRORS[i] + '（' + code.length + ' chars）');
-      } catch (e) { lastErr = e; log(MIRRORS[i] + ' 失败：' + (e && e.message || e)); }
+        var host = urls[i].split('/')[2] || urls[i].split('/')[2];
+        log('@' + ref.slice(0, 7) + ' via ' + host + '（' + code.length + ' chars）');
+      } catch (e) { lastErr = e; log('源' + (i + 1) + ' ' + (urls[i].split('/')[2] || 'raw') + ' 失败：' + (e && e.message || e)); }
     }
 
     if (code) {

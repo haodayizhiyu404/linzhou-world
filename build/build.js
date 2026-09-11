@@ -32,3 +32,11 @@ const distDir = path.join(ROOT, 'dist');
 fs.mkdirSync(distDir, { recursive: true });
 fs.writeFileSync(path.join(distDir, 'engine.js'), out, 'utf8');
 console.log('OK → dist/engine.js（' + out.length + ' chars）');
+
+// 构建后清除 jsDelivr 缓存（尽力而为，失败不阻塞）
+const GH_USER = 'haodayizhiyu404';
+const GH_REPO = 'linzhou-world';
+fetch(`https://purge.jsdelivr.net/gh/${GH_USER}/${GH_REPO}@main/dist/engine.js`)
+  .then(r => r.json())
+  .then(j => console.log('CDN 缓存清除：' + ((j && j.status) || '未知')))
+  .catch(() => console.log('CDN 缓存清除请求失败（不影响构建）'));
