@@ -56,10 +56,14 @@
       if (!m) return;
       var who = m[1].trim();
       var content = m[2].trim();
-      var isUser = who === userName;
-      var avatar = '';
+      // 旧记录里 persona 名可能是当时的取值（如"我"），两种都认作用户
+      var isUser = who === userName || who === '我';
+      var avatar;
       if (isUser) {
-        avatar = '<div class="lzw-ava lzw-ava-me">' + esc(who.slice(0, 1)) + '</div>';
+        var uav = W.Engine && W.Engine.userAvatar();
+        avatar = uav
+          ? '<img class="lzw-ava lzw-ava-me" src="' + esc(uav) + '" alt="">'
+          : '<div class="lzw-ava lzw-ava-me">' + esc(who.slice(0, 1)) + '</div>';
       } else {
         var c = W.Engine && W.Engine.findContact(who);
         avatar = c && c.avatar
@@ -77,7 +81,7 @@
             ? '<img class="lzw-sticker" src="' + esc(W.Worldbook.imgUrl(file)) + '" alt="' + esc(arg) + '" title="' + esc(arg) + '">'
             : '<div class="lzw-bub">[表情:' + esc(arg) + ']</div>';
         } else if (kind === '戳一戳') {
-          bub = '<div class="lzw-bub lzw-sys">戳了戳' + (isUser ? '对方' : esc(who)) + '</div>';
+          bub = '<div class="lzw-bub lzw-sys">' + (isUser ? '你戳了戳对方' : esc(who) + '戳了戳你') + '</div>';
         } else if (kind === '语音') {
           bub = '<div class="lzw-bub lzw-voice"><span class="lzw-voice-ico">▶</span>' + esc(arg) + '</div>';
         } else if (kind === '图片') {
@@ -89,10 +93,12 @@
         bub = '<div class="lzw-bub">' + esc(content) + '</div>';
       }
 
+      // 头像列（头像+名字），气泡另起一列；me 行用 row-reverse 整体靠右
       rows.push(
         '<div class="lzw-row' + (isUser ? ' lzw-row-me' : '') + '">' +
-        (isUser ? bub + avatar : avatar + bub) +
-        '<div class="lzw-who">' + esc(who) + '</div></div>'
+        '<div><div class="lzw-ava-wrap">' + avatar + '</div><div class="lzw-who">' + esc(who) + '</div></div>' +
+        bub +
+        '</div>'
       );
     });
 
@@ -105,11 +111,45 @@
   // ── 主页面 DOM 操作（原生，不依赖 jQuery） ──
   function pdoc() { return window.parent.document; }
 
+  // 楼层气泡样式（注进主页面；与手机内的类名同前缀，但只作用在 #chat 里）
+  var FLOOR_CSS = [
+    '#chat .lzw-record{padding:4px 0}',
+    '#chat .lzw-record-head{text-align:center;font-size:12px;color:#8a8f99;margin:2px 0 8px}',
+    '#chat .lzw-row{display:flex;gap:8px;margin:12px 0;align-items:flex-start}',
+    '#chat .lzw-row.lzw-row-me{flex-direction:row-reverse}',
+    '#chat .lzw-ava{width:36px;height:36px;border-radius:9px;flex:none;object-fit:cover;background:#c9cfd6;',
+    'display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:600}',
+    '#chat .lzw-ava-me{background:#4d7cfe}',
+    '#chat .lzw-who{width:36px;text-align:center;font-size:10px;color:#9aa0a8;margin-top:2px;',
+    'white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '#chat .lzw-row>div{min-width:0}',
+    '#chat .lzw-bub{max-width:65%;padding:8px 12px;border-radius:12px;background:#fff;color:#111;line-height:1.5;',
+    'word-break:break-word;border:1px solid rgba(0,0,0,.06)}',
+    '#chat .lzw-row-me .lzw-bub{background:#95ec69;border-color:transparent}',
+    '#chat .lzw-bub.lzw-sys{background:transparent;border:none;color:#8a8f99;font-size:12px;padding:2px 4px;max-width:none}',
+    '#chat .lzw-sticker{max-width:110px;border-radius:8px}',
+    '#chat .lzw-voice-ico{color:#111;margin-right:6px;opacity:.6}',
+    '#chat .lzw-img-ph{font-size:22px;text-align:center;padding:8px 0 4px}',
+    '#chat .lzw-img-cap{font-size:12px;opacity:.75}'
+  ].join('\n');
+  function ensureStyle() {
+    try {
+      var doc = pdoc();
+      if (!doc.getElementById('lzw-floor-style')) {
+        var st = doc.createElement('style');
+        st.id = 'lzw-floor-style';
+        st.textContent = FLOOR_CSS;
+        doc.head.appendChild(st);
+      }
+    } catch (e) {}
+  }
+
   // 替换某一个楼层的文本为气泡（整块匹配才动，混合内容不碰）
   function renderMesText(el) {
     var raw = el.textContent || '';
     var m = raw.match(RECORD_RE);
     if (!m) return false;
+    ensureStyle();
     el.innerHTML = renderRecordHtml(m[1].trim(), m[2]);
     return true;
   }
@@ -121,6 +161,7 @@
 
     // 插入一条记录楼层并渲染。title 如「与周言的私聊」「高三（2）班 群聊」
     insertRecord: async function (title, msgs, timeText) {
+      ensureStyle();
       var W = window.LZWorld;
       var userName = W.Engine.userName();
       var block = formatRecord(title, msgs, timeText, userName);

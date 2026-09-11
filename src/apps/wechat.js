@@ -34,8 +34,8 @@
     '.lzw-sbar{flex:none;height:38px;display:flex;align-items:center;justify-content:space-between;',
     'padding:4px 20px 0;position:relative;color:#111;z-index:3}',
     '.lzw-clock{font-size:13px;font-weight:600;letter-spacing:.3px;min-width:52px}',
-    '.lzw-island{position:absolute;left:50%;top:8px;transform:translateX(-50%);width:86px;height:24px;',
-    'background:#0b0d10;border-radius:14px}',
+    '.lzw-island{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:72px;height:17px;',
+    'background:#0b0d10;border-radius:10px}',
     '.lzw-sicons{display:flex;align-items:center;gap:5px}',
     '.lzw-sig{display:inline-flex;align-items:flex-end;gap:1.5px;height:11px}',
     '.lzw-sig i{display:block;width:3px;background:#111;border-radius:1px}',
@@ -132,7 +132,10 @@
     var who = isUser ? userName : m.who;
     var avatar;
     if (isUser) {
-      avatar = '<div class="lzw-ava lzw-ava-me">' + esc(who.slice(0, 1)) + '</div>';
+      var uav = window.LZWorld.Engine.userAvatar();
+      avatar = uav
+        ? '<img class="lzw-ava lzw-ava-me" src="' + esc(uav) + '">'
+        : '<div class="lzw-ava lzw-ava-me">' + esc(who.slice(0, 1)) + '</div>';
     } else {
       var c = contactMap && contactMap[m.who];
       avatar = (c && c.avatar)
@@ -157,7 +160,7 @@
     } else {
       bub = '<div class="lzw-bub">' + esc(m.text) + '</div>';
     }
-    return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '">' + (isUser ? bub + avatar : avatar + bub) + '</div>';
+    return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '">' + avatar + bub + '</div>';
   }
 
   var UI = {

@@ -46,12 +46,27 @@
     line: function () { return state.line; },
 
     userName: function () {
+      // 沙盒里没有 name1，走主页面 SillyTavern.getContext() 拿 persona 名
+      try {
+        var st = window.parent.SillyTavern;
+        var ctx = st && st.getContext && st.getContext();
+        if (ctx && ctx.name1) return String(ctx.name1);
+      } catch (e) {}
       try { if (typeof name1 !== 'undefined' && name1) return String(name1); } catch (e) {}
       try {
         var v = getVariables({ type: 'chat' }) || {};
         if (v.name || v.user) return String(v.name || v.user);
       } catch (e) {}
       return '我';
+    },
+
+    // 酒馆 persona 头像：从主页面最近一条用户消息的头像图读（酒馆自己拼好的缩略图地址）
+    userAvatar: function () {
+      try {
+        var img = window.parent.document.querySelector('#chat .mes[is_user="true"] .avatar img');
+        if (img && img.src) return img.src;
+      } catch (e) {}
+      return '';
     },
 
     findContact: function (name) {
