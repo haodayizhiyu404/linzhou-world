@@ -10,6 +10,9 @@
 
   function pdoc() { return window.parent.document; }
   function pwin() { return window.parent; }
+  // 主屏壁纸（用户提供的油画；换图只改这里）。必须定义在 CSS 数组之前——
+  // 数组在脚本加载时立即求值，引用晚于它的变量会得到 undefined。
+  var HOME_WALL = 'https://files.catbox.moe/x9y713.png';
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -150,8 +153,6 @@
   var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
   var ICON_PLANE = '<svg width="23" height="23" viewBox="0 0 24 24" fill="#6b7178"><g transform="translate(12 12) rotate(-45) scale(0.85) translate(-12 -12)"><path d="M2.6 21.4L23 12 2.6 2.6 2.5 9.8 16.4 12l-13.9 2.2z"/></g></svg>';
   var ICON_PLUS = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5.2v13.6M5.2 12h13.6" stroke="#7a8089" stroke-width="1.9" stroke-linecap="round"/></svg>';
-  // 主屏壁纸（用户提供的油画；换图只改这里）
-  var HOME_WALL = 'https://files.catbox.moe/x9y713.png';
   // 主屏微信图标（绿色圆角块 + 白色对话泡）
   var ICON_WECHAT = '<svg width="30" height="30" viewBox="0 0 24 24"><path fill="#fff" d="M8.7 4C4.9 4 2 6.6 2 9.8c0 1.8 1 3.4 2.5 4.5l-.6 2 2.2-1.2c.8.2 1.6.4 2.5.4h.4A5.6 5.6 0 0 1 9 13.6c0-3 2.8-5.4 6.2-5.4h.4C15 5.4 12.2 4 8.7 4zM6.5 8.4a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8zm4.9 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z"/><path fill="#fff" d="M22 13.6c0-2.7-2.5-4.9-5.6-4.9s-5.6 2.2-5.6 4.9 2.5 4.9 5.6 4.9c.7 0 1.3-.1 1.9-.3l1.8 1-.5-1.7c1.4-.9 2.4-2.3 2.4-3.9zm-7.5-1.5a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm4 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>';
   // [+] 菜单图标（自绘线性图标，微信那种简洁风）
@@ -159,7 +160,7 @@
     sticker: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><circle cx="9" cy="9.8" r="1.1" fill="#555" stroke="none"/><circle cx="15" cy="9.8" r="1.1" fill="#555" stroke="none"/><path d="M8.4 14c1 1.2 2.2 1.8 3.6 1.8s2.6-.6 3.6-1.8"/></svg>',
     image: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="9.8" r="1.6"/><path d="M4.5 17.5l4.6-4.6 3 3 3.6-3.6 4.3 4.2"/></svg>',
     voice: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M5.8 11.2a6.2 6.2 0 0 0 12.4 0M12 17.6V21M9.2 21h5.6"/></svg>',
-    poke: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="10" width="10.5" height="7.5" rx="3.2"/><rect x="12" y="11.6" width="8" height="3.4" rx="1.7"/><path d="M6.2 10.2 9.6 7c.7-.6 1.7-.6 2.2 0 .5.6.5 1.5-.1 2.1L9.2 11.4z"/><rect x="2.5" y="17.5" width="7.5" height="3.6" rx="1.8"/></svg>',
+    poke: '<svg width="26" height="26" viewBox="0 0 24 24" fill="#555"><path d="M12 2.6c.7 0 1.2.5 1.2 1.2v.7a7.2 7.2 0 0 1 5.6 7c0 3.1 1 4.6 1.8 5.6.3.4 0 1-.5 1H4c-.5 0-.8-.6-.5-1 .8-1 1.8-2.5 1.8-5.6a7.2 7.2 0 0 1 5.6-7v-.7c0-.7.5-1.2 1.2-1.2z"/><path d="M10.3 19.4h3.4a1.7 1.7 0 0 1-3.4 0z"/></svg>',
     location: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linejoin="round"><path d="M12 21s6.8-6 6.8-10.6A6.8 6.8 0 0 0 5.2 10.4C5.2 15 12 21 12 21z"/><circle cx="12" cy="10.3" r="2.4"/></svg>'
   };
 
