@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T02:32:48.911Z
+//  构建时间：2026-09-11T02:41:24.905Z
 // ═══════════════════════════════════════════════════════════
 
 // ── src/store.js ──
@@ -262,7 +262,8 @@
   }
 
   function titleOf(e) {
-    return String((e && (e.comment || e.title || e.remark)) || '').trim();
+    // 不同版本字段名有差异：name（旧）/ comment（新）都认
+    return String((e && (e.name || e.comment || e.title || e.remark)) || '').trim();
   }
   function contentOf(e) {
     return String((e && (e.content || e.text)) || '');
@@ -322,7 +323,11 @@
     // 返回 { rosters: {线名: 规范区块}, stickers: {名: 文件}, profiles: {角色名: 资料文本} }
     load: async function () {
       var result = { rosters: {}, stickers: {}, profiles: {} };
+      var names = await bookNames();
+      console.log('[霖州引擎] 世界书：' + names.length + ' 本 → ' + names.join(' / '));
       var es = await allEntries();
+      var seen = es.slice(0, 25).map(function (e) { return titleOf(e).slice(0, 24); });
+      console.log('[霖州引擎] 共扫描 ' + es.length + ' 条，前若干条标题：' + seen.join(' | '));
       for (var i = 0; i < es.length; i++) {
         var t = titleOf(es[i]);
         if (t === MARK_ROSTER) {
@@ -637,16 +642,15 @@
       '</div>';
   }
 
-  // ── 主页面 DOM 操作 ──
+  // ── 主页面 DOM 操作（原生，不依赖 jQuery） ──
   function pdoc() { return window.parent.document; }
-  function p$() { return window.parent.$; }
 
   // 替换某一个楼层的文本为气泡（整块匹配才动，混合内容不碰）
-  function renderMesText($mesText) {
-    var raw = $mesText.text() || '';
+  function renderMesText(el) {
+    var raw = el.textContent || '';
     var m = raw.match(RECORD_RE);
     if (!m) return false;
-    $mesText.html(renderRecordHtml(m[1].trim(), m[2]));
+    el.innerHTML = renderRecordHtml(m[1].trim(), m[2]);
     return true;
   }
 
@@ -672,8 +676,8 @@
 
       var mesid = before; // 新楼层 id = 插入前长度
       try {
-        var $mt = p$(pdoc()).find('#chat > .mes[mesid="' + mesid + '"] .mes_text').last();
-        if ($mt.length) renderMesText($mt);
+        var el = pdoc().querySelector('#chat > .mes[mesid="' + mesid + '"] .mes_text');
+        if (el) renderMesText(el);
       } catch (e) { console.warn('[霖州引擎] 楼层渲染失败', e); }
       if (W.Store) W.Store.markRendered(mesid);
       return mesid;
@@ -682,9 +686,8 @@
     // 全量扫描主聊天界面，把所有记录块渲染成气泡（幂等）
     renderAll: function () {
       try {
-        p$(pdoc()).find('#chat .mes .mes_text').each(function () {
-          renderMesText(p$(this));
-        });
+        var els = pdoc().querySelectorAll('#chat .mes .mes_text');
+        for (var i = 0; i < els.length; i++) renderMesText(els[i]);
       } catch (e) { console.warn('[霖州引擎] 全量渲染失败', e); }
     },
 
@@ -1189,7 +1192,7 @@
       if (!entries || !entries.length) return;
       for (var li = 0; li < LINES.length; li++) {
         for (var i = 0; i < entries.length; i++) {
-          var title = String((entries[i] && (entries[i].comment || entries[i].title)) || '');
+          var title = String((entries[i] && (entries[i].name || entries[i].comment || entries[i].title)) || '');
           if (title.indexOf(LINES[li]) !== -1) {
             if (state.line !== LINES[li]) {
               state.line = LINES[li];

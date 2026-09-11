@@ -64,7 +64,8 @@
   }
 
   function titleOf(e) {
-    return String((e && (e.comment || e.title || e.remark)) || '').trim();
+    // 不同版本字段名有差异：name（旧）/ comment（新）都认
+    return String((e && (e.name || e.comment || e.title || e.remark)) || '').trim();
   }
   function contentOf(e) {
     return String((e && (e.content || e.text)) || '');
@@ -124,7 +125,11 @@
     // 返回 { rosters: {线名: 规范区块}, stickers: {名: 文件}, profiles: {角色名: 资料文本} }
     load: async function () {
       var result = { rosters: {}, stickers: {}, profiles: {} };
+      var names = await bookNames();
+      console.log('[霖州引擎] 世界书：' + names.length + ' 本 → ' + names.join(' / '));
       var es = await allEntries();
+      var seen = es.slice(0, 25).map(function (e) { return titleOf(e).slice(0, 24); });
+      console.log('[霖州引擎] 共扫描 ' + es.length + ' 条，前若干条标题：' + seen.join(' | '));
       for (var i = 0; i < es.length; i++) {
         var t = titleOf(es[i]);
         if (t === MARK_ROSTER) {

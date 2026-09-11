@@ -102,16 +102,15 @@
       '</div>';
   }
 
-  // ── 主页面 DOM 操作 ──
+  // ── 主页面 DOM 操作（原生，不依赖 jQuery） ──
   function pdoc() { return window.parent.document; }
-  function p$() { return window.parent.$; }
 
   // 替换某一个楼层的文本为气泡（整块匹配才动，混合内容不碰）
-  function renderMesText($mesText) {
-    var raw = $mesText.text() || '';
+  function renderMesText(el) {
+    var raw = el.textContent || '';
     var m = raw.match(RECORD_RE);
     if (!m) return false;
-    $mesText.html(renderRecordHtml(m[1].trim(), m[2]));
+    el.innerHTML = renderRecordHtml(m[1].trim(), m[2]);
     return true;
   }
 
@@ -137,8 +136,8 @@
 
       var mesid = before; // 新楼层 id = 插入前长度
       try {
-        var $mt = p$(pdoc()).find('#chat > .mes[mesid="' + mesid + '"] .mes_text').last();
-        if ($mt.length) renderMesText($mt);
+        var el = pdoc().querySelector('#chat > .mes[mesid="' + mesid + '"] .mes_text');
+        if (el) renderMesText(el);
       } catch (e) { console.warn('[霖州引擎] 楼层渲染失败', e); }
       if (W.Store) W.Store.markRendered(mesid);
       return mesid;
@@ -147,9 +146,8 @@
     // 全量扫描主聊天界面，把所有记录块渲染成气泡（幂等）
     renderAll: function () {
       try {
-        p$(pdoc()).find('#chat .mes .mes_text').each(function () {
-          renderMesText(p$(this));
-        });
+        var els = pdoc().querySelectorAll('#chat .mes .mes_text');
+        for (var i = 0; i < els.length; i++) renderMesText(els[i]);
       } catch (e) { console.warn('[霖州引擎] 全量渲染失败', e); }
     },
 

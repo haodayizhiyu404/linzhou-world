@@ -95,7 +95,7 @@
       if (!entries || !entries.length) return;
       for (var li = 0; li < LINES.length; li++) {
         for (var i = 0; i < entries.length; i++) {
-          var title = String((entries[i] && (entries[i].comment || entries[i].title)) || '');
+          var title = String((entries[i] && (entries[i].name || entries[i].comment || entries[i].title)) || '');
           if (title.indexOf(LINES[li]) !== -1) {
             if (state.line !== LINES[li]) {
               state.line = LINES[li];
