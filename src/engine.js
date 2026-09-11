@@ -266,10 +266,7 @@
       try {
         on('lzw-phone-toggle', function () {
           var ui = W.Apps.wechat;
-          var has = !!Engine.section();
-          var doc = window.parent.document;
-          var ball = doc.getElementById('lzw-ball');
-          if (!has && !ball) {
+          if (!Engine.section()) {
             try { toastr.info('当前世界线没有手机（古代线或未定位）', '📱 霖州引擎'); } catch (e) {}
             return;
           }

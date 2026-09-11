@@ -1,15 +1,15 @@
 // ═══════════════════════════════════════════════════════════
 //  apps/wechat.js —— 微信应用（引擎装载的第一个应用）
-//  UI 全部为本项目自有设计（深色现代壳 + 玉绿点缀）。
+//  UI 全部为本项目自有设计（仿真手机壳 + 亮色屏）。
 //  展示层注入主页面（沙盒内经 parent.document 操作）。
 // ═══════════════════════════════════════════════════════════
 (function () {
   'use strict';
 
-  var ID = { ball: 'lzw-ball', phone: 'lzw-phone' };
+  var ID = { phone: 'lzw-phone' };
 
   function pdoc() { return window.parent.document; }
-  function p$() { return window.parent.$; }
+  function pwin() { return window.parent; }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -18,59 +18,113 @@
 
   // ── 样式（自有设计） ──
   var CSS = [
-    '#lzw-ball{position:fixed;right:18px;bottom:18px;z-index:99990;width:52px;height:52px;border-radius:50%;',
-    'background:linear-gradient(150deg,#2f6f5e,#173f35);color:#eaf7f0;border:1px solid rgba(255,255,255,.25);',
-    'box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;',
-    'font-size:24px;user-select:none;transition:transform .15s}',
-    '#lzw-ball:hover{transform:scale(1.08)}',
-    '#lzw-phone{position:fixed;right:20px;bottom:20px;z-index:99991;width:min(340px,calc(100vw - 24px));height:min(640px,82vh);background:#101418;color:#e8ecef;',
-    'border-radius:28px;border:1px solid rgba(255,255,255,.14);box-shadow:0 24px 70px rgba(0,0,0,.6);',
-    'display:none;flex-direction:column;overflow:hidden;font-family:system-ui,"Microsoft YaHei",sans-serif;font-size:14px}',
-    '#lzw-phone.lzw-open{display:flex}',
-    '.lzw-sbar{flex:none;display:flex;justify-content:space-between;align-items:center;padding:10px 18px 6px;',
-    'font-size:12px;color:#9fb0ba;background:#171d23}',
-    '.lzw-title{flex:none;padding:6px 14px 10px;font-size:15px;font-weight:600;background:#171d23;',
-    'display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.07)}',
-    '.lzw-back{cursor:pointer;color:#7fd6b2;font-size:13px;padding:2px 6px;border-radius:6px}',
-    '.lzw-back:hover{background:rgba(127,214,178,.12)}',
-    '.lzw-body{flex:1;overflow-y:auto;padding:10px;scrollbar-width:thin}',
-    '.lzw-home{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:22px 14px}',
-    '.lzw-app{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;color:#c9d4da}',
-    '.lzw-app:hover{color:#fff}',
-    '.lzw-app-ico{width:54px;height:54px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;',
-    'background:linear-gradient(150deg,#2b8a6e,#14523f);box-shadow:0 4px 12px rgba(0,0,0,.35)}',
-    '.lzw-conv{display:flex;gap:10px;align-items:center;padding:10px 8px;border-radius:10px;cursor:pointer}',
-    '.lzw-conv:hover{background:rgba(255,255,255,.05)}',
-    '.lzw-ava{width:38px;height:38px;border-radius:9px;flex:none;object-fit:cover;background:#2a343c;',
-    'display:flex;align-items:center;justify-content:center;color:#bcd0c6;font-size:15px}',
-    '.lzw-ava-me{background:#2f6f5e;color:#eaf7f0}',
+    // 外壳：机身 + 屏幕
+    '#lzw-phone{position:fixed;z-index:99991;display:none;font-family:system-ui,"Microsoft YaHei",sans-serif}',
+    '#lzw-phone.lzw-open{display:block}',
+    '.lzw-bezel{width:100%;height:100%;background:#0b0d10;border-radius:48px;padding:11px;position:relative;',
+    'box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 2px #2b3138;box-sizing:border-box}',
+    '.lzw-btn-side{position:absolute;background:#1d2228;border-radius:3px}',
+    '.lzw-btn-vol1{left:-3px;top:120px;width:4px;height:44px}',
+    '.lzw-btn-vol2{left:-3px;top:176px;width:4px;height:44px}',
+    '.lzw-btn-act{left:-3px;top:236px;width:4px;height:64px}',
+    '.lzw-btn-pow{right:-3px;top:170px;width:4px;height:88px}',
+    '.lzw-screen{width:100%;height:100%;border-radius:37px;overflow:hidden;display:flex;flex-direction:column;',
+    'background:#f2f2f5;color:#111;position:relative;user-select:none}',
+    // 状态栏（时间 / 灵动岛 / 信号·WiFi·电量）
+    '.lzw-sbar{flex:none;height:38px;display:flex;align-items:center;justify-content:space-between;',
+    'padding:4px 20px 0;position:relative;color:#111;z-index:3}',
+    '.lzw-clock{font-size:13px;font-weight:600;letter-spacing:.3px;min-width:52px}',
+    '.lzw-island{position:absolute;left:50%;top:8px;transform:translateX(-50%);width:86px;height:24px;',
+    'background:#0b0d10;border-radius:14px}',
+    '.lzw-sicons{display:flex;align-items:center;gap:5px}',
+    '.lzw-sig{display:inline-flex;align-items:flex-end;gap:1.5px;height:11px}',
+    '.lzw-sig i{display:block;width:3px;background:#111;border-radius:1px}',
+    '.lzw-sig i:nth-child(1){height:4px}.lzw-sig i:nth-child(2){height:6px}',
+    '.lzw-sig i:nth-child(3){height:8px}.lzw-sig i:nth-child(4){height:10px;opacity:.35}',
+    '.lzw-batt{display:inline-flex;align-items:center;gap:1px}',
+    '.lzw-batt-in{display:block;width:20px;height:10px;border:1.5px solid #111;border-radius:3px;padding:1px;box-sizing:border-box}',
+    '.lzw-batt-fill{display:block;height:100%;width:72%;background:#111;border-radius:1px}',
+    '.lzw-batt-cap{display:block;width:2px;height:4px;background:#111;border-radius:0 2px 2px 0;opacity:.6}',
+    // 应用栏
+    '.lzw-appbar{flex:none;min-height:40px;display:flex;align-items:center;gap:6px;padding:2px 10px 8px;',
+    'background:rgba(247,247,249,.92);border-bottom:1px solid rgba(0,0,0,.06)}',
+    '.lzw-appbar-t{flex:1;text-align:center;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.lzw-back{display:inline-flex;align-items:center;color:#111;cursor:pointer;padding:4px;border-radius:8px;margin-left:-4px}',
+    '.lzw-back:hover{background:rgba(0,0,0,.05)}',
+    '.lzw-appbar-r{width:24px}',
+    // 主体
+    '.lzw-body{flex:1;overflow-y:auto;scrollbar-width:thin;position:relative;z-index:1}',
+    // 首页（壁纸 + 大时钟 + 应用网格）
+    '.lzw-home-wall{height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:18px 16px 26px;',
+    'background:linear-gradient(165deg,#8fb8d8 0%,#cfe4df 55%,#dfead9 100%)/* 壁纸占位，后续接世界书图片 */}',
+    '.lzw-hometime{text-align:center;color:#17324a;text-shadow:0 1px 8px rgba(255,255,255,.5)}',
+    '.lzw-hometime .t{font-size:44px;font-weight:700;letter-spacing:1px}',
+    '.lzw-hometime .d{font-size:13px;opacity:.8;margin-top:2px}',
+    '.lzw-homegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px}',
+    '.lzw-app{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;color:#fff}',
+    '.lzw-app-ico{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;',
+    'background:rgba(255,255,255,.28);backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.4)}',
+    '.lzw-app span{font-size:11px;text-shadow:0 1px 4px rgba(0,0,0,.45)}',
+    // 会话列表
+    '.lzw-conv{display:flex;gap:10px;align-items:center;padding:11px 12px;background:#fff;',
+    'border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer}',
+    '.lzw-conv:hover{background:#f7f7f9}',
+    '.lzw-ava{width:42px;height:42px;border-radius:10px;flex:none;object-fit:cover;background:#c9cfd6;',
+    'display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:600}',
+    '.lzw-ava-me{background:#4d7cfe}',
     '.lzw-conv-main{flex:1;min-width:0}',
-    '.lzw-conv-name{font-weight:600;color:#eef3f6}',
-    '.lzw-conv-prev{font-size:12px;color:#8b99a3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.lzw-chatrow{display:flex;gap:8px;margin:10px 4px;align-items:flex-end}',
+    '.lzw-conv-name{font-weight:600;font-size:14.5px}',
+    '.lzw-conv-prev{font-size:12.5px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}',
+    // 聊天
+    '.lzw-chatbg{background:#f2f2f5;min-height:100%;padding:4px 0 10px}',
+    '.lzw-chatrow{display:flex;gap:8px;margin:12px 10px;align-items:flex-start}',
     '.lzw-chatrow.me{flex-direction:row-reverse}',
-    '.lzw-bub{max-width:72%;padding:9px 12px;border-radius:12px;background:#232b33;color:#e8ecef;line-height:1.5;word-break:break-word}',
-    '.lzw-chatrow.me .lzw-bub{background:#2f6f5e;color:#f0fbf5}',
-    '.lzw-bub.lzw-sys{background:transparent;color:#8b99a3;font-size:12px;padding:2px 4px}',
-    '.lzw-sticker{max-width:110px;border-radius:8px}',
-    '.lzw-voice-ico{color:#7fd6b2;margin-right:6px}',
-    '.lzw-img-ph{font-size:22px;text-align:center;padding:8px 0 4px}',
-    '.lzw-img-cap{font-size:12px;opacity:.75}',
-    '.lzw-inputbar{flex:none;display:flex;gap:8px;padding:10px;background:#171d23;border-top:1px solid rgba(255,255,255,.07)}',
-    '.lzw-input{flex:1;background:#0d1114;border:1px solid rgba(255,255,255,.1);border-radius:16px;color:#e8ecef;',
-    'padding:8px 14px;font-size:14px;outline:none}',
-    '.lzw-ibtn{background:#232b33;border:1px solid rgba(255,255,255,.1);color:#c9d4da;border-radius:14px;',
-    'padding:0 14px;cursor:pointer;font-size:13px;white-space:nowrap}',
-    '.lzw-ibtn:hover{background:#2c3640}',
-    '.lzw-stickpanel{flex:none;display:none;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px;max-height:180px;overflow-y:auto;',
-    'background:#171d23;border-top:1px solid rgba(255,255,255,.07);scrollbar-width:thin}',
-    '.lzw-stickpanel.lzw-open{display:grid}',
-    '.lzw-stickcell{position:relative;cursor:pointer;border-radius:8px;overflow:hidden;aspect-ratio:1;background:#0d1114}',
-    '.lzw-stickcell img{width:100%;height:100%;object-fit:cover}',
-    '.lzw-stickcell span{position:absolute;left:0;right:0;bottom:0;font-size:10px;text-align:center;',
-    'background:rgba(0,0,0,.55);color:#fff;padding:1px 0;white-space:nowrap;overflow:hidden}',
-    '.lzw-sysrow{text-align:center;font-size:12px;color:#7a8891;margin:8px 0}'
+    '.lzw-bub{max-width:68%;padding:9px 12px;border-radius:12px;background:#fff;color:#111;line-height:1.5;',
+    'word-break:break-word;font-size:14.5px;box-shadow:0 1px 2px rgba(0,0,0,.05)}',
+    '.lzw-chatrow.me .lzw-bub{background:#95ec69}',
+    '.lzw-bub.lzw-sys{background:transparent;box-shadow:none;color:#8a8f99;font-size:12px;padding:2px 4px}',
+    '.lzw-sticker{max-width:120px;border-radius:8px}',
+    '.lzw-voice-ico{color:#111;margin-right:6px;opacity:.6}',
+    '.lzw-imgbox{width:150px;border-radius:10px;overflow:hidden}',
+    '.lzw-imgph{height:90px;background:linear-gradient(140deg,#b9c6d2,#dfe7ee);display:flex;align-items:center;justify-content:center;font-size:30px}',
+    '.lzw-imgbox .cap{font-size:12px;padding:6px 8px;color:#333}',
+    '.lzw-locbox{width:170px;border-radius:10px;overflow:hidden;background:#fff}',
+    '.lzw-locmap{height:64px;background:linear-gradient(140deg,#a8d5a2,#e8f3e4);position:relative}',
+    '.lzw-locmap:after{content:"📍";position:absolute;left:50%;top:50%;transform:translate(-50%,-60%);font-size:22px}',
+    '.lzw-locbox .cap{font-size:13px;font-weight:600;padding:6px 8px}',
+    '.lzw-sysrow{text-align:center;font-size:12px;color:#9aa0a8;margin:10px 0}',
+    // 输入区
+    '.lzw-inputbar{flex:none;display:flex;gap:8px;align-items:center;padding:8px 10px 4px;background:#f7f7f9;',
+    'border-top:1px solid rgba(0,0,0,.06);position:relative;z-index:3}',
+    '.lzw-plus{width:34px;height:34px;flex:none;border-radius:50%;border:1.5px solid #c4c9d0;background:#fff;color:#555;',
+    'font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
+    '.lzw-plus:hover{background:#eef0f3}',
+    '.lzw-input{flex:1;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:17px;color:#111;',
+    'padding:8px 13px;font-size:14.5px;outline:none;min-width:0}',
+    '.lzw-send{flex:none;border:none;background:none;color:#4d7cfe;font-size:15px;font-weight:600;cursor:pointer;padding:6px 4px}',
+    '.lzw-send:disabled{color:#b6bcc6}',
+    // [+] 面板
+    '.lzw-panel{flex:none;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06);padding:14px 14px 6px;display:none;position:relative;z-index:3}',
+    '.lzw-panel.lzw-open{display:block}',
+    '.lzw-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 6px}',
+    '.lzw-act{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;color:#555;font-size:11.5px}',
+    '.lzw-act-ico{width:52px;height:52px;border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.06);',
+    'display:flex;align-items:center;justify-content:center;font-size:24px}',
+    '.lzw-act:hover .lzw-act-ico{background:#eef0f3}',
+    '.lzw-modeform{display:flex;gap:8px;align-items:center;padding-bottom:8px}',
+    '.lzw-modeform .hint{flex:none;font-size:12.5px;color:#777}',
+    '.lzw-stickgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 6px;max-height:190px;overflow-y:auto;scrollbar-width:thin;padding-bottom:6px}',
+    '.lzw-stickcell{cursor:pointer;text-align:center}',
+    '.lzw-stickcell .imgw{width:56px;height:56px;margin:0 auto;border-radius:8px;overflow:hidden;background:#eceff3}',
+    '.lzw-stickcell img{width:100%;height:100%;object-fit:cover;display:block}',
+    '.lzw-stickcell span{display:block;font-size:10px;color:#8a8f99;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    // 底部 home 指示条
+    '.lzw-homebar{flex:none;height:18px;display:flex;align-items:center;justify-content:center;background:#f7f7f9;position:relative;z-index:3}',
+    '.lzw-homebar:after{content:"";display:block;width:110px;height:4px;border-radius:2px;background:rgba(0,0,0,.75)}'
   ].join('\n');
+
+  var ICON_BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
 
   // ── 手机内气泡行 ──
   function chatRowHtml(m, userName, contactMap) {
@@ -92,13 +146,14 @@
         ? '<img class="lzw-sticker" src="' + esc(window.LZWorld.Worldbook.imgUrl(file)) + '" title="' + esc(m.text) + '">'
         : '<div class="lzw-bub">[表情:' + esc(m.text) + ']</div>';
     } else if (m.kind === 'poke') {
-      bub = '<div class="lzw-bub lzw-sys">戳了戳' + (isUser ? '对方' : esc(who)) + '</div>';
+      bub = '<div class="lzw-bub lzw-sys">' + (isUser ? '你戳了戳' + esc(who) : esc(who) + '戳了戳你') + '</div>';
+      return '<div style="text-align:center">' + bub + '</div>';
     } else if (m.kind === 'voice') {
       bub = '<div class="lzw-bub"><span class="lzw-voice-ico">▶</span>' + esc(m.text) + '</div>';
     } else if (m.kind === 'image') {
-      bub = '<div class="lzw-bub"><div class="lzw-img-ph">🖼</div><div class="lzw-img-cap">' + esc(m.text) + '</div></div>';
+      bub = '<div class="lzw-bub lzw-imgbox"><div class="lzw-imgph">🖼</div><div class="cap">' + esc(m.text) + '</div></div>';
     } else if (m.kind === 'location') {
-      bub = '<div class="lzw-bub lzw-sys">📍 ' + esc(m.text) + '</div>';
+      bub = '<div class="lzw-bub lzw-locbox"><div class="lzw-locmap"></div><div class="cap">📍 ' + esc(m.text) + '</div></div>';
     } else {
       bub = '<div class="lzw-bub">' + esc(m.text) + '</div>';
     }
@@ -107,9 +162,11 @@
 
   var UI = {
     screen: 'home',      // home | list | chat
-    chatKey: null,       // 联系人名 或 'group:群名'
+    panel: null,         // null | 'actions' | 'sticker' | 'image' | 'voice' | 'location'
+    chatKey: null,
     isGroup: false,
     busy: false,
+    _placed: false,
 
     inject: function () {
       var doc = pdoc();
@@ -119,47 +176,44 @@
         st.textContent = CSS;
         doc.head.appendChild(st);
       }
-      if (!doc.getElementById(ID.ball)) {
-        var ball = doc.createElement('div');
-        ball.id = ID.ball;
-        ball.textContent = '📱';
-        ball.title = '霖州 · 数字世界';
-        ball.addEventListener('pointerdown', dragStart);
-        ball.addEventListener('click', function (ev) {
-          if (ball.dataset.dragged) { ev.stopPropagation(); return; } // 拖拽后不触发点击
-          UI.toggle();
-        });
-        doc.body.appendChild(ball);
-      }
       if (!doc.getElementById(ID.phone)) {
         var ph = doc.createElement('div');
         ph.id = ID.phone;
         doc.body.appendChild(ph);
       }
+      if (!this._placed) {
+        this._placed = true;
+        var vv = pwin().visualViewport;
+        var target = vv || pwin();
+        try {
+          target.addEventListener('resize', placePhone);
+          if (vv) vv.addEventListener('scroll', placePhone);
+        } catch (e) {}
+      }
     },
 
     remove: function () {
-      var doc = pdoc();
-      var b = doc.getElementById(ID.ball); if (b) b.remove();
-      var p = doc.getElementById(ID.phone); if (p) p.remove();
+      var p = pdoc().getElementById(ID.phone);
+      if (p) p.remove();
     },
 
     toggle: function () {
-      var doc = pdoc();
-      var ph = doc.getElementById(ID.phone);
+      var ph = pdoc().getElementById(ID.phone);
       if (!ph) return;
       ph.classList.toggle('lzw-open');
-      var open = ph.classList.contains('lzw-open');
-      // 手机打开时藏起悬浮球，避免叠在手机右下角
-      var ball = doc.getElementById(ID.ball);
-      if (ball) ball.style.display = open ? 'none' : '';
-      if (open) { UI.screen = 'home'; UI.render(); }
+      if (ph.classList.contains('lzw-open')) {
+        placePhone();
+        this.screen = 'home';
+        this.panel = null;
+        this.render();
+      }
     },
 
     openChat: function (key, isGroup) {
       this.chatKey = key;
       this.isGroup = !!isGroup;
       this.screen = 'chat';
+      this.panel = null;
       this.render();
     },
 
@@ -171,20 +225,26 @@
       var userName = eng.userName();
       var snap = W.Status.snapshot(null);
       var clock = snap.time ? snap.time : '--:--';
-      var date = snap.dateText ? snap.dateText.split(' ')[0] : '';
+      var dateShort = snap.dateText ? snap.dateText.replace(/^(\d{4})年/, '').replace(/星期./, '') : '';
 
-      var bar = '<div class="lzw-sbar"><span>' + esc(clock) + '</span><span>' + esc(date) + '</span><span>📶 🔋</span></div>';
-      var title, body;
+      var sbar =
+        '<div class="lzw-sbar"><span class="lzw-clock">' + esc(clock) + '</span>' +
+        '<span class="lzw-island"></span>' +
+        '<span class="lzw-sicons"><span class="lzw-sig"><i></i><i></i><i></i><i></i></span>' +
+        ICON_WIFI +
+        '<span class="lzw-batt"><span class="lzw-batt-in"><span class="lzw-batt-fill"></span></span><span class="lzw-batt-cap"></span></span></span></div>';
 
+      var body;
       if (this.screen === 'home') {
-        title = '<div class="lzw-title">霖州 · 数字世界</div>';
-        body = '<div class="lzw-body"><div class="lzw-home">' +
+        body =
+          '<div class="lzw-body"><div class="lzw-home-wall">' +
+          '<div class="lzw-hometime"><div class="t">' + esc(clock) + '</div><div class="d">' + esc(dateShort || '霖州') + '</div></div>' +
+          '<div class="lzw-homegrid">' +
           '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico">💬</div><span>微信</span></div>' +
-          '<div class="lzw-app" style="opacity:.35"><div class="lzw-app-ico" style="background:#2a343c">🧩</div><span>敬请期待</span></div>' +
-          '</div></div>';
+          '<div class="lzw-app" style="opacity:.55"><div class="lzw-app-ico">🧩</div><span>敬请期待</span></div>' +
+          '</div></div></div>';
 
       } else if (this.screen === 'list') {
-        title = '<div class="lzw-title"><span class="lzw-back" data-act="home">‹ 返回</span><span>微信</span></div>';
         var sec = eng.section();
         var rowsHtml = '';
         if (sec) {
@@ -212,7 +272,6 @@
         var key = this.chatKey || '';
         var g = this.isGroup;
         var disp = g ? key.replace(/^group:/, '') : key;
-        title = '<div class="lzw-title"><span class="lzw-back" data-act="list">‹ 返回</span><span>' + esc(disp) + '</span></div>';
         var hist = W.Store.history(key);
         var contactMap = {};
         var secNow = eng.section();
@@ -223,21 +282,25 @@
           contactMap[disp] = eng.findContact(disp) || { name: disp, avatar: '' };
         }
         var rows = hist.map(function (m) { return chatRowHtml(m, userName, contactMap); }).join('');
-        body = '<div class="lzw-body" id="lzw-chatbody">' + rows + '</div>' +
-          '<div class="lzw-stickpanel" id="lzw-stickpanel">' + stickerGrid() + '</div>' +
+        body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
+          panelHtml(this.panel) +
           '<div class="lzw-inputbar">' +
+          '<button class="lzw-plus" data-act="plus">＋</button>' +
           '<input class="lzw-input" id="lzw-input" placeholder="发消息…" maxlength="300">' +
-          '<button class="lzw-ibtn" data-act="stick">表情</button>' +
-          '<button class="lzw-ibtn" data-act="poke">戳一戳</button>' +
-          '<button class="lzw-ibtn" data-act="send">发送</button>' +
+          '<button class="lzw-send" data-act="send">发送</button>' +
           '</div>';
       }
 
-      ph.innerHTML = bar + title + body;
+      ph.innerHTML =
+        '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
+        '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
+        '<div class="lzw-screen">' + sbar + appbarHtml(this.screen, disp) + body + '<div class="lzw-homebar"></div>' +
+        '</div></div>';
+
       this.bind(ph);
       if (this.screen === 'chat') {
         var cb = ph.querySelector('#lzw-chatbody');
-        if (cb) cb.scrollTop = cb.scrollHeight;
+        if (cb) cb.parentNode.scrollTop = cb.parentNode.scrollHeight;
         var inp = ph.querySelector('#lzw-input');
         if (inp) inp.addEventListener('keydown', function (e) {
           if (e.key === 'Enter') { e.preventDefault(); UI.sendText(); }
@@ -252,6 +315,7 @@
       ph.querySelectorAll('.lzw-back').forEach(function (el) {
         el.onclick = function () {
           UI.screen = el.dataset.act === 'home' ? 'home' : 'list';
+          UI.panel = null;
           UI.render();
         };
       });
@@ -259,23 +323,47 @@
         el.onclick = function () { UI.openChat(el.dataset.key, el.dataset.group === '1'); };
       });
       ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.sendText(); }; });
-      ph.querySelectorAll('[data-act="stick"]').forEach(function (el) {
+      ph.querySelectorAll('[data-act="plus"]').forEach(function (el) {
         el.onclick = function () {
-          var sp = ph.querySelector('#lzw-stickpanel');
-          if (sp) sp.classList.toggle('lzw-open');
+          UI.panel = UI.panel ? null : 'actions';
+          UI.render();
+          var inp = ph.querySelector('#lzw-input');
+          if (inp && UI.panel) inp.focus();
         };
       });
-      ph.querySelectorAll('[data-act="poke"]').forEach(function (el) { el.onclick = function () { UI.sendTyped('poke', ''); }; });
-      ph.querySelectorAll('.lzw-stickcell').forEach(function (el) {
-        el.onclick = function () { UI.sendTyped('sticker', el.dataset.name); };
+      // [+] 面板内的动作
+      ph.querySelectorAll('[data-mode]').forEach(function (el) {
+        el.onclick = function () {
+          var mode = el.dataset.mode;
+          if (mode === 'poke') { UI.sendTyped('poke', ''); return; }
+          UI.panel = mode; // sticker | image | voice | location
+          UI.render();
+        };
+      });
+      ph.querySelectorAll('[data-stick]').forEach(function (el) {
+        el.onclick = function () { UI.sendTyped('sticker', el.dataset.stick); };
+      });
+      ph.querySelectorAll('[data-modesend]').forEach(function (el) {
+        el.onclick = function () {
+          var kind = el.dataset.modesend;
+          var inp = ph.querySelector('#lzw-modeinput');
+          var t = inp ? inp.value.trim() : '';
+          if (!t) return;
+          UI.sendTyped(kind, t);
+        };
       });
     },
 
     sendText: function () {
-      var inp = pdoc().getElementById('lzw-input');
+      var inp = pdoc().getElementById('lzw-input') || pdoc().getElementById('lzw-modeinput');
       if (!inp) return;
       var t = inp.value.trim();
       if (!t) return;
+      // [+] 面板的二级模式：输入内容即对应类型
+      if (this.panel === 'image' || this.panel === 'voice' || this.panel === 'location') {
+        this.sendTyped(this.panel, t);
+        return;
+      }
       inp.value = '';
       this.sendTyped('text', t);
     },
@@ -285,6 +373,7 @@
       var userName = W.Engine.userName();
       var msg = { who: 'user', kind: kind, text: text, time: W.Status.nowText() };
       W.Store.push(this.chatKey, [msg], 100);
+      this.panel = null;
       this.render();
       this.generate(userName);
     },
@@ -311,49 +400,61 @@
     }
   };
 
-  function stickerGrid() {
-    var stickers = window.LZWorld.Engine.stickers();
-    var names = Object.keys(stickers);
-    if (!names.length) return '<div class="lzw-sysrow">世界书中未找到「霖州手机::表情包」条目</div>';
-    return names.map(function (n) {
-      return '<div class="lzw-stickcell" data-name="' + esc(n) + '">' +
-        '<img src="' + esc(window.LZWorld.Worldbook.imgUrl(stickers[n])) + '" loading="lazy">' +
-        '<span>' + esc(n) + '</span></div>';
-    }).join('');
+  function appbarHtml(screen, disp) {
+    if (screen === 'home') return '<div class="lzw-appbar"><span class="lzw-appbar-t">霖州 · 数字世界</span></div>';
+    if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
+    return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r"></span></div>';
   }
 
-  // ── 悬浮球拖拽 ──
-  var drag = null;
-  function dragStart(e) {
-    var ball = pdoc().getElementById(ID.ball);
-    if (!ball) return;
-    drag = { x: e.clientX - ball.offsetLeft, y: e.clientY - ball.offsetTop, moved: false };
-    window.parent.addEventListener('pointermove', dragMove);
-    window.parent.addEventListener('pointerup', dragEnd);
-  }
-  function dragMove(e) {
-    if (!drag) return;
-    var ball = pdoc().getElementById(ID.ball);
-    if (!ball) return;
-    drag.moved = true;
-    ball.style.left = Math.max(0, e.clientX - drag.x) + 'px';
-    ball.style.top = Math.max(0, e.clientY - drag.y) + 'px';
-    ball.style.right = 'auto';
-    ball.style.bottom = 'auto';
-  }
-  function dragEnd() {
-    window.parent.removeEventListener('pointermove', dragMove);
-    window.parent.removeEventListener('pointerup', dragEnd);
-    var wasDrag = drag && drag.moved;
-    drag = null;
-    if (wasDrag) {
-      var ball = pdoc().getElementById(ID.ball);
-      if (ball) ball.dataset.dragged = '1';
-      setTimeout(function () {
-        var b2 = pdoc().getElementById(ID.ball);
-        if (b2) delete b2.dataset.dragged;
-      }, 200);
+  // [+] 面板内容
+  function panelHtml(panel) {
+    if (!panel) return '<div class="lzw-panel" id="lzw-panel"></div>';
+    if (panel === 'sticker') {
+      var stickers = window.LZWorld.Engine.stickers();
+      var names = Object.keys(stickers);
+      var grid = names.length
+        ? names.map(function (n) {
+            return '<div class="lzw-stickcell" data-stick="' + esc(n) + '"><div class="imgw">' +
+              '<img src="' + esc(window.LZWorld.Worldbook.imgUrl(stickers[n])) + '" loading="lazy"></div>' +
+              '<span>' + esc(n) + '</span></div>';
+          }).join('')
+        : '<div class="lzw-sysrow">世界书中未找到「霖州手机::表情包」条目</div>';
+      return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-stickgrid">' + grid + '</div></div>';
     }
+    if (panel === 'image' || panel === 'voice' || panel === 'location') {
+      var hint = panel === 'image' ? '图片：描述画面' : panel === 'voice' ? '语音：要说的话' : '定位：地点名';
+      return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-modeform">' +
+        '<span class="hint">' + hint + '</span>' +
+        '<input class="lzw-input" id="lzw-modeinput" maxlength="200">' +
+        '<button class="lzw-send" data-modesend="' + panel + '">发送</button></div></div>';
+    }
+    // actions
+    return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-actions">' +
+      '<div class="lzw-act" data-mode="sticker"><div class="lzw-act-ico">😀</div><span>表情</span></div>' +
+      '<div class="lzw-act" data-mode="image"><div class="lzw-act-ico">🖼</div><span>图片</span></div>' +
+      '<div class="lzw-act" data-mode="voice"><div class="lzw-act-ico">🎤</div><span>语音</span></div>' +
+      '<div class="lzw-act" data-mode="poke"><div class="lzw-act-ico">👆</div><span>戳一戳</span></div>' +
+      '<div class="lzw-act" data-mode="location"><div class="lzw-act-ico">📍</div><span>定位</span></div>' +
+      '</div></div>';
+  }
+
+  // 用 visualViewport 计算位置：F12/移动仿真/页面缩放下依然落在可视区右下角
+  function placePhone() {
+    var ph = pdoc().getElementById(ID.phone);
+    if (!ph || !ph.classList.contains('lzw-open')) return;
+    var vp = pwin().visualViewport;
+    var vw = vp ? vp.width : pwin().innerWidth;
+    var vh = vp ? vp.height : pwin().innerHeight;
+    var w = Math.max(280, Math.min(348, vw - 16));
+    var h = Math.max(420, Math.min(680, vh - 20));
+    ph.style.width = w + 'px';
+    ph.style.height = h + 'px';
+    var left = (vp ? vp.offsetLeft : 0) + vw - w - 8;
+    var top = (vp ? vp.offsetTop : 0) + vh - h - 8;
+    ph.style.left = Math.max(4, left) + 'px';
+    ph.style.top = Math.max(4, top) + 'px';
+    ph.style.right = 'auto';
+    ph.style.bottom = 'auto';
   }
 
   window.LZWorld = window.LZWorld || {};

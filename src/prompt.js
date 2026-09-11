@@ -98,10 +98,10 @@
         '',
         situationBlock(snapshot) ? '【情境】\n' + situationBlock(snapshot) : '',
         '',
-        '【应用内记录 · 与{{user}}的微信聊天】',
-        histText(hist, HIST_PRIVATE),
-        '',
         mainContext() ? '【主线近貌】（仅作背景，上面的铁律优先）\n' + mainContext() : '',
+        '',
+        '【应用内记录 · 与{{user}}的微信聊天】（最贴近当前，优先承接这里的话题与语气）',
+        histText(hist, HIST_PRIVATE),
         '',
         consistencyRules('「' + contact.name + '」'),
         '',
@@ -116,7 +116,7 @@
       return {
         ordered_prompts: [
           { role: 'system', content: p },
-          { role: 'user', content: '（生成消息）' }
+          { role: 'user', content: '（现在轮到「' + contact.name + '」回复{{user}}在微信里发来的消息。严格按上方输出契约，只输出消息本身。）' }
         ],
         should_silence: true,
         max_chat_history: 0
@@ -142,10 +142,10 @@
         '',
         situationBlock(snapshot) ? '【情境】\n' + situationBlock(snapshot) : '',
         '',
-        '【应用内记录 · 群「' + group.name + '」】',
-        histText(hist, HIST_GROUP),
-        '',
         mainContext() ? '【主线近貌】（仅作背景，铁律优先）\n' + mainContext() : '',
+        '',
+        '【应用内记录 · 群「' + group.name + '」】（最贴近当前，优先承接这里的话题与语气）',
+        histText(hist, HIST_GROUP),
         '',
         consistencyRules('每个群成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，各自独立判断是否知情。',
         '',
@@ -160,7 +160,7 @@
       return {
         ordered_prompts: [
           { role: 'system', content: p },
-          { role: 'user', content: '（生成群消息）' }
+          { role: 'user', content: '（现在轮到群「' + group.name + '」里的成员们继续聊天。严格按上方输出契约，只输出群消息本身。）' }
         ],
         should_silence: true,
         max_chat_history: 0
