@@ -111,6 +111,8 @@ eq('包含时间', sysPrompt.indexOf('22:49') !== -1, true);
 eq('包含NPC情境', sysPrompt.indexOf('图书馆') !== -1, true);
 eq('HTML被剥离', sysPrompt.indexOf('class="x"') !== -1, false);
 eq('status标签剥离', sysPrompt.indexOf('<环境>') !== -1, false);
+eq('状态栏内容不进主线近况', sysPrompt.indexOf('阴') !== -1, false);
+eq('正文保留', sysPrompt.indexOf('他笑了笑') !== -1, true);
 eq('静默生成', req.should_silence, true);
 eq('不占用主历史', req.max_chat_history, 0);
 eq('无user宏残留·系统块', sysPrompt.indexOf('{{user}}'), -1);

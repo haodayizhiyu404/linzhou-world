@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T11:58:34.024Z
+//  构建时间：2026-09-11T12:10:53.286Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-11 11:58';
+var __LZW_BUILD__ = '2026-09-11 12:10';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -471,17 +471,27 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!msgs || !msgs.length) return '';
       return msgs.slice(-PLOT_FLOORS).map(function (m) {
         var t = String((m && m.message) || '')
+          // 状态栏是机器可读的元数据（时间/着装/心声等），已由「当前情境」按需引用，
+          // 这里整段剔除——只剥标签会留下无主的「着装：…」碎片，严重干扰模型
+          .replace(/<status>[\s\S]*?<\/status>/gi, '')
+          // 旧版写进主楼层的手机记录块一并剔除（手机历史在「聊天记录」节单独给出）
+          .replace(/\[📱[\s\S]*?\/\📱\]\s*/g, '')
           .replace(/```[\s\S]*?```/g, '')
           .replace(/<think>[\s\S]*?<\/think>/gi, '')
           .replace(/<[^>]+>/g, '')
           .replace(/\n{2,}/g, '\n')
           .trim();
-        if (t.length > PLOT_CAP) t = t.substring(0, PLOT_CAP) + '…';
+        // 截断尽量落在行边界，避免半句话/半个词糊在切口上
+        if (t.length > PLOT_CAP) {
+          var cut = t.lastIndexOf('\n', PLOT_CAP);
+          if (cut < PLOT_CAP * 0.5) cut = t.lastIndexOf('。', PLOT_CAP);
+          if (cut < PLOT_CAP * 0.5) cut = PLOT_CAP;
+          t = t.substring(0, cut) + '……（此楼后续从略）';
+        }
         return (m.role === 'user' ? me() : '旁白') + '：' + t;
       }).filter(function (l) { return l.length > 4; }).join('\n');
     } catch (e) { return ''; }
   }
-
   // ── 单条消息 → 契约语法文本（与「消息类型」说明完全一致，AI 不用猜） ──
   function msgBody(m) {
     switch (m.kind) {
