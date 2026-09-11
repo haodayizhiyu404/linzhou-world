@@ -60,7 +60,7 @@
     '.lzw-reroll{display:inline-flex;color:#666;cursor:pointer;padding:5px;border-radius:8px;align-items:center;justify-content:center}',
     '.lzw-reroll:hover{background:rgba(0,0,0,.06)}',
     // 主体
-    '.lzw-body{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;position:relative;z-index:1}',
+    '.lzw-body{flex:1;min-height:0;overflow-y:auto;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
     '.lzw-scr-home{background:url(' + HOME_WALL + ') center/cover no-repeat #f4f6fb}',
     '.lzw-scr-home .lzw-sbar{background:transparent}',
@@ -96,11 +96,10 @@
     '.lzw-chatrow.me .lzw-bub{background:#95ec69}',
     '.lzw-bub.lzw-sys{background:transparent;box-shadow:none;color:#8a8f99;font-size:12px;padding:2px 4px}',
     '.lzw-sticker{max-width:120px;border-radius:8px}',
-    '.lzw-voice{display:flex;flex-wrap:wrap;align-items:center;gap:8px;cursor:pointer}',
+    '.lzw-voice{display:flex;flex-wrap:wrap;align-items:center;gap:8px;cursor:pointer;min-width:120px}',
+    '.lzw-voice.me{flex-direction:row-reverse}',
+    '.lzw-voice.me .lzw-voice-play svg{transform:scaleX(-1)}',
     '.lzw-voice-play{display:inline-flex;line-height:0}',
-    '.lzw-voice-bars{display:inline-flex;align-items:center;gap:2.5px;height:15px}',
-    '.lzw-voice-bars i{display:block;width:3px;background:#222;border-radius:1.5px}',
-    '.lzw-voice-bars i:nth-child(1){height:6px}.lzw-voice-bars i:nth-child(2){height:10px}.lzw-voice-bars i:nth-child(3){height:14px}.lzw-voice-bars i:nth-child(4){height:8px}.lzw-voice-bars i:nth-child(5){height:12px}',
     '.lzw-voice-sec{font-size:12px;color:#8a8f98}',
     '.lzw-voicetxt{display:none;flex-basis:100%;margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.08);font-size:13px;color:#333;line-height:1.5}',
     '.lzw-voice.open .lzw-voicetxt{display:block}',
@@ -115,7 +114,8 @@
     '.lzw-locbox .cap{font-size:12.5px;font-weight:600;padding:7px 9px}',
     '.lzw-sysrow{text-align:center;font-size:11.5px;color:#9aa0a8;margin:10px 0}',
     '.lzw-recallrow{text-align:center;font-size:12px;color:#9aa0a8;margin:13px 0;line-height:1.7;cursor:pointer}',
-    '.lzw-poke{display:inline-block;background:#e3e5e9;color:#666;font-size:11.5px;padding:7px 20px;border-radius:14px;cursor:pointer}',
+    '.lzw-poke{display:inline-block;background:#dcdfe4;color:#333;font-size:11.5px;padding:7px 20px;border-radius:14px;cursor:pointer}',
+    '.lzw-pokerow{margin:12px 12px;text-align:center}',
     '.lzw-poke.shake{animation:lzw-shake .5s}',
     '@keyframes lzw-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}',
     '.lzw-recallrow:hover{color:#6a7078}',
@@ -165,7 +165,7 @@
     '.lzw-modeinput::placeholder{color:#b9bdc4;font-size:12.5px}',
     '.lzw-modebtns{align-self:stretch;display:flex;justify-content:space-between;gap:8px}',
     '.lzw-modeok{border:none;border-radius:8px;background:#22c05e;color:#fff;font-size:13.5px;line-height:1;padding:9px 20px;cursor:pointer}',
-    '.lzw-modecancel{border:none;border-radius:8px;background:#f2f3f5;color:#333;font-size:13.5px;line-height:1;padding:9px 18px;cursor:pointer}',
+    '.lzw-modecancel{border:1px solid #d5d8dd;border-radius:8px;background:#f7f8fa;color:#444;font-size:13.5px;line-height:1;padding:8px 18px;cursor:pointer}',
     '.lzw-stickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:10px 4px;max-height:170px;overflow-y:auto;overflow-x:hidden;padding-bottom:6px}',
     '.lzw-stickcell{cursor:pointer;text-align:center}',
     '.lzw-stickcell .imgw{width:56px;height:56px;margin:0 auto;border-radius:8px;overflow:hidden;background:#eceff3}',
@@ -173,13 +173,9 @@
         // 滚动条（统一的细灰条，不用浏览器默认样式）
     // 滚动条：细、淡灰、无箭头、透明轨道（webkit + Firefox 双管）
     '.lzw-screen ::-webkit-scrollbar{width:5px;height:5px}',
-    '.lzw-screen ::-webkit-scrollbar-button{display:none;width:0;height:0;background:transparent;border:none;-webkit-appearance:none}',
-    '.lzw-screen ::-webkit-scrollbar-button:vertical:decrement,.lzw-screen ::-webkit-scrollbar-button:vertical:increment,.lzw-screen ::-webkit-scrollbar-button:horizontal:decrement,.lzw-screen ::-webkit-scrollbar-button:horizontal:increment{display:none;width:0;height:0;background:transparent;border:none}',
-    '.lzw-screen ::-webkit-scrollbar-corner{background:transparent}',
     '.lzw-screen ::-webkit-scrollbar-track{background:transparent}',
     '.lzw-screen ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}',
     '.lzw-screen ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.26)}',
-    '.lzw-screen *{scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}',
     // 底部 home 指示条
     '.lzw-homebar{flex:none;height:18px;display:flex;align-items:center;justify-content:center;background:#f7f7f9;position:relative;z-index:3}',
     '.lzw-homebar:after{content:"";display:block;width:110px;height:4px;border-radius:2px;background:rgba(0,0,0,.75)}'
@@ -234,7 +230,7 @@
         : '<div class="lzw-bub">[表情:' + esc(m.text) + ']</div>';
     } else if (m.kind === 'poke') {
       bub = richBub(m, isUser, who, targetName, true);
-      return '<div style="text-align:center" data-del="' + idx + '">' + bub + '</div>';
+      return '<div class="lzw-pokerow" data-del="' + idx + '">' + bub + '</div>';
     } else if (m.kind === 'voice' || m.kind === 'image' || m.kind === 'location') {
       bub = richBub(m, isUser, who, targetName, false);
     } else {
@@ -259,7 +255,7 @@
     }
     if (m.kind === 'voice') {
       var vsec = Math.max(2, Math.min(40, Math.round(m.text.length * 0.7)));
-      return '<div class="lzw-bub lzw-voice" data-voice="1" title="点击转文字查看内容"><span class="lzw-voice-play">' + ICON_VOICE + '</span><span class="lzw-voice-bars"><i></i><i></i><i></i><i></i><i></i></span><span class="lzw-voice-sec">' + vsec + '&#8243;</span><div class="lzw-voicetxt">' + esc(m.text) + '</div></div>';
+      return '<div class="lzw-bub lzw-voice' + (isUser ? ' me' : '') + '" data-voice="1" title="点击转文字查看内容"><span class="lzw-voice-play">' + ICON_VOICE + '</span><span class="lzw-voice-sec">' + vsec + '&#8243;</span><div class="lzw-voicetxt">' + esc(m.text) + '</div></div>';
     }
     if (m.kind === 'image') {
       return '<div class="lzw-bub lzw-imgbox"><div class="lzw-imgph"><span>' + esc(m.text) + '</span></div></div>';
@@ -439,6 +435,14 @@
           '</div></div>';
       }
 
+      var prevScroll = -1, prevNearBottom = true;
+      var oldBody = ph.querySelector('#lzw-chatbody');
+      if (oldBody) {
+        var opn = oldBody.parentNode;
+        prevScroll = opn.scrollTop;
+        prevNearBottom = (opn.scrollHeight - opn.clientHeight - opn.scrollTop) < 60;
+      }
+
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
@@ -449,7 +453,10 @@
       this.bind(ph);
       if (this.screen === 'chat') {
         var cb = ph.querySelector('#lzw-chatbody');
-        if (cb) cb.parentNode.scrollTop = cb.parentNode.scrollHeight;
+        if (cb) {
+          var pn = cb.parentNode;
+          pn.scrollTop = prevNearBottom ? pn.scrollHeight : Math.max(0, Math.min(prevScroll, pn.scrollHeight));
+        }
         var inp = ph.querySelector('#lzw-input');
         if (inp) inp.addEventListener('keydown', function (e) {
           if (e.key === 'Enter') { e.preventDefault(); UI.sendText(); }
