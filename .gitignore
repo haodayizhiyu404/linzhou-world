@@ -1,3 +1,6 @@
 Thumbs.db
 .DS_Store
 desktop.ini
+
+# 本地参考材料，不上库
+旧代码参考/
