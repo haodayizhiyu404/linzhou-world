@@ -115,7 +115,7 @@
     '.lzw-locbox .cap{font-size:12.5px;font-weight:600;padding:7px 9px}',
     '.lzw-sysrow{text-align:center;font-size:11.5px;color:#9aa0a8;margin:10px 0}',
     '.lzw-recallrow{text-align:center;font-size:12px;color:#9aa0a8;margin:13px 0;line-height:1.7;cursor:pointer}',
-    '.lzw-poke{display:inline-block;background:#dcdfe4;color:#333;font-size:12.5px;padding:7px 16px;border-radius:16px;cursor:pointer}',
+    '.lzw-poke{display:inline-block;background:#e3e5e9;color:#666;font-size:11.5px;padding:7px 20px;border-radius:14px;cursor:pointer}',
     '.lzw-poke.shake{animation:lzw-shake .5s}',
     '@keyframes lzw-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}',
     '.lzw-recallrow:hover{color:#6a7078}',
@@ -147,6 +147,9 @@
     '.lzw-stgx{position:absolute;top:-7px;right:-7px;width:17px;height:17px;border-radius:50%;',
     'background:#e64b4b;color:#fff;font-size:12px;line-height:17px;text-align:center;',
     'cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}',
+    '.lzw-stgitem{position:relative;flex:1;justify-content:flex-end;display:flex;align-items:flex-start;gap:5px}',
+    '.lzw-stgitem .lzw-bub{max-width:none;flex:none}',
+    '.lzw-stgcenter{position:relative;display:flex;align-items:center;justify-content:center;gap:6px;margin:11px 12px}',
     '.lzw-stgstick{max-width:64px;border-radius:6px;display:block}',
     // [+] 面板（绝对定位：从输入条上方弹出，盖住聊天区，不引起内容重排）
     '.lzw-panel{position:absolute;left:0;right:0;bottom:100%;z-index:4;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06);',
@@ -160,7 +163,7 @@
     '.lzw-modeform{display:flex;flex-direction:column;gap:8px;padding:2px 2px 8px}',
     '.lzw-modeinput{flex:1;width:100%;box-sizing:border-box;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;color:#111;padding:8px 11px;font-size:13.5px;line-height:1.5;outline:none;resize:none;font-family:inherit}',
     '.lzw-modeinput::placeholder{color:#b9bdc4;font-size:12.5px}',
-    '.lzw-modebtns{align-self:flex-end;display:flex;gap:8px}',
+    '.lzw-modebtns{align-self:stretch;display:flex;justify-content:space-between;gap:8px}',
     '.lzw-modeok{border:none;border-radius:8px;background:#22c05e;color:#fff;font-size:13.5px;line-height:1;padding:9px 20px;cursor:pointer}',
     '.lzw-modecancel{border:none;border-radius:8px;background:#f2f3f5;color:#333;font-size:13.5px;line-height:1;padding:9px 18px;cursor:pointer}',
     '.lzw-stickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:10px 4px;max-height:170px;overflow-y:auto;overflow-x:hidden;padding-bottom:6px}',
@@ -171,6 +174,7 @@
     // 滚动条：细、淡灰、无箭头、透明轨道（webkit + Firefox 双管）
     '.lzw-screen ::-webkit-scrollbar{width:5px;height:5px}',
     '.lzw-screen ::-webkit-scrollbar-button{display:none;width:0;height:0;background:transparent;border:none;-webkit-appearance:none}',
+    '.lzw-screen ::-webkit-scrollbar-button:vertical:decrement,.lzw-screen ::-webkit-scrollbar-button:vertical:increment,.lzw-screen ::-webkit-scrollbar-button:horizontal:decrement,.lzw-screen ::-webkit-scrollbar-button:horizontal:increment{display:none;width:0;height:0;background:transparent;border:none}',
     '.lzw-screen ::-webkit-scrollbar-corner{background:transparent}',
     '.lzw-screen ::-webkit-scrollbar-track{background:transparent}',
     '.lzw-screen ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}',
@@ -180,6 +184,8 @@
     '.lzw-homebar{flex:none;height:18px;display:flex;align-items:center;justify-content:center;background:#f7f7f9;position:relative;z-index:3}',
     '.lzw-homebar:after{content:"";display:block;width:110px;height:4px;border-radius:2px;background:rgba(0,0,0,.75)}'
   ].join('\n');
+
+  var ICON_VOICE = '<svg width="15" height="15" viewBox="0 0 1024 1024"><path fill="#222222" d="M501.269333 517.610667a277.333333 277.333333 0 0 1-81.664 197.546666l-5.12 4.906667-3.306666 2.858667a42.666667 42.666667 0 0 1-58.325334-61.696l3.029334-3.136 6.954666-6.954667a192.042667 192.042667 0 0 0-7.936-273.002667l-3.050666-3.136a42.666667 42.666667 0 0 1 61.248-59.264l5.12 4.906667a277.333333 277.333333 0 0 1 83.050666 196.970667z m187.648 10.197333A418.090667 418.090667 0 0 1 565.845333 814.933333l-7.68 7.466667-3.306666 2.837333a42.666667 42.666667 0 0 1-58.346667-61.674666l3.029333-3.157334 6.101334-5.952a332.928 332.928 0 0 0 97.962666-228.48l0.085334-8.533333a332.821333 332.821333 0 0 0-105.834667-242.24 42.666667 42.666667 0 0 1 58.197333-62.4 418.133333 418.133333 0 0 1 132.970667 304.32l-0.106667 10.709333zM625.877333 137.877333a42.666667 42.666667 0 0 1 58.176-62.421333l-58.176 62.421333z m250.730667 394.026667a606.208 606.208 0 0 1-48.853333 225.365333l-6.293334 14.165334a606.016 606.016 0 0 1-123.2 176.554666l-11.136 10.816-3.306666 2.837334a42.666667 42.666667 0 0 1-58.346667-61.696l3.029333-3.136 9.557334-9.28a520.661333 520.661333 0 0 0 105.856-151.722667l5.397333-12.16a520.853333 520.853333 0 0 0 41.984-193.6l0.128-13.333333a520.341333 520.341333 0 0 0-38.4-194.261334l-5.141333-12.288a520.533333 520.533333 0 0 0-122.026667-172.288l58.197333-62.421333a605.909333 605.909333 0 0 1 142.016 200.533333l6.016 14.293334a605.653333 605.653333 0 0 1 44.672 226.133333l-0.149333 15.509333zM170.666667 518.442667a64 64 0 1 1 128 0 64 64 0 0 1-128 0z"/></svg>';
 
   var ICON_REROLL = '<svg width="18" height="18" viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 85.333333c102.869333 0 199.509333 36.693333 275.029333 100.437334l93.866667-94.037334a21.333333 21.333333 0 0 1 36.437333 15.061334V384a21.333333 21.333333 0 0 1-21.333333 21.333333h-276.693333a21.333333 21.333333 0 0 1-15.104-36.394666l122.325333-122.496a341.333333 341.333333 0 1 0 118.314667 341.632 42.666667 42.666667 0 1 1 83.2 18.901333A426.794667 426.794667 0 0 1 512 938.666667C276.352 938.666667 85.333333 747.648 85.333333 512S276.352 85.333333 512 85.333333z"/></svg>';
 
@@ -227,15 +233,10 @@
         ? '<img class="lzw-sticker" src="' + esc(window.LZWorld.Worldbook.imgUrl(file)) + '" title="' + esc(m.text) + '">'
         : '<div class="lzw-bub">[表情:' + esc(m.text) + ']</div>';
     } else if (m.kind === 'poke') {
-      bub = '<div class="lzw-poke" data-poke="1">' + (isUser ? '你戳了戳 ' + esc(targetName || '对方') : esc(who) + ' 戳了戳你') + '</div>';
+      bub = richBub(m, isUser, who, targetName, true);
       return '<div style="text-align:center" data-del="' + idx + '">' + bub + '</div>';
-    } else if (m.kind === 'voice') {
-      var vsec = Math.max(2, Math.min(40, Math.round(m.text.length * 0.7)));
-      bub = '<div class="lzw-bub lzw-voice" data-voice="1" title="点击转文字查看内容"><span class="lzw-voice-play"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="#222222" d="M8 5v14l11-7z"/></svg></span><span class="lzw-voice-bars"><i></i><i></i><i></i><i></i><i></i></span><span class="lzw-voice-sec">' + vsec + '″</span><div class="lzw-voicetxt">' + esc(m.text) + '</div></div>';
-    } else if (m.kind === 'image') {
-      bub = '<div class="lzw-bub lzw-imgbox"><div class="lzw-imgph"><span>' + esc(m.text) + '</span></div></div>';
-    } else if (m.kind === 'location') {
-      bub = '<div class="lzw-bub lzw-locbox"><div class="lzw-locmap"></div><div class="cap">📍 ' + esc(m.text) + '</div></div>';
+    } else if (m.kind === 'voice' || m.kind === 'image' || m.kind === 'location') {
+      bub = richBub(m, isUser, who, targetName, false);
     } else {
       bub = '<div class="lzw-bub">' + esc(m.text) + '</div>';
     }
@@ -251,32 +252,48 @@
     return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '" data-del="' + idx + '">' + avatar + bub + '</div>';
   }
 
+  // 富消息气泡：voice/image/location/poke 的真实渲染（chatRowHtml 与待发预览共用）
+  function richBub(m, isUser, who, targetName, pokeIt) {
+    if (m.kind === 'poke') {
+      return '<div class="lzw-poke"' + (pokeIt ? ' data-poke="1"' : '') + '>' + (isUser ? '你戳了戳 ' + esc(targetName || '对方') : esc(who) + ' 戳了戳你') + '</div>';
+    }
+    if (m.kind === 'voice') {
+      var vsec = Math.max(2, Math.min(40, Math.round(m.text.length * 0.7)));
+      return '<div class="lzw-bub lzw-voice" data-voice="1" title="点击转文字查看内容"><span class="lzw-voice-play">' + ICON_VOICE + '</span><span class="lzw-voice-bars"><i></i><i></i><i></i><i></i><i></i></span><span class="lzw-voice-sec">' + vsec + '&#8243;</span><div class="lzw-voicetxt">' + esc(m.text) + '</div></div>';
+    }
+    if (m.kind === 'image') {
+      return '<div class="lzw-bub lzw-imgbox"><div class="lzw-imgph"><span>' + esc(m.text) + '</span></div></div>';
+    }
+    if (m.kind === 'location') {
+      return '<div class="lzw-bub lzw-locbox"><div class="lzw-locmap"></div><div class="cap">&#128205; ' + esc(m.text) + '</div></div>';
+    }
+    return '<div class="lzw-bub">' + esc(m.text) + '</div>';
+  }
+
   // ── 待发区气泡（攒好的消息，小飞机一键全发） ──
   function stagedHtml(userName) {
     var W = window.LZWorld;
-    var kindLabel = { image: '图片', voice: '语音', location: '定位' };
-    return UI.staged.map(function (m, i) {
-      var inner, sys = false;
-      if (m.kind === 'sticker') {
-        var file = W.Engine.stickers()[m.text];
-        inner = file
-          ? '<img class="lzw-stgstick" src="' + esc(W.Worldbook.imgUrl(file)) + '" title="' + esc(m.text) + '">'
-          : esc(m.text);
-      } else if (m.kind === 'poke') {
-        inner = '戳一戳';
-        sys = true;
-      } else if (m.kind !== 'text') {
-        inner = '[' + (kindLabel[m.kind] || m.kind) + '] ' + esc(m.text);
-      } else {
-        inner = esc(m.text);
-      }
-      var uav = W.Engine.userAvatar();
-      var av = uav
+    var uav = W.Engine.userAvatar();
+    var av = uav
         ? '<img class="lzw-ava lzw-ava-me" src="' + esc(uav) + '">'
         : '<div class="lzw-ava lzw-ava-me">' + esc(userName.slice(0, 1)) + '</div>';
-      return '<div class="lzw-chatrow me lzw-stgrow">' + av +
-        '<div class="lzw-bub' + (sys ? ' lzw-sys' : '') + '">' + inner +
-        '<span class="lzw-stgx" data-sdel="' + i + '" title="删掉这条">×</span></div></div>';
+    return UI.staged.map(function (m, i) {
+      var stgx = '<span class="lzw-stgx" data-sdel="' + i + '" title="删掉这条">×</span>';
+      if (m.kind === 'poke') {
+        return '<div class="lzw-stgrow lzw-stgcenter">' + richBub(m, true, userName, '', false) + stgx + '</div>';
+      }
+      if (m.kind === 'sticker') {
+        var file = W.Engine.stickers()[m.text];
+        var inner = file
+          ? '<img class="lzw-stgstick" src="' + esc(W.Worldbook.imgUrl(file)) + '" title="' + esc(m.text) + '">'
+          : esc(m.text);
+        return '<div class="lzw-chatrow me lzw-stgrow">' + av + '<div class="lzw-bub">' + inner + stgx + '</div></div>';
+      }
+      if (m.kind === 'text') {
+        return '<div class="lzw-chatrow me lzw-stgrow">' + av + '<div class="lzw-bub">' + esc(m.text) + stgx + '</div></div>';
+      }
+      // image / voice / location：直接渲染成真实气泡，发送前后视觉一致
+      return '<div class="lzw-chatrow me lzw-stgrow">' + av + '<div class="lzw-stgitem">' + richBub(m, true, userName, '', false) + stgx + '</div></div>';
     }).join('');
   }
 
