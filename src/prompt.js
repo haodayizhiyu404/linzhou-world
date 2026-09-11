@@ -75,10 +75,12 @@
   }
 
   // ── 应用内聊天记录文本（发言人用真名，不再出现 {{user}}） ──
-  function histText(hist, n) {
+  function histText(hist, n, withNames) {
     return hist.slice(-n).map(function (m) {
+      var body = msgBody(m);
+      if (!withNames) return body;
       var who = m.who === 'user' ? me() : m.who;
-      return who + '：' + msgBody(m);
+      return who + '：' + body;
     }).join('\n');
   }
 
@@ -140,7 +142,7 @@
     // tail = 本轮最新一批用户消息：不混在系统块里，作为最后的 user 轮单独给出
     private: function (contact, hist, snapshot, stickerNames, tail, digest) {
       var myName = me();
-      var tailLines = (tail && tail.length) ? histText(tail, 8) : '';
+      var tailLines = (tail && tail.length) ? histText(tail, 8, false) : '';
       var p = [
         '# 数字世界 · 回应生成',
         '',
@@ -155,7 +157,7 @@
         '## 聊天记录 · 与' + myName + '的微信对话',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_PRIVATE),
+        histText(hist, HIST_PRIVATE, false),
         '',
         consistencyRules('「' + contact.name + '」'),
         '',
@@ -163,7 +165,7 @@
         '- 只输出「' + contact.name + '」发来的新消息，1~5 条，按情绪与话题自然增减，必要时可超出（如情绪激动）',
         '- 每条独立成行，只写消息内容；不要前缀、时间戳、动作描写、括号心理',
         '- 每条不超过 35 字，像真人打字，不重复对方刚说过的话',
-        '- 「' + contact.name + '」的情感与态度必须符合上方「关系」所述阶段，遵循人设和关系进度双重约束，不得ooc',
+        '- 「' + contact.name + '」的情感与态度必须符合上方「关系」所述阶段，遵循人设和关系进度双重约束，输出最符合的人物聊天反馈信息',
         typeSyntax(stickerNames),
         '- 直接输出消息本身，不要以「好的」「收到」这类寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');
@@ -186,7 +188,7 @@
     // ── 群聊 ──
     group: function (group, members, hist, snapshot, stickerNames, tail, digest) {
       var myName = me();
-      var tailLines2 = (tail && tail.length) ? histText(tail, 8) : '';
+      var tailLines2 = (tail && tail.length) ? histText(tail, 8, true) : '';
       var nameList = members.map(function (m) { return m.name; });
       var voices = members.map(function (m) {
         var brief = m.profile ? String(m.profile).replace(/\s+/g, ' ').slice(0, 500) : '（无档案）';
@@ -211,7 +213,7 @@
         '## 聊天记录 · 群「' + group.name + '」',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_GROUP),
+        histText(hist, HIST_GROUP, true),
         '',
         consistencyRules('每名成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。',
         '',

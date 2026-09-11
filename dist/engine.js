@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T12:46:51.502Z
+//  构建时间：2026-09-11T13:11:33.062Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-11 12:46';
+var __LZW_BUILD__ = '2026-09-11 13:11';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -505,10 +505,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   }
 
   // ── 应用内聊天记录文本（发言人用真名，不再出现 {{user}}） ──
-  function histText(hist, n) {
+  function histText(hist, n, withNames) {
     return hist.slice(-n).map(function (m) {
+      var body = msgBody(m);
+      if (!withNames) return body;
       var who = m.who === 'user' ? me() : m.who;
-      return who + '：' + msgBody(m);
+      return who + '：' + body;
     }).join('\n');
   }
 
@@ -570,7 +572,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // tail = 本轮最新一批用户消息：不混在系统块里，作为最后的 user 轮单独给出
     private: function (contact, hist, snapshot, stickerNames, tail, digest) {
       var myName = me();
-      var tailLines = (tail && tail.length) ? histText(tail, 8) : '';
+      var tailLines = (tail && tail.length) ? histText(tail, 8, false) : '';
       var p = [
         '# 数字世界 · 回应生成',
         '',
@@ -585,7 +587,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '## 聊天记录 · 与' + myName + '的微信对话',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_PRIVATE),
+        histText(hist, HIST_PRIVATE, false),
         '',
         consistencyRules('「' + contact.name + '」'),
         '',
@@ -593,7 +595,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '- 只输出「' + contact.name + '」发来的新消息，1~5 条，按情绪与话题自然增减，必要时可超出（如情绪激动）',
         '- 每条独立成行，只写消息内容；不要前缀、时间戳、动作描写、括号心理',
         '- 每条不超过 35 字，像真人打字，不重复对方刚说过的话',
-        '- 「' + contact.name + '」的情感与态度必须符合上方「关系」所述阶段，遵循人设和关系进度双重约束，不得ooc',
+        '- 「' + contact.name + '」的情感与态度必须符合上方「关系」所述阶段，遵循人设和关系进度双重约束，输出最符合的人物聊天反馈信息',
         typeSyntax(stickerNames),
         '- 直接输出消息本身，不要以「好的」「收到」这类寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');
@@ -616,7 +618,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // ── 群聊 ──
     group: function (group, members, hist, snapshot, stickerNames, tail, digest) {
       var myName = me();
-      var tailLines2 = (tail && tail.length) ? histText(tail, 8) : '';
+      var tailLines2 = (tail && tail.length) ? histText(tail, 8, true) : '';
       var nameList = members.map(function (m) { return m.name; });
       var voices = members.map(function (m) {
         var brief = m.profile ? String(m.profile).replace(/\s+/g, ' ').slice(0, 500) : '（无档案）';
@@ -641,7 +643,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '## 聊天记录 · 群「' + group.name + '」',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_GROUP),
+        histText(hist, HIST_GROUP, true),
         '',
         consistencyRules('每名成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。',
         '',
@@ -1005,7 +1007,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     'display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:600}',
     '.lzw-ava-me{background:#4d7cfe}',
     '.lzw-conv-main{flex:1;min-width:0}',
-    '.lzw-conv-name{font-weight:600;font-size:14.5px}',
+    '.lzw-conv-name{font-weight:500;font-size:14.5px}',
     '.lzw-conv-prev{font-size:12.5px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}',
     // 聊天
     '.lzw-chatbg{background:#f2f2f5;min-height:100%;padding:4px 0 10px}',
@@ -1034,6 +1036,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-plus:hover{background:#eef0f3}',
     '.lzw-input{flex:1;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:17px;color:#111;',
     'padding:8px 13px;font-size:14.5px;outline:none;min-width:0}',
+    '.lzw-input::placeholder{color:#b9bdc4;font-size:13px;font-weight:300;letter-spacing:.3px}',
     '.lzw-send{flex:none;border:none;background:none;color:#3f66e8;cursor:pointer;padding:4px 2px;',
     'display:flex;align-items:center;justify-content:center}',
     '.lzw-send svg{display:block}',
@@ -1055,15 +1058,18 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-act:hover .lzw-act-ico{background:#eef0f3}',
     '.lzw-modeform{display:flex;gap:8px;align-items:center;padding-bottom:8px}',
     '.lzw-modeform .hint{flex:none;font-size:12.5px;color:#777}',
-    '.lzw-stickgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 6px;max-height:170px;overflow-y:auto;padding-bottom:6px}',
+    '.lzw-stickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:10px 4px;max-height:170px;overflow-y:auto;overflow-x:hidden;padding-bottom:6px}',
     '.lzw-stickcell{cursor:pointer;text-align:center}',
     '.lzw-stickcell .imgw{width:56px;height:56px;margin:0 auto;border-radius:8px;overflow:hidden;background:#eceff3}',
     '.lzw-stickcell img{width:100%;height:100%;object-fit:cover;display:block}',
-    '.lzw-stickcell span{display:block;font-size:10px;color:#8a8f99;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    // 滚动条（统一的细灰条，不用浏览器默认样式）
-    '.lzw-body::-webkit-scrollbar,.lzw-panel::-webkit-scrollbar,.lzw-stickgrid::-webkit-scrollbar{width:4px}',
-    '.lzw-body::-webkit-scrollbar-thumb,.lzw-panel::-webkit-scrollbar-thumb,.lzw-stickgrid::-webkit-scrollbar-thumb{background:rgba(0,0,0,.14);border-radius:2px}',
-    '.lzw-body::-webkit-scrollbar-track,.lzw-panel::-webkit-scrollbar-track,.lzw-stickgrid::-webkit-scrollbar-track{background:transparent}',
+        // 滚动条（统一的细灰条，不用浏览器默认样式）
+    // 滚动条：细、淡灰、无箭头、透明轨道（webkit + Firefox 双管）
+    '.lzw-screen ::-webkit-scrollbar{width:5px;height:5px}',
+    '.lzw-screen ::-webkit-scrollbar-button{display:none;width:0;height:0}',
+    '.lzw-screen ::-webkit-scrollbar-track{background:transparent}',
+    '.lzw-screen ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}',
+    '.lzw-screen ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.26)}',
+    '.lzw-screen *{scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}',
     // 底部 home 指示条
     '.lzw-homebar{flex:none;height:18px;display:flex;align-items:center;justify-content:center;background:#f7f7f9;position:relative;z-index:3}',
     '.lzw-homebar:after{content:"";display:block;width:110px;height:4px;border-radius:2px;background:rgba(0,0,0,.75)}'
@@ -1250,8 +1256,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           rowsHtml = convs.map(function (cv) {
             var h = W.Store.history(cv.key);
             var last = h.length ? h[h.length - 1] : null;
-            var prev = last ? ((last.who === 'user' ? userName : last.who) + '：' +
-              (last.kind === 'text' ? last.text : '[' + (kindCn[last.kind] || last.kind) + ']')) : '（暂无消息）';
+            var prev = last ? (last.kind === 'text' ? last.text : '[' + (kindCn[last.kind] || last.kind) + ']') : '（暂无消息）';
             var av = cv.group
               ? '<div class="lzw-ava">👥</div>'
               : (cv.avatar ? '<img class="lzw-ava" src="' + esc(W.Worldbook.imgUrl(cv.avatar)) + '">' : '<div class="lzw-ava">' + esc(cv.name.slice(0, 1)) + '</div>');
@@ -1530,8 +1535,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var grid = names.length
         ? names.map(function (n) {
             return '<div class="lzw-stickcell" data-stick="' + esc(n) + '"><div class="imgw">' +
-              '<img src="' + esc(window.LZWorld.Worldbook.imgUrl(stickers[n])) + '" loading="lazy"></div>' +
-              '<span>' + esc(n) + '</span></div>';
+              '<img src="' + esc(window.LZWorld.Worldbook.imgUrl(stickers[n])) + '" loading="lazy"></div></div>';
           }).join('')
         : '<div class="lzw-sysrow">世界书中未找到「霖州手机::表情包」条目</div>';
       return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-stickgrid">' + grid + '</div></div>';

@@ -84,7 +84,7 @@
     'display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:600}',
     '.lzw-ava-me{background:#4d7cfe}',
     '.lzw-conv-main{flex:1;min-width:0}',
-    '.lzw-conv-name{font-weight:600;font-size:14.5px}',
+    '.lzw-conv-name{font-weight:500;font-size:14.5px}',
     '.lzw-conv-prev{font-size:12.5px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}',
     // 聊天
     '.lzw-chatbg{background:#f2f2f5;min-height:100%;padding:4px 0 10px}',
@@ -113,6 +113,7 @@
     '.lzw-plus:hover{background:#eef0f3}',
     '.lzw-input{flex:1;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:17px;color:#111;',
     'padding:8px 13px;font-size:14.5px;outline:none;min-width:0}',
+    '.lzw-input::placeholder{color:#b9bdc4;font-size:13px;font-weight:300;letter-spacing:.3px}',
     '.lzw-send{flex:none;border:none;background:none;color:#3f66e8;cursor:pointer;padding:4px 2px;',
     'display:flex;align-items:center;justify-content:center}',
     '.lzw-send svg{display:block}',
@@ -134,15 +135,18 @@
     '.lzw-act:hover .lzw-act-ico{background:#eef0f3}',
     '.lzw-modeform{display:flex;gap:8px;align-items:center;padding-bottom:8px}',
     '.lzw-modeform .hint{flex:none;font-size:12.5px;color:#777}',
-    '.lzw-stickgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 6px;max-height:170px;overflow-y:auto;padding-bottom:6px}',
+    '.lzw-stickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:10px 4px;max-height:170px;overflow-y:auto;overflow-x:hidden;padding-bottom:6px}',
     '.lzw-stickcell{cursor:pointer;text-align:center}',
     '.lzw-stickcell .imgw{width:56px;height:56px;margin:0 auto;border-radius:8px;overflow:hidden;background:#eceff3}',
     '.lzw-stickcell img{width:100%;height:100%;object-fit:cover;display:block}',
-    '.lzw-stickcell span{display:block;font-size:10px;color:#8a8f99;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    // 滚动条（统一的细灰条，不用浏览器默认样式）
-    '.lzw-body::-webkit-scrollbar,.lzw-panel::-webkit-scrollbar,.lzw-stickgrid::-webkit-scrollbar{width:4px}',
-    '.lzw-body::-webkit-scrollbar-thumb,.lzw-panel::-webkit-scrollbar-thumb,.lzw-stickgrid::-webkit-scrollbar-thumb{background:rgba(0,0,0,.14);border-radius:2px}',
-    '.lzw-body::-webkit-scrollbar-track,.lzw-panel::-webkit-scrollbar-track,.lzw-stickgrid::-webkit-scrollbar-track{background:transparent}',
+        // 滚动条（统一的细灰条，不用浏览器默认样式）
+    // 滚动条：细、淡灰、无箭头、透明轨道（webkit + Firefox 双管）
+    '.lzw-screen ::-webkit-scrollbar{width:5px;height:5px}',
+    '.lzw-screen ::-webkit-scrollbar-button{display:none;width:0;height:0}',
+    '.lzw-screen ::-webkit-scrollbar-track{background:transparent}',
+    '.lzw-screen ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}',
+    '.lzw-screen ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.26)}',
+    '.lzw-screen *{scrollbar-width:thin;scrollbar-color:rgba(0,0,0,.15) transparent}',
     // 底部 home 指示条
     '.lzw-homebar{flex:none;height:18px;display:flex;align-items:center;justify-content:center;background:#f7f7f9;position:relative;z-index:3}',
     '.lzw-homebar:after{content:"";display:block;width:110px;height:4px;border-radius:2px;background:rgba(0,0,0,.75)}'
@@ -329,8 +333,7 @@
           rowsHtml = convs.map(function (cv) {
             var h = W.Store.history(cv.key);
             var last = h.length ? h[h.length - 1] : null;
-            var prev = last ? ((last.who === 'user' ? userName : last.who) + '：' +
-              (last.kind === 'text' ? last.text : '[' + (kindCn[last.kind] || last.kind) + ']')) : '（暂无消息）';
+            var prev = last ? (last.kind === 'text' ? last.text : '[' + (kindCn[last.kind] || last.kind) + ']') : '（暂无消息）';
             var av = cv.group
               ? '<div class="lzw-ava">👥</div>'
               : (cv.avatar ? '<img class="lzw-ava" src="' + esc(W.Worldbook.imgUrl(cv.avatar)) + '">' : '<div class="lzw-ava">' + esc(cv.name.slice(0, 1)) + '</div>');
@@ -609,8 +612,7 @@
       var grid = names.length
         ? names.map(function (n) {
             return '<div class="lzw-stickcell" data-stick="' + esc(n) + '"><div class="imgw">' +
-              '<img src="' + esc(window.LZWorld.Worldbook.imgUrl(stickers[n])) + '" loading="lazy"></div>' +
-              '<span>' + esc(n) + '</span></div>';
+              '<img src="' + esc(window.LZWorld.Worldbook.imgUrl(stickers[n])) + '" loading="lazy"></div></div>';
           }).join('')
         : '<div class="lzw-sysrow">世界书中未找到「霖州手机::表情包」条目</div>';
       return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-stickgrid">' + grid + '</div></div>';
