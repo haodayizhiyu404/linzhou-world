@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T11:58:34.024Z
+//  构建时间：2026-09-11T10:00:27.707Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-11 11:58';
+var __LZW_BUILD__ = '2026-09-11 10:00';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -38,12 +38,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   var Store = {
     KEY: KEY,
 
-    // 有记录的会话 key 列表
-    historyKeys: function () {
-      var r = readRoot();
-      return Object.keys(r.history || {});
-    },
-
     history: function (chatKey) {
       var r = readRoot();
       var h = (r.history || {})[chatKey];
@@ -59,32 +53,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       r.history[chatKey] = h;
       writeRoot(r);
       return h;
-    },
-
-    // 从末尾弹出 n 条（重roll用）
-    popLast: function (chatKey, n) {
-      var r = readRoot();
-      var h = (r.history || {})[chatKey];
-      if (!h || !h.length) return [];
-      var popped = h.splice(Math.max(0, h.length - n), n);
-      writeRoot(r);
-      return popped;
-    },
-
-    // 会话元信息：headline（一句话近况）、atMainCount（最近活跃时的主线楼数）、
-    // digested（已折进提要的条数）、digest（前文提要）
-    meta: function (chatKey) {
-      var r = readRoot();
-      return ((r.meta || {})[chatKey]) || {};
-    },
-
-    setMeta: function (chatKey, patch) {
-      var r = readRoot();
-      r.meta = r.meta || {};
-      var m = r.meta[chatKey] || {};
-      for (var k in patch) m[k] = patch[k];
-      r.meta[chatKey] = m;
-      writeRoot(r);
     },
 
     // 只改最后一条（比如补时间）
@@ -164,20 +132,18 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       dateText: envParts[0] || '',      // 2034年8月26日 星期五
       time: '',                          // 22:49
       userPlace: envParts[2] || '',      // user 所在地点（不可用于 NPC）
-      characters: {},                    // 角色小块：{ 位置, 姿态, 着装, 关系 }
-      overview: ''                       // <关系总览> 整块原文
+      characters: {}                     // 角色小块：{ 位置, 姿态, 着装 }
     };
     var tm = (envParts[1] || '').match(/(\d{1,2}:\d{2})/);
     if (tm) result.time = tm[1];
 
-    // 角色小块：<沈锡元> 着装：… 姿态：… 位置：… 关系：… 心声：… </沈锡元>
+    // 角色小块：<沈锡元> 着装：… 姿态：… 位置：… 心声：… </沈锡元>
     var block;
     charBlockRe.lastIndex = 0;
     while ((block = charBlockRe.exec(scope)) !== null) {
       var name = block[1].trim();
-      if (name === '环境' || name === 'status') continue;
+      if (name === '环境' || name === 'status' || name === '关系总览') continue;
       var body = block[2];
-      if (name === '关系总览') { result.overview = body.trim(); continue; }
       var grab = function (label) {
         var r = body.match(new RegExp(label + '\\s*[:：]\\s*([^\\n]+)'));
         return r ? r[1].trim() : '';
@@ -185,8 +151,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       result.characters[name] = {
         outfit: grab('着装'),
         posture: grab('姿态'),
-        place: grab('位置'),
-        relation: grab('关系')
+        place: grab('位置')
         // 心声刻意不解析
       };
     }
@@ -213,21 +178,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return (p && p.time) || '';
     },
 
-    // 供生成装配使用：时间 + user地点 + 目标角色情境块（含关系）
+    // 供生成装配使用：时间 + user地点 + 目标角色情境块
     snapshot: function (npcName) {
       var p = this.parseLatest();
-      if (!p) return { time: '', userPlace: '', npc: null, overview: '' };
-      var npc = null;
-      if (npcName && p.characters[npcName]) {
-        npc = p.characters[npcName];
-        npc.name = npcName;
-      }
+      if (!p) return { time: '', userPlace: '', npc: null };
       return {
         time: p.time,
         dateText: p.dateText,
         userPlace: p.userPlace,
-        npc: npc,
-        overview: p.overview
+        npc: (npcName && p.characters[npcName]) || null
       };
     }
   };
@@ -429,42 +388,23 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
 // ── src/prompt.js ──
 // ═══════════════════════════════════════════════════════════
-//  prompt.js —— 数字世界引擎 · 提示词装配
+//  prompt.js —— 数字世界引擎 · 提示词装配（v0，待实测迭代）
 //
-//  框架：AI 不是"扮演角色"，而是数字生活应用的模拟引擎。
-//  引擎不认角色，只认「应用 + 人 + 资料」——
-//  微信私聊/群聊/未来的论坛，都只是不同的资料与输出要求。
+//  框架：AI 不是"扮演角色"，而是数字生活世界的模拟引擎。
+//  引擎不认角色，只认「应用 + 实体 + 资料」——
+//  微信私聊/群聊/未来的论坛，都只是不同的资料与输出契约。
 //
-//  ⚠ 提示词不走酒馆宏替换（generateRaw 独立生成），
-//    {{user}} 必须在装配时换成 persona 真名，见 me()。
+//  ⚠ 本文件的措辞为 v0 初稿，用户已确认需后续打磨。
 // ═══════════════════════════════════════════════════════════
 (function () {
   'use strict';
 
   var PLOT_FLOORS = 8;     // 主线带几楼
   var PLOT_CAP = 900;      // 每楼正文上限（验尸结论：低于此 ≈ 失明）
-  var HIST_PRIVATE = 50;   // 私聊带回几条（短聊天内容很少，50 条也才角色卡资料的零头）
-  var HIST_GROUP = 50;     // 群聊带回几条
+  var HIST_PRIVATE = 14;   // 私聊带回几条
+  var HIST_GROUP = 18;     // 群聊带回几条
 
-  // ── persona 真名。generateRaw 不做宏替换，{{user}} 会原文进提示词，
-  //    所以这里自己解析（与 engine.js userName() 同一套回退）。──
-  function me() {
-    try {
-      var W = window.LZWorld;
-      if (W && W.Engine && W.Engine.userName) {
-        var n = W.Engine.userName();
-        if (n && n !== '我') return n;
-      }
-    } catch (e) {}
-    try {
-      var st = window.parent.SillyTavern;
-      var ctx = st && st.getContext && st.getContext();
-      if (ctx && ctx.name1) return String(ctx.name1);
-    } catch (e) {}
-    return '我';
-  }
-
-  // ── 主线近况：最近 N 楼，去 HTML/代码块/思考块，每楼截断 ──
+  // ── 主线近貌：最近 N 楼，去 HTML/代码块/思考块，每楼截断 ──
   function mainContext() {
     try {
       var msgs = getChatMessages('0-{{lastMessageId}}');
@@ -477,7 +417,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           .replace(/\n{2,}/g, '\n')
           .trim();
         if (t.length > PLOT_CAP) t = t.substring(0, PLOT_CAP) + '…';
-        return (m.role === 'user' ? me() : '旁白') + '：' + t;
+        return (m.role === 'user' ? '{{user}}' : '旁白') + '：' + t;
       }).filter(function (l) { return l.length > 4; }).join('\n');
     } catch (e) { return ''; }
   }
@@ -494,37 +434,37 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     }
   }
 
-  // ── 应用内聊天记录文本（发言人用真名，不再出现 {{user}}） ──
+  // ── 应用内记录文本 ──
   function histText(hist, n) {
     return hist.slice(-n).map(function (m) {
-      var who = m.who === 'user' ? me() : m.who;
+      var who = m.who === 'user' ? '{{user}}' : m.who;
       return who + '：' + msgBody(m);
     }).join('\n');
   }
 
-  // ── 消息类型语法说明（输出要求的一部分） ──
+  // ── 消息类型语法说明（输出契约的一部分） ──
   function typeSyntax(stickerNames) {
     var stickerLine = (stickerNames && stickerNames.length)
-      ? '- [表情:名字]  只可选用图库现有名字，严禁编造：' + stickerNames.join('、')
-      : '- [表情:名字]  图库为空，本次请勿发送表情';
+      ? '[表情:名字]  只可选用图库现有名字，严禁编造：' + stickerNames.join('、')
+      : '[表情:名字]  图库为空，本次请勿发送表情';
     return [
       '消息类型（按需单独成行，不用则不写）：',
       stickerLine,
-      '- [语音:要说的话]',
-      '- [图片:画面描述]',
-      '- [戳一戳]',
-      '- [定位:地点名]'
+      '[语音:要说的话]',
+      '[图片:画面描述]',
+      '[戳一戳]',
+      '[定位:地点名]'
     ].join('\n');
   }
 
-  // ── 一致性规则（防开天眼） ──
+  // ── 一致性铁律（防开天眼） ──
   function consistencyRules(entityDesc) {
     return [
-      '## 一致性规则',
-      '- ' + entityDesc + '只知道两类事：①本人亲眼所见、亲耳所闻的；②对方在微信里明确告诉本人的。',
-      '- 以下一律不知：主线中没有本人出场的段落、其他私聊、其他群聊、对方此刻在哪里/在干什么/穿着什么、任何人的内心想法。',
-      '- 想谈本人不在场的事，只能用「听说……」「你今天怎么样」这类不确定的说法开口，不得讲出细节。',
-      '- 宁可少说，不可全知。说漏即出戏。'
+      '【一致性铁律】',
+      '- ' + entityDesc + '只知道两类事：①本人在场亲眼所见、亲耳所闻；②对方在本应用内明确告诉它的。',
+      '- 下列内容一律不知：主线中没有本人出场的段落、其他私聊、其他群聊、对方此刻在哪里/在干什么/穿着什么、任何人的心声。',
+      '- 想谈主线里的事但本人不在场？只能用"听说/你今天怎么样"这类不确定方式开口，不得说出细节。',
+      '- 宁可少说，不可全知。违反即出戏。'
     ].join('\n');
   }
 
@@ -535,21 +475,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       lines.push('当前时间：' + when);
     }
     if (snapshot && snapshot.userPlace) {
-      lines.push(me() + '此刻在：' + snapshot.userPlace + '（仅作参考，不代表你的位置）');
+      lines.push('（对方此刻在：' + snapshot.userPlace + '——仅作参考，不代表你的位置）');
     }
     if (snapshot && snapshot.npc) {
       var bits = [];
       if (snapshot.npc.place) bits.push('位置：' + snapshot.npc.place);
       if (snapshot.npc.posture) bits.push('姿态：' + snapshot.npc.posture);
-      if (bits.length) lines.push('你（' + (snapshot.npc.name || '本人') + '）此刻：' + bits.join('，'));
-      // 关系项：卡面状态栏固定维护（如「克制内敛的青梅竹马，尚未告白」）。
-      // 它是防情感越界出戏的主锚点，必须显式给出并划定表达上限。
-      if (snapshot.npc.relation) {
-        lines.push('你与' + me() + '的关系：' + snapshot.npc.relation + '——一切情感表达不得越过这个阶段');
-      }
-    }
-    if (snapshot && snapshot.overview) {
-      lines.push('人物关系总览：' + snapshot.overview);
+      if (bits.length) lines.push('你（实体）此刻：' + bits.join('，'));
     }
     return lines.join('\n');
   }
@@ -558,34 +490,29 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
     // ── 私聊 ──
     // tail = 本轮最新一批用户消息：不混在系统块里，作为最后的 user 轮单独给出
-    private: function (contact, hist, snapshot, stickerNames, tail, digest) {
-      var myName = me();
+    private: function (contact, hist, snapshot, stickerNames, tail) {
       var tailLines = (tail && tail.length) ? histText(tail, 8) : '';
       var p = [
-        '# 数字世界 · 回应生成',
+        '【数字世界 · 回应生成】',
+        '你是数字生活世界的模拟引擎。本次任务：生成应用「微信」中，来自「' + contact.name + '」的新消息。',
         '',
-        '你是一款数字生活应用的模拟引擎。本次任务：生成应用「微信」里，来自「' + contact.name + '」的新消息。',
+        contact.profile ? '【实体资料】\n' + contact.profile : '【实体资料】（暂无档案，依据对话上下文自然演绎）',
         '',
-        contact.profile ? '## 人物档案\n' + contact.profile : '## 人物档案\n（暂无档案，依据对话上下文自然演绎）',
+        situationBlock(snapshot) ? '【情境】\n' + situationBlock(snapshot) : '',
         '',
-        situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+        mainContext() ? '【主线近貌】（仅作背景，上面的铁律优先）\n' + mainContext() : '',
         '',
-        mainContext() ? '## 主线近况（只作背景，下方规则优先）\n' + mainContext() : '',
-        '',
-        '## 聊天记录 · 与' + myName + '的微信对话',
-        '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
-        digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
+        '【应用内记录 · 与{{user}}的微信聊天】（优先承接这里的话题与语气；{{user}}本轮最新发的消息在末尾单独给出）',
         histText(hist, HIST_PRIVATE),
         '',
         consistencyRules('「' + contact.name + '」'),
         '',
-        '## 输出要求',
-        '- 只输出「' + contact.name + '」发来的新消息，1~4 条，按情绪与话题自然增减',
-        '- 每条独立成行，只写消息内容；不要前缀、时间戳、动作描写、括号心理',
-        '- 每条不超过 35 字，像真人打字，不重复对方刚说过的话',
-        '- 「' + contact.name + '」的情感与态度必须符合上方「关系」所述阶段；关系未到时克制优先，直白情话、索取承诺、越界称呼一律视为出戏',
+        '【输出契约】',
+        '- 只输出「' + contact.name + '」发出的新消息，1~4 条，按情绪与话题自然增减',
+        '- 每条独立成行，只写消息内容；无前缀、无时间戳、无动作旁白、无括号心理',
+        '- 每条不超过 35 字，像真人打字，不复述对方的话',
         typeSyntax(stickerNames),
-        '- 直接输出消息本身，不要以「好的」「收到」这类寒暄开头'
+        '- 直接输出消息本身，严禁以"好的""收到"等寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');
 
       return {
@@ -594,8 +521,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           {
             role: 'user',
             content: tailLines
-              ? '（' + myName + '刚在微信里发来以下消息。请严格按上方输出要求，只输出「' + contact.name + '」的新消息本身。）\n' + tailLines
-              : '（现在轮到「' + contact.name + '」回复' + myName + '。请严格按上方输出要求，只输出消息本身。）'
+              ? '（我刚在微信里发来以下消息。请严格按上方输出契约，只输出「' + contact.name + '」的新消息本身。）\n' + tailLines
+              : '（现在轮到「' + contact.name + '」回复{{user}}在微信里发来的消息。严格按上方输出契约，只输出消息本身。）'
           }
         ],
         should_silence: true,
@@ -604,43 +531,38 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     },
 
     // ── 群聊 ──
-    group: function (group, members, hist, snapshot, stickerNames, tail, digest) {
-      var myName = me();
+    group: function (group, members, hist, snapshot, stickerNames, tail) {
       var tailLines2 = (tail && tail.length) ? histText(tail, 8) : '';
       var nameList = members.map(function (m) { return m.name; });
       var voices = members.map(function (m) {
         var brief = m.profile ? String(m.profile).replace(/\s+/g, ' ').slice(0, 500) : '（无档案）';
-        return '- ' + m.name + '：' + brief;
+        return '· ' + m.name + '：' + brief;
       });
 
       var p = [
-        '# 数字世界 · 回应生成',
+        '【数字世界 · 回应生成】',
+        '你是数字生活世界的模拟引擎。本次任务：生成应用「微信」的群「' + group.name + '」中发来的新消息。',
         '',
-        '你是一款数字生活应用的模拟引擎。本次任务：生成应用「微信」的群「' + group.name + '」里新来的消息。',
+        '【群成员】' + nameList.join('、') + '、{{user}}' + (group.open ? '，以及若干未列名的路人（可让其冒泡，用真实昵称）' : ''),
         '',
-        '## 群成员',
-        nameList.join('、') + '、' + myName + (group.open ? '，以及若干未具名的路人（可让其冒泡，用真实昵称）' : ''),
-        '',
-        '## 成员档案',
+        '【成员资料】',
         voices.join('\n'),
         '',
-        situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+        situationBlock(snapshot) ? '【情境】\n' + situationBlock(snapshot) : '',
         '',
-        mainContext() ? '## 主线近况（只作背景，下方规则优先）\n' + mainContext() : '',
+        mainContext() ? '【主线近貌】（仅作背景，铁律优先）\n' + mainContext() : '',
         '',
-        '## 聊天记录 · 群「' + group.name + '」',
-        '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
-        digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
+        '【应用内记录 · 群「' + group.name + '」】（优先承接这里的话题与语气；{{user}}本轮最新发的消息在末尾单独给出）',
         histText(hist, HIST_GROUP),
         '',
-        consistencyRules('每名成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。',
+        consistencyRules('每个群成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，各自独立判断是否知情。',
         '',
-        '## 输出要求',
+        '【输出契约】',
         '- 输出 3~8 条群消息，每条一行，格式严格为「成员名：消息」',
-        '- 谁接得上这句谁说，不必人人开口；可以互相接梗、拆台',
+        '- 谁会接这句谁说，不必人人开口；可互相接梗拆台',
         '- 每条不超过 35 字，口语',
         typeSyntax(stickerNames),
-        '- 直接输出消息，不要以寒暄开头'
+        '- 直接输出消息，严禁寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');
 
       return {
@@ -649,8 +571,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           {
             role: 'user',
             content: tailLines2
-              ? '（' + myName + '刚在群「' + group.name + '」里发来以下消息。请严格按上方输出要求，只输出成员们的新消息本身。）\n' + tailLines2
-              : '（现在轮到群「' + group.name + '」里的成员们继续聊天。请严格按上方输出要求，只输出群消息本身。）'
+              ? '（我刚在群「' + group.name + '」里发来以下消息。请严格按上方输出契约，只输出成员们的新消息本身。）\n' + tailLines2
+              : '（现在轮到群「' + group.name + '」里的成员们继续聊天。严格按上方输出契约，只输出群消息本身。）'
           }
         ],
         should_silence: true,
@@ -924,8 +846,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // 主屏壁纸（浅色可爱系；换图只改这里）。必须定义在 CSS 数组之前——
   // 数组在脚本加载时立即求值，引用晚于它的变量会得到 undefined。
   var HOME_WALL = 'https://files.catbox.moe/2rg9in.jpg';
-  // 预载壁纸：引擎加载时就拉取，避免首次打开手机屏幕空白 1~2 秒
-  try { var _wallPre = new Image(); _wallPre.src = HOME_WALL; } catch (e) {}
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -968,8 +888,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-back{display:inline-flex;align-items:center;color:#111;cursor:pointer;padding:4px;border-radius:8px;margin-left:-4px}',
     '.lzw-back:hover{background:rgba(0,0,0,.05)}',
     '.lzw-appbar-r{width:24px}',
-    '.lzw-reroll{display:inline-flex;width:22px;height:22px;border-radius:50%;border:1.5px solid #878e98;color:#555;',
-    'font-size:14px;align-items:center;justify-content:center;cursor:pointer;background:#fff}',
     // 主体
     '.lzw-body{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
@@ -977,9 +895,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-home-wall{height:100%;padding:20px 16px 26px;display:flex;flex-direction:column;justify-content:space-between;',
     'box-sizing:border-box}',
     // 时钟用与壁纸线稿同系的石板蓝灰；白色光晕保证在任何底色上可读
-    '.lzw-hometime{text-align:center;color:#46536f;text-shadow:0 1px 10px rgba(255,255,255,.9);margin-top:52px}',
-    '.lzw-hometime .t{font-size:56px;font-weight:700;letter-spacing:1px}',
-    '.lzw-hometime .d{font-size:14.5px;font-weight:600;letter-spacing:2.5px;margin-top:5px;opacity:.85}',
+    '.lzw-hometime{text-align:center;color:#46536f;text-shadow:0 1px 10px rgba(255,255,255,.9)}',
+    '.lzw-hometime .t{font-size:48px;font-weight:700;letter-spacing:1px}',
+    '.lzw-hometime .d{font-size:13.5px;font-weight:600;letter-spacing:2.5px;margin-top:3px;opacity:.85}',
     // 应用名在浅色壁纸上用深字
     '.lzw-scr-home .lzw-app span{color:#46536f;text-shadow:0 1px 4px rgba(255,255,255,.7)}',
     '.lzw-homegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px}',
@@ -1067,7 +985,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   var ICON_PLANE = '<svg width="23" height="23" viewBox="0 0 1024 1024" fill="#555"><path d="M972.48 40.64c-17.38666667-8.64-34.77333333-8.64-43.41333333 0L60.16 472.10666667C42.88 472.10666667 34.13333333 489.38666667 34.13333333 506.66666667s8.64 34.56 17.38666667 34.56l208.53333333 129.49333333c17.38666667 8.64 34.77333333 8.64 52.16-8.64l460.48-414.18666667 17.38666667 8.64-417.06666667 439.89333334c-8.64 8.64-8.64 17.28-8.64 25.92v189.86666666c0 17.28 8.64 34.56 26.02666667 43.2 17.38666667 8.64 34.77333333 0 43.41333333-8.64l104.32-103.57333333L746.66666667 981.22666667c8.64 8.64 17.38666667 8.64 26.02666666 8.64h17.38666667c17.38666667-8.64 26.02666667-17.28 26.02666667-34.56l173.76-862.93333334c0-25.92 0-43.09333333-17.38666667-51.73333333z"/></svg>';
   var ICON_PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5.4v13.2M5.4 12h13.2" stroke="#555" stroke-width="2.1" stroke-linecap="round"/></svg>';
   // 主屏微信图标（绿色圆角块 + 白色对话泡）
-  var ICON_WECHAT = '<svg width="30" height="30" viewBox="0 0 24 24"><path fill="#fff" transform="translate(12 12) scale(1.16) translate(-12 -12)" d="M8.7 4C4.9 4 2 6.6 2 9.8c0 1.8 1 3.4 2.5 4.5l-.6 2 2.2-1.2c.8.2 1.6.4 2.5.4h.4A5.6 5.6 0 0 1 9 13.6c0-3 2.8-5.4 6.2-5.4h.4C15 5.4 12.2 4 8.7 4zM6.5 8.4a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8zm4.9 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z"/><path fill="#fff" transform="translate(12 12) scale(1.16) translate(-12 -12)" d="M22 13.6c0-2.7-2.5-4.9-5.6-4.9s-5.6 2.2-5.6 4.9 2.5 4.9 5.6 4.9c.7 0 1.3-.1 1.9-.3l1.8 1-.5-1.7c1.4-.9 2.4-2.3 2.4-3.9zm-7.5-1.5a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm4 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>';
+  var ICON_WECHAT = '<svg width="30" height="30" viewBox="0 0 24 24"><path fill="#fff" d="M8.7 4C4.9 4 2 6.6 2 9.8c0 1.8 1 3.4 2.5 4.5l-.6 2 2.2-1.2c.8.2 1.6.4 2.5.4h.4A5.6 5.6 0 0 1 9 13.6c0-3 2.8-5.4 6.2-5.4h.4C15 5.4 12.2 4 8.7 4zM6.5 8.4a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8zm4.9 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z"/><path fill="#fff" d="M22 13.6c0-2.7-2.5-4.9-5.6-4.9s-5.6 2.2-5.6 4.9 2.5 4.9 5.6 4.9c.7 0 1.3-.1 1.9-.3l1.8 1-.5-1.7c1.4-.9 2.4-2.3 2.4-3.9zm-7.5-1.5a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm4 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>';
   // [+] 菜单图标（自绘线性图标，微信那种简洁风）
   var ICO = {
     sticker: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><circle cx="9" cy="9.8" r="1.1" fill="#555" stroke="none"/><circle cx="15" cy="9.8" r="1.1" fill="#555" stroke="none"/><path d="M8.4 14c1 1.2 2.2 1.8 3.6 1.8s2.6-.6 3.6-1.8"/></svg>',
@@ -1151,7 +1069,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     isGroup: false,
     busy: false,
     staged: [],          // 待发消息 [{kind,text}]，回车攒入，小飞机一起发
-    failed: false,        // 上次生成失败（消息已发出但对方没回成）→ 小飞机/↻ 变为重试
     _placed: false,
 
     inject: function () {
@@ -1213,7 +1130,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var userName = eng.userName();
       var snap = W.Status.snapshot(null);
       var clock = snap.time ? snap.time : '--:--';
-      var dateShort = snap.dateText ? snap.dateText.replace(/^(\d{4})年/, '') : '';
+      var dateShort = snap.dateText ? snap.dateText.replace(/^(\d{4})年/, '').replace(/星期./, '') : '';
 
       var sbar =
         '<div class="lzw-sbar"><span class="lzw-clock">' + esc(clock) + '</span>' +
@@ -1271,7 +1188,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           contactMap[disp] = eng.findContact(disp) || { name: disp, avatar: '' };
         }
         var rows = hist.map(function (m) { return chatRowHtml(m, userName, contactMap, disp); }).join('');
-        if (this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角 ↻ 或再点小飞机重试</div>';
         body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
           '<div class="lzw-staged' + (this.staged.length ? ' lzw-has' : '') + '" id="lzw-staged">' + stagedHtml(userName) + '</div>' +
           '<div class="lzw-bottom">' +
@@ -1286,7 +1202,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + '">' + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + '">' + sbar + appbarHtml(this.screen, disp) + body + '<div class="lzw-homebar"></div>' +
         '</div></div>';
 
       this.bind(ph);
@@ -1319,7 +1235,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         el.onclick = function () { UI.openChat(el.dataset.key, el.dataset.group === '1'); };
       });
       ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
-      ph.querySelectorAll('[data-act="reroll"]').forEach(function (el) { el.onclick = function () { UI.reroll(); }; });
       // 待发区：点红 ✕ 删一条
       ph.querySelectorAll('[data-sdel]').forEach(function (el) {
         el.onclick = function (ev) {
@@ -1396,16 +1311,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var inp = pdoc().getElementById('lzw-input');
       var t = inp ? inp.value.trim() : '';
       if (t) { inp.value = ''; this.staged.push({ kind: 'text', text: t }); }
-      if (!this.staged.length) {
-        // 没有待发内容时，小飞机充当「重试」：上次生成失败且对方还没回，就再生成一次
-        var W0 = window.LZWorld;
-        var h0 = W0.Store.history(this.chatKey);
-        if (this.failed && !this.busy && h0.length && h0[h0.length - 1].who === 'user') {
-          this.failed = false;
-          this.generate(W0.Engine.userName());
-        }
-        return;
-      }
       this.sendBatch();
     },
 
@@ -1416,7 +1321,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         return { who: 'user', kind: m.kind, text: m.text, time: W.Status.nowText() };
       });
       this.staged = [];
-      this.failed = false;
+      this._lastUserBatch = msgs; // 楼层记录里带上用户这半边
       W.Store.push(this.chatKey, msgs, 100);
       this.render();
       this.generate(W.Engine.userName());
@@ -1426,92 +1331,41 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var W = window.LZWorld;
       var userName = W.Engine.userName();
       var msg = { who: 'user', kind: kind, text: text, time: W.Status.nowText() };
-      this.failed = false;
       W.Store.push(this.chatKey, [msg], 100);
       this.panel = null;
       this.render();
       this.generate(userName);
     },
 
-    // 重roll 条件：当前会话最后一条是对方消息。
-    // 注意不查 busy——生成结束渲染时 busy 尚未复位，查了就会导致按钮迟到一轮
-    canReroll: function () {
-      var h = window.LZWorld.Store.history(this.chatKey);
-      return !!(h.length && h[h.length - 1].who !== 'user');
-    },
-
-    // 重试条件：上次生成失败，且末尾是我方消息（发出后对方没回成）
-    canRetry: function () {
-      if (!this.failed) return false;
-      var h = window.LZWorld.Store.history(this.chatKey);
-      return !!(h.length && h[h.length - 1].who === 'user');
-    },
-
-    // ↻ 双模式：末尾是对方消息 → 弹出重roll；末尾是我方消息且上次失败 → 直接重试
-    reroll: async function () {
-      var W = window.LZWorld;
-      if (this.busy) return;
-      if (this.canRetry()) {
-        this.failed = false;
-        try { toastr.info('重试中……', '📱 霖州引擎'); } catch (e) {}
-        this.render();
-        await this.generate(W.Engine.userName());
-        return;
-      }
-      if (!this.canReroll()) return;
-      var h = W.Store.history(this.chatKey);
-      var n = 0;
-      for (var i = h.length - 1; i >= 0 && h[i].who !== 'user' && n < 12; i--) n++;
-      var popped = W.Store.popLast(this.chatKey, n);
-      if (!popped.length) { this.render(); return; }
-      try { toastr.info('重roll中……', '📱 霖州引擎'); } catch (e) {}
-      this.render();
-      await this.generate(W.Engine.userName());
-    },
-
-    // 独立生成 → 存历史（正文不写楼层，手机记录自包含）
+    // 独立生成 → 存历史 + 写楼层
     generate: async function (userName) {
       if (this.busy) return;
       this.busy = true;
       var W = window.LZWorld;
       var eng = W.Engine;
       try {
-        var result = await withTimeout(eng.generateFor(this.chatKey, this.isGroup), 90000);
-        this.failed = false;
+        var result = await eng.generateFor(this.chatKey, this.isGroup);
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(this.chatKey, result.msgs, 100);
           if (this.screen === 'chat' && this.chatKey === result.key) this.render();
+          // 楼层记录 = 用户这半边 + NPC 回复，整段交换留在主聊天里
+          var combined = (this._lastUserBatch || []).concat(result.msgs);
+          this._lastUserBatch = null;
+          await W.Floor.insertRecord(result.title, combined, W.Status.nowText());
         }
       } catch (e) {
-        // API 故障有两类：直接报错、或永远挂起（由 withTimeout 兜底）。两种都要能重试。
-        this.failed = true;
         console.warn('[霖州引擎] 生成失败', e);
         try { toastr.error('手机消息生成失败：' + (e && e.message || e), '📱 霖州引擎'); } catch (e2) {}
-        if (this.screen === 'chat') this.render();
       } finally {
         this.busy = false;
       }
     }
   };
 
-  // 生成超时保护：API 故障时 generateRaw 可能永远不返回，不兜底会让小飞机永远失灵
-  function withTimeout(promise, ms) {
-    return Promise.race([
-      promise,
-      new Promise(function (resolve, reject) {
-        setTimeout(function () { reject(new Error('生成超时（' + Math.round(ms / 1000) + '秒无响应），请重试')); }, ms);
-      })
-    ]);
-  }
-
-  function appbarHtml(screen, disp, act) {
+  function appbarHtml(screen, disp) {
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
-    return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
-      (act === 'reroll' ? '<span class="lzw-reroll" data-act="reroll" title="重新生成对方的上一条回复">↻</span>'
-        : act === 'retry' ? '<span class="lzw-reroll" data-act="reroll" title="上一条消息发送失败，点击重新获取回复">↻</span>'
-        : '') +
-      '</span></div>';
+    return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r"></span></div>';
   }
 
   // [+] 面板内容
@@ -1770,100 +1624,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       else UI.remove();
     },
 
-    // ── 聊天压缩：某会话未折叠的条数超阈值时，把窗口外的旧消息折成提要 ──
-    // 提要留在 Store 里，手机提示词用它接续话题；正文注入用 headline 一行近况。
-    COMPRESS_AT: 60,      // 未折叠超过 60 条触发（窗口 50 + 10 条缓冲）
-    DIGEST_KEEP: 50,      // 提示词直接携带的最近条数
-
-    compress: async function (chatKey) {
-      var W = window.LZWorld;
-      var hist = W.Store.history(chatKey);
-      var meta = W.Store.meta(chatKey);
-      var digested = meta.digested || 0;
-      if (hist.length - digested <= this.COMPRESS_AT) return meta.digest || '';
-      var fold = hist.slice(digested, hist.length - this.DIGEST_KEEP);
-      if (!fold.length) return meta.digest || '';
-      var lines = fold.map(function (m) {
-        return W.Floor.msgToLine(m, this.userName());
-      }, this);
-      var raw = await generateRaw({
-        ordered_prompts: [
-          { role: 'system', content: '把以下微信聊天记录折叠成不超过150字的中文提要。保留：约定/计划、冲突与误会、关系进展、未了的情绪；丢弃：寒暄、重复内容。只输出提要本身。' },
-          { role: 'user', content: lines.join('\n') }
-        ],
-        should_silence: true,
-        max_chat_history: 0
-      });
-      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
-      text = text.trim();
-      if (!text) return meta.digest || '';
-      var digest = (meta.digest ? meta.digest + '；' : '') + text;
-      W.Store.setMeta(chatKey, { digest: digest, digested: digested + fold.length });
-      console.log('[霖州引擎] 聊天记录折叠：' + chatKey + ' 折叠 ' + fold.length + ' 条，累计提要 ' + (digested + fold.length) + ' 条');
-      return digest;
-    },
-
-    // ── 主线楼数（注入判定「多久前聊过」用） ──
-    mainCount: function () {
-      try { return getChatMessages('0-{{lastMessageId}}').length; } catch (e) { return 0; }
-    },
-
-    // ── 正文生成前的手机动态注入：每个入选会话带最近 5 轮完整对话 ──
-    INJECT_RECENT_FLOORS: 12,   // 最近 N 楼内聊过 → 带
-    INJECT_MENTION_FLOORS: 4,   // 名字出现在最近 N 楼 → 带（哪怕聊得早）
-    INJECT_MAX_CHATS: 3,        // 最多带几个会话
-    INJECT_ROUNDS: 10,          // 每会话带最近几条（5 轮 user+对方）
-
-    injectDigest: function () {
-      try {
-        var W = window.LZWorld;
-        var sec = this.section();
-        if (!sec) return;
-        var root = W.Store;
-        var myName = this.userName();
-        var now = this.mainCount();
-        var recentText = '';
-        try {
-          recentText = getChatMessages('0-{{lastMessageId}}')
-            .slice(-this.INJECT_MENTION_FLOORS)
-            .map(function (m) { return String((m && m.message) || ''); }).join('\n');
-        } catch (e) {}
-        var blocks = [];
-        var keys = root.historyKeys();
-        for (var i = 0; i < keys.length && blocks.length < this.INJECT_MAX_CHATS; i++) {
-          var key = keys[i];
-          var hist = root.history(key);
-          if (!hist.length) continue;
-          var meta = root.meta(key);
-          var name = key.indexOf('group:') === 0 ? key.slice(6) + '（群）' : key;
-          var hit = false;
-          if (meta.atMainCount != null && now - meta.atMainCount <= this.INJECT_RECENT_FLOORS) hit = true;
-          if (!hit && recentText.indexOf(name.replace(/（群）$/, '')) !== -1) hit = true;
-          if (!hit) continue;
-          var ago = meta.atMainCount != null ? Math.max(0, now - meta.atMainCount) : null;
-          var lines = hist.slice(-this.INJECT_ROUNDS).map(function (m) {
-            return (m.who === 'user' ? myName : m.who) + '：' + W.Floor.msgToLine(m, myName).replace(/^[^：]*：/, '');
-          });
-          blocks.push('「' + name + '」' + (ago != null ? '（' + ago + ' 楼前）' : '') + '：\n' + lines.join('\n'));
-        }
-        if (!blocks.length) return;
-        injectPrompts([{
-          id: 'lzw-phone-digest',
-          position: 'in_chat',
-          depth: 4,
-          role: 'system',
-          content: '【手机近况 · 微信】' + myName + '近期在手机上聊过天（仅作背景，正文不必提到；角色当面不得说出只有微信里才知道的细节，除非对方当时就在这些聊天里）：\n' + blocks.join('\n')
-        }], { once: true });
-      } catch (e) { console.warn('[霖州引擎] 手机动态注入失败', e); }
-    },
-
     // ── 独立生成 ──
     generateFor: async function (chatKey, isGroup) {
       var W = window.LZWorld;
       var sec = this.section();
       if (!sec) throw new Error('当前世界线无通讯录');
 
-      var digest = await this.compress(chatKey);
       var stickerNames = Object.keys(state.stickers).slice(0, 120);
       var raw, title, parseGroup = false;
 
@@ -1877,7 +1643,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var tail = [];
         for (var hi = hist.length - 1; hi >= 0 && hist[hi].who === 'user'; hi--) tail.unshift(hist[hi]);
         var rest = hist.slice(0, hist.length - tail.length);
-        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest);
+        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail);
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {
@@ -1893,7 +1659,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var tail2 = [];
         for (var hj = hist2.length - 1; hj >= 0 && hist2[hj].who === 'user'; hj--) tail2.unshift(hist2[hj]);
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
-        var req2 = W.Prompt.group({ name: g.name, open: g.open }, members, rest2, snap2, stickerNames, tail2, digest);
+        var req2 = W.Prompt.group({ name: g.name, open: g.open }, members, rest2, snap2, stickerNames, tail2);
         raw = await generateRaw(req2);
         title = g.name + ' 群聊';
         parseGroup = true;
@@ -1902,10 +1668,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var msgs = W.Floor.parseNpcLines(text, parseGroup ? null : chatKey);
       if (!msgs.length) throw new Error('生成结果为空');
-      // 一行近况（正文注入用）：取最后一条消息的核心内容
-      var lastMsg = msgs[msgs.length - 1];
-      var headText = lastMsg.kind === 'text' ? lastMsg.text : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[lastMsg.kind] || '消息') + ']';
-      W.Store.setMeta(chatKey, { headline: String(headText).slice(0, 40), atMainCount: this.mainCount() });
       return { key: chatKey, title: title, msgs: msgs };
     },
 
@@ -1968,13 +1730,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       try {
         on(tavern_events.WORLD_INFO_ACTIVATED, function (entries) {
           Engine.setLineByEntries(entries);
-        });
-      } catch (e) {}
-
-      // 正文生成前：注入手机动态（一行近况/会话，绝不带原始记录）
-      try {
-        on(tavern_events.GENERATION_AFTER_COMMANDS, function () {
-          Engine.injectDigest();
         });
       } catch (e) {}
 

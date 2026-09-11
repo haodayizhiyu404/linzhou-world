@@ -240,6 +240,7 @@
     isGroup: false,
     busy: false,
     staged: [],          // 待发消息 [{kind,text}]，回车攒入，小飞机一起发
+    failed: false,        // 上次生成失败（消息已发出但对方没回成）→ 小飞机/↻ 变为重试
     _placed: false,
 
     inject: function () {
@@ -359,6 +360,7 @@
           contactMap[disp] = eng.findContact(disp) || { name: disp, avatar: '' };
         }
         var rows = hist.map(function (m) { return chatRowHtml(m, userName, contactMap, disp); }).join('');
+        if (this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角 ↻ 或再点小飞机重试</div>';
         body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
           '<div class="lzw-staged' + (this.staged.length ? ' lzw-has' : '') + '" id="lzw-staged">' + stagedHtml(userName) + '</div>' +
           '<div class="lzw-bottom">' +
@@ -373,7 +375,7 @@
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + '">' + sbar + appbarHtml(this.screen, disp, this.canReroll()) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + '">' + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
         '</div></div>';
 
       this.bind(ph);
@@ -483,6 +485,16 @@
       var inp = pdoc().getElementById('lzw-input');
       var t = inp ? inp.value.trim() : '';
       if (t) { inp.value = ''; this.staged.push({ kind: 'text', text: t }); }
+      if (!this.staged.length) {
+        // 没有待发内容时，小飞机充当「重试」：上次生成失败且对方还没回，就再生成一次
+        var W0 = window.LZWorld;
+        var h0 = W0.Store.history(this.chatKey);
+        if (this.failed && !this.busy && h0.length && h0[h0.length - 1].who === 'user') {
+          this.failed = false;
+          this.generate(W0.Engine.userName());
+        }
+        return;
+      }
       this.sendBatch();
     },
 
@@ -493,6 +505,7 @@
         return { who: 'user', kind: m.kind, text: m.text, time: W.Status.nowText() };
       });
       this.staged = [];
+      this.failed = false;
       W.Store.push(this.chatKey, msgs, 100);
       this.render();
       this.generate(W.Engine.userName());
@@ -502,6 +515,7 @@
       var W = window.LZWorld;
       var userName = W.Engine.userName();
       var msg = { who: 'user', kind: kind, text: text, time: W.Status.nowText() };
+      this.failed = false;
       W.Store.push(this.chatKey, [msg], 100);
       this.panel = null;
       this.render();
@@ -515,10 +529,25 @@
       return !!(h.length && h[h.length - 1].who !== 'user');
     },
 
-    // 重roll：把末尾连续的一批 NPC 消息从存储里弹出，重新生成
+    // 重试条件：上次生成失败，且末尾是我方消息（发出后对方没回成）
+    canRetry: function () {
+      if (!this.failed) return false;
+      var h = window.LZWorld.Store.history(this.chatKey);
+      return !!(h.length && h[h.length - 1].who === 'user');
+    },
+
+    // ↻ 双模式：末尾是对方消息 → 弹出重roll；末尾是我方消息且上次失败 → 直接重试
     reroll: async function () {
       var W = window.LZWorld;
-      if (this.busy || !this.canReroll()) return;
+      if (this.busy) return;
+      if (this.canRetry()) {
+        this.failed = false;
+        try { toastr.info('重试中……', '📱 霖州引擎'); } catch (e) {}
+        this.render();
+        await this.generate(W.Engine.userName());
+        return;
+      }
+      if (!this.canReroll()) return;
       var h = W.Store.history(this.chatKey);
       var n = 0;
       for (var i = h.length - 1; i >= 0 && h[i].who !== 'user' && n < 12; i--) n++;
@@ -536,25 +565,41 @@
       var W = window.LZWorld;
       var eng = W.Engine;
       try {
-        var result = await eng.generateFor(this.chatKey, this.isGroup);
+        var result = await withTimeout(eng.generateFor(this.chatKey, this.isGroup), 90000);
+        this.failed = false;
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(this.chatKey, result.msgs, 100);
           if (this.screen === 'chat' && this.chatKey === result.key) this.render();
         }
       } catch (e) {
+        // API 故障有两类：直接报错、或永远挂起（由 withTimeout 兜底）。两种都要能重试。
+        this.failed = true;
         console.warn('[霖州引擎] 生成失败', e);
         try { toastr.error('手机消息生成失败：' + (e && e.message || e), '📱 霖州引擎'); } catch (e2) {}
+        if (this.screen === 'chat') this.render();
       } finally {
         this.busy = false;
       }
     }
   };
 
-  function appbarHtml(screen, disp, canReroll) {
+  // 生成超时保护：API 故障时 generateRaw 可能永远不返回，不兜底会让小飞机永远失灵
+  function withTimeout(promise, ms) {
+    return Promise.race([
+      promise,
+      new Promise(function (resolve, reject) {
+        setTimeout(function () { reject(new Error('生成超时（' + Math.round(ms / 1000) + '秒无响应），请重试')); }, ms);
+      })
+    ]);
+  }
+
+  function appbarHtml(screen, disp, act) {
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
-      (canReroll ? '<span class="lzw-reroll" data-act="reroll" title="重新生成对方的上一条回复">↻</span>' : '') +
+      (act === 'reroll' ? '<span class="lzw-reroll" data-act="reroll" title="重新生成对方的上一条回复">↻</span>'
+        : act === 'retry' ? '<span class="lzw-reroll" data-act="reroll" title="上一条消息发送失败，点击重新获取回复">↻</span>'
+        : '') +
       '</span></div>';
   }
 
