@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T08:12:27.742Z
+//  构建时间：2026-09-11T08:47:57.111Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-11 08:12';
+var __LZW_BUILD__ = '2026-09-11 08:47';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -887,12 +887,18 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-appbar-r{width:24px}',
     // 主体
     '.lzw-body{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;position:relative;z-index:1}',
-    // 首页（壁纸 + 大时钟 + 应用网格）
-    '.lzw-home-wall{height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:18px 16px 26px;',
-    'background:linear-gradient(165deg,#8fb8d8 0%,#cfe4df 55%,#dfead9 100%)/* 壁纸占位，后续接世界书图片 */}',
-    '.lzw-hometime{text-align:center;color:#17324a;text-shadow:0 1px 8px rgba(255,255,255,.5)}',
+    // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，状态栏压在上面反白
+    '.lzw-scr-home{background:url(' + HOME_WALL + ') center/cover no-repeat #9db8d2}',
+    '.lzw-home-wall{height:100%;padding:20px 16px 26px;display:flex;flex-direction:column;justify-content:space-between;',
+    'box-sizing:border-box}',
+    '.lzw-hometime{text-align:center;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.45)}',
     '.lzw-hometime .t{font-size:44px;font-weight:700;letter-spacing:1px}',
-    '.lzw-hometime .d{font-size:13px;opacity:.8;margin-top:2px}',
+    '.lzw-hometime .d{font-size:13px;opacity:.92;margin-top:2px}',
+    // 主屏状态栏压在壁纸上：图标反白
+    '.lzw-scr-home .lzw-sbar{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.35)}',
+    '.lzw-scr-home .lzw-sig i,.lzw-scr-home .lzw-batt-fill,.lzw-scr-home .lzw-batt-cap{background:#fff}',
+    '.lzw-scr-home .lzw-batt-in{border-color:#fff}',
+    '.lzw-scr-home .lzw-sicons svg path{fill:#fff}',
     '.lzw-homegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px}',
     '.lzw-app{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;color:#fff}',
     '.lzw-app-ico{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;',
@@ -929,7 +935,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 输入区（底部整体：面板叠加在输入条上方，不挤压聊天内容）
     '.lzw-bottom{flex:none;position:relative;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06)}',
     '.lzw-inputbar{display:flex;gap:8px;align-items:center;padding:8px 10px 4px;position:relative;z-index:3}',
-    '.lzw-plus{width:32px;height:32px;flex:none;border-radius:50%;border:1.5px solid #aeb4bb;background:#fff;',
+    '.lzw-plus{width:28px;height:28px;flex:none;border-radius:50%;border:1.2px solid #aeb4bb;background:#fff;',
     'cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
     '.lzw-plus svg{display:block}',
     '.lzw-plus:hover{background:#eef0f3}',
@@ -949,7 +955,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     'cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}',
     '.lzw-stgstick{max-width:64px;border-radius:6px;display:block}',
     // [+] 面板（绝对定位：从输入条上方弹出，盖住聊天区，不引起内容重排）
-    '.lzw-panel{position:absolute;left:0;right:0;bottom:100%;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06);',
+    '.lzw-panel{position:absolute;left:0;right:0;bottom:100%;z-index:4;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06);',
     'padding:14px 14px 8px;display:none;max-height:236px;overflow-y:auto;box-shadow:0 -8px 20px rgba(0,0,0,.05)}',
     '.lzw-panel.lzw-open{display:block}',
     '.lzw-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 6px}',
@@ -975,8 +981,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   var ICON_BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
-  var ICON_PLANE = '<svg width="21" height="21" viewBox="0 0 24 24" fill="#1aad19"><path d="M2.6 21.4L23 12 2.6 2.6 2.5 9.8 16.4 12l-13.9 2.2z"/></svg>';
-  var ICON_PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5.4v13.2M5.4 12h13.2" stroke="#7a8089" stroke-width="2.2" stroke-linecap="round"/></svg>';
+  var ICON_PLANE = '<svg width="23" height="23" viewBox="0 0 24 24" fill="#6b7178"><g transform="translate(12 12) rotate(-45) scale(0.85) translate(-12 -12)"><path d="M2.6 21.4L23 12 2.6 2.6 2.5 9.8 16.4 12l-13.9 2.2z"/></g></svg>';
+  var ICON_PLUS = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 5.2v13.6M5.2 12h13.6" stroke="#7a8089" stroke-width="1.9" stroke-linecap="round"/></svg>';
+  // 主屏壁纸（用户提供的油画；换图只改这里）
+  var HOME_WALL = 'https://files.catbox.moe/x9y713.png';
   // 主屏微信图标（绿色圆角块 + 白色对话泡）
   var ICON_WECHAT = '<svg width="30" height="30" viewBox="0 0 24 24"><path fill="#fff" d="M8.7 4C4.9 4 2 6.6 2 9.8c0 1.8 1 3.4 2.5 4.5l-.6 2 2.2-1.2c.8.2 1.6.4 2.5.4h.4A5.6 5.6 0 0 1 9 13.6c0-3 2.8-5.4 6.2-5.4h.4C15 5.4 12.2 4 8.7 4zM6.5 8.4a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8zm4.9 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z"/><path fill="#fff" d="M22 13.6c0-2.7-2.5-4.9-5.6-4.9s-5.6 2.2-5.6 4.9 2.5 4.9 5.6 4.9c.7 0 1.3-.1 1.9-.3l1.8 1-.5-1.7c1.4-.9 2.4-2.3 2.4-3.9zm-7.5-1.5a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm4 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>';
   // [+] 菜单图标（自绘线性图标，微信那种简洁风）
@@ -1195,7 +1203,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen">' + sbar + appbarHtml(this.screen, disp) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + '">' + sbar + appbarHtml(this.screen, disp) + body + '<div class="lzw-homebar"></div>' +
         '</div></div>';
 
       this.bind(ph);
