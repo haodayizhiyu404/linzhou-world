@@ -53,7 +53,7 @@
     // 应用栏
     '.lzw-appbar{flex:none;min-height:40px;display:flex;align-items:center;gap:6px;padding:2px 10px 8px;',
     'background:rgba(247,247,249,.92);border-bottom:1px solid rgba(0,0,0,.06)}',
-    '.lzw-appbar-t{flex:1;text-align:center;font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.lzw-appbar-t{flex:1;text-align:center;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
     '.lzw-back{display:inline-flex;align-items:center;color:#111;cursor:pointer;padding:4px;border-radius:8px;margin-left:-4px}',
     '.lzw-back:hover{background:rgba(0,0,0,.05)}',
     '.lzw-appbar-r{width:24px}',
@@ -80,18 +80,18 @@
     '.lzw-conv{display:flex;gap:10px;align-items:center;padding:11px 12px;background:#fff;',
     'border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer}',
     '.lzw-conv:hover{background:#f7f7f9}',
-    '.lzw-ava{width:42px;height:42px;border-radius:10px;flex:none;object-fit:cover;background:#c9cfd6;',
-    'display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:600}',
+    '.lzw-ava{width:34px;height:34px;border-radius:9px;flex:none;object-fit:cover;background:#c9cfd6;',
+    'display:flex;align-items:center;justify-content:center;color:#fff;font-size:13.5px;font-weight:600}',
     '.lzw-ava-me{background:#4d7cfe}',
     '.lzw-conv-main{flex:1;min-width:0}',
-    '.lzw-conv-name{font-weight:500;font-size:14.5px}',
-    '.lzw-conv-prev{font-size:12.5px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}',
+    '.lzw-conv-name{font-weight:500;font-size:14px}',
+    '.lzw-conv-prev{font-size:12px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}',
     // 聊天
     '.lzw-chatbg{background:#f2f2f5;min-height:100%;padding:4px 0 10px}',
-    '.lzw-chatrow{display:flex;gap:8px;margin:12px 10px;align-items:flex-start}',
+    '.lzw-chatrow{display:flex;gap:7px;margin:11px 12px;align-items:flex-start}',
     '.lzw-chatrow.me{flex-direction:row-reverse}',
-    '.lzw-bub{max-width:68%;padding:9px 12px;border-radius:12px;background:#fff;color:#111;line-height:1.5;',
-    'word-break:break-word;font-size:14.5px;box-shadow:0 1px 2px rgba(0,0,0,.05)}',
+    '.lzw-bub{max-width:62%;padding:8px 11px;border-radius:12px;background:#fff;color:#111;line-height:1.45;font-size:13.5px;',
+    'word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.05)}',
     '.lzw-chatrow.me .lzw-bub{background:#95ec69}',
     '.lzw-bub.lzw-sys{background:transparent;box-shadow:none;color:#8a8f99;font-size:12px;padding:2px 4px}',
     '.lzw-sticker{max-width:120px;border-radius:8px}',
@@ -103,13 +103,18 @@
     '.lzw-locmap{height:64px;background:linear-gradient(140deg,#a8d5a2,#e8f3e4);position:relative}',
     '.lzw-locmap:after{content:"📍";position:absolute;left:50%;top:50%;transform:translate(-50%,-60%);font-size:22px}',
     '.lzw-locbox .cap{font-size:13px;font-weight:600;padding:6px 8px}',
-    '.lzw-sysrow{text-align:center;font-size:12px;color:#9aa0a8;margin:10px 0}',
-    '.lzw-recallrow{text-align:center;font-size:12px;color:#9aa0a8;margin:10px 0;cursor:pointer}',
+    '.lzw-sysrow{text-align:center;font-size:11.5px;color:#9aa0a8;margin:10px 0}',
+    '.lzw-recallrow{text-align:center;font-size:12px;color:#9aa0a8;margin:13px 0;line-height:1.7;cursor:pointer}',
     '.lzw-recallrow:hover{color:#6a7078}',
     '.lzw-peektg{display:block;font-size:10px;color:#a7abb2;cursor:pointer;margin-bottom:2px}',
     '.lzw-peektg:hover{color:#6a7078}',
-    '.lzw-msgdel{flex:none;align-self:flex-start;font-size:12px;color:#c3c7cd;cursor:pointer;padding:3px 5px;opacity:0;transition:opacity .15s}',
-    '.lzw-chatrow:hover .lzw-msgdel{opacity:1}',
+    // 删除确认弹窗（右键/长按消息触发）
+    '.lzw-scrim{position:absolute;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;z-index:50}',
+    '.lzw-confirm{background:#fff;border-radius:14px;padding:20px 20px 14px;width:216px;text-align:center;font-size:14px;color:#111;box-shadow:0 8px 30px rgba(0,0,0,.25)}',
+    '.lzw-cbtns{display:flex;gap:10px;margin-top:15px}',
+    '.lzw-cbtn{flex:1;border:none;border-radius:9px;padding:9px 0;font-size:14px;cursor:pointer}',
+    '.lzw-cbtn.no{background:#f2f3f5;color:#333}',
+    '.lzw-cbtn.yes{background:#e64b4b;color:#fff}',
     // 输入区（底部整体：面板叠加在输入条上方，不挤压聊天内容）
     '.lzw-bottom{flex:none;position:relative;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06)}',
     '.lzw-inputbar{display:flex;gap:8px;align-items:center;padding:8px 10px 4px;position:relative;z-index:3}',
@@ -117,8 +122,8 @@
     'cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
     '.lzw-plus svg{display:block}',
     '.lzw-plus:hover{background:#eef0f3}',
-    '.lzw-input{flex:1;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:17px;color:#111;',
-    'padding:8px 13px;font-size:14.5px;outline:none;min-width:0}',
+    '.lzw-input{flex:1;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:16px;color:#111;',
+    'padding:7px 12px;font-size:14px;outline:none;min-width:0}',
     '.lzw-input::placeholder{color:#b9bdc4;font-size:13px;font-weight:300;letter-spacing:.3px}',
     '.lzw-send{flex:none;border:none;background:none;color:#3f66e8;cursor:pointer;padding:4px 2px;',
     'display:flex;align-items:center;justify-content:center}',
@@ -180,7 +185,7 @@
     var who = isUser ? userName : m.who;
     // 撤回未偷看：只留一行可点击的撤回提示
     if (m.recalled && !peeked) {
-      return '<div class="lzw-recallrow" data-peek="' + idx + '">' + esc(who) + ' 撤回了一条消息 · 偷看</div>';
+      return '<div class="lzw-recallrow" data-peek="' + idx + '" data-del="' + idx + '">' + esc(who) + ' 撤回了一条消息</div>';
     }
     var peektg = m.recalled ? '<span class="lzw-peektg" data-peek="' + idx + '">已撤回 · 点击隐藏</span>' : '';
     var avatar;
@@ -203,7 +208,7 @@
         : '<div class="lzw-bub">[表情:' + esc(m.text) + ']</div>';
     } else if (m.kind === 'poke') {
       bub = '<div class="lzw-bub lzw-sys">' + (isUser ? '你戳了戳 ' + esc(targetName || '对方') : esc(who) + ' 戳了戳你') + '</div>';
-      return '<div style="text-align:center">' + bub + '</div>';
+      return '<div style="text-align:center" data-del="' + idx + '">' + bub + '</div>';
     } else if (m.kind === 'voice') {
       bub = '<div class="lzw-bub"><span class="lzw-voice-ico">▶</span>' + esc(m.text) + '</div>';
     } else if (m.kind === 'image') {
@@ -222,8 +227,7 @@
         bub = '<div class="lzw-bub" style="padding:6px">' + peektg + bub + '</div>';
       }
     }
-    return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '">' + avatar + bub +
-      '<span class="lzw-msgdel" data-del="' + idx + '" title="删除这条">×</span></div>';
+    return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '" data-del="' + idx + '">' + avatar + bub + '</div>';
   }
 
   // ── 待发区气泡（攒好的消息，小飞机一键全发） ──
@@ -264,6 +268,7 @@
     staged: [],          // 待发消息 [{kind,text}]，回车攒入，小飞机一起发
     failed: false,        // 上次生成失败（消息已发出但对方没回成）→ 小飞机/↻ 变为重试
     peek: {},             // 撤回偷看集合：chatKey:index → true
+    confirmDel: -1,       // 待确认删除的消息下标（-1=无）
     _placed: false,
 
     inject: function () {
@@ -400,6 +405,7 @@
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
         '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + '">' + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
+        (this.confirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条消息？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="cancel">取消</button><button class="lzw-cbtn yes" data-cact="del">删除</button></div></div></div>' : '') +
         '</div></div>';
 
       this.bind(ph);
@@ -434,10 +440,29 @@
       ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
       ph.querySelectorAll('[data-act="reroll"]').forEach(function (el) { el.onclick = function () { UI.reroll(); }; });
       // 待发区：点红 ✕ 删一条
-      ph.querySelectorAll('[data-del]').forEach(function (el) {
-        el.onclick = function (ev) {
-          ev.stopPropagation();
-          UI.removeAt(parseInt(el.getAttribute('data-del'), 10));
+      // 右键（PC）或长按 550ms（触屏）消息 → 弹确认窗，防止误删
+      ph.oncontextmenu = function (e) {
+        var row = e.target && e.target.closest ? e.target.closest('[data-del]') : null;
+        if (!row) return;
+        e.preventDefault();
+        UI.confirmDel = parseInt(row.getAttribute('data-del'), 10);
+        UI.render();
+      };
+      var lpTimer = null;
+      ph.ontouchstart = function (e) {
+        var row = e.target && e.target.closest ? e.target.closest('[data-del]') : null;
+        lpTimer = row ? setTimeout(function () {
+          UI.confirmDel = parseInt(row.getAttribute('data-del'), 10);
+          UI.render();
+        }, 550) : null;
+      };
+      ph.ontouchend = function () { clearTimeout(lpTimer); };
+      ph.ontouchmove = function () { clearTimeout(lpTimer); };
+      ph.querySelectorAll('[data-cact]').forEach(function (el) {
+        el.onclick = function () {
+          if (el.getAttribute('data-cact') === 'del') UI.removeAt(UI.confirmDel);
+          UI.confirmDel = -1;
+          UI.render();
         };
       });
       ph.querySelectorAll('[data-peek]').forEach(function (el) {
