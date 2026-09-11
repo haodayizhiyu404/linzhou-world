@@ -33,12 +33,23 @@
     } catch (e) { return ''; }
   }
 
+  // ── 单条消息 → 契约语法文本（与「消息类型」说明完全一致，AI 不用猜） ──
+  function msgBody(m) {
+    switch (m.kind) {
+      case 'sticker':  return '[表情:' + m.text + ']';
+      case 'voice':    return '[语音:' + m.text + ']';
+      case 'image':    return '[图片:' + m.text + ']';
+      case 'poke':     return '[戳一戳]';
+      case 'location': return '[定位:' + m.text + ']';
+      default:         return String(m.text || '');
+    }
+  }
+
   // ── 应用内记录文本 ──
   function histText(hist, n) {
     return hist.slice(-n).map(function (m) {
       var who = m.who === 'user' ? '{{user}}' : m.who;
-      var body = m.kind === 'text' ? m.text : '[' + m.kind + ':' + m.text + ']';
-      return who + '：' + body;
+      return who + '：' + msgBody(m);
     }).join('\n');
   }
 
@@ -89,7 +100,9 @@
   var Prompt = {
 
     // ── 私聊 ──
-    private: function (contact, hist, snapshot, stickerNames) {
+    // tail = 本轮最新一批用户消息：不混在系统块里，作为最后的 user 轮单独给出
+    private: function (contact, hist, snapshot, stickerNames, tail) {
+      var tailLines = (tail && tail.length) ? histText(tail, 8) : '';
       var p = [
         '【数字世界 · 回应生成】',
         '你是数字生活世界的模拟引擎。本次任务：生成应用「微信」中，来自「' + contact.name + '」的新消息。',
@@ -100,7 +113,7 @@
         '',
         mainContext() ? '【主线近貌】（仅作背景，上面的铁律优先）\n' + mainContext() : '',
         '',
-        '【应用内记录 · 与{{user}}的微信聊天】（最贴近当前，优先承接这里的话题与语气）',
+        '【应用内记录 · 与{{user}}的微信聊天】（优先承接这里的话题与语气；{{user}}本轮最新发的消息在末尾单独给出）',
         histText(hist, HIST_PRIVATE),
         '',
         consistencyRules('「' + contact.name + '」'),
@@ -116,7 +129,12 @@
       return {
         ordered_prompts: [
           { role: 'system', content: p },
-          { role: 'user', content: '（现在轮到「' + contact.name + '」回复{{user}}在微信里发来的消息。严格按上方输出契约，只输出消息本身。）' }
+          {
+            role: 'user',
+            content: tailLines
+              ? '（我刚在微信里发来以下消息。请严格按上方输出契约，只输出「' + contact.name + '」的新消息本身。）\n' + tailLines
+              : '（现在轮到「' + contact.name + '」回复{{user}}在微信里发来的消息。严格按上方输出契约，只输出消息本身。）'
+          }
         ],
         should_silence: true,
         max_chat_history: 0
@@ -124,7 +142,8 @@
     },
 
     // ── 群聊 ──
-    group: function (group, members, hist, snapshot, stickerNames) {
+    group: function (group, members, hist, snapshot, stickerNames, tail) {
+      var tailLines2 = (tail && tail.length) ? histText(tail, 8) : '';
       var nameList = members.map(function (m) { return m.name; });
       var voices = members.map(function (m) {
         var brief = m.profile ? String(m.profile).replace(/\s+/g, ' ').slice(0, 500) : '（无档案）';
@@ -144,7 +163,7 @@
         '',
         mainContext() ? '【主线近貌】（仅作背景，铁律优先）\n' + mainContext() : '',
         '',
-        '【应用内记录 · 群「' + group.name + '」】（最贴近当前，优先承接这里的话题与语气）',
+        '【应用内记录 · 群「' + group.name + '」】（优先承接这里的话题与语气；{{user}}本轮最新发的消息在末尾单独给出）',
         histText(hist, HIST_GROUP),
         '',
         consistencyRules('每个群成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，各自独立判断是否知情。',
@@ -160,7 +179,12 @@
       return {
         ordered_prompts: [
           { role: 'system', content: p },
-          { role: 'user', content: '（现在轮到群「' + group.name + '」里的成员们继续聊天。严格按上方输出契约，只输出群消息本身。）' }
+          {
+            role: 'user',
+            content: tailLines2
+              ? '（我刚在群「' + group.name + '」里发来以下消息。请严格按上方输出契约，只输出成员们的新消息本身。）\n' + tailLines2
+              : '（现在轮到群「' + group.name + '」里的成员们继续聊天。严格按上方输出契约，只输出群消息本身。）'
+          }
         ],
         should_silence: true,
         max_chat_history: 0

@@ -60,11 +60,22 @@
       return '我';
     },
 
-    // 酒馆 persona 头像：从主页面最近一条用户消息的头像图读（酒馆自己拼好的缩略图地址）
+    // 酒馆 persona 头像：多路读取，全部失败才退回字母块。
+    // ① 聊天里最近一条用户消息的头像图（酒馆渲染好的）；② 用户设置面板当前 persona 的高亮块。
     userAvatar: function () {
+      var doc = null;
+      try { doc = window.parent.document; }
+      catch (e) { console.warn('[霖州引擎] 头像：父页 DOM 不可达：' + (e && e.message)); return ''; }
       try {
-        var img = window.parent.document.querySelector('#chat .mes[is_user="true"] .avatar img');
-        if (img && img.src) return img.src;
+        var imgs = doc.querySelectorAll('#chat .mes[is_user="true"] .avatar img');
+        for (var i = imgs.length - 1; i >= 0; i--) {
+          if (imgs[i].src) return imgs[i].src;
+        }
+        console.log('[霖州引擎] 头像：聊天里还没有用户消息（' + imgs.length + ' 条），改读 persona 面板');
+      } catch (e) { console.warn('[霖州引擎] 头像：聊天内查找失败：' + (e && e.message)); }
+      try {
+        var pimg = doc.querySelector('#user_avatar_block .avatar-container.selected .avatar img');
+        if (pimg && pimg.src) return pimg.src;
       } catch (e) {}
       return '';
     },
@@ -210,7 +221,11 @@
         var profile = state.profiles[c.name] || '';
         var snap = W.Status.snapshot(c.name);
         var hist = W.Store.history(chatKey);
-        var req = W.Prompt.private({ name: c.name, profile: profile }, hist, snap, stickerNames);
+        // 最新一批连续的用户消息摘出来作为最终 user 轮次，其余留在系统块的应用内记录里
+        var tail = [];
+        for (var hi = hist.length - 1; hi >= 0 && hist[hi].who === 'user'; hi--) tail.unshift(hist[hi]);
+        var rest = hist.slice(0, hist.length - tail.length);
+        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail);
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {
@@ -223,7 +238,10 @@
         });
         var snap2 = W.Status.snapshot(null);
         var hist2 = W.Store.history(chatKey);
-        var req2 = W.Prompt.group({ name: g.name, open: g.open }, members, hist2, snap2, stickerNames);
+        var tail2 = [];
+        for (var hj = hist2.length - 1; hj >= 0 && hist2[hj].who === 'user'; hj--) tail2.unshift(hist2[hj]);
+        var rest2 = hist2.slice(0, hist2.length - tail2.length);
+        var req2 = W.Prompt.group({ name: g.name, open: g.open }, members, rest2, snap2, stickerNames, tail2);
         raw = await generateRaw(req2);
         title = g.name + ' 群聊';
         parseGroup = true;

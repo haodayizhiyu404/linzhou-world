@@ -72,6 +72,11 @@
       }
 
       var bub;
+      // 戳一戳单独成行：整行居中灰字，不带头像气泡
+      if (content === '[戳一戳]') {
+        rows.push('<div class="lzw-pokerow">' + (isUser ? '你戳了戳对方' : esc(who) + '戳了戳你') + '</div>');
+        return;
+      }
       var typed = content.match(/^\[(表情|语音|图片|戳一戳|定位)(?::|\||｜)([\s\S]*)\]$/);
       if (typed) {
         var kind = typed[1], arg = (typed[2] || '').trim();
@@ -130,7 +135,8 @@
     '#chat .lzw-sticker{max-width:110px;border-radius:8px}',
     '#chat .lzw-voice-ico{color:#111;margin-right:6px;opacity:.6}',
     '#chat .lzw-img-ph{font-size:22px;text-align:center;padding:8px 0 4px}',
-    '#chat .lzw-img-cap{font-size:12px;opacity:.75}'
+    '#chat .lzw-img-cap{font-size:12px;opacity:.75}',
+    '#chat .lzw-pokerow{text-align:center;font-size:12px;color:#8a8f99;margin:10px 0}'
   ].join('\n');
   function ensureStyle() {
     try {
