@@ -45,7 +45,7 @@
   }
 
   // ── 4. 本地缓存（断网兜底） ──
-  var CACHE_KEY = 'lzw_dist_cache';
+  var CACHE_KEY = 'lzw_dist_cache_v2';
   function readCache() {
     try {
       var raw = localStorage.getItem(CACHE_KEY);
