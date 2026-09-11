@@ -107,21 +107,18 @@
     // 输入区（底部整体：面板叠加在输入条上方，不挤压聊天内容）
     '.lzw-bottom{flex:none;position:relative;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06)}',
     '.lzw-inputbar{display:flex;gap:8px;align-items:center;padding:8px 10px 4px;position:relative;z-index:3}',
-    '.lzw-plus{width:26px;height:26px;flex:none;border-radius:50%;border:1.8px solid #878e98;background:#fff;',
+    '.lzw-plus{width:23px;height:23px;flex:none;border-radius:50%;border:1.6px solid #6f7680;background:#fff;',
     'cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
     '.lzw-plus svg{display:block}',
     '.lzw-plus:hover{background:#eef0f3}',
     '.lzw-input{flex:1;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:17px;color:#111;',
     'padding:8px 13px;font-size:14.5px;outline:none;min-width:0}',
-    '.lzw-send{flex:none;border:none;background:none;color:#4d7cfe;cursor:pointer;padding:4px 2px;',
+    '.lzw-send{flex:none;border:none;background:none;color:#3f66e8;cursor:pointer;padding:4px 2px;',
     'display:flex;align-items:center;justify-content:center}',
     '.lzw-send svg{display:block}',
     // 待发区（回车攒多条，小飞机一起发）
-    '.lzw-staged{display:none;max-height:118px;overflow-y:auto;flex:none;padding:2px 0;',
-    'background:#f2f2f5;border-top:1px dashed rgba(0,0,0,.08)}',
-    '.lzw-staged.lzw-has{display:block}',
-    '.lzw-staged .lzw-chatrow{position:relative;margin:8px 10px}',
-    '.lzw-staged .lzw-bub{position:relative;opacity:.94}',
+    // 待发消息与历史记录同流显示（不再用虚线框隔开），行尾 × 可单条撤回
+    '.lzw-stgrow{position:relative}.lzw-stgrow .lzw-bub{opacity:.96}',
     '.lzw-stgx{position:absolute;top:-7px;right:-7px;width:17px;height:17px;border-radius:50%;',
     'background:#e64b4b;color:#fff;font-size:12px;line-height:17px;text-align:center;',
     'cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}',
@@ -143,9 +140,9 @@
     '.lzw-stickcell img{width:100%;height:100%;object-fit:cover;display:block}',
     '.lzw-stickcell span{display:block;font-size:10px;color:#8a8f99;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
     // 滚动条（统一的细灰条，不用浏览器默认样式）
-    '.lzw-body::-webkit-scrollbar,.lzw-staged::-webkit-scrollbar,.lzw-panel::-webkit-scrollbar,.lzw-stickgrid::-webkit-scrollbar{width:4px}',
-    '.lzw-body::-webkit-scrollbar-thumb,.lzw-staged::-webkit-scrollbar-thumb,.lzw-panel::-webkit-scrollbar-thumb,.lzw-stickgrid::-webkit-scrollbar-thumb{background:rgba(0,0,0,.14);border-radius:2px}',
-    '.lzw-body::-webkit-scrollbar-track,.lzw-staged::-webkit-scrollbar-track,.lzw-panel::-webkit-scrollbar-track,.lzw-stickgrid::-webkit-scrollbar-track{background:transparent}',
+    '.lzw-body::-webkit-scrollbar,.lzw-panel::-webkit-scrollbar,.lzw-stickgrid::-webkit-scrollbar{width:4px}',
+    '.lzw-body::-webkit-scrollbar-thumb,.lzw-panel::-webkit-scrollbar-thumb,.lzw-stickgrid::-webkit-scrollbar-thumb{background:rgba(0,0,0,.14);border-radius:2px}',
+    '.lzw-body::-webkit-scrollbar-track,.lzw-panel::-webkit-scrollbar-track,.lzw-stickgrid::-webkit-scrollbar-track{background:transparent}',
     // 底部 home 指示条
     '.lzw-homebar{flex:none;height:18px;display:flex;align-items:center;justify-content:center;background:#f7f7f9;position:relative;z-index:3}',
     '.lzw-homebar:after{content:"";display:block;width:110px;height:4px;border-radius:2px;background:rgba(0,0,0,.75)}'
@@ -154,7 +151,7 @@
   var ICON_BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
   var ICON_PLANE = '<svg width="23" height="23" viewBox="0 0 1024 1024" fill="#555"><path d="M972.48 40.64c-17.38666667-8.64-34.77333333-8.64-43.41333333 0L60.16 472.10666667C42.88 472.10666667 34.13333333 489.38666667 34.13333333 506.66666667s8.64 34.56 17.38666667 34.56l208.53333333 129.49333333c17.38666667 8.64 34.77333333 8.64 52.16-8.64l460.48-414.18666667 17.38666667 8.64-417.06666667 439.89333334c-8.64 8.64-8.64 17.28-8.64 25.92v189.86666666c0 17.28 8.64 34.56 26.02666667 43.2 17.38666667 8.64 34.77333333 0 43.41333333-8.64l104.32-103.57333333L746.66666667 981.22666667c8.64 8.64 17.38666667 8.64 26.02666666 8.64h17.38666667c17.38666667-8.64 26.02666667-17.28 26.02666667-34.56l173.76-862.93333334c0-25.92 0-43.09333333-17.38666667-51.73333333z"/></svg>';
-  var ICON_PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5.4v13.2M5.4 12h13.2" stroke="#555" stroke-width="2.1" stroke-linecap="round"/></svg>';
+  var ICON_PLUS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5.4v13.2M5.4 12h13.2" stroke="#454545" stroke-width="2.2" stroke-linecap="round"/></svg>';
   // 主屏微信图标（绿色圆角块 + 白色对话泡）
   var ICON_WECHAT = '<svg width="30" height="30" viewBox="0 0 24 24"><path fill="#fff" transform="translate(12 12) scale(1.16) translate(-12 -12)" d="M8.7 4C4.9 4 2 6.6 2 9.8c0 1.8 1 3.4 2.5 4.5l-.6 2 2.2-1.2c.8.2 1.6.4 2.5.4h.4A5.6 5.6 0 0 1 9 13.6c0-3 2.8-5.4 6.2-5.4h.4C15 5.4 12.2 4 8.7 4zM6.5 8.4a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8zm4.9 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z"/><path fill="#fff" transform="translate(12 12) scale(1.16) translate(-12 -12)" d="M22 13.6c0-2.7-2.5-4.9-5.6-4.9s-5.6 2.2-5.6 4.9 2.5 4.9 5.6 4.9c.7 0 1.3-.1 1.9-.3l1.8 1-.5-1.7c1.4-.9 2.4-2.3 2.4-3.9zm-7.5-1.5a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm4 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>';
   // [+] 菜单图标（自绘线性图标，微信那种简洁风）
@@ -227,7 +224,7 @@
       var av = uav
         ? '<img class="lzw-ava lzw-ava-me" src="' + esc(uav) + '">'
         : '<div class="lzw-ava lzw-ava-me">' + esc(userName.slice(0, 1)) + '</div>';
-      return '<div class="lzw-chatrow me">' + av +
+      return '<div class="lzw-chatrow me lzw-stgrow">' + av +
         '<div class="lzw-bub' + (sys ? ' lzw-sys' : '') + '">' + inner +
         '<span class="lzw-stgx" data-sdel="' + i + '" title="删掉这条">×</span></div></div>';
     }).join('');
@@ -361,8 +358,8 @@
         }
         var rows = hist.map(function (m) { return chatRowHtml(m, userName, contactMap, disp); }).join('');
         if (this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角 ↻ 或再点小飞机重试</div>';
+        if (this.staged.length) rows += stagedHtml(userName);
         body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
-          '<div class="lzw-staged' + (this.staged.length ? ' lzw-has' : '') + '" id="lzw-staged">' + stagedHtml(userName) + '</div>' +
           '<div class="lzw-bottom">' +
           panelHtml(this.panel) +
           '<div class="lzw-inputbar">' +
