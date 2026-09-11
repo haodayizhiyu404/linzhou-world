@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T09:41:37.985Z
+//  构建时间：2026-09-11T10:00:27.707Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-11 09:41';
+var __LZW_BUILD__ = '2026-09-11 10:00';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -843,9 +843,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   function pdoc() { return window.parent.document; }
   function pwin() { return window.parent; }
-  // 主屏壁纸（用户提供的油画；换图只改这里）。必须定义在 CSS 数组之前——
+  // 主屏壁纸（浅色可爱系；换图只改这里）。必须定义在 CSS 数组之前——
   // 数组在脚本加载时立即求值，引用晚于它的变量会得到 undefined。
-  var HOME_WALL = 'https://files.catbox.moe/x9y713.png';
+  var HOME_WALL = 'https://files.catbox.moe/2rg9in.jpg';
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -890,19 +890,16 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-appbar-r{width:24px}',
     // 主体
     '.lzw-body{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;position:relative;z-index:1}',
-    // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，状态栏压在上面反白
-    '.lzw-scr-home{background:url(' + HOME_WALL + ') center/cover no-repeat #9db8d2;',
-    'box-shadow:inset 0 150px 100px -45px rgba(15,25,40,.5)}',
+    // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
+    '.lzw-scr-home{background:url(' + HOME_WALL + ') center/cover no-repeat #f4f6fb}',
     '.lzw-home-wall{height:100%;padding:20px 16px 26px;display:flex;flex-direction:column;justify-content:space-between;',
     'box-sizing:border-box}',
-    '.lzw-hometime{text-align:center;color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.45)}',
+    // 时钟用与壁纸线稿同系的石板蓝灰；白色光晕保证在任何底色上可读
+    '.lzw-hometime{text-align:center;color:#46536f;text-shadow:0 1px 10px rgba(255,255,255,.9)}',
     '.lzw-hometime .t{font-size:48px;font-weight:700;letter-spacing:1px}',
-    '.lzw-hometime .d{font-size:13px;opacity:.92;margin-top:2px}',
-    // 主屏状态栏压在壁纸上：图标反白
-    '.lzw-scr-home .lzw-sbar{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.35)}',
-    '.lzw-scr-home .lzw-sig i,.lzw-scr-home .lzw-batt-fill,.lzw-scr-home .lzw-batt-cap{background:#fff}',
-    '.lzw-scr-home .lzw-batt-in{border-color:#fff}',
-    '.lzw-scr-home .lzw-sicons svg path{fill:#fff}',
+    '.lzw-hometime .d{font-size:13.5px;font-weight:600;letter-spacing:2.5px;margin-top:3px;opacity:.85}',
+    // 应用名在浅色壁纸上用深字
+    '.lzw-scr-home .lzw-app span{color:#46536f;text-shadow:0 1px 4px rgba(255,255,255,.7)}',
     '.lzw-homegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px 8px}',
     '.lzw-app{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;color:#fff}',
     '.lzw-app-ico{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;',
@@ -939,7 +936,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 输入区（底部整体：面板叠加在输入条上方，不挤压聊天内容）
     '.lzw-bottom{flex:none;position:relative;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06)}',
     '.lzw-inputbar{display:flex;gap:8px;align-items:center;padding:8px 10px 4px;position:relative;z-index:3}',
-    '.lzw-plus{width:26px;height:26px;flex:none;border-radius:50%;border:1.8px solid #9aa1a9;background:#fff;',
+    '.lzw-plus{width:26px;height:26px;flex:none;border-radius:50%;border:1.8px solid #878e98;background:#fff;',
     'cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
     '.lzw-plus svg{display:block}',
     '.lzw-plus:hover{background:#eef0f3}',
@@ -985,8 +982,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   var ICON_BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
-  var ICON_PLANE = '<svg width="23" height="23" viewBox="0 0 1024 1024" fill="#6b7178"><path d="M972.48 40.64c-17.38666667-8.64-34.77333333-8.64-43.41333333 0L60.16 472.10666667C42.88 472.10666667 34.13333333 489.38666667 34.13333333 506.66666667s8.64 34.56 17.38666667 34.56l208.53333333 129.49333333c17.38666667 8.64 34.77333333 8.64 52.16-8.64l460.48-414.18666667 17.38666667 8.64-417.06666667 439.89333334c-8.64 8.64-8.64 17.28-8.64 25.92v189.86666666c0 17.28 8.64 34.56 26.02666667 43.2 17.38666667 8.64 34.77333333 0 43.41333333-8.64l104.32-103.57333333L746.66666667 981.22666667c8.64 8.64 17.38666667 8.64 26.02666666 8.64h17.38666667c17.38666667-8.64 26.02666667-17.28 26.02666667-34.56l173.76-862.93333334c0-25.92 0-43.09333333-17.38666667-51.73333333z"/></svg>';
-  var ICON_PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5.4v13.2M5.4 12h13.2" stroke="#7a8089" stroke-width="2.1" stroke-linecap="round"/></svg>';
+  var ICON_PLANE = '<svg width="23" height="23" viewBox="0 0 1024 1024" fill="#555"><path d="M972.48 40.64c-17.38666667-8.64-34.77333333-8.64-43.41333333 0L60.16 472.10666667C42.88 472.10666667 34.13333333 489.38666667 34.13333333 506.66666667s8.64 34.56 17.38666667 34.56l208.53333333 129.49333333c17.38666667 8.64 34.77333333 8.64 52.16-8.64l460.48-414.18666667 17.38666667 8.64-417.06666667 439.89333334c-8.64 8.64-8.64 17.28-8.64 25.92v189.86666666c0 17.28 8.64 34.56 26.02666667 43.2 17.38666667 8.64 34.77333333 0 43.41333333-8.64l104.32-103.57333333L746.66666667 981.22666667c8.64 8.64 17.38666667 8.64 26.02666666 8.64h17.38666667c17.38666667-8.64 26.02666667-17.28 26.02666667-34.56l173.76-862.93333334c0-25.92 0-43.09333333-17.38666667-51.73333333z"/></svg>';
+  var ICON_PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5.4v13.2M5.4 12h13.2" stroke="#555" stroke-width="2.1" stroke-linecap="round"/></svg>';
   // 主屏微信图标（绿色圆角块 + 白色对话泡）
   var ICON_WECHAT = '<svg width="30" height="30" viewBox="0 0 24 24"><path fill="#fff" d="M8.7 4C4.9 4 2 6.6 2 9.8c0 1.8 1 3.4 2.5 4.5l-.6 2 2.2-1.2c.8.2 1.6.4 2.5.4h.4A5.6 5.6 0 0 1 9 13.6c0-3 2.8-5.4 6.2-5.4h.4C15 5.4 12.2 4 8.7 4zM6.5 8.4a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8zm4.9 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z"/><path fill="#fff" d="M22 13.6c0-2.7-2.5-4.9-5.6-4.9s-5.6 2.2-5.6 4.9 2.5 4.9 5.6 4.9c.7 0 1.3-.1 1.9-.3l1.8 1-.5-1.7c1.4-.9 2.4-2.3 2.4-3.9zm-7.5-1.5a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm4 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>';
   // [+] 菜单图标（自绘线性图标，微信那种简洁风）
