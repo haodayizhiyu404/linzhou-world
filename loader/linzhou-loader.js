@@ -39,7 +39,7 @@
         var sha = String((j && j.sha) || '').trim();
         if (/^[0-9a-f]{7,40}$/.test(sha)) return sha;
       }
-      log('提交号解析失败（HTTP ' + r.status + '），退回 @main');
+      log('GitHub API 不可用（限流），改用备用源');
     } catch (e) { log('提交号请求失败：' + (e && e.message || e)); }
     return 'main';
   }

@@ -13,6 +13,7 @@
 
   var MARK_ROSTER = '霖州手机::通讯录';
   var MARK_STICKER = '霖州手机::表情包';
+  var MARK_STICKER_ALIAS = ['媒体与表情包_StickerData'];   // 卡组既有条目，直接兼容
   var MARK_PROFILE = '霖州手机::人设::';
 
   // ── 适配层：世界书列表与条目 ──
@@ -130,6 +131,14 @@
       var es = await allEntries();
       var seen = es.slice(0, 25).map(function (e) { return titleOf(e).slice(0, 24); });
       console.log('[霖州引擎] 共扫描 ' + es.length + ' 条，前若干条标题：' + seen.join(' | '));
+
+      // 短标题条目的索引，供「人设兜底」用（条目名=角色名）
+      var titleMap = {};
+      for (var ti = 0; ti < es.length; ti++) {
+        var tt = titleOf(es[ti]);
+        if (tt && tt.length <= 15 && !(tt in titleMap)) titleMap[tt] = contentOf(es[ti]);
+      }
+
       for (var i = 0; i < es.length; i++) {
         var t = titleOf(es[i]);
         if (t === MARK_ROSTER) {
@@ -139,7 +148,7 @@
               result.rosters[String(line).trim()] = normSection(j[line]);
             }
           }
-        } else if (t === MARK_STICKER) {
+        } else if (t === MARK_STICKER || MARK_STICKER_ALIAS.indexOf(t) !== -1) {
           var st = parseStickers(contentOf(es[i]));
           for (var k in st) result.stickers[k] = st[k];
         } else if (t.indexOf(MARK_PROFILE) === 0) {
@@ -148,6 +157,15 @@
             var prev = result.profiles[who];
             result.profiles[who] = prev ? prev + '\n' + contentOf(es[i]) : contentOf(es[i]);
           }
+        }
+      }
+
+      // 人设兜底：通讯录里有的人物，若条目名正好是该角色名，直接取其内容当档案
+      for (var ln in result.rosters) {
+        var cs = result.rosters[ln].contacts || [];
+        for (var ci = 0; ci < cs.length; ci++) {
+          var cn = cs[ci].name;
+          if (!result.profiles[cn] && titleMap[cn]) result.profiles[cn] = titleMap[cn];
         }
       }
       return result;

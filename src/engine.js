@@ -167,8 +167,36 @@
       var saved = W.Store.line();
       if (saved && state.rosters[saved]) state.line = saved;
 
+      // 首次无记录：临时定位到第一条「有内容」的世界线（等首次生成后再精确纠正）
+      if (!state.line) {
+        for (var li = 0; li < LINES.length; li++) {
+          var sec0 = state.rosters[LINES[li]];
+          if (sec0 && (sec0.contacts.length || sec0.groups.length)) {
+            state.line = LINES[li];
+            console.log('[霖州引擎] 首次临时定位世界线：' + LINES[li] + '（首次主对话生成后将精确纠正）');
+            break;
+          }
+        }
+      }
+
       this.syncMount();
       try { W.Floor.renderAll(); } catch (e) {}
+
+      // 快捷回复入口：QR 按钮命令 /event-emit event="lzw-phone-toggle"
+      try {
+        on('lzw-phone-toggle', function () {
+          var ui = W.Apps.wechat;
+          var has = !!Engine.section();
+          var doc = window.parent.document;
+          var ball = doc.getElementById('lzw-ball');
+          if (!has && !ball) {
+            try { toastr.info('当前世界线没有手机（古代线或未定位）', '📱 霖州引擎'); } catch (e) {}
+            return;
+          }
+          ui.inject();
+          ui.toggle();
+        });
+      } catch (e) {}
 
       // 世界书激活广播 → 世界线定位（每次主对话生成后触发）
       try {

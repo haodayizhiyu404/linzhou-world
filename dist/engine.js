@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T03:09:39.430Z
+//  构建时间：2026-09-11T03:17:08.634Z
 // ═══════════════════════════════════════════════════════════
 
 // ── src/store.js ──
@@ -211,6 +211,7 @@
 
   var MARK_ROSTER = '霖州手机::通讯录';
   var MARK_STICKER = '霖州手机::表情包';
+  var MARK_STICKER_ALIAS = ['媒体与表情包_StickerData'];   // 卡组既有条目，直接兼容
   var MARK_PROFILE = '霖州手机::人设::';
 
   // ── 适配层：世界书列表与条目 ──
@@ -328,6 +329,14 @@
       var es = await allEntries();
       var seen = es.slice(0, 25).map(function (e) { return titleOf(e).slice(0, 24); });
       console.log('[霖州引擎] 共扫描 ' + es.length + ' 条，前若干条标题：' + seen.join(' | '));
+
+      // 短标题条目的索引，供「人设兜底」用（条目名=角色名）
+      var titleMap = {};
+      for (var ti = 0; ti < es.length; ti++) {
+        var tt = titleOf(es[ti]);
+        if (tt && tt.length <= 15 && !(tt in titleMap)) titleMap[tt] = contentOf(es[ti]);
+      }
+
       for (var i = 0; i < es.length; i++) {
         var t = titleOf(es[i]);
         if (t === MARK_ROSTER) {
@@ -337,7 +346,7 @@
               result.rosters[String(line).trim()] = normSection(j[line]);
             }
           }
-        } else if (t === MARK_STICKER) {
+        } else if (t === MARK_STICKER || MARK_STICKER_ALIAS.indexOf(t) !== -1) {
           var st = parseStickers(contentOf(es[i]));
           for (var k in st) result.stickers[k] = st[k];
         } else if (t.indexOf(MARK_PROFILE) === 0) {
@@ -346,6 +355,15 @@
             var prev = result.profiles[who];
             result.profiles[who] = prev ? prev + '\n' + contentOf(es[i]) : contentOf(es[i]);
           }
+        }
+      }
+
+      // 人设兜底：通讯录里有的人物，若条目名正好是该角色名，直接取其内容当档案
+      for (var ln in result.rosters) {
+        var cs = result.rosters[ln].contacts || [];
+        for (var ci = 0; ci < cs.length; ci++) {
+          var cn = cs[ci].name;
+          if (!result.profiles[cn] && titleMap[cn]) result.profiles[cn] = titleMap[cn];
         }
       }
       return result;
@@ -1264,8 +1282,36 @@
       var saved = W.Store.line();
       if (saved && state.rosters[saved]) state.line = saved;
 
+      // 首次无记录：临时定位到第一条「有内容」的世界线（等首次生成后再精确纠正）
+      if (!state.line) {
+        for (var li = 0; li < LINES.length; li++) {
+          var sec0 = state.rosters[LINES[li]];
+          if (sec0 && (sec0.contacts.length || sec0.groups.length)) {
+            state.line = LINES[li];
+            console.log('[霖州引擎] 首次临时定位世界线：' + LINES[li] + '（首次主对话生成后将精确纠正）');
+            break;
+          }
+        }
+      }
+
       this.syncMount();
       try { W.Floor.renderAll(); } catch (e) {}
+
+      // 快捷回复入口：QR 按钮命令 /event-emit event="lzw-phone-toggle"
+      try {
+        on('lzw-phone-toggle', function () {
+          var ui = W.Apps.wechat;
+          var has = !!Engine.section();
+          var doc = window.parent.document;
+          var ball = doc.getElementById('lzw-ball');
+          if (!has && !ball) {
+            try { toastr.info('当前世界线没有手机（古代线或未定位）', '📱 霖州引擎'); } catch (e) {}
+            return;
+          }
+          ui.inject();
+          ui.toggle();
+        });
+      } catch (e) {}
 
       // 世界书激活广播 → 世界线定位（每次主对话生成后触发）
       try {
