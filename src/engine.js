@@ -60,23 +60,13 @@
       return '我';
     },
 
-    // 酒馆 persona 头像：多路读取，全部失败才退回字母块。
-    // ① 聊天里最近一条用户消息的头像图（酒馆渲染好的）；② 用户设置面板当前 persona 的高亮块。
+    // 酒馆 persona 头像：只读用户设置面板里当前 persona 的高亮头像块，与聊天楼层无关。
     userAvatar: function () {
-      var doc = null;
-      try { doc = window.parent.document; }
-      catch (e) { console.warn('[霖州引擎] 头像：父页 DOM 不可达：' + (e && e.message)); return ''; }
       try {
-        var imgs = doc.querySelectorAll('#chat .mes[is_user="true"] .avatar img');
-        for (var i = imgs.length - 1; i >= 0; i--) {
-          if (imgs[i].src) return imgs[i].src;
-        }
-        console.log('[霖州引擎] 头像：聊天里还没有用户消息（' + imgs.length + ' 条），改读 persona 面板');
-      } catch (e) { console.warn('[霖州引擎] 头像：聊天内查找失败：' + (e && e.message)); }
-      try {
-        var pimg = doc.querySelector('#user_avatar_block .avatar-container.selected .avatar img');
+        var pimg = window.parent.document.querySelector('#user_avatar_block .avatar-container.selected .avatar img');
         if (pimg && pimg.src) return pimg.src;
-      } catch (e) {}
+        console.log('[霖州引擎] 头像：persona 面板未找到当前头像');
+      } catch (e) { console.warn('[霖州引擎] 头像读取失败：' + (e && e.message)); }
       return '';
     },
 

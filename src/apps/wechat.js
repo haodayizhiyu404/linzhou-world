@@ -42,8 +42,7 @@
     '.lzw-sig i:nth-child(1){height:4px}.lzw-sig i:nth-child(2){height:6px}',
     '.lzw-sig i:nth-child(3){height:8px}.lzw-sig i:nth-child(4){height:10px;opacity:.35}',
     '.lzw-batt{display:inline-flex;align-items:center;gap:1px}',
-    '.lzw-batt-in{display:block;width:20px;height:10px;border:1.5px solid #111;border-radius:3px;padding:1px;box-sizing:border-box;',
-    'font-size:0;line-height:0}',
+    '.lzw-batt-in{display:block;width:20px;height:10px;border:1.5px solid #111;border-radius:3px;padding:1px;box-sizing:border-box}',
     '.lzw-batt-fill{display:block;height:100%;width:72%;background:#111;border-radius:1px}',
     '.lzw-batt-cap{display:block;width:2px;height:4px;background:#111;border-radius:0 2px 2px 0;opacity:.6}',
     // 应用栏
@@ -54,7 +53,7 @@
     '.lzw-back:hover{background:rgba(0,0,0,.05)}',
     '.lzw-appbar-r{width:24px}',
     // 主体
-    '.lzw-body{flex:1;overflow-y:auto;scrollbar-width:thin;position:relative;z-index:1}',
+    '.lzw-body{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）
     '.lzw-home-wall{height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:18px 16px 26px;',
     'background:linear-gradient(165deg,#8fb8d8 0%,#cfe4df 55%,#dfead9 100%)/* 壁纸占位，后续接世界书图片 */}',
@@ -94,10 +93,10 @@
     '.lzw-locmap:after{content:"📍";position:absolute;left:50%;top:50%;transform:translate(-50%,-60%);font-size:22px}',
     '.lzw-locbox .cap{font-size:13px;font-weight:600;padding:6px 8px}',
     '.lzw-sysrow{text-align:center;font-size:12px;color:#9aa0a8;margin:10px 0}',
-    // 输入区
-    '.lzw-inputbar{flex:none;display:flex;gap:8px;align-items:center;padding:8px 10px 4px;background:#f7f7f9;',
-    'border-top:1px solid rgba(0,0,0,.06);position:relative;z-index:3}',
-    '.lzw-plus{width:34px;height:34px;flex:none;border-radius:50%;border:1.5px solid #c4c9d0;background:#fff;color:#555;',
+    // 输入区（底部整体：面板叠加在输入条上方，不挤压聊天内容）
+    '.lzw-bottom{flex:none;position:relative;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06)}',
+    '.lzw-inputbar{display:flex;gap:8px;align-items:center;padding:8px 10px 4px;position:relative;z-index:3}',
+    '.lzw-plus{width:32px;height:32px;flex:none;border-radius:50%;border:1.5px solid #aeb4bb;background:#fff;',
     'cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}',
     '.lzw-plus svg{display:block}',
     '.lzw-plus:hover{background:#eef0f3}',
@@ -116,8 +115,9 @@
     'background:#e64b4b;color:#fff;font-size:12px;line-height:17px;text-align:center;',
     'cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}',
     '.lzw-stgstick{max-width:64px;border-radius:6px;display:block}',
-    // [+] 面板
-    '.lzw-panel{flex:none;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06);padding:14px 14px 6px;display:none;position:relative;z-index:3}',
+    // [+] 面板（绝对定位：从输入条上方弹出，盖住聊天区，不引起内容重排）
+    '.lzw-panel{position:absolute;left:0;right:0;bottom:100%;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06);',
+    'padding:14px 14px 8px;display:none;max-height:236px;overflow-y:auto;box-shadow:0 -8px 20px rgba(0,0,0,.05)}',
     '.lzw-panel.lzw-open{display:block}',
     '.lzw-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 6px}',
     '.lzw-act{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;color:#555;font-size:11.5px}',
@@ -126,11 +126,15 @@
     '.lzw-act:hover .lzw-act-ico{background:#eef0f3}',
     '.lzw-modeform{display:flex;gap:8px;align-items:center;padding-bottom:8px}',
     '.lzw-modeform .hint{flex:none;font-size:12.5px;color:#777}',
-    '.lzw-stickgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 6px;max-height:190px;overflow-y:auto;scrollbar-width:thin;padding-bottom:6px}',
+    '.lzw-stickgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 6px;max-height:170px;overflow-y:auto;padding-bottom:6px}',
     '.lzw-stickcell{cursor:pointer;text-align:center}',
     '.lzw-stickcell .imgw{width:56px;height:56px;margin:0 auto;border-radius:8px;overflow:hidden;background:#eceff3}',
     '.lzw-stickcell img{width:100%;height:100%;object-fit:cover;display:block}',
     '.lzw-stickcell span{display:block;font-size:10px;color:#8a8f99;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    // 滚动条（统一的细灰条，不用浏览器默认样式）
+    '.lzw-body::-webkit-scrollbar,.lzw-staged::-webkit-scrollbar,.lzw-panel::-webkit-scrollbar,.lzw-stickgrid::-webkit-scrollbar{width:4px}',
+    '.lzw-body::-webkit-scrollbar-thumb,.lzw-staged::-webkit-scrollbar-thumb,.lzw-panel::-webkit-scrollbar-thumb,.lzw-stickgrid::-webkit-scrollbar-thumb{background:rgba(0,0,0,.14);border-radius:2px}',
+    '.lzw-body::-webkit-scrollbar-track,.lzw-staged::-webkit-scrollbar-track,.lzw-panel::-webkit-scrollbar-track,.lzw-stickgrid::-webkit-scrollbar-track{background:transparent}',
     // 底部 home 指示条
     '.lzw-homebar{flex:none;height:18px;display:flex;align-items:center;justify-content:center;background:#f7f7f9;position:relative;z-index:3}',
     '.lzw-homebar:after{content:"";display:block;width:110px;height:4px;border-radius:2px;background:rgba(0,0,0,.75)}'
@@ -139,7 +143,7 @@
   var ICON_BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
   var ICON_PLANE = '<svg width="21" height="21" viewBox="0 0 24 24" fill="#1aad19"><path d="M2.6 21.4L23 12 2.6 2.6 2.5 9.8 16.4 12l-13.9 2.2z"/></svg>';
-  var ICON_PLUS = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 5.4v13.2M5.4 12h13.2" stroke="#5a6068" stroke-width="2.4" stroke-linecap="round"/></svg>';
+  var ICON_PLUS = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5.4v13.2M5.4 12h13.2" stroke="#7a8089" stroke-width="2.2" stroke-linecap="round"/></svg>';
   // 主屏微信图标（绿色圆角块 + 白色对话泡）
   var ICON_WECHAT = '<svg width="30" height="30" viewBox="0 0 24 24"><path fill="#fff" d="M8.7 4C4.9 4 2 6.6 2 9.8c0 1.8 1 3.4 2.5 4.5l-.6 2 2.2-1.2c.8.2 1.6.4 2.5.4h.4A5.6 5.6 0 0 1 9 13.6c0-3 2.8-5.4 6.2-5.4h.4C15 5.4 12.2 4 8.7 4zM6.5 8.4a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8zm4.9 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z"/><path fill="#fff" d="M22 13.6c0-2.7-2.5-4.9-5.6-4.9s-5.6 2.2-5.6 4.9 2.5 4.9 5.6 4.9c.7 0 1.3-.1 1.9-.3l1.8 1-.5-1.7c1.4-.9 2.4-2.3 2.4-3.9zm-7.5-1.5a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm4 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>';
   // [+] 菜单图标（自绘线性图标，微信那种简洁风）
@@ -147,7 +151,7 @@
     sticker: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><circle cx="9" cy="9.8" r="1.1" fill="#555" stroke="none"/><circle cx="15" cy="9.8" r="1.1" fill="#555" stroke="none"/><path d="M8.4 14c1 1.2 2.2 1.8 3.6 1.8s2.6-.6 3.6-1.8"/></svg>',
     image: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="9.8" r="1.6"/><path d="M4.5 17.5l4.6-4.6 3 3 3.6-3.6 4.3 4.2"/></svg>',
     voice: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M5.8 11.2a6.2 6.2 0 0 0 12.4 0M12 17.6V21M9.2 21h5.6"/></svg>',
-    poke: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.4 21V6a1.5 1.5 0 0 1 3 0v15"/><path d="M10.4 14.4H8a1.4 1.4 0 0 1 0-2.8h2.4"/><path d="M13.4 21h2.6"/><path d="M17.6 3.6a5 5 0 0 1 2.7 4.4"/><path d="M15.9 5.3a3 3 0 0 1 1.6 2.7"/></svg>',
+    poke: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="10" width="10.5" height="7.5" rx="3.2"/><rect x="12" y="11.6" width="8" height="3.4" rx="1.7"/><path d="M6.2 10.2 9.6 7c.7-.6 1.7-.6 2.2 0 .5.6.5 1.5-.1 2.1L9.2 11.4z"/><rect x="2.5" y="17.5" width="7.5" height="3.6" rx="1.8"/></svg>',
     location: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linejoin="round"><path d="M12 21s6.8-6 6.8-10.6A6.8 6.8 0 0 0 5.2 10.4C5.2 15 12 21 12 21z"/><circle cx="12" cy="10.3" r="2.4"/></svg>'
   };
 
@@ -346,12 +350,13 @@
         var rows = hist.map(function (m) { return chatRowHtml(m, userName, contactMap, disp); }).join('');
         body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
           '<div class="lzw-staged' + (this.staged.length ? ' lzw-has' : '') + '" id="lzw-staged">' + stagedHtml(userName) + '</div>' +
+          '<div class="lzw-bottom">' +
           panelHtml(this.panel) +
           '<div class="lzw-inputbar">' +
           '<button class="lzw-plus" data-act="plus">' + ICON_PLUS + '</button>' +
           '<input class="lzw-input" id="lzw-input" placeholder="回车攒一条，小飞机一起发" maxlength="300">' +
           '<button class="lzw-send" data-act="send" title="发送（把攒下的消息一起发出）">' + ICON_PLANE + '</button>' +
-          '</div>';
+          '</div></div>';
       }
 
       ph.innerHTML =
@@ -518,7 +523,7 @@
   };
 
   function appbarHtml(screen, disp) {
-    if (screen === 'home') return '<div class="lzw-appbar"><span class="lzw-appbar-t">霖州 · 数字世界</span></div>';
+    if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r"></span></div>';
   }
