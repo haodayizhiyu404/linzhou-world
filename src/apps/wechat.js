@@ -101,8 +101,18 @@
     '.lzw-plus:hover{background:#eef0f3}',
     '.lzw-input{flex:1;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:17px;color:#111;',
     'padding:8px 13px;font-size:14.5px;outline:none;min-width:0}',
-    '.lzw-send{flex:none;border:none;background:none;color:#4d7cfe;font-size:15px;font-weight:600;cursor:pointer;padding:6px 4px}',
-    '.lzw-send:disabled{color:#b6bcc6}',
+    '.lzw-send{flex:none;border:none;background:none;color:#4d7cfe;cursor:pointer;padding:4px 2px;',
+    'display:flex;align-items:center;justify-content:center}',
+    '.lzw-send svg{display:block}',
+    // 待发区（回车攒多条，小飞机一起发）
+    '.lzw-staged{display:none;max-height:118px;overflow-y:auto;flex:none;padding:2px 0;',
+    'background:#f2f2f5;border-top:1px dashed rgba(0,0,0,.08)}',
+    '.lzw-staged.lzw-has{display:block}',
+    '.lzw-staged .lzw-chatrow{position:relative;margin:8px 10px}',
+    '.lzw-staged .lzw-bub{position:relative;opacity:.94}',
+    '.lzw-stgx{position:absolute;top:-7px;right:-7px;width:17px;height:17px;border-radius:50%;',
+    'background:#e64b4b;color:#fff;font-size:12px;line-height:17px;text-align:center;',
+    'cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3)}',
     // [+] 面板
     '.lzw-panel{flex:none;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06);padding:14px 14px 6px;display:none;position:relative;z-index:3}',
     '.lzw-panel.lzw-open{display:block}',
@@ -125,6 +135,17 @@
 
   var ICON_BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
+  var ICON_PLANE = '<svg width="21" height="21" viewBox="0 0 24 24" fill="#4d7cfe"><path d="M2.6 21.4L23 12 2.6 2.6 2.5 9.8 16.4 12l-13.9 2.2z"/></svg>';
+  // 主屏微信图标（绿色圆角块 + 白色对话泡）
+  var ICON_WECHAT = '<svg width="30" height="30" viewBox="0 0 24 24"><path fill="#fff" d="M8.7 4C4.9 4 2 6.6 2 9.8c0 1.8 1 3.4 2.5 4.5l-.6 2 2.2-1.2c.8.2 1.6.4 2.5.4h.4A5.6 5.6 0 0 1 9 13.6c0-3 2.8-5.4 6.2-5.4h.4C15 5.4 12.2 4 8.7 4zM6.5 8.4a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8zm4.9 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8z"/><path fill="#fff" d="M22 13.6c0-2.7-2.5-4.9-5.6-4.9s-5.6 2.2-5.6 4.9 2.5 4.9 5.6 4.9c.7 0 1.3-.1 1.9-.3l1.8 1-.5-1.7c1.4-.9 2.4-2.3 2.4-3.9zm-7.5-1.5a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6zm4 0a.8.8 0 1 1 0 1.6.8.8 0 0 1 0-1.6z"/></svg>';
+  // [+] 菜单图标（自绘线性图标，微信那种简洁风）
+  var ICO = {
+    sticker: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="8.6"/><circle cx="9" cy="9.8" r="1.1" fill="#555" stroke="none"/><circle cx="15" cy="9.8" r="1.1" fill="#555" stroke="none"/><path d="M8.4 14c1 1.2 2.2 1.8 3.6 1.8s2.6-.6 3.6-1.8"/></svg>',
+    image: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="9.8" r="1.6"/><path d="M4.5 17.5l4.6-4.6 3 3 3.6-3.6 4.3 4.2"/></svg>',
+    voice: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M5.8 11.2a6.2 6.2 0 0 0 12.4 0M12 17.6V21M9.2 21h5.6"/></svg>',
+    poke: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 3.5v2.6M12 17.9v2.6M3.5 12h2.6M17.9 12h2.6M6 6l1.8 1.8M16.2 16.2 18 18M18 6l-1.8 1.8M7.8 16.2 6 18"/></svg>',
+    location: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linejoin="round"><path d="M12 21s6.8-6 6.8-10.6A6.8 6.8 0 0 0 5.2 10.4C5.2 15 12 21 12 21z"/><circle cx="12" cy="10.3" r="2.4"/></svg>'
+  };
 
   // ── 手机内气泡行 ──
   function chatRowHtml(m, userName, contactMap) {
@@ -163,12 +184,30 @@
     return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '">' + avatar + bub + '</div>';
   }
 
+  // ── 待发区气泡（攒好的消息，小飞机一键全发） ──
+  function stagedHtml(userName) {
+    return UI.staged.map(function (m, i) {
+      var label = m.kind === 'text' ? esc(m.text)
+        : m.kind === 'sticker' ? '[表情]'
+        : m.kind === 'image' ? '[图片]'
+        : m.kind === 'voice' ? '[语音]'
+        : m.kind === 'location' ? '[定位]' : '[戳一戳]';
+      var uav = window.LZWorld.Engine.userAvatar();
+      var av = uav
+        ? '<img class="lzw-ava lzw-ava-me" src="' + esc(uav) + '">'
+        : '<div class="lzw-ava lzw-ava-me">' + esc(userName.slice(0, 1)) + '</div>';
+      return '<div class="lzw-chatrow me">' + av +
+        '<div class="lzw-bub">' + label + '<span class="lzw-stgx" data-sdel="' + i + '" title="删掉这条">×</span></div></div>';
+    }).join('');
+  }
+
   var UI = {
     screen: 'home',      // home | list | chat
     panel: null,         // null | 'actions' | 'sticker' | 'image' | 'voice' | 'location'
     chatKey: null,
     isGroup: false,
     busy: false,
+    staged: [],          // 待发消息 [{kind,text}]，回车攒入，小飞机一起发
     _placed: false,
 
     inject: function () {
@@ -208,6 +247,7 @@
         placePhone();
         this.screen = 'home';
         this.panel = null;
+        this.staged = [];
         this.render();
       }
     },
@@ -217,6 +257,7 @@
       this.isGroup = !!isGroup;
       this.screen = 'chat';
       this.panel = null;
+      this.staged = [];
       this.render();
     },
 
@@ -243,7 +284,7 @@
           '<div class="lzw-body"><div class="lzw-home-wall">' +
           '<div class="lzw-hometime"><div class="t">' + esc(clock) + '</div><div class="d">' + esc(dateShort || '霖州') + '</div></div>' +
           '<div class="lzw-homegrid">' +
-          '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico">💬</div><span>微信</span></div>' +
+          '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none">' + ICON_WECHAT + '</div><span>微信</span></div>' +
           '<div class="lzw-app" style="opacity:.55"><div class="lzw-app-ico">🧩</div><span>敬请期待</span></div>' +
           '</div></div></div>';
 
@@ -286,11 +327,12 @@
         }
         var rows = hist.map(function (m) { return chatRowHtml(m, userName, contactMap); }).join('');
         body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
+          '<div class="lzw-staged' + (this.staged.length ? ' lzw-has' : '') + '" id="lzw-staged">' + stagedHtml(userName) + '</div>' +
           panelHtml(this.panel) +
           '<div class="lzw-inputbar">' +
           '<button class="lzw-plus" data-act="plus">＋</button>' +
-          '<input class="lzw-input" id="lzw-input" placeholder="发消息…" maxlength="300">' +
-          '<button class="lzw-send" data-act="send">发送</button>' +
+          '<input class="lzw-input" id="lzw-input" placeholder="回车攒一条，小飞机一起发" maxlength="300">' +
+          '<button class="lzw-send" data-act="send" title="发送（把攒下的消息一起发出）">' + ICON_PLANE + '</button>' +
           '</div>';
       }
 
@@ -307,6 +349,10 @@
         var inp = ph.querySelector('#lzw-input');
         if (inp) inp.addEventListener('keydown', function (e) {
           if (e.key === 'Enter') { e.preventDefault(); UI.sendText(); }
+          else if (e.key === 'Backspace' && !inp.value && UI.staged.length) {
+            e.preventDefault(); UI.staged.pop(); UI.render();
+            var i2 = ph.querySelector('#lzw-input'); if (i2) i2.focus();
+          }
         });
       }
     },
@@ -325,7 +371,16 @@
       ph.querySelectorAll('.lzw-conv').forEach(function (el) {
         el.onclick = function () { UI.openChat(el.dataset.key, el.dataset.group === '1'); };
       });
-      ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.sendText(); }; });
+      ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
+      // 待发区：点红 ✕ 删一条
+      ph.querySelectorAll('[data-sdel]').forEach(function (el) {
+        el.onclick = function (ev) {
+          ev.stopPropagation();
+          UI.staged.splice(parseInt(el.dataset.sdel, 10), 1);
+          UI.render();
+          var i2 = ph.querySelector('#lzw-input'); if (i2) i2.focus();
+        };
+      });
       ph.querySelectorAll('[data-act="plus"]').forEach(function (el) {
         el.onclick = function () {
           UI.panel = UI.panel ? null : 'actions';
@@ -357,18 +412,46 @@
       });
     },
 
+    // 回车：攒一条进待发区（[+] 二级模式的输入除外，那仍是即发）
     sendText: function () {
       var inp = pdoc().getElementById('lzw-input') || pdoc().getElementById('lzw-modeinput');
       if (!inp) return;
       var t = inp.value.trim();
-      if (!t) return;
-      // [+] 面板的二级模式：输入内容即对应类型
       if (this.panel === 'image' || this.panel === 'voice' || this.panel === 'location') {
-        this.sendTyped(this.panel, t);
+        if (t) this.sendTyped(this.panel, t);
         return;
       }
       inp.value = '';
-      this.sendTyped('text', t);
+      this.stageText(t);
+    },
+
+    stageText: function (t) {
+      if (!t) return;
+      this.staged.push({ kind: 'text', text: t });
+      this.render();
+      var inp = pdoc().getElementById('lzw-input');
+      if (inp) inp.focus();
+    },
+
+    // 小飞机：输入框有字先攒上，然后把待发区一次性全发（AI 只生成一次、只写一楼）
+    trySend: function () {
+      if (this.panel === 'image' || this.panel === 'voice' || this.panel === 'location') { this.sendText(); return; }
+      var inp = pdoc().getElementById('lzw-input');
+      var t = inp ? inp.value.trim() : '';
+      if (t) { inp.value = ''; this.staged.push({ kind: 'text', text: t }); }
+      this.sendBatch();
+    },
+
+    sendBatch: function () {
+      if (!this.staged.length || this.busy) return;
+      var W = window.LZWorld;
+      var msgs = this.staged.map(function (m) {
+        return { who: 'user', kind: m.kind, text: m.text, time: W.Status.nowText() };
+      });
+      this.staged = [];
+      W.Store.push(this.chatKey, msgs, 100);
+      this.render();
+      this.generate(W.Engine.userName());
     },
 
     sendTyped: function (kind, text) {
@@ -433,11 +516,11 @@
     }
     // actions
     return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-actions">' +
-      '<div class="lzw-act" data-mode="sticker"><div class="lzw-act-ico">😀</div><span>表情</span></div>' +
-      '<div class="lzw-act" data-mode="image"><div class="lzw-act-ico">🖼</div><span>图片</span></div>' +
-      '<div class="lzw-act" data-mode="voice"><div class="lzw-act-ico">🎤</div><span>语音</span></div>' +
-      '<div class="lzw-act" data-mode="poke"><div class="lzw-act-ico">👆</div><span>戳一戳</span></div>' +
-      '<div class="lzw-act" data-mode="location"><div class="lzw-act-ico">📍</div><span>定位</span></div>' +
+      '<div class="lzw-act" data-mode="sticker"><div class="lzw-act-ico">' + ICO.sticker + '</div><span>表情</span></div>' +
+      '<div class="lzw-act" data-mode="image"><div class="lzw-act-ico">' + ICO.image + '</div><span>图片</span></div>' +
+      '<div class="lzw-act" data-mode="voice"><div class="lzw-act-ico">' + ICO.voice + '</div><span>语音</span></div>' +
+      '<div class="lzw-act" data-mode="poke"><div class="lzw-act-ico">' + ICO.poke + '</div><span>戳一戳</span></div>' +
+      '<div class="lzw-act" data-mode="location"><div class="lzw-act-ico">' + ICO.location + '</div><span>定位</span></div>' +
       '</div></div>';
   }
 
