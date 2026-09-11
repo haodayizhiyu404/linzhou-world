@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T15:41:03.153Z
+//  构建时间：2026-09-11T23:39:30.535Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-11 15:41';
+var __LZW_BUILD__ = '2026-09-11 23:39';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1043,7 +1043,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-chatrow.me .lzw-bub{background:#95ec69}',
     '.lzw-bub.lzw-sys{background:transparent;box-shadow:none;color:#8a8f99;font-size:12px;padding:2px 4px}',
     '.lzw-sticker{max-width:120px;border-radius:8px}',
-    '.lzw-voice{display:flex;flex-wrap:wrap;align-items:center;gap:8px;cursor:pointer;min-width:120px}',
+    '.lzw-voice{display:flex;flex-wrap:wrap;align-items:center;gap:8px;cursor:pointer;min-width:80px}',
     '.lzw-voice.me{flex-direction:row-reverse}',
     '.lzw-voice.me .lzw-voice-play svg{transform:scaleX(-1)}',
     '.lzw-voice-play{display:inline-flex;line-height:0}',
@@ -1063,7 +1063,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-recallrow{text-align:center;font-size:12px;color:#9aa0a8;margin:13px 0;line-height:1.7;cursor:pointer}',
     '.lzw-poke{display:inline-block;background:#dcdfe4;color:#333;font-size:11.5px;padding:7px 20px;border-radius:14px;cursor:pointer}',
     '.lzw-pokerow{margin:12px 12px;text-align:center}',
-    '.lzw-poke.shake{animation:lzw-shake .5s}',
+    '#lzw-phone.shake{animation:lzw-shake .5s}',
     '@keyframes lzw-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}',
     '.lzw-recallrow:hover{color:#6a7078}',
     '.lzw-peektg{display:block;font-size:10px;color:#a7abb2;cursor:pointer;margin-bottom:2px}',
@@ -1121,8 +1121,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 滚动条：细、淡灰、无箭头、透明轨道（webkit + Firefox 双管）
     '.lzw-screen ::-webkit-scrollbar{width:5px;height:5px}',
     '.lzw-screen ::-webkit-scrollbar-track{background:transparent}',
-    '.lzw-screen ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}',
-    '.lzw-screen ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.26)}',
+    '.lzw-screen ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.22);border-radius:2px}',
+    '.lzw-screen ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.32)}',
     // 底部 home 指示条
     '.lzw-homebar{flex:none;height:18px;display:flex;align-items:center;justify-content:center;background:#f7f7f9;position:relative;z-index:3}',
     '.lzw-homebar:after{content:"";display:block;width:110px;height:4px;border-radius:2px;background:rgba(0,0,0,.75)}'
@@ -1462,9 +1462,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       });
       ph.querySelectorAll('[data-poke]').forEach(function (el) {
         el.onclick = function () {
-          el.classList.remove('shake');
-          void el.offsetWidth; // 重启动画
-          el.classList.add('shake');
+          ph.classList.remove('shake');
+          void ph.offsetWidth; // 重启动画
+          ph.classList.add('shake');
         };
       });
       ph.querySelectorAll('[data-peek]').forEach(function (el) {
