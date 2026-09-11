@@ -13,3 +13,6 @@ test/sbar-test.html
 test/mini.html
 test/*.png
 test/bell.html
+
+# 用户素材，不上库
+素材/
