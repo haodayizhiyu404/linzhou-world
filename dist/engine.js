@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T13:54:12.891Z
+//  构建时间：2026-09-11T14:30:25.481Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-11 13:54';
+var __LZW_BUILD__ = '2026-09-11 14:30';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -984,7 +984,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     'background:#f2f2f5;color:#111;position:relative;user-select:none}',
     // 状态栏（时间 / 灵动岛 / 信号·WiFi·电量）
     '.lzw-sbar{flex:none;height:38px;display:flex;align-items:center;justify-content:space-between;',
-    'padding:4px 20px 0;position:relative;color:#111;z-index:3}',
+    'padding:4px 20px 0;position:relative;color:#111;z-index:3;background:#f7f7f9}',
     '.lzw-clock{font-size:13px;font-weight:600;letter-spacing:.3px;min-width:52px}',
     '.lzw-island{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:72px;height:17px;',
     'background:#0b0d10;border-radius:10px}',
@@ -1004,12 +1004,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-back{display:inline-flex;align-items:center;color:#111;cursor:pointer;padding:4px;border-radius:8px;margin-left:-4px}',
     '.lzw-back:hover{background:rgba(0,0,0,.05)}',
     '.lzw-appbar-r{width:24px}',
-    '.lzw-reroll{display:inline-flex;width:22px;height:22px;border-radius:50%;border:1.5px solid #878e98;color:#555;',
-    'font-size:14px;align-items:center;justify-content:center;cursor:pointer;background:#fff}',
+    '.lzw-reroll{display:inline-flex;color:#666;cursor:pointer;padding:5px;border-radius:8px;align-items:center;justify-content:center}',
+    '.lzw-reroll:hover{background:rgba(0,0,0,.06)}',
     // 主体
     '.lzw-body{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
     '.lzw-scr-home{background:url(' + HOME_WALL + ') center/cover no-repeat #f4f6fb}',
+    '.lzw-scr-home .lzw-sbar{background:transparent}',
     '.lzw-home-wall{height:100%;padding:20px 16px 26px;display:flex;flex-direction:column;justify-content:space-between;',
     'box-sizing:border-box}',
     // 时钟用与壁纸线稿同系的石板蓝灰；白色光晕保证在任何底色上可读
@@ -1037,21 +1038,33 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-chatbg{background:#f2f2f5;min-height:100%;padding:4px 0 10px}',
     '.lzw-chatrow{display:flex;gap:7px;margin:11px 12px;align-items:flex-start}',
     '.lzw-chatrow.me{flex-direction:row-reverse}',
-    '.lzw-bub{max-width:62%;padding:8px 11px;border-radius:12px;background:#fff;color:#111;line-height:1.45;font-size:13.5px;',
+    '.lzw-bub{max-width:62%;padding:8px 11px;border-radius:9px;background:#fff;color:#111;line-height:1.45;font-size:13.5px;',
     'word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.05)}',
     '.lzw-chatrow.me .lzw-bub{background:#95ec69}',
     '.lzw-bub.lzw-sys{background:transparent;box-shadow:none;color:#8a8f99;font-size:12px;padding:2px 4px}',
     '.lzw-sticker{max-width:120px;border-radius:8px}',
-    '.lzw-voice-ico{color:#111;margin-right:6px;opacity:.6}',
-    '.lzw-imgbox{width:150px;border-radius:10px;overflow:hidden}',
-    '.lzw-imgph{height:90px;background:linear-gradient(140deg,#b9c6d2,#dfe7ee);display:flex;align-items:center;justify-content:center;font-size:30px}',
-    '.lzw-imgbox .cap{font-size:12px;padding:6px 8px;color:#333}',
-    '.lzw-locbox{width:170px;border-radius:10px;overflow:hidden;background:#fff}',
-    '.lzw-locmap{height:64px;background:linear-gradient(140deg,#a8d5a2,#e8f3e4);position:relative}',
-    '.lzw-locmap:after{content:"📍";position:absolute;left:50%;top:50%;transform:translate(-50%,-60%);font-size:22px}',
-    '.lzw-locbox .cap{font-size:13px;font-weight:600;padding:6px 8px}',
+    '.lzw-voice{display:flex;flex-wrap:wrap;align-items:center;gap:6px;cursor:pointer}',
+    '.lzw-voice-ico{color:#111;opacity:.65;font-size:12px}',
+    '.lzw-voice-bar{display:inline-flex;align-items:flex-end;gap:2px;height:13px}',
+    '.lzw-voice-bar i{display:block;width:3px;background:#111;opacity:.6;border-radius:1px}',
+    '.lzw-voice-bar i:nth-child(1){height:5px}.lzw-voice-bar i:nth-child(2){height:9px}.lzw-voice-bar i:nth-child(3){height:13px}',
+    '.lzw-voice-s{font-size:10px;color:#a7abb2}',
+    '.lzw-voicetxt{display:none;flex-basis:100%;margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.08);font-size:13px;color:#333;line-height:1.5}',
+    '.lzw-voice.open .lzw-voicetxt{display:block}',
+    '.lzw-imgbox{width:140px;padding:0;border-radius:9px;overflow:hidden;position:relative}',
+    '.lzw-imgph{height:140px;background:linear-gradient(140deg,#b9c6d2,#dfe7ee);display:flex;align-items:center;justify-content:center;font-size:28px}',
+    '.lzw-imgbox .cap{position:absolute;left:0;right:0;bottom:0;font-size:11.5px;line-height:1.4;padding:14px 8px 6px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.55))}',
+    '.lzw-locbox{width:160px;padding:0;border-radius:9px;overflow:hidden;background:#fff}',
+    '.lzw-chatrow.me .lzw-bub.lzw-locbox,.lzw-chatrow.me .lzw-bub.lzw-imgbox{background:#fff}',
+    '.lzw-locmap{height:80px;position:relative;background:linear-gradient(140deg,#b7d9b0,#e8f3e4)}',
+    '.lzw-locmap:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 13px,rgba(255,255,255,.55) 13px 14px),repeating-linear-gradient(90deg,transparent 0 13px,rgba(255,255,255,.55) 13px 14px)}',
+    '.lzw-locmap:after{content:"📍";position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-size:26px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}',
+    '.lzw-locbox .cap{font-size:12.5px;font-weight:600;padding:7px 9px}',
     '.lzw-sysrow{text-align:center;font-size:11.5px;color:#9aa0a8;margin:10px 0}',
     '.lzw-recallrow{text-align:center;font-size:12px;color:#9aa0a8;margin:13px 0;line-height:1.7;cursor:pointer}',
+    '.lzw-poke{display:inline-block;background:#dcdfe4;color:#333;font-size:12.5px;padding:7px 16px;border-radius:16px;cursor:pointer}',
+    '.lzw-poke.shake{animation:lzw-shake .5s}',
+    '@keyframes lzw-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}',
     '.lzw-recallrow:hover{color:#6a7078}',
     '.lzw-peektg{display:block;font-size:10px;color:#a7abb2;cursor:pointer;margin-bottom:2px}',
     '.lzw-peektg:hover{color:#6a7078}',
@@ -1091,8 +1104,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-act-ico{width:52px;height:52px;border-radius:14px;background:#fff;border:1px solid rgba(0,0,0,.06);',
     'display:flex;align-items:center;justify-content:center;font-size:24px}',
     '.lzw-act:hover .lzw-act-ico{background:#eef0f3}',
-    '.lzw-modeform{display:flex;gap:8px;align-items:center;padding-bottom:8px}',
-    '.lzw-modeform .hint{flex:none;font-size:12.5px;color:#777}',
+    '.lzw-modeform{display:flex;flex-direction:column;gap:8px;padding:2px 2px 8px}',
+    '.lzw-modeinput{flex:1;width:100%;box-sizing:border-box;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;color:#111;padding:8px 11px;font-size:13.5px;line-height:1.5;outline:none;resize:none;font-family:inherit}',
+    '.lzw-modeinput::placeholder{color:#b9bdc4;font-size:12.5px}',
+    '.lzw-modeok{align-self:flex-end;border:none;border-radius:8px;background:#22c05e;color:#fff;font-size:13.5px;padding:7px 20px;cursor:pointer}',
     '.lzw-stickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:10px 4px;max-height:170px;overflow-y:auto;overflow-x:hidden;padding-bottom:6px}',
     '.lzw-stickcell{cursor:pointer;text-align:center}',
     '.lzw-stickcell .imgw{width:56px;height:56px;margin:0 auto;border-radius:8px;overflow:hidden;background:#eceff3}',
@@ -1100,7 +1115,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         // 滚动条（统一的细灰条，不用浏览器默认样式）
     // 滚动条：细、淡灰、无箭头、透明轨道（webkit + Firefox 双管）
     '.lzw-screen ::-webkit-scrollbar{width:5px;height:5px}',
-    '.lzw-screen ::-webkit-scrollbar-button{display:none;width:0;height:0}',
+    '.lzw-screen ::-webkit-scrollbar-button{display:none;width:0;height:0;background:transparent;border:none;-webkit-appearance:none}',
+    '.lzw-screen ::-webkit-scrollbar-corner{background:transparent}',
     '.lzw-screen ::-webkit-scrollbar-track{background:transparent}',
     '.lzw-screen ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}',
     '.lzw-screen ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.26)}',
@@ -1109,6 +1125,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-homebar{flex:none;height:18px;display:flex;align-items:center;justify-content:center;background:#f7f7f9;position:relative;z-index:3}',
     '.lzw-homebar:after{content:"";display:block;width:110px;height:4px;border-radius:2px;background:rgba(0,0,0,.75)}'
   ].join('\n');
+
+  var ICON_REROLL = '<svg width="18" height="18" viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 85.333333c102.869333 0 199.509333 36.693333 275.029333 100.437334l93.866667-94.037334a21.333333 21.333333 0 0 1 36.437333 15.061334V384a21.333333 21.333333 0 0 1-21.333333 21.333333h-276.693333a21.333333 21.333333 0 0 1-15.104-36.394666l122.325333-122.496a341.333333 341.333333 0 1 0 118.314667 341.632 42.666667 42.666667 0 1 1 83.2 18.901333A426.794667 426.794667 0 0 1 512 938.666667C276.352 938.666667 85.333333 747.648 85.333333 512S276.352 85.333333 512 85.333333z"/></svg>';
 
   var ICON_BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
@@ -1154,10 +1172,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         ? '<img class="lzw-sticker" src="' + esc(window.LZWorld.Worldbook.imgUrl(file)) + '" title="' + esc(m.text) + '">'
         : '<div class="lzw-bub">[表情:' + esc(m.text) + ']</div>';
     } else if (m.kind === 'poke') {
-      bub = '<div class="lzw-bub lzw-sys">' + (isUser ? '你戳了戳 ' + esc(targetName || '对方') : esc(who) + ' 戳了戳你') + '</div>';
+      bub = '<div class="lzw-poke" data-poke="1">' + (isUser ? '你戳了戳 ' + esc(targetName || '对方') : esc(who) + ' 戳了戳你') + '</div>';
       return '<div style="text-align:center" data-del="' + idx + '">' + bub + '</div>';
     } else if (m.kind === 'voice') {
-      bub = '<div class="lzw-bub"><span class="lzw-voice-ico">▶</span>' + esc(m.text) + '</div>';
+      bub = '<div class="lzw-bub lzw-voice" data-voice="1"><span class="lzw-voice-ico">▶</span><span class="lzw-voice-bar"><i></i><i></i><i></i></span><span class="lzw-voice-s">转文字</span><div class="lzw-voicetxt">' + esc(m.text) + '</div></div>';
     } else if (m.kind === 'image') {
       bub = '<div class="lzw-bub lzw-imgbox"><div class="lzw-imgph">🖼</div><div class="cap">' + esc(m.text) + '</div></div>';
     } else if (m.kind === 'location') {
@@ -1412,6 +1430,16 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           UI.render();
         };
       });
+      ph.querySelectorAll('[data-voice]').forEach(function (el) {
+        el.onclick = function () { el.classList.toggle('open'); };
+      });
+      ph.querySelectorAll('[data-poke]').forEach(function (el) {
+        el.onclick = function () {
+          el.classList.remove('shake');
+          void el.offsetWidth; // 重启动画
+          el.classList.add('shake');
+        };
+      });
       ph.querySelectorAll('[data-peek]').forEach(function (el) {
         el.onclick = function () {
           UI.togglePeek(parseInt(el.getAttribute('data-peek'), 10));
@@ -1615,9 +1643,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
-      (act === 'reroll' ? '<span class="lzw-reroll" data-act="reroll" title="重新生成对方的上一条回复">↻</span>'
-        : act === 'retry' ? '<span class="lzw-reroll" data-act="reroll" title="上一条消息发送失败，点击重新获取回复">↻</span>'
-        : '') +
+      (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
       '</span></div>';
   }
 
@@ -1636,11 +1662,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-stickgrid">' + grid + '</div></div>';
     }
     if (panel === 'image' || panel === 'voice' || panel === 'location') {
-      var hint = panel === 'image' ? '图片：描述画面' : panel === 'voice' ? '语音：要说的话' : '定位：地点名';
+      var hint = panel === 'image' ? '描述这张图片的画面，如：一张拍糊的试卷' : panel === 'voice' ? '这句语音说了什么，如：到了吱一声' : '地点名称，如：霖州一中北门';
       return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-modeform">' +
-        '<span class="hint">' + hint + '</span>' +
-        '<input class="lzw-input" id="lzw-modeinput" maxlength="200">' +
-        '<button class="lzw-send" data-modesend="' + panel + '">发送</button></div></div>';
+        '<textarea class="lzw-modeinput" id="lzw-modeinput" rows="2" maxlength="200" placeholder="' + hint + '"></textarea>' +
+        '<button class="lzw-modeok" data-modesend="' + panel + '">确定</button></div></div>';
     }
     // actions
     return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-actions">' +
