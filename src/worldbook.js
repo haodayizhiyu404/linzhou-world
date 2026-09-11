@@ -1,0 +1,161 @@
+// ═══════════════════════════════════════════════════════════
+//  worldbook.js —— 世界书读取与解析
+//
+//  约定（设计文档 §5.1，条目按「备注/标题」识别）：
+//    霖州手机::通讯录        → 全部 IF 线联系人/群 JSON
+//    霖州手机::表情包        → 表情名→catbox 文件名（JSON 或逐行 名: 文件）
+//    霖州手机::人设::周言    → 角色「周言」的生成资料（可多条）
+//
+//  酒馆助手不同版本函数名有差异，这里做容错适配。
+// ═══════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+
+  var MARK_ROSTER = '霖州手机::通讯录';
+  var MARK_STICKER = '霖州手机::表情包';
+  var MARK_PROFILE = '霖州手机::人设::';
+
+  // ── 适配层：世界书列表与条目 ──
+  async function bookNames() {
+    try {
+      if (typeof getCharWorldbookNames === 'function') {
+        var n = getCharWorldbookNames('current');
+        var out = [];
+        if (n && n.primary) out.push(n.primary);
+        if (n && n.additional) out = out.concat(n.additional);
+        if (out.length) return out;
+      }
+    } catch (e) {}
+    try {
+      if (typeof getCharLorebooks === 'function') {
+        var c = getCharLorebooks({ name: 'current' });
+        var out2 = [];
+        if (c && c.primary) out2.push(c.primary);
+        if (c && c.additional) out2 = out2.concat(c.additional);
+        return out2;
+      }
+    } catch (e) {}
+    return [];
+  }
+
+  async function entriesOf(book) {
+    try {
+      if (typeof getWorldbook === 'function') {
+        var es = await getWorldbook(book);
+        if (es && es.length) return es;
+      }
+    } catch (e) {}
+    try {
+      if (typeof getLorebookEntries === 'function') {
+        var es2 = await getLorebookEntries(book);
+        if (es2 && es2.length) return es2;
+      }
+    } catch (e) {}
+    return [];
+  }
+
+  async function allEntries() {
+    var names = await bookNames();
+    var all = [];
+    for (var i = 0; i < names.length; i++) {
+      try { all = all.concat(await entriesOf(names[i])); } catch (e) {}
+    }
+    return all;
+  }
+
+  function titleOf(e) {
+    return String((e && (e.comment || e.title || e.remark)) || '').trim();
+  }
+  function contentOf(e) {
+    return String((e && (e.content || e.text)) || '');
+  }
+
+  // 从文本中抠出第一个 {...} 块并解析
+  function extractJson(text) {
+    var s = String(text || '');
+    var start = s.indexOf('{');
+    if (start === -1) return null;
+    var depth = 0;
+    for (var i = start; i < s.length; i++) {
+      var ch = s[i];
+      if (ch === '{') depth++;
+      else if (ch === '}') { depth--; if (depth === 0) {
+        try { return JSON.parse(s.slice(start, i + 1)); } catch (e) { return null; }
+      } }
+    }
+    return null;
+  }
+
+  // ── 表情包解析：JSON 对象，或逐行「名字: 文件名」/「名字=文件名」/「名字 文件名」 ──
+  function parseStickers(text) {
+    var j = extractJson(text);
+    if (j && typeof j === 'object' && !Array.isArray(j)) {
+      var out = {};
+      for (var k in j) out[String(k).trim()] = String(j[k]).trim();
+      return out;
+    }
+    var map = {};
+    String(text || '').split(/\r?\n/).forEach(function (line) {
+      var m = line.match(/^\s*[-*•]?\s*([^:：=\s|【】]+)\s*[:：=|\s]\s*([A-Za-z0-9]+\.(?:jpg|jpeg|png|gif|webp))\s*$/i);
+      if (m) map[m[1].trim()] = m[2];
+    });
+    return map;
+  }
+
+  // ── 通讯录区块规范化：把各种写法收成 {contacts:[{name,avatar}],groups:[{name,members,open}]} ──
+  function normSection(sec) {
+    sec = sec || {};
+    var contacts = (sec.contacts || sec.friends || []).map(function (c) {
+      if (typeof c === 'string') return { name: c, avatar: '' };
+      return { name: String(c.name || '').trim(), avatar: String(c.avatar || c.avatar_file || '').trim() };
+    }).filter(function (c) { return c.name; });
+    var groups = (sec.groups || []).map(function (g) {
+      if (typeof g === 'string') return { name: g, members: [] };
+      return {
+        name: String(g.name || '').trim(),
+        members: (g.members || []).map(String),
+        open: !!g.open
+      };
+    }).filter(function (g) { return g.name; });
+    return { contacts: contacts, groups: groups };
+  }
+
+  var Worldbook = {
+    // 返回 { rosters: {线名: 规范区块}, stickers: {名: 文件}, profiles: {角色名: 资料文本} }
+    load: async function () {
+      var result = { rosters: {}, stickers: {}, profiles: {} };
+      var es = await allEntries();
+      for (var i = 0; i < es.length; i++) {
+        var t = titleOf(es[i]);
+        if (t === MARK_ROSTER) {
+          var j = extractJson(contentOf(es[i]));
+          if (j && typeof j === 'object') {
+            for (var line in j) {
+              result.rosters[String(line).trim()] = normSection(j[line]);
+            }
+          }
+        } else if (t === MARK_STICKER) {
+          var st = parseStickers(contentOf(es[i]));
+          for (var k in st) result.stickers[k] = st[k];
+        } else if (t.indexOf(MARK_PROFILE) === 0) {
+          var who = t.slice(MARK_PROFILE.length).trim();
+          if (who) {
+            var prev = result.profiles[who];
+            result.profiles[who] = prev ? prev + '\n' + contentOf(es[i]) : contentOf(es[i]);
+          }
+        }
+      }
+      return result;
+    },
+
+    imgUrl: function (file) {
+      file = String(file || '').trim();
+      if (!file) return '';
+      if (/^https?:\/\//i.test(file)) return file;
+      return (window.LZWorld.IMG_BASE || 'https://files.catbox.moe/') + file;
+    }
+  };
+
+  window.LZWorld = window.LZWorld || {};
+  window.LZWorld.Worldbook = Worldbook;
+})();

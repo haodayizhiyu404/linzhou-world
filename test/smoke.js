@@ -1,0 +1,106 @@
+// smoke.js —— 数据层离线冒烟测试（node test/smoke.js）
+// 只测纯逻辑：状态栏解析 / 记录块往返 / NPC输出解析 / 提示词装配
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+const ROOT = path.resolve(__dirname, '..');
+const ctx = {
+  window: {},
+  console,
+  getChatMessages: () => global.__msgs || [],
+  getVariables: () => ({}),
+  replaceVariables: () => {},
+};
+vm.createContext(ctx);
+for (const f of ['src/store.js', 'src/status.js', 'src/worldbook.js', 'src/prompt.js', 'src/floor.js']) {
+  vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
+}
+const LW = ctx.window.LZWorld;
+let pass = 0, fail = 0;
+function eq(name, got, want) {
+  const g = JSON.stringify(got), w = JSON.stringify(want);
+  if (g === w) { pass++; console.log('  ✓ ' + name); }
+  else { fail++; console.log('  ✗ ' + name + '\n    got  ' + g + '\n    want ' + w); }
+}
+
+// ── 1. 状态栏解析 ──
+console.log('[状态栏]');
+const statusText = `<status>
+
+<环境>
+2034年8月26日 星期五|22:49|天禧城3幢901室|阴
+</环境>
+
+<沈锡元>
+着装：黑色圆领薄棉T
+姿态：靠在车边单手夹烟
+位置：霖州城南门外
+心声：“到了也不放个屁。”
+</沈锡元>
+
+</status>`;
+const p = LW._parseStatusBlock(statusText);
+eq('时间', p.time, '22:49');
+eq('日期文本', p.dateText, '2034年8月26日 星期五');
+eq('user地点', p.userPlace, '天禧城3幢901室');
+eq('NPC位置', p.characters['沈锡元'].place, '霖州城南门外');
+eq('NPC姿态', p.characters['沈锡元'].posture, '靠在车边单手夹烟');
+eq('心声不外泄', '心声' in p.characters['沈锡元'], false);
+eq('无状态栏返回null', LW._parseStatusBlock('普通正文'), null);
+
+// ── 2. 记录块往返 ──
+console.log('[记录块]');
+LW.Engine = LW.Engine || {};
+LW.Engine.userName = () => '陈默';
+LW.Engine.stickers = () => ({ '偷看': 's9v34y.jpeg' });
+LW.Engine.resolveSticker = (n) => (n === '探头' ? '偷看' : (LW.Engine.stickers()[n] ? n : null));
+const msgs = [
+  { who: 'user', kind: 'text', text: '在吗', time: '22:49' },
+  { who: '周言', kind: 'text', text: '刚写完卷子', time: '' },
+  { who: '周言', kind: 'sticker', text: '偷看', time: '' },
+  { who: '周言', kind: 'poke', text: '', time: '' },
+];
+const block = LW.Floor.formatRecord('与周言的私聊', msgs, '22:49', '陈默');
+const m = block.match(LW.Floor.RECORD_RE);
+eq('块可被正则整体匹配', !!m, true);
+eq('块头', m[1].trim(), '与周言的私聊 22:49');
+eq(' sticker行', /周言：\[表情:偷看\]/.test(m[2]), true);
+eq('poke行无冒号参数', /周言：\[戳一戳\]/.test(m[2]), true);
+
+// ── 3. NPC 原始输出解析 ──
+console.log('[NPC输出解析]');
+const npcRaw = '在的\n[表情:探头]\n[语音|明天老地方]\n[戳一戳]\n（思考了一下）';
+const parsed = LW.Floor.parseNpcLines(npcRaw, '周言');
+eq('解析条数', parsed.length, 4);
+eq('文字行', parsed[0], { who: '周言', kind: 'text', text: '在的', time: '' });
+eq('表情同义词解析为白名单名', parsed[1], { who: '周言', kind: 'sticker', text: '偷看', time: '' });
+eq('语音行', parsed[2], { who: '周言', kind: 'voice', text: '明天老地方', time: '' });
+eq('戳一戳行', parsed[3], { who: '周言', kind: 'poke', text: '', time: '' });
+eq('括号旁白被丢弃', parsed.some(x => x.text.indexOf('思考') !== -1), false);
+const grpParsed = LW.Floor.parseNpcLines('林溪：啊啊啊\n陆飞：[图片|一张试卷]\n路人甲：围观', null);
+eq('群聊发件人', grpParsed.map(x => x.who), ['林溪', '陆飞', '路人甲']);
+eq('群聊图片类型', grpParsed[1].kind, 'image');
+
+// ── 4. 提示词装配 ──
+console.log('[提示词]');
+global.__msgs = [
+  { role: 'user', message: '周言把卷子递了过来。<span class="x">注</span>' },
+  { role: 'assistant', message: '<status><环境>2034年8月26日 星期五|22:49|教室|阴</环境></status>他笑了笑。' },
+];
+const req = LW.Prompt.private({ name: '周言', profile: '档案：班长。' }, msgs, { time: '22:49', dateText: '2034年8月26日 星期五', userPlace: '教室', npc: { place: '图书馆', posture: '坐着' } });
+const sysPrompt = req.ordered_prompts[0].content;
+eq('框架头部', sysPrompt.indexOf('数字世界') !== -1, true);
+eq('包含档案', sysPrompt.indexOf('班长') !== -1, true);
+eq('包含时间', sysPrompt.indexOf('22:49') !== -1, true);
+eq('包含NPC情境', sysPrompt.indexOf('图书馆') !== -1, true);
+eq('HTML被剥离', sysPrompt.indexOf('class="x"') !== -1, false);
+eq('status标签剥离', sysPrompt.indexOf('<环境>') !== -1, false);
+eq('静默生成', req.should_silence, true);
+eq('不占用主历史', req.max_chat_history, 0);
+const greq = LW.Prompt.group({ name: '高三（2）班', open: true }, [{ name: '林溪', profile: '闺蜜' }], [], null);
+eq('群提示词含成员', greq.ordered_prompts[0].content.indexOf('林溪') !== -1, true);
+eq('开放群提示', greq.ordered_prompts[0].content.indexOf('路人') !== -1, true);
+
+console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
+process.exit(fail ? 1 : 0);
