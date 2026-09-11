@@ -57,6 +57,8 @@
     '.lzw-back{display:inline-flex;align-items:center;color:#111;cursor:pointer;padding:4px;border-radius:8px;margin-left:-4px}',
     '.lzw-back:hover{background:rgba(0,0,0,.05)}',
     '.lzw-appbar-r{width:24px}',
+    '.lzw-reroll{display:inline-flex;width:22px;height:22px;border-radius:50%;border:1.5px solid #878e98;color:#555;',
+    'font-size:14px;align-items:center;justify-content:center;cursor:pointer;background:#fff}',
     // 主体
     '.lzw-body{flex:1;min-height:0;overflow-y:auto;scrollbar-width:thin;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
@@ -371,7 +373,7 @@
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + '">' + sbar + appbarHtml(this.screen, disp) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + '">' + sbar + appbarHtml(this.screen, disp, this.canReroll()) + body + '<div class="lzw-homebar"></div>' +
         '</div></div>';
 
       this.bind(ph);
@@ -404,6 +406,7 @@
         el.onclick = function () { UI.openChat(el.dataset.key, el.dataset.group === '1'); };
       });
       ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
+      ph.querySelectorAll('[data-act="reroll"]').forEach(function (el) { el.onclick = function () { UI.reroll(); }; });
       // 待发区：点红 ✕ 删一条
       ph.querySelectorAll('[data-sdel]').forEach(function (el) {
         el.onclick = function (ev) {
@@ -490,7 +493,6 @@
         return { who: 'user', kind: m.kind, text: m.text, time: W.Status.nowText() };
       });
       this.staged = [];
-      this._lastUserBatch = msgs; // 楼层记录里带上用户这半边
       W.Store.push(this.chatKey, msgs, 100);
       this.render();
       this.generate(W.Engine.userName());
@@ -506,7 +508,26 @@
       this.generate(userName);
     },
 
-    // 独立生成 → 存历史 + 写楼层
+    // 重roll 条件：上一批生成属于当前会话、且不是正在生成中
+    canReroll: function () {
+      var g = this._lastGen;
+      return !!(g && g.key === this.chatKey && !this.busy);
+    },
+
+    // 重roll：把上一批 NPC 消息从存储里弹出，用同样的输入重新生成
+    reroll: async function () {
+      var W = window.LZWorld;
+      var g = this._lastGen;
+      if (this.busy || !g || g.key !== this.chatKey) return;
+      var popped = W.Store.popLast(g.key, g.count);
+      this._lastGen = null;
+      if (!popped.length) { this.render(); return; }
+      try { toastr.info('重roll中……', '📱 霖州引擎'); } catch (e) {}
+      this.render();
+      await this.generate(W.Engine.userName());
+    },
+
+    // 独立生成 → 存历史（正文不写楼层，手机记录自包含）
     generate: async function (userName) {
       if (this.busy) return;
       this.busy = true;
@@ -516,11 +537,8 @@
         var result = await eng.generateFor(this.chatKey, this.isGroup);
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(this.chatKey, result.msgs, 100);
+          this._lastGen = { key: result.key, count: result.msgs.length };
           if (this.screen === 'chat' && this.chatKey === result.key) this.render();
-          // 楼层记录 = 用户这半边 + NPC 回复，整段交换留在主聊天里
-          var combined = (this._lastUserBatch || []).concat(result.msgs);
-          this._lastUserBatch = null;
-          await W.Floor.insertRecord(result.title, combined, W.Status.nowText());
         }
       } catch (e) {
         console.warn('[霖州引擎] 生成失败', e);
@@ -531,10 +549,12 @@
     }
   };
 
-  function appbarHtml(screen, disp) {
+  function appbarHtml(screen, disp, canReroll) {
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
-    return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r"></span></div>';
+    return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
+      (canReroll ? '<span class="lzw-reroll" data-act="reroll" title="重新生成对方的上一条回复">↻</span>' : '') +
+      '</span></div>';
   }
 
   // [+] 面板内容

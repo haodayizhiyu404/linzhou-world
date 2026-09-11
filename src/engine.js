@@ -196,12 +196,94 @@
       else UI.remove();
     },
 
+    // ── 聊天压缩：某会话未折叠的条数超阈值时，把窗口外的旧消息折成提要 ──
+    // 提要留在 Store 里，手机提示词用它接续话题；正文注入用 headline 一行近况。
+    COMPRESS_AT: 60,      // 未折叠超过 60 条触发（窗口 50 + 10 条缓冲）
+    DIGEST_KEEP: 50,      // 提示词直接携带的最近条数
+
+    compress: async function (chatKey) {
+      var W = window.LZWorld;
+      var hist = W.Store.history(chatKey);
+      var meta = W.Store.meta(chatKey);
+      var digested = meta.digested || 0;
+      if (hist.length - digested <= this.COMPRESS_AT) return meta.digest || '';
+      var fold = hist.slice(digested, hist.length - this.DIGEST_KEEP);
+      if (!fold.length) return meta.digest || '';
+      var lines = fold.map(function (m) {
+        return W.Floor.msgToLine(m, this.userName());
+      }, this);
+      var raw = await generateRaw({
+        ordered_prompts: [
+          { role: 'system', content: '把以下微信聊天记录折叠成不超过150字的中文提要。保留：约定/计划、冲突与误会、关系进展、未了的情绪；丢弃：寒暄、重复内容。只输出提要本身。' },
+          { role: 'user', content: lines.join('\n') }
+        ],
+        should_silence: true,
+        max_chat_history: 0
+      });
+      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      text = text.trim();
+      if (!text) return meta.digest || '';
+      var digest = (meta.digest ? meta.digest + '；' : '') + text;
+      W.Store.setMeta(chatKey, { digest: digest, digested: digested + fold.length });
+      console.log('[霖州引擎] 聊天记录折叠：' + chatKey + ' 折叠 ' + fold.length + ' 条，累计提要 ' + (digested + fold.length) + ' 条');
+      return digest;
+    },
+
+    // ── 主线楼数（注入判定「多久前聊过」用） ──
+    mainCount: function () {
+      try { return getChatMessages('0-{{lastMessageId}}').length; } catch (e) { return 0; }
+    },
+
+    // ── 正文生成前的手机动态注入：只带一行近况，绝不带原始记录 ──
+    INJECT_RECENT_FLOORS: 12,   // 最近 N 楼内聊过 → 带
+    INJECT_MENTION_FLOORS: 4,   // 名字出现在最近 N 楼 → 带（哪怕聊得早）
+    INJECT_MAX_LINES: 6,
+
+    injectDigest: function () {
+      try {
+        var W = window.LZWorld;
+        var sec = this.section();
+        if (!sec) return;
+        var root = W.Store;
+        var now = this.mainCount();
+        var recentText = '';
+        try {
+          recentText = getChatMessages('0-{{lastMessageId}}')
+            .slice(-this.INJECT_MENTION_FLOORS)
+            .map(function (m) { return String((m && m.message) || ''); }).join('\n');
+        } catch (e) {}
+        var lines = [];
+        var keys = W.Store.historyKeys();
+        for (var i = 0; i < keys.length && lines.length < this.INJECT_MAX_LINES; i++) {
+          var key = keys[i];
+          var meta = root.meta(key);
+          if (!meta.headline) continue;
+          var name = key.indexOf('group:') === 0 ? key.slice(6) + '（群）' : key;
+          var hit = false;
+          if (meta.atMainCount != null && now - meta.atMainCount <= this.INJECT_RECENT_FLOORS) hit = true;
+          if (!hit && recentText.indexOf(name.replace(/（群）$/, '')) !== -1) hit = true;
+          if (!hit) continue;
+          var ago = meta.atMainCount != null ? Math.max(0, now - meta.atMainCount) : null;
+          lines.push('- 「' + name + '」' + meta.headline + (ago != null ? '（' + ago + ' 楼前）' : ''));
+        }
+        if (!lines.length) return;
+        injectPrompts([{
+          id: 'lzw-phone-digest',
+          position: 'in_chat',
+          depth: 4,
+          role: 'system',
+          content: '【手机动态 · 微信】' + this.userName() + '近期在手机上聊过的天的最新动向（只是背景，正文不一定会提到；禁止据此让角色当面说出只有微信里才知道的细节，除非对方当时在聊天里）：\n' + lines.join('\n')
+        }], { once: true });
+      } catch (e) { console.warn('[霖州引擎] 手机动态注入失败', e); }
+    },
+
     // ── 独立生成 ──
     generateFor: async function (chatKey, isGroup) {
       var W = window.LZWorld;
       var sec = this.section();
       if (!sec) throw new Error('当前世界线无通讯录');
 
+      var digest = await this.compress(chatKey);
       var stickerNames = Object.keys(state.stickers).slice(0, 120);
       var raw, title, parseGroup = false;
 
@@ -215,7 +297,7 @@
         var tail = [];
         for (var hi = hist.length - 1; hi >= 0 && hist[hi].who === 'user'; hi--) tail.unshift(hist[hi]);
         var rest = hist.slice(0, hist.length - tail.length);
-        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail);
+        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest);
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {
@@ -231,7 +313,7 @@
         var tail2 = [];
         for (var hj = hist2.length - 1; hj >= 0 && hist2[hj].who === 'user'; hj--) tail2.unshift(hist2[hj]);
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
-        var req2 = W.Prompt.group({ name: g.name, open: g.open }, members, rest2, snap2, stickerNames, tail2);
+        var req2 = W.Prompt.group({ name: g.name, open: g.open }, members, rest2, snap2, stickerNames, tail2, digest);
         raw = await generateRaw(req2);
         title = g.name + ' 群聊';
         parseGroup = true;
@@ -240,6 +322,10 @@
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var msgs = W.Floor.parseNpcLines(text, parseGroup ? null : chatKey);
       if (!msgs.length) throw new Error('生成结果为空');
+      // 一行近况（正文注入用）：取最后一条消息的核心内容
+      var lastMsg = msgs[msgs.length - 1];
+      var headText = lastMsg.kind === 'text' ? lastMsg.text : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[lastMsg.kind] || '消息') + ']';
+      W.Store.setMeta(chatKey, { headline: String(headText).slice(0, 40), atMainCount: this.mainCount() });
       return { key: chatKey, title: title, msgs: msgs };
     },
 
@@ -302,6 +388,13 @@
       try {
         on(tavern_events.WORLD_INFO_ACTIVATED, function (entries) {
           Engine.setLineByEntries(entries);
+        });
+      } catch (e) {}
+
+      // 正文生成前：注入手机动态（一行近况/会话，绝不带原始记录）
+      try {
+        on(tavern_events.GENERATION_AFTER_COMMANDS, function () {
+          Engine.injectDigest();
         });
       } catch (e) {}
 

@@ -5,12 +5,13 @@ const path = require('path');
 const vm = require('vm');
 
 const ROOT = path.resolve(__dirname, '..');
+const __vars = {};
 const ctx = {
   window: {},
   console,
   getChatMessages: () => global.__msgs || [],
-  getVariables: () => ({}),
-  replaceVariables: () => {},
+  getVariables: () => __vars,
+  replaceVariables: (v) => { const snap = JSON.parse(JSON.stringify(v)); for (const k of Object.keys(__vars)) delete __vars[k]; Object.assign(__vars, snap); },
 };
 vm.createContext(ctx);
 for (const f of ['src/store.js', 'src/status.js', 'src/worldbook.js', 'src/prompt.js', 'src/floor.js']) {
@@ -48,6 +49,18 @@ eq('NPC位置', p.characters['沈锡元'].place, '霖州城南门外');
 eq('NPC姿态', p.characters['沈锡元'].posture, '靠在车边单手夹烟');
 eq('心声不外泄', '心声' in p.characters['沈锡元'], false);
 eq('无状态栏返回null', LW._parseStatusBlock('普通正文'), null);
+
+// ── 1.5 存储：popLast / meta / historyKeys ──
+console.log('[存储]');
+LW.Store.push('周言', [{ who: 'user', text: 'a' }, { who: '周言', text: 'b' }, { who: '周言', text: 'c' }], 100);
+const popped = LW.Store.popLast('周言', 2);
+eq('弹出条数', popped.length, 2);
+eq('弹出内容', popped[0].text, 'b');
+eq('剩余条数', LW.Store.history('周言').length, 1);
+LW.Store.setMeta('周言', { headline: '睡了没', atMainCount: 5 });
+eq('元信息读回', LW.Store.meta('周言').headline, '睡了没');
+eq('会话key列表', LW.Store.historyKeys(), ['周言']);
+LW.Store.wipeHistory();
 
 // ── 2. 记录块往返 ──
 console.log('[记录块]');

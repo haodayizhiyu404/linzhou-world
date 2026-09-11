@@ -29,6 +29,12 @@
   var Store = {
     KEY: KEY,
 
+    // 有记录的会话 key 列表
+    historyKeys: function () {
+      var r = readRoot();
+      return Object.keys(r.history || {});
+    },
+
     history: function (chatKey) {
       var r = readRoot();
       var h = (r.history || {})[chatKey];
@@ -44,6 +50,32 @@
       r.history[chatKey] = h;
       writeRoot(r);
       return h;
+    },
+
+    // 从末尾弹出 n 条（重roll用）
+    popLast: function (chatKey, n) {
+      var r = readRoot();
+      var h = (r.history || {})[chatKey];
+      if (!h || !h.length) return [];
+      var popped = h.splice(Math.max(0, h.length - n), n);
+      writeRoot(r);
+      return popped;
+    },
+
+    // 会话元信息：headline（一句话近况）、atMainCount（最近活跃时的主线楼数）、
+    // digested（已折进提要的条数）、digest（前文提要）
+    meta: function (chatKey) {
+      var r = readRoot();
+      return ((r.meta || {})[chatKey]) || {};
+    },
+
+    setMeta: function (chatKey, patch) {
+      var r = readRoot();
+      r.meta = r.meta || {};
+      var m = r.meta[chatKey] || {};
+      for (var k in patch) m[k] = patch[k];
+      r.meta[chatKey] = m;
+      writeRoot(r);
     },
 
     // 只改最后一条（比如补时间）

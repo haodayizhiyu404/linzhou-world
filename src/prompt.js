@@ -13,8 +13,8 @@
 
   var PLOT_FLOORS = 8;     // 主线带几楼
   var PLOT_CAP = 900;      // 每楼正文上限（验尸结论：低于此 ≈ 失明）
-  var HIST_PRIVATE = 14;   // 私聊带回几条
-  var HIST_GROUP = 18;     // 群聊带回几条
+  var HIST_PRIVATE = 50;   // 私聊带回几条（短聊天内容很少，50 条也才角色卡资料的零头）
+  var HIST_GROUP = 50;     // 群聊带回几条
 
   // ── persona 真名。generateRaw 不做宏替换，{{user}} 会原文进提示词，
   //    所以这里自己解析（与 engine.js userName() 同一套回退）。──
@@ -120,7 +120,7 @@
 
     // ── 私聊 ──
     // tail = 本轮最新一批用户消息：不混在系统块里，作为最后的 user 轮单独给出
-    private: function (contact, hist, snapshot, stickerNames, tail) {
+    private: function (contact, hist, snapshot, stickerNames, tail, digest) {
       var myName = me();
       var tailLines = (tail && tail.length) ? histText(tail, 8) : '';
       var p = [
@@ -136,6 +136,7 @@
         '',
         '## 聊天记录 · 与' + myName + '的微信对话',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
+        digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
         histText(hist, HIST_PRIVATE),
         '',
         consistencyRules('「' + contact.name + '」'),
@@ -164,7 +165,7 @@
     },
 
     // ── 群聊 ──
-    group: function (group, members, hist, snapshot, stickerNames, tail) {
+    group: function (group, members, hist, snapshot, stickerNames, tail, digest) {
       var myName = me();
       var tailLines2 = (tail && tail.length) ? histText(tail, 8) : '';
       var nameList = members.map(function (m) { return m.name; });
@@ -190,6 +191,7 @@
         '',
         '## 聊天记录 · 群「' + group.name + '」',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
+        digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
         histText(hist, HIST_GROUP),
         '',
         consistencyRules('每名成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。',
