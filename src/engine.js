@@ -234,10 +234,11 @@
       try { return getChatMessages('0-{{lastMessageId}}').length; } catch (e) { return 0; }
     },
 
-    // ── 正文生成前的手机动态注入：只带一行近况，绝不带原始记录 ──
+    // ── 正文生成前的手机动态注入：每个入选会话带最近 5 轮完整对话 ──
     INJECT_RECENT_FLOORS: 12,   // 最近 N 楼内聊过 → 带
     INJECT_MENTION_FLOORS: 4,   // 名字出现在最近 N 楼 → 带（哪怕聊得早）
-    INJECT_MAX_LINES: 6,
+    INJECT_MAX_CHATS: 3,        // 最多带几个会话
+    INJECT_ROUNDS: 10,          // 每会话带最近几条（5 轮 user+对方）
 
     injectDigest: function () {
       try {
@@ -245,6 +246,7 @@
         var sec = this.section();
         if (!sec) return;
         var root = W.Store;
+        var myName = this.userName();
         var now = this.mainCount();
         var recentText = '';
         try {
@@ -252,27 +254,31 @@
             .slice(-this.INJECT_MENTION_FLOORS)
             .map(function (m) { return String((m && m.message) || ''); }).join('\n');
         } catch (e) {}
-        var lines = [];
-        var keys = W.Store.historyKeys();
-        for (var i = 0; i < keys.length && lines.length < this.INJECT_MAX_LINES; i++) {
+        var blocks = [];
+        var keys = root.historyKeys();
+        for (var i = 0; i < keys.length && blocks.length < this.INJECT_MAX_CHATS; i++) {
           var key = keys[i];
+          var hist = root.history(key);
+          if (!hist.length) continue;
           var meta = root.meta(key);
-          if (!meta.headline) continue;
           var name = key.indexOf('group:') === 0 ? key.slice(6) + '（群）' : key;
           var hit = false;
           if (meta.atMainCount != null && now - meta.atMainCount <= this.INJECT_RECENT_FLOORS) hit = true;
           if (!hit && recentText.indexOf(name.replace(/（群）$/, '')) !== -1) hit = true;
           if (!hit) continue;
           var ago = meta.atMainCount != null ? Math.max(0, now - meta.atMainCount) : null;
-          lines.push('- 「' + name + '」' + meta.headline + (ago != null ? '（' + ago + ' 楼前）' : ''));
+          var lines = hist.slice(-this.INJECT_ROUNDS).map(function (m) {
+            return (m.who === 'user' ? myName : m.who) + '：' + W.Floor.msgToLine(m, myName).replace(/^[^：]*：/, '');
+          });
+          blocks.push('「' + name + '」' + (ago != null ? '（' + ago + ' 楼前）' : '') + '：\n' + lines.join('\n'));
         }
-        if (!lines.length) return;
+        if (!blocks.length) return;
         injectPrompts([{
           id: 'lzw-phone-digest',
           position: 'in_chat',
           depth: 4,
           role: 'system',
-          content: '【手机动态 · 微信】' + this.userName() + '近期在手机上聊过的天的最新动向（只是背景，正文不一定会提到；禁止据此让角色当面说出只有微信里才知道的细节，除非对方当时在聊天里）：\n' + lines.join('\n')
+          content: '【手机近况 · 微信】' + myName + '近期在手机上聊过天（仅作背景，正文不必提到；角色当面不得说出只有微信里才知道的细节，除非对方当时就在这些聊天里）：\n' + blocks.join('\n')
         }], { once: true });
       } catch (e) { console.warn('[霖州引擎] 手机动态注入失败', e); }
     },

@@ -508,19 +508,21 @@
       this.generate(userName);
     },
 
-    // 重roll 条件：上一批生成属于当前会话、且不是正在生成中
+    // 重roll 条件：当前会话最后一条是对方消息（与生成状态无关，刷新重开都在）
     canReroll: function () {
-      var g = this._lastGen;
-      return !!(g && g.key === this.chatKey && !this.busy);
+      if (this.busy) return false;
+      var h = window.LZWorld.Store.history(this.chatKey);
+      return !!(h.length && h[h.length - 1].who !== 'user');
     },
 
-    // 重roll：把上一批 NPC 消息从存储里弹出，用同样的输入重新生成
+    // 重roll：把末尾连续的一批 NPC 消息从存储里弹出，重新生成
     reroll: async function () {
       var W = window.LZWorld;
-      var g = this._lastGen;
-      if (this.busy || !g || g.key !== this.chatKey) return;
-      var popped = W.Store.popLast(g.key, g.count);
-      this._lastGen = null;
+      if (this.busy || !this.canReroll()) return;
+      var h = W.Store.history(this.chatKey);
+      var n = 0;
+      for (var i = h.length - 1; i >= 0 && h[i].who !== 'user' && n < 12; i--) n++;
+      var popped = W.Store.popLast(this.chatKey, n);
       if (!popped.length) { this.render(); return; }
       try { toastr.info('重roll中……', '📱 霖州引擎'); } catch (e) {}
       this.render();
@@ -537,7 +539,6 @@
         var result = await eng.generateFor(this.chatKey, this.isGroup);
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(this.chatKey, result.msgs, 100);
-          this._lastGen = { key: result.key, count: result.msgs.length };
           if (this.screen === 'chat' && this.chatKey === result.key) this.render();
         }
       } catch (e) {
