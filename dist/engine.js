@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T23:39:30.535Z
+//  构建时间：2026-09-11T23:46:19.165Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-11 23:39';
+var __LZW_BUILD__ = '2026-09-11 23:46';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -973,6 +973,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 外壳：机身 + 屏幕
     '#lzw-phone{position:fixed;z-index:99991;display:none;font-family:system-ui,"Microsoft YaHei",sans-serif}',
     '#lzw-phone.lzw-open{display:block}',
+    '.lzw-sbar,.lzw-appbar{cursor:grab;touch-action:none}',
+    '.lzw-sbar:active,.lzw-appbar:active{cursor:grabbing}',
     '.lzw-bezel{width:100%;height:100%;background:#0b0d10;border-radius:48px;padding:11px;position:relative;',
     'box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 2px #2b3138;box-sizing:border-box}',
     '.lzw-btn-side{position:absolute;background:#1d2228;border-radius:3px}',
@@ -1467,6 +1469,39 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           ph.classList.add('shake');
         };
       });
+      // 顶部拖动挪位置
+      ph.querySelectorAll('.lzw-sbar,.lzw-appbar').forEach(function (hd) {
+        hd.addEventListener('pointerdown', function (ev) {
+          if (ev.button !== undefined && ev.button !== 0) return;
+          var sx = ev.clientX, sy = ev.clientY;
+          var stL = parseFloat(ph.style.left) || 0, stT = parseFloat(ph.style.top) || 0;
+          var moved = false;
+          try { hd.setPointerCapture(ev.pointerId); } catch (e) {}
+          var mv = function (e2) {
+            var dx = e2.clientX - sx, dy = e2.clientY - sy;
+            if (!moved && dx * dx + dy * dy < 16) return;
+            moved = true;
+            var vw2 = pwin().innerWidth, vh2 = pwin().innerHeight;
+            var L = Math.max(4, Math.min(stL + dx, vw2 - ph.offsetWidth - 4));
+            var T = Math.max(4, Math.min(stT + dy, vh2 - ph.offsetHeight - 4));
+            ph.style.left = L + 'px';
+            ph.style.top = T + 'px';
+            savedPos = { left: L, top: T };
+          };
+          var up = function () {
+            hd.removeEventListener('pointermove', mv);
+            hd.removeEventListener('pointerup', up);
+            hd.removeEventListener('pointercancel', up);
+            if (moved) {
+              var kill = function (ce) { ce.stopPropagation(); ce.preventDefault(); pdoc().removeEventListener('click', kill, true); };
+              pdoc().addEventListener('click', kill, true);
+            }
+          };
+          hd.addEventListener('pointermove', mv);
+          hd.addEventListener('pointerup', up);
+          hd.addEventListener('pointercancel', up);
+        });
+      });
       ph.querySelectorAll('[data-peek]').forEach(function (el) {
         el.onclick = function () {
           UI.togglePeek(parseInt(el.getAttribute('data-peek'), 10));
@@ -1709,6 +1744,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   }
 
   // 用 visualViewport 计算位置：F12/移动仿真/页面缩放下依然落在可视区右下角
+  var savedPos = null; // 拖动过的位置，关闭再唤起仍记得（刷新重置）
+
   function placePhone() {
     var ph = pdoc().getElementById(ID.phone);
     if (!ph || !ph.classList.contains('lzw-open')) return;
@@ -1719,10 +1756,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var h = Math.max(420, Math.min(680, vh - 20));
     ph.style.width = w + 'px';
     ph.style.height = h + 'px';
-    var left = (vp ? vp.offsetLeft : 0) + vw - w - 8;
-    var top = (vp ? vp.offsetTop : 0) + vh - h - 8;
-    ph.style.left = Math.max(4, left) + 'px';
-    ph.style.top = Math.max(4, top) + 'px';
+    var left = savedPos ? savedPos.left : (vp ? vp.offsetLeft : 0) + vw - w - 8;
+    var top = savedPos ? savedPos.top : (vp ? vp.offsetTop : 0) + vh - h - 8;
+    ph.style.left = Math.max(4, Math.min(left, vw - w - 4)) + 'px';
+    ph.style.top = Math.max(4, Math.min(top, vh - h - 4)) + 'px';
     ph.style.right = 'auto';
     ph.style.bottom = 'auto';
   }
