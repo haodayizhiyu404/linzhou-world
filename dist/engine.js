@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T14:30:25.481Z
+//  构建时间：2026-09-11T14:46:24.718Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-11 14:30';
+var __LZW_BUILD__ = '2026-09-11 14:46';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1043,21 +1043,21 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-chatrow.me .lzw-bub{background:#95ec69}',
     '.lzw-bub.lzw-sys{background:transparent;box-shadow:none;color:#8a8f99;font-size:12px;padding:2px 4px}',
     '.lzw-sticker{max-width:120px;border-radius:8px}',
-    '.lzw-voice{display:flex;flex-wrap:wrap;align-items:center;gap:6px;cursor:pointer}',
-    '.lzw-voice-ico{color:#111;opacity:.65;font-size:12px}',
-    '.lzw-voice-bar{display:inline-flex;align-items:flex-end;gap:2px;height:13px}',
-    '.lzw-voice-bar i{display:block;width:3px;background:#111;opacity:.6;border-radius:1px}',
-    '.lzw-voice-bar i:nth-child(1){height:5px}.lzw-voice-bar i:nth-child(2){height:9px}.lzw-voice-bar i:nth-child(3){height:13px}',
-    '.lzw-voice-s{font-size:10px;color:#a7abb2}',
+    '.lzw-voice{display:flex;flex-wrap:wrap;align-items:center;gap:8px;cursor:pointer}',
+    '.lzw-voice-play{display:inline-flex;line-height:0}',
+    '.lzw-voice-bars{display:inline-flex;align-items:center;gap:2.5px;height:15px}',
+    '.lzw-voice-bars i{display:block;width:3px;background:#222;border-radius:1.5px}',
+    '.lzw-voice-bars i:nth-child(1){height:6px}.lzw-voice-bars i:nth-child(2){height:10px}.lzw-voice-bars i:nth-child(3){height:14px}.lzw-voice-bars i:nth-child(4){height:8px}.lzw-voice-bars i:nth-child(5){height:12px}',
+    '.lzw-voice-sec{font-size:12px;color:#8a8f98}',
     '.lzw-voicetxt{display:none;flex-basis:100%;margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.08);font-size:13px;color:#333;line-height:1.5}',
     '.lzw-voice.open .lzw-voicetxt{display:block}',
-    '.lzw-imgbox{width:140px;padding:0;border-radius:9px;overflow:hidden;position:relative}',
-    '.lzw-imgph{height:140px;background:linear-gradient(140deg,#b9c6d2,#dfe7ee);display:flex;align-items:center;justify-content:center;font-size:28px}',
-    '.lzw-imgbox .cap{position:absolute;left:0;right:0;bottom:0;font-size:11.5px;line-height:1.4;padding:14px 8px 6px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.55))}',
+    '.lzw-imgbox{width:150px;padding:0;border-radius:9px;overflow:hidden}',
+    '.lzw-imgph{min-height:110px;background:linear-gradient(150deg,#ccd6e2,#e8eef5);display:flex;align-items:center;justify-content:center;padding:16px 14px}',
+    '.lzw-imgph span{font-size:12.5px;line-height:1.55;color:#5a6577;text-align:center;word-break:break-word}',
     '.lzw-locbox{width:160px;padding:0;border-radius:9px;overflow:hidden;background:#fff}',
     '.lzw-chatrow.me .lzw-bub.lzw-locbox,.lzw-chatrow.me .lzw-bub.lzw-imgbox{background:#fff}',
-    '.lzw-locmap{height:80px;position:relative;background:linear-gradient(140deg,#b7d9b0,#e8f3e4)}',
-    '.lzw-locmap:before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent 0 13px,rgba(255,255,255,.55) 13px 14px),repeating-linear-gradient(90deg,transparent 0 13px,rgba(255,255,255,.55) 13px 14px)}',
+    '.lzw-locmap{height:84px;position:relative;background:linear-gradient(150deg,#dde9d9,#eef4ea)}',
+    '.lzw-locmap:before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.95) 42% 50%,transparent 50%),linear-gradient(8deg,transparent 62%,rgba(255,255,255,.85) 62% 68%,transparent 68%),linear-gradient(0deg,transparent 80%,rgba(255,255,255,.75) 80% 86%,transparent 86%)}',
     '.lzw-locmap:after{content:"📍";position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-size:26px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}',
     '.lzw-locbox .cap{font-size:12.5px;font-weight:600;padding:7px 9px}',
     '.lzw-sysrow{text-align:center;font-size:11.5px;color:#9aa0a8;margin:10px 0}',
@@ -1107,7 +1107,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-modeform{display:flex;flex-direction:column;gap:8px;padding:2px 2px 8px}',
     '.lzw-modeinput{flex:1;width:100%;box-sizing:border-box;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;color:#111;padding:8px 11px;font-size:13.5px;line-height:1.5;outline:none;resize:none;font-family:inherit}',
     '.lzw-modeinput::placeholder{color:#b9bdc4;font-size:12.5px}',
-    '.lzw-modeok{align-self:flex-end;border:none;border-radius:8px;background:#22c05e;color:#fff;font-size:13.5px;padding:7px 20px;cursor:pointer}',
+    '.lzw-modebtns{align-self:flex-end;display:flex;gap:8px}',
+    '.lzw-modeok{border:none;border-radius:8px;background:#22c05e;color:#fff;font-size:13.5px;line-height:1;padding:9px 20px;cursor:pointer}',
+    '.lzw-modecancel{border:none;border-radius:8px;background:#f2f3f5;color:#333;font-size:13.5px;line-height:1;padding:9px 18px;cursor:pointer}',
     '.lzw-stickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:10px 4px;max-height:170px;overflow-y:auto;overflow-x:hidden;padding-bottom:6px}',
     '.lzw-stickcell{cursor:pointer;text-align:center}',
     '.lzw-stickcell .imgw{width:56px;height:56px;margin:0 auto;border-radius:8px;overflow:hidden;background:#eceff3}',
@@ -1175,9 +1177,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       bub = '<div class="lzw-poke" data-poke="1">' + (isUser ? '你戳了戳 ' + esc(targetName || '对方') : esc(who) + ' 戳了戳你') + '</div>';
       return '<div style="text-align:center" data-del="' + idx + '">' + bub + '</div>';
     } else if (m.kind === 'voice') {
-      bub = '<div class="lzw-bub lzw-voice" data-voice="1"><span class="lzw-voice-ico">▶</span><span class="lzw-voice-bar"><i></i><i></i><i></i></span><span class="lzw-voice-s">转文字</span><div class="lzw-voicetxt">' + esc(m.text) + '</div></div>';
+      var vsec = Math.max(2, Math.min(40, Math.round(m.text.length * 0.7)));
+      bub = '<div class="lzw-bub lzw-voice" data-voice="1" title="点击转文字查看内容"><span class="lzw-voice-play"><svg width="14" height="14" viewBox="0 0 24 24"><path fill="#222222" d="M8 5v14l11-7z"/></svg></span><span class="lzw-voice-bars"><i></i><i></i><i></i><i></i><i></i></span><span class="lzw-voice-sec">' + vsec + '″</span><div class="lzw-voicetxt">' + esc(m.text) + '</div></div>';
     } else if (m.kind === 'image') {
-      bub = '<div class="lzw-bub lzw-imgbox"><div class="lzw-imgph">🖼</div><div class="cap">' + esc(m.text) + '</div></div>';
+      bub = '<div class="lzw-bub lzw-imgbox"><div class="lzw-imgph"><span>' + esc(m.text) + '</span></div></div>';
     } else if (m.kind === 'location') {
       bub = '<div class="lzw-bub lzw-locbox"><div class="lzw-locmap"></div><div class="cap">📍 ' + esc(m.text) + '</div></div>';
     } else {
@@ -1354,7 +1357,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var rows = hist.map(function (m, i) {
           return chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i]);
         }, this).join('');
-        if (this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角 ↻ 或再点小飞机重试</div>';
+        if (this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
         if (this.staged.length) rows += stagedHtml(userName);
         body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
           '<div class="lzw-bottom">' +
@@ -1472,6 +1475,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       });
       ph.querySelectorAll('[data-stick]').forEach(function (el) {
         el.onclick = function () { UI.stageTyped('sticker', el.dataset.stick); }; // 表情也攒着
+      });
+      ph.querySelectorAll('[data-act="modecancel"]').forEach(function (el) {
+        el.onclick = function () { UI.panel = null; UI.render(); };
       });
       ph.querySelectorAll('[data-modesend]').forEach(function (el) {
         el.onclick = function () {
@@ -1665,7 +1671,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var hint = panel === 'image' ? '描述这张图片的画面，如：一张拍糊的试卷' : panel === 'voice' ? '这句语音说了什么，如：到了吱一声' : '地点名称，如：霖州一中北门';
       return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-modeform">' +
         '<textarea class="lzw-modeinput" id="lzw-modeinput" rows="2" maxlength="200" placeholder="' + hint + '"></textarea>' +
-        '<button class="lzw-modeok" data-modesend="' + panel + '">确定</button></div></div>';
+        '<div class="lzw-modebtns"><button class="lzw-modeok" data-modesend="' + panel + '">确定</button>' +
+        '<button class="lzw-modecancel" data-act="modecancel">取消</button></div></div></div>';
     }
     // actions
     return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-actions">' +
