@@ -112,6 +112,14 @@
       if (snapshot.npc.place) bits.push('位置：' + snapshot.npc.place);
       if (snapshot.npc.posture) bits.push('姿态：' + snapshot.npc.posture);
       if (bits.length) lines.push('你（' + (snapshot.npc.name || '本人') + '）此刻：' + bits.join('，'));
+      // 关系项：卡面状态栏固定维护（如「克制内敛的青梅竹马，尚未告白」）。
+      // 它是防情感越界出戏的主锚点，必须显式给出并划定表达上限。
+      if (snapshot.npc.relation) {
+        lines.push('你与' + me() + '的关系：' + snapshot.npc.relation + '——一切情感表达不得越过这个阶段');
+      }
+    }
+    if (snapshot && snapshot.overview) {
+      lines.push('人物关系总览：' + snapshot.overview);
     }
     return lines.join('\n');
   }
@@ -145,6 +153,7 @@
         '- 只输出「' + contact.name + '」发来的新消息，1~4 条，按情绪与话题自然增减',
         '- 每条独立成行，只写消息内容；不要前缀、时间戳、动作描写、括号心理',
         '- 每条不超过 35 字，像真人打字，不重复对方刚说过的话',
+        '- 「' + contact.name + '」的情感与态度必须符合上方「关系」所述阶段；关系未到时克制优先，直白情话、索取承诺、越界称呼一律视为出戏',
         typeSyntax(stickerNames),
         '- 直接输出消息本身，不要以「好的」「收到」这类寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');

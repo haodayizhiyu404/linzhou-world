@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T11:19:21.129Z
+//  构建时间：2026-09-11T11:36:42.735Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-11 11:19';
+var __LZW_BUILD__ = '2026-09-11 11:36';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -164,18 +164,20 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       dateText: envParts[0] || '',      // 2034年8月26日 星期五
       time: '',                          // 22:49
       userPlace: envParts[2] || '',      // user 所在地点（不可用于 NPC）
-      characters: {}                     // 角色小块：{ 位置, 姿态, 着装 }
+      characters: {},                    // 角色小块：{ 位置, 姿态, 着装, 关系 }
+      overview: ''                       // <关系总览> 整块原文
     };
     var tm = (envParts[1] || '').match(/(\d{1,2}:\d{2})/);
     if (tm) result.time = tm[1];
 
-    // 角色小块：<沈锡元> 着装：… 姿态：… 位置：… 心声：… </沈锡元>
+    // 角色小块：<沈锡元> 着装：… 姿态：… 位置：… 关系：… 心声：… </沈锡元>
     var block;
     charBlockRe.lastIndex = 0;
     while ((block = charBlockRe.exec(scope)) !== null) {
       var name = block[1].trim();
-      if (name === '环境' || name === 'status' || name === '关系总览') continue;
+      if (name === '环境' || name === 'status') continue;
       var body = block[2];
+      if (name === '关系总览') { result.overview = body.trim(); continue; }
       var grab = function (label) {
         var r = body.match(new RegExp(label + '\\s*[:：]\\s*([^\\n]+)'));
         return r ? r[1].trim() : '';
@@ -183,7 +185,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       result.characters[name] = {
         outfit: grab('着装'),
         posture: grab('姿态'),
-        place: grab('位置')
+        place: grab('位置'),
+        relation: grab('关系')
         // 心声刻意不解析
       };
     }
@@ -210,15 +213,21 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return (p && p.time) || '';
     },
 
-    // 供生成装配使用：时间 + user地点 + 目标角色情境块
+    // 供生成装配使用：时间 + user地点 + 目标角色情境块（含关系）
     snapshot: function (npcName) {
       var p = this.parseLatest();
-      if (!p) return { time: '', userPlace: '', npc: null };
+      if (!p) return { time: '', userPlace: '', npc: null, overview: '' };
+      var npc = null;
+      if (npcName && p.characters[npcName]) {
+        npc = p.characters[npcName];
+        npc.name = npcName;
+      }
       return {
         time: p.time,
         dateText: p.dateText,
         userPlace: p.userPlace,
-        npc: (npcName && p.characters[npcName]) || null
+        npc: npc,
+        overview: p.overview
       };
     }
   };
@@ -533,6 +542,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (snapshot.npc.place) bits.push('位置：' + snapshot.npc.place);
       if (snapshot.npc.posture) bits.push('姿态：' + snapshot.npc.posture);
       if (bits.length) lines.push('你（' + (snapshot.npc.name || '本人') + '）此刻：' + bits.join('，'));
+      // 关系项：卡面状态栏固定维护（如「克制内敛的青梅竹马，尚未告白」）。
+      // 它是防情感越界出戏的主锚点，必须显式给出并划定表达上限。
+      if (snapshot.npc.relation) {
+        lines.push('你与' + me() + '的关系：' + snapshot.npc.relation + '——一切情感表达不得越过这个阶段');
+      }
+    }
+    if (snapshot && snapshot.overview) {
+      lines.push('人物关系总览：' + snapshot.overview);
     }
     return lines.join('\n');
   }
@@ -566,6 +583,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '- 只输出「' + contact.name + '」发来的新消息，1~4 条，按情绪与话题自然增减',
         '- 每条独立成行，只写消息内容；不要前缀、时间戳、动作描写、括号心理',
         '- 每条不超过 35 字，像真人打字，不重复对方刚说过的话',
+        '- 「' + contact.name + '」的情感与态度必须符合上方「关系」所述阶段；关系未到时克制优先，直白情话、索取承诺、越界称呼一律视为出戏',
         typeSyntax(stickerNames),
         '- 直接输出消息本身，不要以「好的」「收到」这类寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');
@@ -1401,9 +1419,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       this.generate(userName);
     },
 
-    // 重roll 条件：当前会话最后一条是对方消息（与生成状态无关，刷新重开都在）
+    // 重roll 条件：当前会话最后一条是对方消息。
+    // 注意不查 busy——生成结束渲染时 busy 尚未复位，查了就会导致按钮迟到一轮
     canReroll: function () {
-      if (this.busy) return false;
       var h = window.LZWorld.Store.history(this.chatKey);
       return !!(h.length && h[h.length - 1].who !== 'user');
     },

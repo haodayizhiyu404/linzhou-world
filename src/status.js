@@ -26,18 +26,20 @@
       dateText: envParts[0] || '',      // 2034年8月26日 星期五
       time: '',                          // 22:49
       userPlace: envParts[2] || '',      // user 所在地点（不可用于 NPC）
-      characters: {}                     // 角色小块：{ 位置, 姿态, 着装 }
+      characters: {},                    // 角色小块：{ 位置, 姿态, 着装, 关系 }
+      overview: ''                       // <关系总览> 整块原文
     };
     var tm = (envParts[1] || '').match(/(\d{1,2}:\d{2})/);
     if (tm) result.time = tm[1];
 
-    // 角色小块：<沈锡元> 着装：… 姿态：… 位置：… 心声：… </沈锡元>
+    // 角色小块：<沈锡元> 着装：… 姿态：… 位置：… 关系：… 心声：… </沈锡元>
     var block;
     charBlockRe.lastIndex = 0;
     while ((block = charBlockRe.exec(scope)) !== null) {
       var name = block[1].trim();
-      if (name === '环境' || name === 'status' || name === '关系总览') continue;
+      if (name === '环境' || name === 'status') continue;
       var body = block[2];
+      if (name === '关系总览') { result.overview = body.trim(); continue; }
       var grab = function (label) {
         var r = body.match(new RegExp(label + '\\s*[:：]\\s*([^\\n]+)'));
         return r ? r[1].trim() : '';
@@ -45,7 +47,8 @@
       result.characters[name] = {
         outfit: grab('着装'),
         posture: grab('姿态'),
-        place: grab('位置')
+        place: grab('位置'),
+        relation: grab('关系')
         // 心声刻意不解析
       };
     }
@@ -72,15 +75,21 @@
       return (p && p.time) || '';
     },
 
-    // 供生成装配使用：时间 + user地点 + 目标角色情境块
+    // 供生成装配使用：时间 + user地点 + 目标角色情境块（含关系）
     snapshot: function (npcName) {
       var p = this.parseLatest();
-      if (!p) return { time: '', userPlace: '', npc: null };
+      if (!p) return { time: '', userPlace: '', npc: null, overview: '' };
+      var npc = null;
+      if (npcName && p.characters[npcName]) {
+        npc = p.characters[npcName];
+        npc.name = npcName;
+      }
       return {
         time: p.time,
         dateText: p.dateText,
         userPlace: p.userPlace,
-        npc: (npcName && p.characters[npcName]) || null
+        npc: npc,
+        overview: p.overview
       };
     }
   };

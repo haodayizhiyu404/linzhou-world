@@ -37,6 +37,7 @@ const statusText = `<status>
 着装：黑色圆领薄棉T
 姿态：靠在车边单手夹烟
 位置：霖州城南门外
+关系：克制内敛的青梅竹马，尚未告白
 心声：“到了也不放个屁。”
 </沈锡元>
 
@@ -47,6 +48,7 @@ eq('日期文本', p.dateText, '2034年8月26日 星期五');
 eq('user地点', p.userPlace, '天禧城3幢901室');
 eq('NPC位置', p.characters['沈锡元'].place, '霖州城南门外');
 eq('NPC姿态', p.characters['沈锡元'].posture, '靠在车边单手夹烟');
+eq('NPC关系', p.characters['沈锡元'].relation, '克制内敛的青梅竹马，尚未告白');
 eq('心声不外泄', '心声' in p.characters['沈锡元'], false);
 eq('无状态栏返回null', LW._parseStatusBlock('普通正文'), null);
 

@@ -508,9 +508,9 @@
       this.generate(userName);
     },
 
-    // 重roll 条件：当前会话最后一条是对方消息（与生成状态无关，刷新重开都在）
+    // 重roll 条件：当前会话最后一条是对方消息。
+    // 注意不查 busy——生成结束渲染时 busy 尚未复位，查了就会导致按钮迟到一轮
     canReroll: function () {
-      if (this.busy) return false;
       var h = window.LZWorld.Store.history(this.chatKey);
       return !!(h.length && h[h.length - 1].who !== 'user');
     },
