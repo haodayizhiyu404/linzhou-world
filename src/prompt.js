@@ -43,10 +43,13 @@
   }
 
   // ── 消息类型语法说明（输出契约的一部分） ──
-  function typeSyntax() {
+  function typeSyntax(stickerNames) {
+    var stickerLine = (stickerNames && stickerNames.length)
+      ? '[表情:名字]  只可选用图库现有名字，严禁编造：' + stickerNames.join('、')
+      : '[表情:名字]  图库为空，本次请勿发送表情';
     return [
       '消息类型（按需单独成行，不用则不写）：',
-      '[表情:名字]  只可选用列出的表情包名',
+      stickerLine,
       '[语音:要说的话]',
       '[图片:画面描述]',
       '[戳一戳]',
@@ -86,7 +89,7 @@
   var Prompt = {
 
     // ── 私聊 ──
-    private: function (contact, hist, snapshot) {
+    private: function (contact, hist, snapshot, stickerNames) {
       var p = [
         '【数字世界 · 回应生成】',
         '你是数字生活世界的模拟引擎。本次任务：生成应用「微信」中，来自「' + contact.name + '」的新消息。',
@@ -106,7 +109,7 @@
         '- 只输出「' + contact.name + '」发出的新消息，1~4 条，按情绪与话题自然增减',
         '- 每条独立成行，只写消息内容；无前缀、无时间戳、无动作旁白、无括号心理',
         '- 每条不超过 35 字，像真人打字，不复述对方的话',
-        typeSyntax(),
+        typeSyntax(stickerNames),
         '- 直接输出消息本身，严禁以"好的""收到"等寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');
 
@@ -121,7 +124,7 @@
     },
 
     // ── 群聊 ──
-    group: function (group, members, hist, snapshot) {
+    group: function (group, members, hist, snapshot, stickerNames) {
       var nameList = members.map(function (m) { return m.name; });
       var voices = members.map(function (m) {
         var brief = m.profile ? String(m.profile).replace(/\s+/g, ' ').slice(0, 500) : '（无档案）';
@@ -150,7 +153,7 @@
         '- 输出 3~8 条群消息，每条一行，格式严格为「成员名：消息」',
         '- 谁会接这句谁说，不必人人开口；可互相接梗拆台',
         '- 每条不超过 35 字，口语',
-        typeSyntax(),
+        typeSyntax(stickerNames),
         '- 直接输出消息，严禁寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');
 

@@ -123,9 +123,10 @@
   }
 
   var Worldbook = {
-    // 返回 { rosters: {线名: 规范区块}, stickers: {名: 文件}, profiles: {角色名: 资料文本} }
+    // 返回 { rosters, stickers, profiles, states }
+    // states = { 条目标题: 是否勾选开启 }——世界线主条目定位用（enabled 字段读不到时按"开"记）
     load: async function () {
-      var result = { rosters: {}, stickers: {}, profiles: {} };
+      var result = { rosters: {}, stickers: {}, profiles: {}, states: {} };
       var names = await bookNames();
       console.log('[霖州引擎] 世界书：' + names.length + ' 本 → ' + names.join(' / '));
       var es = await allEntries();
@@ -141,6 +142,7 @@
 
       for (var i = 0; i < es.length; i++) {
         var t = titleOf(es[i]);
+        if (t && !(t in result.states)) result.states[t] = es[i].enabled !== false;
         if (t === MARK_ROSTER) {
           var j = extractJson(contentOf(es[i]));
           if (j && typeof j === 'object') {

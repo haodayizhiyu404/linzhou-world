@@ -1,7 +1,7 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-11T03:17:08.634Z
+//  构建时间：2026-09-11T06:00:53.317Z
 // ═══════════════════════════════════════════════════════════
 
 // ── src/store.js ──
@@ -321,9 +321,10 @@
   }
 
   var Worldbook = {
-    // 返回 { rosters: {线名: 规范区块}, stickers: {名: 文件}, profiles: {角色名: 资料文本} }
+    // 返回 { rosters, stickers, profiles, states }
+    // states = { 条目标题: 是否勾选开启 }——世界线主条目定位用（enabled 字段读不到时按"开"记）
     load: async function () {
-      var result = { rosters: {}, stickers: {}, profiles: {} };
+      var result = { rosters: {}, stickers: {}, profiles: {}, states: {} };
       var names = await bookNames();
       console.log('[霖州引擎] 世界书：' + names.length + ' 本 → ' + names.join(' / '));
       var es = await allEntries();
@@ -339,6 +340,7 @@
 
       for (var i = 0; i < es.length; i++) {
         var t = titleOf(es[i]);
+        if (t && !(t in result.states)) result.states[t] = es[i].enabled !== false;
         if (t === MARK_ROSTER) {
           var j = extractJson(contentOf(es[i]));
           if (j && typeof j === 'object') {
@@ -428,10 +430,13 @@
   }
 
   // ── 消息类型语法说明（输出契约的一部分） ──
-  function typeSyntax() {
+  function typeSyntax(stickerNames) {
+    var stickerLine = (stickerNames && stickerNames.length)
+      ? '[表情:名字]  只可选用图库现有名字，严禁编造：' + stickerNames.join('、')
+      : '[表情:名字]  图库为空，本次请勿发送表情';
     return [
       '消息类型（按需单独成行，不用则不写）：',
-      '[表情:名字]  只可选用列出的表情包名',
+      stickerLine,
       '[语音:要说的话]',
       '[图片:画面描述]',
       '[戳一戳]',
@@ -471,7 +476,7 @@
   var Prompt = {
 
     // ── 私聊 ──
-    private: function (contact, hist, snapshot) {
+    private: function (contact, hist, snapshot, stickerNames) {
       var p = [
         '【数字世界 · 回应生成】',
         '你是数字生活世界的模拟引擎。本次任务：生成应用「微信」中，来自「' + contact.name + '」的新消息。',
@@ -491,7 +496,7 @@
         '- 只输出「' + contact.name + '」发出的新消息，1~4 条，按情绪与话题自然增减',
         '- 每条独立成行，只写消息内容；无前缀、无时间戳、无动作旁白、无括号心理',
         '- 每条不超过 35 字，像真人打字，不复述对方的话',
-        typeSyntax(),
+        typeSyntax(stickerNames),
         '- 直接输出消息本身，严禁以"好的""收到"等寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');
 
@@ -506,7 +511,7 @@
     },
 
     // ── 群聊 ──
-    group: function (group, members, hist, snapshot) {
+    group: function (group, members, hist, snapshot, stickerNames) {
       var nameList = members.map(function (m) { return m.name; });
       var voices = members.map(function (m) {
         var brief = m.profile ? String(m.profile).replace(/\s+/g, ' ').slice(0, 500) : '（无档案）';
@@ -535,7 +540,7 @@
         '- 输出 3~8 条群消息，每条一行，格式严格为「成员名：消息」',
         '- 谁会接这句谁说，不必人人开口；可互相接梗拆台',
         '- 每条不超过 35 字，口语',
-        typeSyntax(),
+        typeSyntax(stickerNames),
         '- 直接输出消息，严禁寒暄开头'
       ].filter(function (s) { return s !== ''; }).join('\n');
 
@@ -778,7 +783,7 @@
     'box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;',
     'font-size:24px;user-select:none;transition:transform .15s}',
     '#lzw-ball:hover{transform:scale(1.08)}',
-    '#lzw-phone{position:fixed;z-index:99991;width:340px;height:640px;max-height:82vh;background:#101418;color:#e8ecef;',
+    '#lzw-phone{position:fixed;right:20px;bottom:20px;z-index:99991;width:min(340px,calc(100vw - 24px));height:min(640px,82vh);background:#101418;color:#e8ecef;',
     'border-radius:28px;border:1px solid rgba(255,255,255,.14);box-shadow:0 24px 70px rgba(0,0,0,.6);',
     'display:none;flex-direction:column;overflow:hidden;font-family:system-ui,"Microsoft YaHei",sans-serif;font-size:14px}',
     '#lzw-phone.lzw-open{display:flex}',
@@ -900,10 +905,15 @@
     },
 
     toggle: function () {
-      var ph = pdoc().getElementById(ID.phone);
+      var doc = pdoc();
+      var ph = doc.getElementById(ID.phone);
       if (!ph) return;
       ph.classList.toggle('lzw-open');
-      if (ph.classList.contains('lzw-open')) { UI.screen = 'home'; UI.render(); }
+      var open = ph.classList.contains('lzw-open');
+      // 手机打开时藏起悬浮球，避免叠在手机右下角
+      var ball = doc.getElementById(ID.ball);
+      if (ball) ball.style.display = open ? 'none' : '';
+      if (open) { UI.screen = 'home'; UI.render(); }
     },
 
     openChat: function (key, isGroup) {
@@ -1137,7 +1147,9 @@
     rosters: {},
     stickers: {},
     profiles: {},
+    entryStates: {},   // {条目标题: 是否勾选开启}
     line: null,        // 当前世界线（主条目名）
+    lineSource: null,  // 这条线是怎么定出来的（日志用）
     ready: false
   };
 
@@ -1200,24 +1212,85 @@
       state.rosters = data.rosters;
       state.stickers = data.stickers;
       state.profiles = data.profiles;
+      state.entryStates = data.states || {};
       state.ready = true;
       console.log('[霖州引擎] 世界书装载完成：世界线 ' + Object.keys(state.rosters).join(' / ') +
         '｜表情包 ' + Object.keys(state.stickers).length + '｜人设 ' + Object.keys(state.profiles).join('、'));
     },
 
     // ── 世界线定位 ──
+    // 优先读主条目自身的勾选状态（玩家选线时卡内代码会开关对应主条目，读这个最准，不用猜）。
+    // mode='chat'：切聊天时聊天记录里存的线优先（每条聊天记自己的线）。
+    locateLine: function (mode) {
+      var W = window.LZWorld;
+
+      var switchHit = this.lineBySwitch();
+      if (mode === 'chat') {
+        var saved = W.Store.line();
+        if (saved && state.rosters[saved]) { this.applyLine(saved, '聊天记录'); return; }
+        if (switchHit.known) { this.applyLine(switchHit.line, switchHit.note); return; }
+      } else {
+        if (switchHit.known) { this.applyLine(switchHit.line, switchHit.note); return; }
+        var saved2 = W.Store.line();
+        if (saved2 && state.rosters[saved2]) { this.applyLine(saved2, '聊天记录'); return; }
+      }
+
+      // 兜底：第一条有内容的世界线（只有开关读不到且无记录时才会走到这）
+      for (var lj = 0; lj < LINES.length; lj++) {
+        var sec0 = state.rosters[LINES[lj]];
+        if (sec0 && (sec0.contacts.length || sec0.groups.length)) {
+          this.applyLine(LINES[lj], '兜底（世界书开关读不到且无记录时的临时猜测）');
+          return;
+        }
+      }
+      this.applyLine(null, '无可用世界线');
+    },
+
+    // 读四条主条目的勾选状态。返回 {known, line, note}：
+    // known=true 表示读到了明确结论（一条开 / 全开关联动都关=古代线）；
+    // known=false 表示读不出（条目缺失 / 多条同时开 / 开关字段不存在）。
+    lineBySwitch: function () {
+      var titles = Object.keys(state.entryStates);
+      if (!titles.length) return { known: false };
+      var opened = [];
+      for (var li = 0; li < LINES.length; li++) {
+        var want = LINES[li].replace(/[【】\s]/g, '');
+        for (var i = 0; i < titles.length; i++) {
+          if (titles[i].replace(/[【】\s]/g, '') === want) {
+            if (state.entryStates[titles[i]]) opened.push(LINES[li]);
+            break;
+          }
+        }
+      }
+      if (opened.length === 1) return { known: true, line: opened[0], note: '主条目开关' };
+      if (opened.length === 0) return { known: true, line: null, note: '主条目全部关闭（古代线）' };
+      console.warn('[霖州引擎] 主条目开关读到 ' + opened.length + ' 条线同时开着（' + opened.join('、') +
+        '），视为读不出，改用其他方式定位');
+      return { known: false };
+    },
+
+    applyLine: function (line, source) {
+      if (state.line === line && state.lineSource === source) return;
+      state.line = line;
+      state.lineSource = source;
+      if (line) {
+        window.LZWorld.Store.setLine(line);
+        console.log('[霖州引擎] 世界线定位：' + line + '（依据：' + source + '）');
+      } else {
+        console.log('[霖州引擎] 世界线定位：无手机世界线（依据：' + source + '）');
+      }
+      this.syncMount();
+    },
+
+    // ── 世界线定位 ──
     setLineByEntries: function (entries) {
       if (!entries || !entries.length) return;
+      if (state.lineSource === '主条目开关') return; // 开关定位最准，广播不再纠正
       for (var li = 0; li < LINES.length; li++) {
         for (var i = 0; i < entries.length; i++) {
           var title = String((entries[i] && (entries[i].name || entries[i].comment || entries[i].title)) || '');
           if (title.indexOf(LINES[li]) !== -1) {
-            if (state.line !== LINES[li]) {
-              state.line = LINES[li];
-              window.LZWorld.Store.setLine(LINES[li]);
-              console.log('[霖州引擎] 世界线定位：' + LINES[li]);
-              this.syncMount();
-            }
+            this.applyLine(LINES[li], '世界书激活广播');
             return;
           }
         }
@@ -1238,6 +1311,7 @@
       var sec = this.section();
       if (!sec) throw new Error('当前世界线无通讯录');
 
+      var stickerNames = Object.keys(state.stickers).slice(0, 120);
       var raw, title, parseGroup = false;
 
       if (!isGroup) {
@@ -1246,7 +1320,7 @@
         var profile = state.profiles[c.name] || '';
         var snap = W.Status.snapshot(c.name);
         var hist = W.Store.history(chatKey);
-        var req = W.Prompt.private({ name: c.name, profile: profile }, hist, snap);
+        var req = W.Prompt.private({ name: c.name, profile: profile }, hist, snap, stickerNames);
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {
@@ -1259,7 +1333,7 @@
         });
         var snap2 = W.Status.snapshot(null);
         var hist2 = W.Store.history(chatKey);
-        var req2 = W.Prompt.group({ name: g.name, open: g.open }, members, hist2, snap2);
+        var req2 = W.Prompt.group({ name: g.name, open: g.open }, members, hist2, snap2, stickerNames);
         raw = await generateRaw(req2);
         title = g.name + ' 群聊';
         parseGroup = true;
@@ -1271,6 +1345,37 @@
       return { key: chatKey, title: title, msgs: msgs };
     },
 
+    // ── 快捷回复按钮自装 ──
+    // 父页面全局暴露 quickReplyApi（酒馆自带QR扩展）。装一个「📱 手机」按钮到
+    // 自建的「霖州手机」按钮集并全局显示；已存在则跳过，可重复执行。
+    installQr: function () {
+      var SET = '霖州手机';
+      try {
+        var api = window.parent.quickReplyApi;
+        if (!api || typeof api.createSet !== 'function') {
+          console.log('[霖州引擎] 父页未暴露快捷回复API，跳过按钮自装（可手动建QR按钮，命令：/event-emit event="lzw-phone-toggle"）');
+          return;
+        }
+        if (api.listSets().indexOf(SET) === -1) {
+          api.createSet(SET, {});
+          console.log('[霖州引擎] 快捷回复：已创建按钮集「' + SET + '」');
+        }
+        if (api.listQuickReplies(SET).indexOf('📱 手机') === -1) {
+          api.createQuickReply(SET, '📱 手机', {
+            message: '/event-emit event="lzw-phone-toggle"',
+            title: '霖州·数字世界（再点一次关闭）'
+          });
+          console.log('[霖州引擎] 快捷回复：已安装「📱 手机」按钮');
+        }
+        if (api.listGlobalSets().indexOf(SET) === -1) {
+          api.addGlobalSet(SET, true);
+          console.log('[霖州引擎] 快捷回复：按钮集「' + SET + '」已设为全局显示');
+        }
+      } catch (e) {
+        console.warn('[霖州引擎] 快捷回复自装失败（不影响手机本体，可手动建按钮，命令：/event-emit event="lzw-phone-toggle"）', e);
+      }
+    },
+
     // ── 启动 ──
     init: async function () {
       var W = window.LZWorld;
@@ -1278,23 +1383,8 @@
 
       await this.load();
 
-      // 先沿用上次记录的世界线（聊天变量），有新广播再纠正
-      var saved = W.Store.line();
-      if (saved && state.rosters[saved]) state.line = saved;
-
-      // 首次无记录：临时定位到第一条「有内容」的世界线（等首次生成后再精确纠正）
-      if (!state.line) {
-        for (var li = 0; li < LINES.length; li++) {
-          var sec0 = state.rosters[LINES[li]];
-          if (sec0 && (sec0.contacts.length || sec0.groups.length)) {
-            state.line = LINES[li];
-            console.log('[霖州引擎] 首次临时定位世界线：' + LINES[li] + '（首次主对话生成后将精确纠正）');
-            break;
-          }
-        }
-      }
-
-      this.syncMount();
+      this.locateLine();
+      this.installQr();
       try { W.Floor.renderAll(); } catch (e) {}
 
       // 快捷回复入口：QR 按钮命令 /event-emit event="lzw-phone-toggle"
@@ -1326,7 +1416,7 @@
         on(tavern_events.CHAT_CHANGED, function () {
           clearTimeout(reinitTimer);
           reinitTimer = setTimeout(async function () {
-            state.line = W.Store.line();
+            Engine.locateLine('chat');
             Engine.syncMount();
             try { W.Floor.renderAll(); } catch (e) {}
             var UI = W.Apps.wechat;

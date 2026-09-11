@@ -23,7 +23,7 @@
     'box-shadow:0 6px 20px rgba(0,0,0,.4);cursor:pointer;display:flex;align-items:center;justify-content:center;',
     'font-size:24px;user-select:none;transition:transform .15s}',
     '#lzw-ball:hover{transform:scale(1.08)}',
-    '#lzw-phone{position:fixed;z-index:99991;width:340px;height:640px;max-height:82vh;background:#101418;color:#e8ecef;',
+    '#lzw-phone{position:fixed;right:20px;bottom:20px;z-index:99991;width:min(340px,calc(100vw - 24px));height:min(640px,82vh);background:#101418;color:#e8ecef;',
     'border-radius:28px;border:1px solid rgba(255,255,255,.14);box-shadow:0 24px 70px rgba(0,0,0,.6);',
     'display:none;flex-direction:column;overflow:hidden;font-family:system-ui,"Microsoft YaHei",sans-serif;font-size:14px}',
     '#lzw-phone.lzw-open{display:flex}',
@@ -145,10 +145,15 @@
     },
 
     toggle: function () {
-      var ph = pdoc().getElementById(ID.phone);
+      var doc = pdoc();
+      var ph = doc.getElementById(ID.phone);
       if (!ph) return;
       ph.classList.toggle('lzw-open');
-      if (ph.classList.contains('lzw-open')) { UI.screen = 'home'; UI.render(); }
+      var open = ph.classList.contains('lzw-open');
+      // 手机打开时藏起悬浮球，避免叠在手机右下角
+      var ball = doc.getElementById(ID.ball);
+      if (ball) ball.style.display = open ? 'none' : '';
+      if (open) { UI.screen = 'home'; UI.render(); }
     },
 
     openChat: function (key, isGroup) {
