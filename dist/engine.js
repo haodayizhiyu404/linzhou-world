@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T15:21:14.936Z
+//  构建时间：2026-09-12T15:38:41.288Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 15:21';
+var __LZW_BUILD__ = '2026-09-12 15:38';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -715,6 +715,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       case 'voice':    return '[语音:' + m.text + ']';
       case 'image':    return '[图片:' + m.text + ']';
       case 'poke':     return '[戳一戳]';
+      case 'calllog':  return '[' + (m.mode === 'video' ? '视频通话' : '语音通话') + ']';
       case 'location': return '[定位:' + m.text + ']';
       default:         return String(m.text || '');
     }
@@ -867,18 +868,18 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
     // ── 通话邀请：机主拨打了语音/视频通话，AI 决定接/拒 ──
     // 约定：两种反应都带标识便于解析剔除——拒绝 → 第一行以 [拒绝] 开头，可附一句简短说明；
-    // 接听 → 以 [接听] 开头，其后接接通后的第一句话（口语台词，不要引号/动作/括号）。
-    // 视频通话还须先给 [画面] 块（机主接通瞬间看到的对方可见状态），块结束单独一行 --- 分隔。
+    // 接听 → 以 [接听] 开头，其后接接通后的开场（台词与画面交织）。
+    // 视频通话的可见状态用 [画面] 行写，插在动作发生的对应位置（可穿插多行，不只开头）。
     // 呼叫页等待期间的一次生成。
     callInvite: function (contact, hist, snapshot, userInfo, mode, crossGroups) {
       var myName = me();
       var kind = mode === 'video' ? '视频通话' : '语音通话';
       var outReq = mode === 'video' ? [
         '## 输出要求（严格遵守，二选一）',
-        '- 接听：第一行以 [接听] 开头；其后先给 [画面] 块——机主接通瞬间在屏幕里看到的「' + contact.name + '」的可见状态（在哪、姿势、表情、衣着、手上动作），1~3 个短句，只写看得见的东西；画面块结束单独一行输出 --- 作为分隔；分隔线后接 1~3 行开场台词，像真人视频电话的开场',
+        '- 接听：第一行以 [接听] 开头；其后是接通后的开场——台词与画面交织，每行要么是「' + contact.name + '」的口语台词，要么是以 [画面] 开头的一行可见状态（在哪、姿势、表情、衣着、手上动作；只写看得见的东西，就写在该动作发生的对应位置，可穿插多行：一边说一边做的事要插在对应台词旁边）',
         '- 拒绝：第一行以 [拒绝] 开头，其后可附一句简短说明（如「在忙，晚点回」），也可不附',
         '- [接听]/[拒绝]/[画面] 是程序解析用的标记，只输出标记本身，不要给标记加引号或其他说明',
-        '- 台词口语化：短句、停顿感、可有语气词；不要引号、动作描写、心理括号、时间戳（动作只写进画面块）',
+        '- 台词口语化：短句、停顿感、可有语气词；不要引号、动作描写、心理括号、时间戳（动作只写进 [画面] 行）',
         '- 决定须符合上方「关系」阶段与当前情境（深夜/工作时间/在群里刚聊过等）'
       ].join('\n') : [
         '## 输出要求（严格遵守，二选一）',
@@ -931,10 +932,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var kind = mode === 'video' ? '视频通话' : '语音通话';
       var outReq = mode === 'video' ? [
         '## 输出要求',
-        '- 先输出 [画面] 块：机主在屏幕里看到的「' + contact.name + '」当下的可见状态（在哪、姿势、表情、衣着、手上的动作），1~3 个短句，只写看得见的东西',
-        '- 画面块结束单独一行输出 --- 作为分隔；分隔线后才是台词',
-        '- 分隔线后只输出「' + contact.name + '」的台词，行数随情境自然决定（聊得热络可以多说，无事可说就少），口语化：短句、停顿感、可有语气词，不要书面腔',
-        '- 每行独立，不要引号、动作描写、心理括号、时间戳（动作只写进画面块）',
+        '- 输出 = 「' + contact.name + '」的台词与画面交织流：每行要么是台词，要么是以 [画面] 开头的一行可见状态（在哪、姿势、表情、衣着、手上的动作；只写看得见的东西）',
+        '- [画面] 行穿插在台词中间、写在该动作发生的时刻——他一边说一边做的事（吃了片薯片、抬头看镜头、擦了把汗）就插在对应台词旁边，不要全堆在开头或结尾',
+        '- 台词行数随情境自然决定（聊得热络可以多说，无事可说就少），口语化：短句、停顿感、可有语气词，不要书面腔',
+        '- 每行独立，不要引号、动作描写、心理括号、时间戳（动作只写进 [画面] 行）',
         '- 情感与态度符合上方「关系」阶段；吵架、撒娇、汇报都按当前关系该有度',
         '- 不要复述机主刚说的话'
       ].join('\n') : [
@@ -1100,6 +1101,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       case 'voice':   body = '[语音:' + m.text + ']'; break;
       case 'image':   body = '[图片:' + m.text + ']'; break;
       case 'poke':    body = '[戳一戳]'; break;
+      // 通话记录灰泡在楼层存档里就是一行类型标（与列表页预览一致）
+      case 'calllog': body = '[' + (m.mode === 'video' ? '视频通话' : '语音通话') + ']'; break;
       case 'location':body = '[定位:' + m.text + ']'; break;
       // 视频通话的画面条目（跨行压成一行，带标记便于模型区分可见状态与台词）
       case 'scene':   body = '（画面：' + String(m.text || '').replace(/\n+/g, '　') + '）'; break;
@@ -1147,6 +1150,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       // 戳一戳单独成行：整行居中灰字，不带头像气泡
       if (content === '[戳一戳]') {
         rows.push('<div class="lzw-pokerow">' + (isUser ? '你戳了戳对方' : esc(who) + '戳了戳你') + '</div>');
+        return;
+      }
+      // 通话记录：灰字一行，不带头像气泡
+      if (content === '[语音通话]' || content === '[视频通话]') {
+        rows.push('<div class="lzw-pokerow">' + esc(content) + '</div>');
         return;
       }
       var typed = content.match(/^\[(表情|语音|图片|戳一戳|定位)(?::|\||｜)([\s\S]*)\]$/);
@@ -1447,6 +1455,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-bub{max-width:62%;padding:8px 11px;border-radius:9px;background:#fff;color:#111;line-height:1.45;font-size:13.5px;',
     'word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.05)}',
     '.lzw-chatrow.me .lzw-bub{background:#95ec69}',
+    // 通话记录灰泡：两边都灰（对齐真实微信），须压过 me 的绿底
+    '.lzw-bub.lzw-calllog{display:flex;align-items:center;gap:7px;background:#dcdfe4;color:#333;font-size:12.5px;padding:7px 12px}',
+    '.lzw-chatrow.me .lzw-bub.lzw-calllog{background:#dcdfe4;color:#333}',
+    '.lzw-calllog-ico{display:inline-flex;transform:rotate(135deg);flex:none}', // 听筒朝下 = 已结束/未接通
     '.lzw-bub.lzw-sys{background:transparent;box-shadow:none;color:#8a8f99;font-size:12px;padding:2px 4px}',
     '.lzw-sticker{max-width:120px;border-radius:8px}',
     '.lzw-voice{display:flex;flex-wrap:wrap;align-items:center;gap:8px;cursor:pointer;min-width:80px}',
@@ -1654,6 +1666,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     } else if (m.kind === 'poke') {
       bub = richBub(m, isUser, who, targetName, true);
       return '<div class="lzw-pokerow" data-del="' + idx + '">' + bub + '</div>';
+    } else if (m.kind === 'calllog') {
+      // 通话记录灰泡：谁发起的归谁一侧，听筒朝下图标 + 时长/拒绝/取消文案
+      bub = '<div class="lzw-bub lzw-calllog"><span class="lzw-calllog-ico">' + ICON_CALL + '</span>' + esc(m.text || '') + '</div>';
     } else if (m.kind === 'voice' || m.kind === 'image' || m.kind === 'location') {
       bub = richBub(m, isUser, who, targetName, false);
     } else {
@@ -1900,7 +1915,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           rowsHtml = convs.map(function (cv) {
             var h = W.Store.history(cv.key);
             var last = h.length ? h[h.length - 1] : null;
-            var prev = last ? (last.kind === 'text' ? last.text : '[' + (kindCn[last.kind] || last.kind) + ']') : '（暂无消息）';
+            var prev = last
+              ? (last.kind === 'text' ? last.text
+                : last.kind === 'calllog' ? '[' + (last.mode === 'video' ? '视频通话' : '语音通话') + ']'
+                : '[' + (kindCn[last.kind] || last.kind) + ']')
+              : '（暂无消息）';
             var av = cv.avatar
               ? '<img class="lzw-ava" src="' + esc(W.Worldbook.imgUrl(cv.avatar)) + '">'
               : (cv.group ? '<div class="lzw-ava">👥</div>' : '<div class="lzw-ava">' + esc(cv.name.slice(0, 1)) + '</div>');
@@ -2330,7 +2349,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var name = this.chatKey;
       this.panel = null;
       this.callMute = false; this.callSpkr = false;
-      this.call = { name: name, mode: mode, phase: 'ringing', startAt: Date.now(), busy: false };
+      this.call = { name: name, mode: mode, phase: 'ringing', startAt: Date.now(), busy: false, by: 'user' };
       this.render();
       try {
         var text = await withTimeout(eng.callInvite(name, mode), 90000);
@@ -2342,21 +2361,25 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           var kindCn1 = mode === 'video' ? '视频通话' : '语音通话';
           var back = [];
           if (reason) back.push({ who: name, kind: 'text', text: reason });
-          back.push({ who: 'sys', kind: 'sys', text: kindCn1 + ' · 对方拒接' });
+          // 通话记录灰泡由发起方生成：被拒 = 「对方已拒绝」+ 听筒朝下图标
+          back.push({ who: 'user', kind: 'calllog', mode: mode, text: '对方已拒绝' });
           W.Store.push(name, back, 100);
           try { W.Store.setMeta(name, { headline: kindCn1 + ' · 未接', atMainCount: eng.mainCount() }); } catch (e) {}
           this.call = null; this.render();
           return;
         }
-        // 接听：剥掉 [接听] 标记（兼容笨 AI 的「接听：」写法），正文进通话记录；
-        // 标记后没有正文也不碍事——先进通话，由机主先开口。
-        // 视频通话还要拆 [画面] 块（无分隔线时 splitScene 自动降级为纯台词）。
+        // 接听：剥掉 [接听] 标记（兼容笨 AI 的「接听：」写法），正文按保序流进通话记录
+        // （视频 = [画面] 行与台词行交织；splitCallOutput 兼容旧式 --- 块）
         text = text.replace(/^\[接听\]\s*/, '').replace(/^接听[：:]\s*/, '').trim();
-        var opening = eng.splitScene(text);
         var entries = [];
-        if (mode === 'video' && opening.scene) entries.push({ who: name, kind: 'scene', text: opening.scene });
-        opening.text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 8)
-          .forEach(function (l) { entries.push({ who: name, kind: 'text', text: l }); });
+        if (mode === 'video') {
+          eng.splitCallOutput(text).slice(0, 12).forEach(function (en) {
+            entries.push({ who: name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
+          });
+        } else {
+          text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 8)
+            .forEach(function (l) { entries.push({ who: name, kind: 'text', text: l }); });
+        }
         if (entries.length) W.Store.push(eng.callKey(name), entries, 200);
         this.call.phase = 'active';
         this.call.startAt = Date.now();
@@ -2381,8 +2404,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       try {
         var ret = await withTimeout(eng.callTurn(call.name, call.mode, text), 90000);
         var entries = [];
-        if (call.mode === 'video' && ret.scene) entries.push({ who: call.name, kind: 'scene', text: ret.scene });
-        (ret.lines || []).forEach(function (l) { entries.push({ who: call.name, kind: 'text', text: l }); });
+        (ret.entries || []).forEach(function (en) {
+          entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
+        });
         if (entries.length) W.Store.push(key, entries, 200);
       } catch (e) {
         try { toastr.error('对方信号不好，再试一次', '📱 霖州引擎'); } catch (e2) {}
@@ -2406,8 +2430,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       try {
         var ret = await withTimeout(eng.callTurn(call.name, call.mode, ''), 90000);
         var entries = [];
-        if (call.mode === 'video' && ret.scene) entries.push({ who: call.name, kind: 'scene', text: ret.scene });
-        (ret.lines || []).forEach(function (l) { entries.push({ who: call.name, kind: 'text', text: l }); });
+        (ret.entries || []).forEach(function (en) {
+          entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
+        });
         if (entries.length) W.Store.push(key, entries, 200);
       } catch (e) {
         try { toastr.error('重说失败，再试一次', '📱 霖州引擎'); } catch (e2) {}
@@ -2415,20 +2440,23 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (this.call === call) { call.busy = false; this.render(); }
     },
 
-    // 挂断：写时长（transcript 末尾 + 私聊系统条目），回聊天页。
-    // cancelled = 呼叫未接通时取消，不留记录。
+    // 挂断：transcript 末尾写时长；私聊里由发起方留一条通话记录灰泡（微信真实样式：
+    // 正常结束 = 通话时长 + 听筒朝下；取消 = 已取消），回聊天页。
     hangup: function (cancelled) {
       var call = this.call; if (!call) return;
       var W = window.LZWorld, eng = W.Engine;
       this.call = null;
       if (this._ct) { clearInterval(this._ct); this._ct = null; }
-      if (!cancelled && call.phase === 'active') {
+      var who = call.by === 'user' ? 'user' : call.name;
+      var kindCn2 = call.mode === 'video' ? '视频通话' : '语音通话';
+      if (call.phase === 'active') {
         var sec = Math.max(1, Math.round((Date.now() - call.startAt) / 1000));
         var dur = fmtDur(sec);
-        var kindCn2 = call.mode === 'video' ? '视频通话' : '语音通话';
         W.Store.push(eng.callKey(call.name), [{ who: 'sys', kind: 'sys', text: '通话结束 · ' + dur }], 200);
-        W.Store.push(call.name, [{ who: 'sys', kind: 'sys', text: kindCn2 + ' · ' + dur }], 100);
+        W.Store.push(call.name, [{ who: who, kind: 'calllog', mode: call.mode, text: '通话时长 ' + dur }], 100);
         try { W.Store.setMeta(call.name, { headline: kindCn2 + ' ' + dur, atMainCount: eng.mainCount() }); } catch (e) {}
+      } else if (cancelled) {
+        W.Store.push(call.name, [{ who: who, kind: 'calllog', mode: call.mode, text: '已取消' }], 100);
       }
       this.screen = 'chat';
       this.chatKey = call.name;
@@ -3213,6 +3241,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var arr = byWho[n];
         var last = arr[arr.length - 1];
         var headText = last.kind === 'text' ? last.text
+          : last.kind === 'calllog' ? '[' + (last.mode === 'video' ? '视频通话' : '语音通话') + ']'
           : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[last.kind] || '消息') + ']';
         W.Store.setMeta(n, { headline: String(headText).slice(0, 40), atMainCount: Engine.mainCount() });
       });
@@ -3320,7 +3349,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!msgs.length) throw new Error('生成结果为空');
       // 一行近况（正文注入用）：取最后一条消息的核心内容
       var lastMsg = msgs[msgs.length - 1];
-      var headText = lastMsg.kind === 'text' ? lastMsg.text : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[lastMsg.kind] || '消息') + ']';
+      var headText = lastMsg.kind === 'text' ? lastMsg.text
+        : lastMsg.kind === 'calllog' ? '[' + (lastMsg.mode === 'video' ? '视频通话' : '语音通话') + ']'
+        : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[lastMsg.kind] || '消息') + ']';
       W.Store.setMeta(chatKey, { headline: String(headText).slice(0, 40), atMainCount: this.mainCount() });
       return { key: chatKey, title: title, msgs: msgs };
     },
@@ -3349,15 +3380,30 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return text.trim();
     },
 
-    // 通话轮：机主「说」了 userSays（可为空 = 接续对方上一句），生成对方台词
-    // 视频通话输出拆分：[画面]块 + 单独一行的 --- 分隔 + 台词。
-    // 没有分隔线时只剥掉标记行、全部当台词（保住对话流优先于画面）。
-    splitScene: function (text) {
-      var scene = '';
-      var m = String(text || '').match(/\[画面\][^\n]*\n?([\s\S]*?)\n?---[ \t]*\n?([\s\S]*)$/);
-      if (m) { scene = m[1].trim(); text = m[2]; }
-      else { text = String(text || '').replace(/^\[画面\][^\n]*\n?/, ''); }
-      return { scene: scene, text: String(text || '').trim() };
+    // 通话输出拆分（保序，视频用）：逐行扫描，[画面] 行是画面条目，其余是台词，
+    // 按出现顺序交织返回——说到哪演到哪，画面不堆在开头。
+    // 兼容旧格式：[画面] 行后未写完的续行一直收到单独一行的 --- 为止。
+    splitCallOutput: function (text) {
+      var entries = [];
+      var sceneBuf = null;
+      String(text || '').split('\n').forEach(function (raw) {
+        var ln = raw.trim();
+        if (!ln) return;
+        if (/^-{3,}\s*$/.test(ln)) { // 分隔线：旧格式的画面块到此闭合落档
+          if (sceneBuf) { entries.push({ kind: 'scene', text: sceneBuf }); sceneBuf = null; }
+          return;
+        }
+        var m = ln.match(/^\[画面\]\s*(.*)$/);
+        if (m) {
+          if (m[1]) { entries.push({ kind: 'scene', text: m[1] }); sceneBuf = null; }
+          else sceneBuf = ''; // 空标记行：后续续行进画面块，直到 --- 或下一行 [画面]
+          return;
+        }
+        if (sceneBuf != null) { sceneBuf = sceneBuf ? sceneBuf + '\n' + ln : ln; return; }
+        entries.push({ kind: 'line', text: ln });
+      });
+      if (sceneBuf) entries.push({ kind: 'scene', text: sceneBuf });
+      return entries;
     },
 
     callTurn: async function (name, mode, userSays) {
@@ -3384,13 +3430,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       // 剥注释块防污染（极端情况：AI 在通话里输出主动块）
       text = text.replace(/<!--" + BS + "s*phone" + BS + "s*([" + BS + "s" + BS + "S]*?)-->/gi, '');
-      // 视频通话拆出 [画面] 块（音频永远无画面）
-      var sp = { scene: '', text: text };
-      if (mode === 'video') sp = this.splitScene(text);
-      return {
-        scene: sp.scene,
-        lines: sp.text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 12)
-      };
+      // 视频通话拆成保序条目流：[画面] 行与台词行按出现顺序交织（音频永远无画面）
+      var entries = [];
+      if (mode === 'video') {
+        this.splitCallOutput(text).slice(0, 16).forEach(function (en) { entries.push(en); });
+      } else {
+        text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 12)
+          .forEach(function (l) { entries.push({ kind: 'line', text: l }); });
+      }
+      return { entries: entries };
     },
 
     // ── 快捷回复按钮自装 ──

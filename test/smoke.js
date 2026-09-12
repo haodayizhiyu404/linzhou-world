@@ -312,12 +312,12 @@ ctx.getWorldbook = async () => [
   eq('通话·邀请任务', invTxt.indexOf('语音通话') !== -1, true);
   eq('通话·拒绝约定', invTxt.indexOf('[拒绝]') !== -1, true);
   eq('通话·接听约定', invTxt.indexOf('[接听]') !== -1, true);
-  // 视频邀请单独要求 [画面] 块 + 分隔线（看得见对方，与语音区分）
+  // 视频邀请单独要求 [画面] 行（与台词交织，不只开头）
   const invV = LW.Prompt.callInvite({ name: '沈锡元', profile: '测试档案' }, invHist, { dateText: '2034年8月26日 星期五', npc: { relation: '竹马' } }, '机主资料', 'video', []);
   const invVTxt = invV.ordered_prompts[0].content;
   eq('通话·视频邀请任务', invVTxt.indexOf('视频通话') !== -1, true);
   eq('通话·视频邀请画面约定', invVTxt.indexOf('[画面]') !== -1, true);
-  eq('通话·视频邀请分隔线', invVTxt.indexOf('---') !== -1, true);
+  eq('通话·视频邀请画面穿插', invVTxt.indexOf('穿插') !== -1, true);
   eq('通话·语音邀请无画面约定', invTxt.indexOf('[画面]') === -1, true);
   eq('通话·邀请不带通话记录段', invTxt.indexOf('## 通话记录') === -1, true);
   eq('通话·邀请带主线近况', invTxt.indexOf('## 主线近况') !== -1, true);
@@ -329,19 +329,24 @@ ctx.getWorldbook = async () => [
   eq('通话·轮带主线近况', turnTxt.indexOf('## 主线近况') !== -1, true);
   eq('通话·轮带近期私聊', turnTxt.indexOf('## 近期私聊记录') !== -1, true);
   eq('通话·机主话入user轮', turn.ordered_prompts[1].content.indexOf('你睡了吗') !== -1, true);
-  // 视频轮次同样要 [画面] 块；splitScene 把画面与台词拆开，台词丢画面标记
+  // 视频轮次同样要 [画面] 行且要求穿插；splitCallOutput 保序拆分画面与台词
   eq('通话·视频轮画面约定', turnTxt.indexOf('[画面]') !== -1, true);
-  eq('通话·视频轮分隔线', turnTxt.indexOf('---') !== -1, true);
-  const sp = LW.Engine.splitScene('[画面]\n他揉了揉眼睛，凑近屏幕\n---\n沈锡元：喂');
-  eq('通话·画面拆分场景', sp.scene, '他揉了揉眼睛，凑近屏幕');
-  eq('通话·画面拆分台词', sp.text.indexOf('沈锡元：喂') !== -1, true);
-  eq('通话·画面拆分去标记', sp.text.indexOf('[画面]') === -1, true);
-  // 没有分隔线时只剥标记行、全部当台词（保住对话流优先于画面）
-  const sp2 = LW.Engine.splitScene('[画面]\n喂，听得到吗');
-  eq('通话·画面无分隔线兜底', sp2.scene, '');
-  eq('通话·画面无分隔线台词', sp2.text.indexOf('喂，听得到吗') !== -1, true);
-  // 画面条目跨行压成一行进通话记录（楼层记录里不吃多行）
-  eq('通话·画面行格式', LW.Floor.msgToLine({ who: '沈锡元', kind: 'scene', text: '镜头里\n他在笑' }, '裴知意'), '沈锡元：（画面：镜头里　他在笑）');
+  eq('通话·视频轮画面穿插', turnTxt.indexOf('穿插') !== -1, true);
+  const sp = LW.Engine.splitCallOutput('[画面] 他揉了揉眼睛，凑近屏幕\n喂\n[画面] 他笑着摆了摆手\n明天见');
+  eq('通话·拆分保序数', sp.length, 4);
+  eq('通话·拆分首条画面', sp[0].kind, 'scene');
+  eq('通话·拆分画面内容', sp[0].text.indexOf('揉了揉眼睛') !== -1, true);
+  eq('通话·拆分台词在画面后', sp[1].kind + ':' + sp[1].text, 'line:喂');
+  eq('通话·拆分画面穿插中间', sp[2].kind, 'scene');
+  eq('通话·拆分结尾台词', sp[3].text, '明天见');
+  // 旧格式兼容：[画面] 行后未写完的续行收到 --- 为止
+  const sp2 = LW.Engine.splitCallOutput('[画面]\n他凑近屏幕，眨了眨眼\n---\n喂，听得到吗');
+  eq('通话·旧格式画面合块', sp2[0].kind, 'scene');
+  eq('通话·旧格式画面内容', sp2[0].text.indexOf('眨了眨眼') !== -1, true);
+  eq('通话·旧格式台词保留', sp2[1].text, '喂，听得到吗');
+  // 通话记录灰泡：楼层存档与列表页预览统一压成 [语音通话]/[视频通话]
+  eq('通话·记录行格式音频', LW.Floor.msgToLine({ who: 'user', kind: 'calllog', mode: 'audio', text: '通话时长 00:09' }, '裴知意'), '裴知意：[语音通话]');
+  eq('通话·记录行格式视频', LW.Floor.msgToLine({ who: 'user', kind: 'calllog', mode: 'video', text: '对方已拒绝' }, '裴知意'), '裴知意：[视频通话]');
   // 群夹带私聊：群回复里的 <!--phone--> 块路由进私聊且从群记录剥掉
   global.__msgs = null;
   const sideNames = LW.Engine.capturePhoneText('陆飞：哈哈<!--phone\n许嘉文：我有，直接送你\n-->还有');

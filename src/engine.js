@@ -599,6 +599,7 @@
         var arr = byWho[n];
         var last = arr[arr.length - 1];
         var headText = last.kind === 'text' ? last.text
+          : last.kind === 'calllog' ? '[' + (last.mode === 'video' ? '视频通话' : '语音通话') + ']'
           : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[last.kind] || '消息') + ']';
         W.Store.setMeta(n, { headline: String(headText).slice(0, 40), atMainCount: Engine.mainCount() });
       });
@@ -706,7 +707,9 @@
       if (!msgs.length) throw new Error('生成结果为空');
       // 一行近况（正文注入用）：取最后一条消息的核心内容
       var lastMsg = msgs[msgs.length - 1];
-      var headText = lastMsg.kind === 'text' ? lastMsg.text : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[lastMsg.kind] || '消息') + ']';
+      var headText = lastMsg.kind === 'text' ? lastMsg.text
+        : lastMsg.kind === 'calllog' ? '[' + (lastMsg.mode === 'video' ? '视频通话' : '语音通话') + ']'
+        : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[lastMsg.kind] || '消息') + ']';
       W.Store.setMeta(chatKey, { headline: String(headText).slice(0, 40), atMainCount: this.mainCount() });
       return { key: chatKey, title: title, msgs: msgs };
     },
@@ -735,15 +738,30 @@
       return text.trim();
     },
 
-    // 通话轮：机主「说」了 userSays（可为空 = 接续对方上一句），生成对方台词
-    // 视频通话输出拆分：[画面]块 + 单独一行的 --- 分隔 + 台词。
-    // 没有分隔线时只剥掉标记行、全部当台词（保住对话流优先于画面）。
-    splitScene: function (text) {
-      var scene = '';
-      var m = String(text || '').match(/\[画面\][^\n]*\n?([\s\S]*?)\n?---[ \t]*\n?([\s\S]*)$/);
-      if (m) { scene = m[1].trim(); text = m[2]; }
-      else { text = String(text || '').replace(/^\[画面\][^\n]*\n?/, ''); }
-      return { scene: scene, text: String(text || '').trim() };
+    // 通话输出拆分（保序，视频用）：逐行扫描，[画面] 行是画面条目，其余是台词，
+    // 按出现顺序交织返回——说到哪演到哪，画面不堆在开头。
+    // 兼容旧格式：[画面] 行后未写完的续行一直收到单独一行的 --- 为止。
+    splitCallOutput: function (text) {
+      var entries = [];
+      var sceneBuf = null;
+      String(text || '').split('\n').forEach(function (raw) {
+        var ln = raw.trim();
+        if (!ln) return;
+        if (/^-{3,}\s*$/.test(ln)) { // 分隔线：旧格式的画面块到此闭合落档
+          if (sceneBuf) { entries.push({ kind: 'scene', text: sceneBuf }); sceneBuf = null; }
+          return;
+        }
+        var m = ln.match(/^\[画面\]\s*(.*)$/);
+        if (m) {
+          if (m[1]) { entries.push({ kind: 'scene', text: m[1] }); sceneBuf = null; }
+          else sceneBuf = ''; // 空标记行：后续续行进画面块，直到 --- 或下一行 [画面]
+          return;
+        }
+        if (sceneBuf != null) { sceneBuf = sceneBuf ? sceneBuf + '\n' + ln : ln; return; }
+        entries.push({ kind: 'line', text: ln });
+      });
+      if (sceneBuf) entries.push({ kind: 'scene', text: sceneBuf });
+      return entries;
     },
 
     callTurn: async function (name, mode, userSays) {
@@ -770,13 +788,15 @@
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       // 剥注释块防污染（极端情况：AI 在通话里输出主动块）
       text = text.replace(/<!--" + BS + "s*phone" + BS + "s*([" + BS + "s" + BS + "S]*?)-->/gi, '');
-      // 视频通话拆出 [画面] 块（音频永远无画面）
-      var sp = { scene: '', text: text };
-      if (mode === 'video') sp = this.splitScene(text);
-      return {
-        scene: sp.scene,
-        lines: sp.text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 12)
-      };
+      // 视频通话拆成保序条目流：[画面] 行与台词行按出现顺序交织（音频永远无画面）
+      var entries = [];
+      if (mode === 'video') {
+        this.splitCallOutput(text).slice(0, 16).forEach(function (en) { entries.push(en); });
+      } else {
+        text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 12)
+          .forEach(function (l) { entries.push({ kind: 'line', text: l }); });
+      }
+      return { entries: entries };
     },
 
     // ── 快捷回复按钮自装 ──

@@ -130,6 +130,10 @@
     '.lzw-bub{max-width:62%;padding:8px 11px;border-radius:9px;background:#fff;color:#111;line-height:1.45;font-size:13.5px;',
     'word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.05)}',
     '.lzw-chatrow.me .lzw-bub{background:#95ec69}',
+    // 通话记录灰泡：两边都灰（对齐真实微信），须压过 me 的绿底
+    '.lzw-bub.lzw-calllog{display:flex;align-items:center;gap:7px;background:#dcdfe4;color:#333;font-size:12.5px;padding:7px 12px}',
+    '.lzw-chatrow.me .lzw-bub.lzw-calllog{background:#dcdfe4;color:#333}',
+    '.lzw-calllog-ico{display:inline-flex;transform:rotate(135deg);flex:none}', // 听筒朝下 = 已结束/未接通
     '.lzw-bub.lzw-sys{background:transparent;box-shadow:none;color:#8a8f99;font-size:12px;padding:2px 4px}',
     '.lzw-sticker{max-width:120px;border-radius:8px}',
     '.lzw-voice{display:flex;flex-wrap:wrap;align-items:center;gap:8px;cursor:pointer;min-width:80px}',
@@ -337,6 +341,9 @@
     } else if (m.kind === 'poke') {
       bub = richBub(m, isUser, who, targetName, true);
       return '<div class="lzw-pokerow" data-del="' + idx + '">' + bub + '</div>';
+    } else if (m.kind === 'calllog') {
+      // 通话记录灰泡：谁发起的归谁一侧，听筒朝下图标 + 时长/拒绝/取消文案
+      bub = '<div class="lzw-bub lzw-calllog"><span class="lzw-calllog-ico">' + ICON_CALL + '</span>' + esc(m.text || '') + '</div>';
     } else if (m.kind === 'voice' || m.kind === 'image' || m.kind === 'location') {
       bub = richBub(m, isUser, who, targetName, false);
     } else {
@@ -583,7 +590,11 @@
           rowsHtml = convs.map(function (cv) {
             var h = W.Store.history(cv.key);
             var last = h.length ? h[h.length - 1] : null;
-            var prev = last ? (last.kind === 'text' ? last.text : '[' + (kindCn[last.kind] || last.kind) + ']') : '（暂无消息）';
+            var prev = last
+              ? (last.kind === 'text' ? last.text
+                : last.kind === 'calllog' ? '[' + (last.mode === 'video' ? '视频通话' : '语音通话') + ']'
+                : '[' + (kindCn[last.kind] || last.kind) + ']')
+              : '（暂无消息）';
             var av = cv.avatar
               ? '<img class="lzw-ava" src="' + esc(W.Worldbook.imgUrl(cv.avatar)) + '">'
               : (cv.group ? '<div class="lzw-ava">👥</div>' : '<div class="lzw-ava">' + esc(cv.name.slice(0, 1)) + '</div>');
@@ -1013,7 +1024,7 @@
       var name = this.chatKey;
       this.panel = null;
       this.callMute = false; this.callSpkr = false;
-      this.call = { name: name, mode: mode, phase: 'ringing', startAt: Date.now(), busy: false };
+      this.call = { name: name, mode: mode, phase: 'ringing', startAt: Date.now(), busy: false, by: 'user' };
       this.render();
       try {
         var text = await withTimeout(eng.callInvite(name, mode), 90000);
@@ -1025,21 +1036,25 @@
           var kindCn1 = mode === 'video' ? '视频通话' : '语音通话';
           var back = [];
           if (reason) back.push({ who: name, kind: 'text', text: reason });
-          back.push({ who: 'sys', kind: 'sys', text: kindCn1 + ' · 对方拒接' });
+          // 通话记录灰泡由发起方生成：被拒 = 「对方已拒绝」+ 听筒朝下图标
+          back.push({ who: 'user', kind: 'calllog', mode: mode, text: '对方已拒绝' });
           W.Store.push(name, back, 100);
           try { W.Store.setMeta(name, { headline: kindCn1 + ' · 未接', atMainCount: eng.mainCount() }); } catch (e) {}
           this.call = null; this.render();
           return;
         }
-        // 接听：剥掉 [接听] 标记（兼容笨 AI 的「接听：」写法），正文进通话记录；
-        // 标记后没有正文也不碍事——先进通话，由机主先开口。
-        // 视频通话还要拆 [画面] 块（无分隔线时 splitScene 自动降级为纯台词）。
+        // 接听：剥掉 [接听] 标记（兼容笨 AI 的「接听：」写法），正文按保序流进通话记录
+        // （视频 = [画面] 行与台词行交织；splitCallOutput 兼容旧式 --- 块）
         text = text.replace(/^\[接听\]\s*/, '').replace(/^接听[：:]\s*/, '').trim();
-        var opening = eng.splitScene(text);
         var entries = [];
-        if (mode === 'video' && opening.scene) entries.push({ who: name, kind: 'scene', text: opening.scene });
-        opening.text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 8)
-          .forEach(function (l) { entries.push({ who: name, kind: 'text', text: l }); });
+        if (mode === 'video') {
+          eng.splitCallOutput(text).slice(0, 12).forEach(function (en) {
+            entries.push({ who: name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
+          });
+        } else {
+          text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 8)
+            .forEach(function (l) { entries.push({ who: name, kind: 'text', text: l }); });
+        }
         if (entries.length) W.Store.push(eng.callKey(name), entries, 200);
         this.call.phase = 'active';
         this.call.startAt = Date.now();
@@ -1064,8 +1079,9 @@
       try {
         var ret = await withTimeout(eng.callTurn(call.name, call.mode, text), 90000);
         var entries = [];
-        if (call.mode === 'video' && ret.scene) entries.push({ who: call.name, kind: 'scene', text: ret.scene });
-        (ret.lines || []).forEach(function (l) { entries.push({ who: call.name, kind: 'text', text: l }); });
+        (ret.entries || []).forEach(function (en) {
+          entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
+        });
         if (entries.length) W.Store.push(key, entries, 200);
       } catch (e) {
         try { toastr.error('对方信号不好，再试一次', '📱 霖州引擎'); } catch (e2) {}
@@ -1089,8 +1105,9 @@
       try {
         var ret = await withTimeout(eng.callTurn(call.name, call.mode, ''), 90000);
         var entries = [];
-        if (call.mode === 'video' && ret.scene) entries.push({ who: call.name, kind: 'scene', text: ret.scene });
-        (ret.lines || []).forEach(function (l) { entries.push({ who: call.name, kind: 'text', text: l }); });
+        (ret.entries || []).forEach(function (en) {
+          entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
+        });
         if (entries.length) W.Store.push(key, entries, 200);
       } catch (e) {
         try { toastr.error('重说失败，再试一次', '📱 霖州引擎'); } catch (e2) {}
@@ -1098,20 +1115,23 @@
       if (this.call === call) { call.busy = false; this.render(); }
     },
 
-    // 挂断：写时长（transcript 末尾 + 私聊系统条目），回聊天页。
-    // cancelled = 呼叫未接通时取消，不留记录。
+    // 挂断：transcript 末尾写时长；私聊里由发起方留一条通话记录灰泡（微信真实样式：
+    // 正常结束 = 通话时长 + 听筒朝下；取消 = 已取消），回聊天页。
     hangup: function (cancelled) {
       var call = this.call; if (!call) return;
       var W = window.LZWorld, eng = W.Engine;
       this.call = null;
       if (this._ct) { clearInterval(this._ct); this._ct = null; }
-      if (!cancelled && call.phase === 'active') {
+      var who = call.by === 'user' ? 'user' : call.name;
+      var kindCn2 = call.mode === 'video' ? '视频通话' : '语音通话';
+      if (call.phase === 'active') {
         var sec = Math.max(1, Math.round((Date.now() - call.startAt) / 1000));
         var dur = fmtDur(sec);
-        var kindCn2 = call.mode === 'video' ? '视频通话' : '语音通话';
         W.Store.push(eng.callKey(call.name), [{ who: 'sys', kind: 'sys', text: '通话结束 · ' + dur }], 200);
-        W.Store.push(call.name, [{ who: 'sys', kind: 'sys', text: kindCn2 + ' · ' + dur }], 100);
+        W.Store.push(call.name, [{ who: who, kind: 'calllog', mode: call.mode, text: '通话时长 ' + dur }], 100);
         try { W.Store.setMeta(call.name, { headline: kindCn2 + ' ' + dur, atMainCount: eng.mainCount() }); } catch (e) {}
+      } else if (cancelled) {
+        W.Store.push(call.name, [{ who: who, kind: 'calllog', mode: call.mode, text: '已取消' }], 100);
       }
       this.screen = 'chat';
       this.chatKey = call.name;

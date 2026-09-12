@@ -31,6 +31,8 @@
       case 'voice':   body = '[语音:' + m.text + ']'; break;
       case 'image':   body = '[图片:' + m.text + ']'; break;
       case 'poke':    body = '[戳一戳]'; break;
+      // 通话记录灰泡在楼层存档里就是一行类型标（与列表页预览一致）
+      case 'calllog': body = '[' + (m.mode === 'video' ? '视频通话' : '语音通话') + ']'; break;
       case 'location':body = '[定位:' + m.text + ']'; break;
       // 视频通话的画面条目（跨行压成一行，带标记便于模型区分可见状态与台词）
       case 'scene':   body = '（画面：' + String(m.text || '').replace(/\n+/g, '　') + '）'; break;
@@ -78,6 +80,11 @@
       // 戳一戳单独成行：整行居中灰字，不带头像气泡
       if (content === '[戳一戳]') {
         rows.push('<div class="lzw-pokerow">' + (isUser ? '你戳了戳对方' : esc(who) + '戳了戳你') + '</div>');
+        return;
+      }
+      // 通话记录：灰字一行，不带头像气泡
+      if (content === '[语音通话]' || content === '[视频通话]') {
+        rows.push('<div class="lzw-pokerow">' + esc(content) + '</div>');
         return;
       }
       var typed = content.match(/^\[(表情|语音|图片|戳一戳|定位)(?::|\||｜)([\s\S]*)\]$/);
