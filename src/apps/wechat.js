@@ -487,10 +487,7 @@
         var inp = ph.querySelector('#lzw-input');
         if (inp) inp.addEventListener('keydown', function (e) {
           if (e.key === 'Enter') { e.preventDefault(); UI.sendText(); }
-          else if (e.key === 'Backspace' && !inp.value && UI.staged.length) {
-            e.preventDefault(); UI.staged.pop(); UI.render();
-            var i2 = ph.querySelector('#lzw-input'); if (i2) i2.focus();
-          }
+          // 空输入框按 Backspace 不弹删待发消息——删错别字按多了会误删；要删待发请点其右上角 ×
         });
       }
     },

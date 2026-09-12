@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T04:22:42.903Z
+//  构建时间：2026-09-12T04:29:15.751Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 04:22';
+var __LZW_BUILD__ = '2026-09-12 04:29';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1525,10 +1525,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var inp = ph.querySelector('#lzw-input');
         if (inp) inp.addEventListener('keydown', function (e) {
           if (e.key === 'Enter') { e.preventDefault(); UI.sendText(); }
-          else if (e.key === 'Backspace' && !inp.value && UI.staged.length) {
-            e.preventDefault(); UI.staged.pop(); UI.render();
-            var i2 = ph.querySelector('#lzw-input'); if (i2) i2.focus();
-          }
+          // 空输入框按 Backspace 不弹删待发消息——删错别字按多了会误删；要删待发请点其右上角 ×
         });
       }
     },
