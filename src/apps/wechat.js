@@ -289,7 +289,7 @@
     '.lzw-tab.on{color:#22c05e}',
     '.lzw-tab svg{width:22px;height:22px}',
     '.lzw-tabdot{position:absolute;top:2px;left:calc(50% + 8px);min-width:15px;height:15px;border-radius:8px;background:#e5484d;color:#fff;font-size:9.5px;line-height:15px;text-align:center;padding:0 4px}',
-    '.lzw-disc-row{display:flex;align-items:center;gap:11px;padding:12px;background:#fff;cursor:pointer}',
+    '.lzw-disc-row{position:relative;display:flex;align-items:center;gap:11px;padding:12px;background:#fff;cursor:pointer}',
     '.lzw-disc-ico{width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center}',
     '.lzw-disc-ico svg{width:30px;height:30px}',
     '.lzw-disc-main{flex:1;min-width:0}',
@@ -297,7 +297,6 @@
     '.lzw-disc-prev{font-size:12px;color:#9aa0a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}',
     '.lzw-disc-chev{flex:none;display:flex}',
     '.lzw-disc-gap{height:9px;background:#f2f3f5;border-top:1px solid rgba(0,0,0,.05)}',
-    '.lzw-disc-todo{opacity:.5;cursor:pointer}',
     '.lzw-mfeed{flex:1;min-height:0;overflow-y:auto;background:#fff;padding-bottom:14px}',
     '.lzw-mcover{height:156px;position:relative;background:linear-gradient(160deg,#6f8cba,#a9bedd 55%,#d2dfee);overflow:hidden}',
     '.lzw-mcover img{width:100%;height:100%;object-fit:cover;display:block}',
@@ -353,7 +352,7 @@
   var ICON_TAB_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.34-4.1-1L3 20l1.1-4.9A8.5 8.5 0 1 1 21 11.5z"/></svg>';
   var ICON_TAB_DISC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/></svg>';
   // 发现页里的朋友圈入口（彩色圆标）
-  var ICON_MOMENTS = '<svg viewBox="0 0 24 24"><defs><linearGradient id="lzwmomg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6b93c"/><stop offset=".55" stop-color="#e8704d"/><stop offset="1" stop-color="#8e5bc9"/></linearGradient></defs><circle cx="12" cy="12" r="10.5" fill="url(#lzwmomg)"/><circle cx="8.6" cy="9.2" r="2.6" fill="#fff" opacity=".95"/><circle cx="15" cy="13.8" r="3.6" fill="#fff" opacity=".5"/></svg>';
+  var ICON_MOMENTS = '<svg viewBox="0 0 1024 1024"><path fill="#fff" d="M512 954.24A442.24 442.24 0 1 0 69.76 512 442.08 442.08 0 0 0 512 954.24z m0-30.88a401.12 401.12 0 0 1-137.12-21.92V621.6l274.24 276.64A356 356 0 0 1 512 923.36z m285.28-119.68a400 400 0 0 1-112 81.28L487.2 687.04l389.44 1.92a359.52 359.52 0 0 1-79.2 114.72z m118.24-289.28a400 400 0 0 1-21.92 136.96H613.76l276.8-273.92a355.04 355.04 0 0 1 25.12 136.96z m-232.8-368a355.68 355.68 0 0 1 114.56 79.04 402.88 402.88 0 0 1 81.44 112L680.96 535.52zM512 653.6A141.6 141.6 0 1 1 653.6 512 141.6 141.6 0 0 1 512 653.6z m0-548.32A400 400 0 0 1 649.12 128v280L375.04 130.4A356.32 356.32 0 0 1 512 105.28z m-285.28 119.84a405.44 405.44 0 0 1 112-81.44l198.4 198.08-389.44-2.08a355.68 355.68 0 0 1 79.04-114.56zM108.64 514.4a400 400 0 0 1 21.92-136.96h279.84L133.6 651.36a357.92 357.92 0 0 1-24.96-136.96z m234.72-21.12l-1.92 389.44a357.12 357.12 0 0 1-114.72-79.04 401.76 401.76 0 0 1-81.28-112z"/><path fill="#FC6B4F" d="M649.12 128A400 400 0 0 0 512 105.28a356.32 356.32 0 0 0-137.12 25.12l274.08 276.8z"/><path fill="#7838F2" d="M797.44 225.12a355.68 355.68 0 0 0-114.56-79.04l-1.92 389.44 197.92-198.08a402.88 402.88 0 0 0-81.44-112.32z"/><path fill="#5698F3" d="M893.76 651.36a400 400 0 0 0 21.92-136.96 355.04 355.04 0 0 0-25.12-136.96l-276.8 273.92z"/><path fill="#20E9F4" d="M685.12 884.96a400 400 0 0 0 112-81.28 359.52 359.52 0 0 0 79.2-114.72l-389.44-1.92z"/><path fill="#00FD60" d="M375.04 901.44A401.12 401.12 0 0 0 512 923.36a356 356 0 0 0 136.96-25.12L375.04 621.6z"/><path fill="#ABFB5B" d="M341.44 882.72l1.92-389.44L145.44 691.2a401.76 401.76 0 0 0 81.28 112 357.12 357.12 0 0 0 114.72 79.52z"/><path fill="#F0E254" d="M130.56 377.44a400 400 0 0 0-21.92 136.96 357.92 357.92 0 0 0 24.96 136.96l276.8-273.92z"/><path fill="#F6B351" d="M339.04 144a405.44 405.44 0 0 0-112 81.44 355.68 355.68 0 0 0-79.04 114.56l389.44 2.08z"/></svg>';
   var ICON_CHEV = '<svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c3c7cd" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5L6.5 7l-5 5.5"/></svg>';
   var ICON_CAM = '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#454545" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h2.2l1.6-2.4A1.5 1.5 0 0 1 9 5h6a1.5 1.5 0 0 1 1.2.6L17.8 8H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></svg>';
 
@@ -552,16 +551,16 @@
       this.momentsEnsureFresh();
     },
     // 每个故事日首次进入生成 3~4 条动态；生成完若还在朋友圈页就刷新
+    // 已生成 / 状态栏日期缺失都不静默跳过：前者由引擎 filledDay 判重，后者兜底生成一次并提示
     momentsEnsureFresh: function () {
       if (this.mBusy) return;
       var eng = window.LZWorld.Engine;
       var stamp = null;
       try { stamp = window.LZWorld.Status.snapshot(null); } catch (e) {}
-      var today = stamp && stamp.dateText;
-      if (!today) return;
-      try {
-        if (window.LZWorld.Store.meta(eng.momentsKey).filledDay === today) return;
-      } catch (e) { return; }
+      if (!(stamp && stamp.dateText)) {
+        console.warn('[霖州引擎] 朋友圈：最近 6 层未解析到 <status> 里的 <环境> 日期，按无日期兜底生成一次');
+        try { toastr.warning('未解析到状态栏日期，朋友圈已按无日期生成；检查最近楼层的状态栏 <环境> 块', '霖州手机', { timeOut: 6000 }); } catch (e) {}
+      }
       this.mBusy = true;
       this.render();
       var self = this;
@@ -714,11 +713,7 @@
             '<div class="lzw-disc-main"><div class="lzw-disc-name">朋友圈</div>' +
             '<div class="lzw-disc-prev">' + esc(lastP ? lastP.who + '：' + String(lastP.text).slice(0, 18) : '朋友们的生活动态') + '</div></div>' +
             (mUn ? '<span class="lzw-unread">' + (mUn > 99 ? '99+' : mUn) + '</span>' : '') +
-            '<span class="lzw-disc-chev">' + ICON_CHEV + '</span></div>' +
-            '<div class="lzw-disc-gap"></div>' +
-            '<div class="lzw-disc-row lzw-disc-todo" data-todo="扫一扫"><div class="lzw-disc-ico">🔍</div><div class="lzw-disc-main"><div class="lzw-disc-name">扫一扫</div></div><span class="lzw-disc-chev">' + ICON_CHEV + '</span></div>' +
-            '<div class="lzw-disc-row lzw-disc-todo" data-todo="摇一摇"><div class="lzw-disc-ico">📳</div><div class="lzw-disc-main"><div class="lzw-disc-name">摇一摇</div></div><span class="lzw-disc-chev">' + ICON_CHEV + '</span></div>' +
-            '<div class="lzw-disc-row lzw-disc-todo" data-todo="附近的人"><div class="lzw-disc-ico">📍</div><div class="lzw-disc-main"><div class="lzw-disc-name">附近的人</div></div><span class="lzw-disc-chev">' + ICON_CHEV + '</span></div>';
+            '<span class="lzw-disc-chev">' + ICON_CHEV + '</span></div>';
         } else if (sec) {
           var convs = [];
           var kindCn = { sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' };
@@ -906,12 +901,9 @@
       ph.querySelectorAll('[data-tab]').forEach(function (el) {
         el.onclick = function () { UI.tab = el.dataset.tab; UI.render(); };
       });
-      // 发现页：朋友圈入口 + 敬请期待项
+      // 发现页：朋友圈入口
       ph.querySelectorAll('[data-mom]').forEach(function (el) {
         el.onclick = function () { UI.openMoments(); };
-      });
-      ph.querySelectorAll('[data-todo]').forEach(function (el) {
-        el.onclick = function () { try { toastr.info('「' + el.dataset.todo + '」敬请期待', '霖州手机'); } catch (e) {} };
       });
       // 朋友圈：相机占位、头像/名字进主页、⋯菜单、赞、评论、发送
       ph.querySelectorAll('[data-mcam]').forEach(function (el) {

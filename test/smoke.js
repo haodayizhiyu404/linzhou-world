@@ -403,6 +403,15 @@ ctx.getWorldbook = async () => [
     '机主在动态「月考成绩出了」下评论「请客吗」');
   eq('朋友圈·互动痕迹段', reqMN.ordered_prompts[0].content.indexOf('## 今日朋友圈互动') !== -1, true);
   eq('朋友圈·互动痕迹内容', reqMN.ordered_prompts[0].content.indexOf('请客吗') !== -1, true);
+  // 无日期兜底：状态栏解析不到日期也能生成一次（修复曾静默 return false、前端永远空态的 bug）
+  global.__msgs = [{ role: 'assistant', message: '没有任何状态栏块的普通楼层' }];
+  ctx.generateRaw = async (req) => '[动态:周言:无日期也能正常发动态]\n[动态:林溪:第二条兜底]';
+  eq('朋友圈·无日期兜底生成', await LW.Engine.momentsEnsure(), true);
+  eq('朋友圈·哨兵打卡', LW.Store.meta(LW.Engine.momentsKey).filledDay, '__nodate__');
+  eq('朋友圈·兜底条数', LW.Engine.momentsFeed().length, 2);
+  eq('朋友圈·最新标今天', /^今天 \d{2}:\d{2}$/.test(LW.Engine.momentsFeed()[1].label), true);
+  eq('朋友圈·时间标不是NaN', LW.Engine.momentsFeed().every(function (e) { return /^\d{2}:\d{2}$/.test(e.label.slice(-5)); }), true);
+  eq('朋友圈·兜底不重复生成', await LW.Engine.momentsEnsure(), false);
   // 群夹带私聊：群回复里的 <!--phone--> 块路由进私聊且从群记录剥掉
   global.__msgs = null;
   const sideNames = LW.Engine.capturePhoneText('陆飞：哈哈<!--phone\n许嘉文：我有，直接送你\n-->还有');

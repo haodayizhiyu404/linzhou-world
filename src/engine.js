@@ -793,11 +793,11 @@
     },
 
     // 首次填充：抽 3~4 位联系人/群成员，各写一条动态（日期散在"今天/昨天/前几天"）
+    // 状态栏日期缺失时按无日期兜底生成一次（filledDay 记哨兵，日期恢复后自然重生成）
     momentsEnsure: async function () {
       var W = window.LZWorld;
       var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
-      var today = snap && snap.dateText;
-      if (!today) return false;
+      var today = (snap && snap.dateText) || '__nodate__';
       var key = this.momentsKey;
       if (W.Store.meta(key).filledDay === today) return false;
       var sec = this.section(); if (!sec) return false;
@@ -806,10 +806,11 @@
       (sec.groups || []).forEach(function (g) {
         (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
       });
-      var want = Math.min(pool.length, 3 + (hashStr(today) % 2)); // 3~4 位
+      // hashStr 返回 base36 字符串，算数前必须 parseInt（直接 % 得 NaN，want 变 NaN 一条都抽不出）
+      var want = Math.min(pool.length, 3 + (parseInt(hashStr(today), 36) % 2)); // 3~4 位
       var picks = [];
       while (picks.length < want && pool.length) {
-        var i = Math.abs(hashStr(today + ':' + picks.length + ':' + pool.length)) % pool.length;
+        var i = parseInt(hashStr(today + ':' + picks.length + ':' + pool.length), 36) % pool.length;
         picks.push(pool.splice(i, 1)[0]);
       }
       if (!picks.length) return false;
@@ -822,7 +823,7 @@
       // 时间标：最新一条"今天"，依次往前推；时刻由 who+text 哈希定（重渲染不跳变）
       var entries = posts.map(function (p, idx) {
         var age = posts.length - 1 - idx;
-        var h = Math.abs(hashStr(p.who + p.text));
+        var h = parseInt(hashStr(p.who + p.text), 36);
         var hh = ('0' + (8 + h % 12)).slice(-2), mm = ('0' + ((h >> 4) % 60)).slice(-2);
         var label = age === 0 ? '今天 ' + hh + ':' + mm
           : age === 1 ? '昨天 ' + hh + ':' + mm
