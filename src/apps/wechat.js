@@ -345,7 +345,7 @@
     } else if (m.kind === 'calllog') {
       // 通话记录泡：语音=听筒朝下，视频=摄像机（不旋转），图标比字略小
       var vcLog = m.mode === 'video';
-      bub = '<div class="lzw-bub lzw-calllog"><span class="lzw-calllog-ico' + (vcLog ? ' vc' : '') + '">' + (vcLog ? ICON_VCALL : ICON_CALL) + '</span>' + esc(m.text || '') + '</div>';
+      bub = '<div class="lzw-bub lzw-calllog">' + esc(m.text || '') + '<span class="lzw-calllog-ico' + (vcLog ? ' vc' : '') + '">' + (vcLog ? ICON_VCALL : ICON_CALL) + '</span></div>';
     } else if (m.kind === 'voice' || m.kind === 'image' || m.kind === 'location') {
       bub = richBub(m, isUser, who, targetName, false);
     } else {

@@ -13,7 +13,7 @@
   var GH_USER = 'haodayizhiyu404';
   var GH_REPO = 'linzhou-world';
   var FILE = 'dist/engine.js';
-  var MIRRORS = ['cdn.jsdelivr.net', 'fastly.jsdelivr.net', 'testingcf.jsdelivr.net'];
+  var MIRRORS = ['cdn.jsdelivr.net', 'fastly.jsdelivr.net', 'testingcf.jsdelivr.net', 'gcore.jsdelivr.net'];
   var log = function (m) { try { console.log('[霖州引擎] ' + m); } catch (e) {} };
 
   // ── 1. 防重复注入 ──
@@ -83,10 +83,11 @@
     var ref = await resolveRef();
     var code = null, lastErr = null;
 
-    // 源清单：raw（始终实时）优先，jsDelivr 镜像其后。
+    // 源清单：raw 优先（版本号 pinning——raw 对同一 URL 有 5 分钟边缘缓存，
+    // 用提交号当路径才能绕过；写死 /main/ 会白等 300 秒），jsDelivr 镜像其后。
     // 原因：jsDelivr 的 @main 有最长12h缓存，API被限流时容易拿到旧版；
-    // raw 永远跟随 main。镜像用于 raw 被墙/故障的备用。
-    var urls = ['https://raw.githubusercontent.com/' + GH_USER + '/' + GH_REPO + '/main/' + FILE];
+    // 镜像用于 raw 被墙/故障的备用。
+    var urls = ['https://raw.githubusercontent.com/' + GH_USER + '/' + GH_REPO + '/' + ref + '/' + FILE];
     MIRRORS.forEach(function (h) {
       urls.push('https://' + h + '/gh/' + GH_USER + '/' + GH_REPO + '@' + ref + '/' + FILE);
     });

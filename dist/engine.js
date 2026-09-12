@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T15:50:10.276Z
+//  构建时间：2026-09-12T15:58:44.763Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 15:50';
+var __LZW_BUILD__ = '2026-09-12 15:58';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1670,7 +1670,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     } else if (m.kind === 'calllog') {
       // 通话记录泡：语音=听筒朝下，视频=摄像机（不旋转），图标比字略小
       var vcLog = m.mode === 'video';
-      bub = '<div class="lzw-bub lzw-calllog"><span class="lzw-calllog-ico' + (vcLog ? ' vc' : '') + '">' + (vcLog ? ICON_VCALL : ICON_CALL) + '</span>' + esc(m.text || '') + '</div>';
+      bub = '<div class="lzw-bub lzw-calllog">' + esc(m.text || '') + '<span class="lzw-calllog-ico' + (vcLog ? ' vc' : '') + '">' + (vcLog ? ICON_VCALL : ICON_CALL) + '</span></div>';
     } else if (m.kind === 'voice' || m.kind === 'image' || m.kind === 'location') {
       bub = richBub(m, isUser, who, targetName, false);
     } else {
