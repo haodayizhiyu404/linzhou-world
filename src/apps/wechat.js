@@ -61,10 +61,6 @@
     '.lzw-sig i{display:block;width:3px;background:#111;border-radius:1px}',
     '.lzw-sig i:nth-child(1){height:4px}.lzw-sig i:nth-child(2){height:6px}',
     '.lzw-sig i:nth-child(3){height:8px}.lzw-sig i:nth-child(4){height:10px;opacity:.35}',
-    '.lzw-batt{display:inline-flex;align-items:center;gap:1px}',
-    '.lzw-batt-in{display:block;width:20px;height:10px;border:1.5px solid #111;border-radius:3px;padding:1px;box-sizing:border-box}',
-    '.lzw-batt-fill{display:block;height:100%;width:72%;background:#111;border-radius:1px}',
-    '.lzw-batt-cap{display:block;width:2px;height:4px;background:#111;border-radius:0 2px 2px 0;opacity:.6}',
     // 应用栏
     '.lzw-appbar{flex:none;min-height:40px;display:flex;align-items:center;gap:6px;padding:2px 10px 8px;',
     'background:rgba(247,247,249,.92);border-bottom:1px solid rgba(0,0,0,.06)}',
@@ -205,6 +201,8 @@
 
   var ICON_BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
+  // 电池：素材/电池.svg（iconfont 路径，填充 #111 与状态栏一致），第三段改为 72% 电量
+  var ICON_BATT = '<svg width="15" height="12" viewBox="0 0 1024 1024" fill="#111"><path d="M938.667 426.667v-85.334c0-46.933-38.4-85.333-85.334-85.333H128c-46.933 0-85.333 38.4-85.333 85.333v341.334C42.667 729.6 81.067 768 128 768h725.333c46.934 0 85.334-38.4 85.334-85.333v-85.334c23.466 0 42.666-19.2 42.666-42.666v-85.334c0-23.466-19.2-42.666-42.666-42.666zM896 469.333v213.334c0 23.466-19.2 42.666-42.667 42.666H128c-23.467 0-42.667-19.2-42.667-42.666V341.333c0-23.466 19.2-42.666 42.667-42.666h725.333c23.467 0 42.667 19.2 42.667 42.666v128zM128 682.667h399.4V341.333H128v341.334z"/></svg>';
   var ICON_PLANE = '<svg width="23" height="23" viewBox="0 0 1024 1024" fill="#555"><path d="M972.48 40.64c-17.38666667-8.64-34.77333333-8.64-43.41333333 0L60.16 472.10666667C42.88 472.10666667 34.13333333 489.38666667 34.13333333 506.66666667s8.64 34.56 17.38666667 34.56l208.53333333 129.49333333c17.38666667 8.64 34.77333333 8.64 52.16-8.64l460.48-414.18666667 17.38666667 8.64-417.06666667 439.89333334c-8.64 8.64-8.64 17.28-8.64 25.92v189.86666666c0 17.28 8.64 34.56 26.02666667 43.2 17.38666667 8.64 34.77333333 0 43.41333333-8.64l104.32-103.57333333L746.66666667 981.22666667c8.64 8.64 17.38666667 8.64 26.02666666 8.64h17.38666667c17.38666667-8.64 26.02666667-17.28 26.02666667-34.56l173.76-862.93333334c0-25.92 0-43.09333333-17.38666667-51.73333333z"/></svg>';
   var ICON_PLUS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5.4v13.2M5.4 12h13.2" stroke="#454545" stroke-width="3" stroke-linecap="round"/></svg>';
   // 主屏微信图标（绿色圆角块 + 白色对话泡）
@@ -390,7 +388,7 @@
         '<span class="lzw-island"></span>' +
         '<span class="lzw-sicons"><span class="lzw-sig"><i></i><i></i><i></i><i></i></span>' +
         ICON_WIFI +
-        '<span class="lzw-batt"><span class="lzw-batt-in"><span class="lzw-batt-fill"></span></span><span class="lzw-batt-cap"></span></span></span></div>';
+        ICON_BATT + '</span></div>';
 
       var body;
       if (this.screen === 'home') {
