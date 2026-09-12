@@ -75,14 +75,36 @@
   }
 
   // ── 应用内聊天记录文本（发言人用真名，不再出现 {{user}}） ──
-  function histText(hist, n, withNames) {
-    return hist.slice(-n).map(function (m) {
+  // 消息带 day（状态栏日期文本）时，跨天插入 [昨天 22:10] 这类时间标
+  function parseDay(s) {
+    var m = /(\d+)年(\d+)月(\d+)日/.exec(s || '');
+    return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null;
+  }
+  function dayNum(p) { return p.y * 372 + p.mo * 31 + p.d; }
+  function relDay(day, cur) {
+    var a = parseDay(day), b = parseDay(cur);
+    if (!a) return day;
+    if (!b) return a.mo + '月' + a.d + '日';
+    var diff = dayNum(b) - dayNum(a);
+    if (diff === 0) return '今天';
+    if (diff === 1) return '昨天';
+    return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d + '日';
+  }
+  function histText(hist, n, withNames, curDay) {
+    var out = [];
+    var prevDay = null;
+    hist.slice(-n).forEach(function (m) {
+      if (m.day && m.day !== prevDay) {
+        out.push('[' + relDay(m.day, curDay) + (m.time ? ' ' + m.time : '') + ']');
+        prevDay = m.day;
+      }
       var body = msgBody(m);
       if (m.recalled) body += '（此条已撤回）';
-      if (!withNames) return body;
+      if (!withNames) { out.push(body); return; }
       var who = m.who === 'user' ? me() : m.who;
-      return who + '：' + body;
-    }).join('\n');
+      out.push(who + '：' + body);
+    });
+    return out.join('\n');
   }
 
   // ── 消息类型语法说明（输出要求的一部分） ──
@@ -159,7 +181,7 @@
         '## 聊天记录 · 与' + myName + '的微信对话',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_PRIVATE, false),
+        histText(hist, HIST_PRIVATE, true, snapshot && snapshot.dateText),
         '',
         consistencyRules('「' + contact.name + '」'),
         '',
@@ -204,6 +226,7 @@
         '',
         '## 群成员',
         nameList.join('、') + '、' + myName + (group.open ? '，以及若干未具名的路人（可让其冒泡，用真实昵称）' : ''),
+        group.style ? '群氛围：' + group.style : '',
         '',
         '## 成员档案',
         voices.join('\n'),
@@ -215,7 +238,7 @@
         '## 聊天记录 · 群「' + group.name + '」',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_GROUP, true),
+        histText(hist, HIST_GROUP, true, snapshot && snapshot.dateText),
         '',
         consistencyRules('每名成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。',
         '',

@@ -15,6 +15,19 @@
   var HOME_WALL = 'https://files.catbox.moe/2rg9in.jpg';
   // 预载壁纸：引擎加载时就拉取，避免首次打开手机屏幕空白 1~2 秒
   try { var _wallPre = new Image(); _wallPre.src = HOME_WALL; } catch (e) {}
+  function parseDay(s) {
+    var m = /(\d+)年(\d+)月(\d+)日/.exec(s || '');
+    return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null;
+  }
+  function relDay(day, cur) {
+    var a = parseDay(day), b = parseDay(cur);
+    if (!a) return day || '';
+    if (!b) return a.mo + '月' + a.d + '日';
+    var diff = (b.y * 372 + b.mo * 31 + b.d) - (a.y * 372 + a.mo * 31 + a.d);
+    if (diff === 0) return '今天';
+    if (diff === 1) return '昨天';
+    return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d + '日';
+  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -392,7 +405,7 @@
           var convs = [];
           var kindCn = { sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' };
           (sec.contacts || []).forEach(function (c) { convs.push({ key: c.name, name: c.name, avatar: c.avatar, group: false }); });
-          (sec.groups || []).forEach(function (g) { convs.push({ key: 'group:' + g.name, name: g.name, avatar: '', group: true }); });
+          (sec.groups || []).forEach(function (g) { convs.push({ key: 'group:' + g.name, name: g.name, avatar: g.avatar || '', group: true }); });
           rowsHtml = convs.map(function (cv) {
             var h = W.Store.history(cv.key);
             var last = h.length ? h[h.length - 1] : null;
@@ -422,8 +435,16 @@
         } else {
           contactMap[disp] = eng.findContact(disp) || { name: disp, avatar: '' };
         }
+        var curDay = '';
+        try { curDay = W.Status.snapshot(null).dateText; } catch (e2) {}
+        var prevDay = null;
         var rows = hist.map(function (m, i) {
-          return chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i]);
+          var pre = '';
+          if (m.day && m.day !== prevDay) {
+            pre = '<div class="lzw-sysrow">' + esc(relDay(m.day, curDay) + (m.time ? ' ' + m.time : '')) + '</div>';
+            prevDay = m.day;
+          }
+          return pre + chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i]);
         }, this).join('');
         if (this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
         if (this.staged.length) rows += stagedHtml(userName);

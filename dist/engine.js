@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T00:20:16.032Z
+//  构建时间：2026-09-12T00:47:17.731Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 00:20';
+var __LZW_BUILD__ = '2026-09-12 00:47';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -53,8 +53,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     push: function (chatKey, msgs, cap) {
       var r = readRoot();
       var h = (r.history || {})[chatKey] || [];
+      var stampDay = null;
       for (var i = 0; i < msgs.length; i++) {
         var m = msgs[i];
+        if (m && m.kind !== 'recall' && m.day == null) {
+          if (stampDay === null) { try { stampDay = window.LZWorld.Status.nowDay() || ''; } catch (e) { stampDay = ''; } }
+          m = Object.assign({}, m, { day: stampDay });
+          msgs[i] = m;
+        }
         if (m && m.kind === 'recall') {
           // 撤回标记本身不落库：给该发言人最近一条消息打撤回标
           for (var j = h.length - 1; j >= 0; j--) {
@@ -232,6 +238,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     nowText: function () {
       var p = this.parseLatest();
       return (p && p.time) || '';
+    },
+
+    // 供消息落库打日期标用（'2034年8月26日 星期五'）
+    nowDay: function () {
+      var p = this.parseLatest();
+      return (p && p.dateText) || '';
     },
 
     // 供生成装配使用：时间 + user地点 + 目标角色情境块（含关系）
@@ -526,14 +538,36 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   }
 
   // ── 应用内聊天记录文本（发言人用真名，不再出现 {{user}}） ──
-  function histText(hist, n, withNames) {
-    return hist.slice(-n).map(function (m) {
+  // 消息带 day（状态栏日期文本）时，跨天插入 [昨天 22:10] 这类时间标
+  function parseDay(s) {
+    var m = /(\d+)年(\d+)月(\d+)日/.exec(s || '');
+    return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null;
+  }
+  function dayNum(p) { return p.y * 372 + p.mo * 31 + p.d; }
+  function relDay(day, cur) {
+    var a = parseDay(day), b = parseDay(cur);
+    if (!a) return day;
+    if (!b) return a.mo + '月' + a.d + '日';
+    var diff = dayNum(b) - dayNum(a);
+    if (diff === 0) return '今天';
+    if (diff === 1) return '昨天';
+    return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d + '日';
+  }
+  function histText(hist, n, withNames, curDay) {
+    var out = [];
+    var prevDay = null;
+    hist.slice(-n).forEach(function (m) {
+      if (m.day && m.day !== prevDay) {
+        out.push('[' + relDay(m.day, curDay) + (m.time ? ' ' + m.time : '') + ']');
+        prevDay = m.day;
+      }
       var body = msgBody(m);
       if (m.recalled) body += '（此条已撤回）';
-      if (!withNames) return body;
+      if (!withNames) { out.push(body); return; }
       var who = m.who === 'user' ? me() : m.who;
-      return who + '：' + body;
-    }).join('\n');
+      out.push(who + '：' + body);
+    });
+    return out.join('\n');
   }
 
   // ── 消息类型语法说明（输出要求的一部分） ──
@@ -610,7 +644,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '## 聊天记录 · 与' + myName + '的微信对话',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_PRIVATE, false),
+        histText(hist, HIST_PRIVATE, true, snapshot && snapshot.dateText),
         '',
         consistencyRules('「' + contact.name + '」'),
         '',
@@ -655,6 +689,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '',
         '## 群成员',
         nameList.join('、') + '、' + myName + (group.open ? '，以及若干未具名的路人（可让其冒泡，用真实昵称）' : ''),
+        group.style ? '群氛围：' + group.style : '',
         '',
         '## 成员档案',
         voices.join('\n'),
@@ -666,7 +701,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '## 聊天记录 · 群「' + group.name + '」',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_GROUP, true),
+        histText(hist, HIST_GROUP, true, snapshot && snapshot.dateText),
         '',
         consistencyRules('每名成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。',
         '',
@@ -962,6 +997,19 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   var HOME_WALL = 'https://files.catbox.moe/2rg9in.jpg';
   // 预载壁纸：引擎加载时就拉取，避免首次打开手机屏幕空白 1~2 秒
   try { var _wallPre = new Image(); _wallPre.src = HOME_WALL; } catch (e) {}
+  function parseDay(s) {
+    var m = /(\d+)年(\d+)月(\d+)日/.exec(s || '');
+    return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null;
+  }
+  function relDay(day, cur) {
+    var a = parseDay(day), b = parseDay(cur);
+    if (!a) return day || '';
+    if (!b) return a.mo + '月' + a.d + '日';
+    var diff = (b.y * 372 + b.mo * 31 + b.d) - (a.y * 372 + a.mo * 31 + a.d);
+    if (diff === 0) return '今天';
+    if (diff === 1) return '昨天';
+    return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d + '日';
+  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -1339,7 +1387,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           var convs = [];
           var kindCn = { sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' };
           (sec.contacts || []).forEach(function (c) { convs.push({ key: c.name, name: c.name, avatar: c.avatar, group: false }); });
-          (sec.groups || []).forEach(function (g) { convs.push({ key: 'group:' + g.name, name: g.name, avatar: '', group: true }); });
+          (sec.groups || []).forEach(function (g) { convs.push({ key: 'group:' + g.name, name: g.name, avatar: g.avatar || '', group: true }); });
           rowsHtml = convs.map(function (cv) {
             var h = W.Store.history(cv.key);
             var last = h.length ? h[h.length - 1] : null;
@@ -1369,8 +1417,16 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         } else {
           contactMap[disp] = eng.findContact(disp) || { name: disp, avatar: '' };
         }
+        var curDay = '';
+        try { curDay = W.Status.snapshot(null).dateText; } catch (e2) {}
+        var prevDay = null;
         var rows = hist.map(function (m, i) {
-          return chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i]);
+          var pre = '';
+          if (m.day && m.day !== prevDay) {
+            pre = '<div class="lzw-sysrow">' + esc(relDay(m.day, curDay) + (m.time ? ' ' + m.time : '')) + '</div>';
+            prevDay = m.day;
+          }
+          return pre + chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i]);
         }, this).join('');
         if (this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
         if (this.staged.length) rows += stagedHtml(userName);
@@ -2092,7 +2148,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var tail2 = [];
         for (var hj = hist2.length - 1; hj >= 0 && hist2[hj].who === 'user'; hj--) tail2.unshift(hist2[hj]);
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
-        var req2 = W.Prompt.group({ name: g.name, open: g.open }, members, rest2, snap2, stickerNames, tail2, digest);
+        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style }, members, rest2, snap2, stickerNames, tail2, digest);
         raw = await generateRaw(req2);
         title = g.name + ' 群聊';
         parseGroup = true;

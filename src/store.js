@@ -44,8 +44,14 @@
     push: function (chatKey, msgs, cap) {
       var r = readRoot();
       var h = (r.history || {})[chatKey] || [];
+      var stampDay = null;
       for (var i = 0; i < msgs.length; i++) {
         var m = msgs[i];
+        if (m && m.kind !== 'recall' && m.day == null) {
+          if (stampDay === null) { try { stampDay = window.LZWorld.Status.nowDay() || ''; } catch (e) { stampDay = ''; } }
+          m = Object.assign({}, m, { day: stampDay });
+          msgs[i] = m;
+        }
         if (m && m.kind === 'recall') {
           // 撤回标记本身不落库：给该发言人最近一条消息打撤回标
           for (var j = h.length - 1; j >= 0; j--) {

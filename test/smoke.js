@@ -132,6 +132,19 @@ eq('群无user宏残留', greq.ordered_prompts[0].content.indexOf('{{user}}'), -
 
 const reqR = LW.Prompt.private({ name: '周言', profile: '' }, [{ who: '周言', kind: 'text', text: '在的', recalled: true }], null, null, null, null);
 eq('撤回标注进记录', reqR.ordered_prompts[0].content.indexOf('（此条已撤回）') !== -1, true);
+const reqN = LW.Prompt.private({ name: '周言', profile: '' }, [
+  { who: 'user', kind: 'text', text: '早', day: '2034年8月25日 星期四', time: '22:00' },
+  { who: '周言', kind: 'text', text: '嗯', day: '2034年8月26日 星期五', time: '08:00' },
+], { time: '22:49', dateText: '2034年8月26日 星期五', userPlace: '', npc: null }, null, null, null);
+const spN = reqN.ordered_prompts[0].content;
+eq('私聊记录带对方名', spN.indexOf('周言：嗯') !== -1, true);
+eq('私聊记录带user名', spN.indexOf('陈默：早') !== -1, true);
+eq('跨天时间标·昨天', spN.indexOf('[昨天 22:00]') !== -1, true);
+eq('跨天时间标·今天', spN.indexOf('[今天 08:00]') !== -1, true);
+const greq2 = LW.Prompt.group({ name: '高三（2）班', open: false, style: '有班主任在，发言收敛' }, [{ name: '林溪', profile: '闺蜜' }], [], null);
+eq('群氛围字段', greq2.ordered_prompts[0].content.indexOf('有班主任在，发言收敛') !== -1, true);
+LW.Store.push('stampT', [{ who: 'user', kind: 'text', text: 'x', time: '22:00' }], 100);
+eq('落库自动补日期', LW.Store.history('stampT')[0].day, '2034年8月26日 星期五');
 
 console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
 process.exit(fail ? 1 : 0);

@@ -75,6 +75,12 @@
       return (p && p.time) || '';
     },
 
+    // 供消息落库打日期标用（'2034年8月26日 星期五'）
+    nowDay: function () {
+      var p = this.parseLatest();
+      return (p && p.dateText) || '';
+    },
+
     // 供生成装配使用：时间 + user地点 + 目标角色情境块（含关系）
     snapshot: function (npcName) {
       var p = this.parseLatest();

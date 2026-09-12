@@ -319,7 +319,7 @@
         var tail2 = [];
         for (var hj = hist2.length - 1; hj >= 0 && hist2[hj].who === 'user'; hj--) tail2.unshift(hist2[hj]);
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
-        var req2 = W.Prompt.group({ name: g.name, open: g.open }, members, rest2, snap2, stickerNames, tail2, digest);
+        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style }, members, rest2, snap2, stickerNames, tail2, digest);
         raw = await generateRaw(req2);
         title = g.name + ' 群聊';
         parseGroup = true;
