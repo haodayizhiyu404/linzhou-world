@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T13:44:26.430Z
+//  构建时间：2026-09-12T14:04:35.183Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 13:44';
+var __LZW_BUILD__ = '2026-09-12 14:04';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1510,8 +1510,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-dial{display:inline-flex;color:#111;padding:4px;border-radius:8px;cursor:pointer}',
     '.lzw-dial:hover{background:rgba(0,0,0,.06)}',
     '.lzw-callbody{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:10px;padding:22px 16px 12px;background:#101418;color:#fff;position:relative;overflow:hidden}',
+    '.lzw-scr-call .lzw-callbody{background:transparent}', // 背景在屏幕层铺，内容区透出来
     '.lzw-callfeed{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:blur(22px);transform:scale(1.18)}',
-    '.lzw-callshade{position:absolute;inset:0;background:#0a0d10;opacity:.87;z-index:0}',
+    '.lzw-callshade{position:absolute;inset:0;background:#101418;opacity:.85;z-index:0}',
     '.lzw-calltop{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;z-index:1;margin-top:44px}',
     '.lzw-callava{width:88px;height:88px;border-radius:50%;overflow:hidden;background:#232a33;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:600;box-shadow:0 4px 18px rgba(0,0,0,.4)}',
     '.lzw-callava img{width:100%;height:100%;object-fit:cover}',
@@ -1530,20 +1531,24 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-callinput::placeholder{color:rgba(255,255,255,.45)}',
     '.lzw-csend{background:#22c05e;border:none;color:#fff;border-radius:17px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap}',
     '.lzw-cwait{position:relative;z-index:1;color:#c9d1d9;font-size:13px}',
-    '.lzw-scr-call{background:#0a0d10}', // 状态栏区与通话背景融为一体
+    '.lzw-scr-call{background:#101418}', // 无头像时兜底，与通话内容区同色
     '.lzw-scr-call .lzw-sbar{background:transparent}',
+    '.lzw-scr-call .lzw-homebar{background:transparent}',
+    '.lzw-scr-call .lzw-homebar:after{background:rgba(255,255,255,.72)}', // 底部横条反白
     // 通话黑底：只反白时间/信号图标，灵动岛保持纯黑不反白
     '.lzw-scr-call .lzw-sbar .lzw-clock,.lzw-scr-call .lzw-sbar .lzw-sicons{filter:invert(1)}',
     '.lzw-callmid{justify-content:space-between;width:100%;padding:0 42px;align-items:center}',
     '.lzw-callbtn i{width:54px;height:54px;font-size:22px}',
     '.lzw-callbtn.hang i{width:54px;height:54px}',
     '.lzw-callroll{position:absolute;top:10px;right:12px;z-index:5;color:#fff;opacity:.85;cursor:pointer;padding:4px;line-height:0}',
-    '.lzw-callconf{position:relative;z-index:1;display:flex;gap:10px;align-items:center;justify-content:center;font-size:12.5px;color:#ffb4b4;background:rgba(229,72,77,.16);border-radius:10px;padding:7px 10px;width:100%}',
-    '.lzw-callta{width:100%;box-sizing:border-box;background:#0d1117;border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#e6edf3;padding:9px 11px;font-size:13.5px;line-height:1.55;resize:none;outline:none;margin-bottom:8px;font-family:inherit}',
-    '.lzw-callta::placeholder{color:rgba(255,255,255,.35)}',
-    '.lzw-callpop{width:266px;background:#1c2128;color:#e6edf3;padding:16px 16px 13px;text-align:left;font-size:13.5px;box-shadow:0 10px 34px rgba(0,0,0,.5)}',
-    '.lzw-callpop .lzw-cbtn.no{background:rgba(255,255,255,.12);color:#e6edf3}',
-    '.lzw-sub{cursor:pointer}'
+    // 说话弹窗 + 删除确认：灰黑半透明面板，贴合通话暗色场景；输入区聚焦保持暗色不刺眼
+    '.lzw-callta{width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#fff;caret-color:#fff;padding:9px 11px;font-size:13.5px;line-height:1.55;resize:none;outline:none;margin-bottom:2px;font-family:inherit}',
+    '.lzw-callta::placeholder{color:rgba(255,255,255,.4)}',
+    '.lzw-callta:focus{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.32)}',
+    '.lzw-callpop{width:266px;background:rgba(28,32,38,.96);color:#e6edf3;padding:14px 14px 12px;text-align:left;font-size:13.5px;box-shadow:0 10px 34px rgba(0,0,0,.5)}',
+    '.lzw-callpop .lzw-cbtns{margin-top:10px}',
+    '.lzw-callpop .lzw-cbtn.no,.lzw-calldel .lzw-cbtn.no{background:rgba(255,255,255,.12);color:#e6edf3}',
+    '.lzw-calldel{width:216px;background:rgba(28,32,38,.97);color:#e6edf3;padding:18px 18px 13px;text-align:center;font-size:14px;box-shadow:0 10px 34px rgba(0,0,0,.5)}'
   ].join('\n');
 
   var ICON_VOICE = '<svg width="15" height="15" viewBox="0 0 1024 1024"><path fill="#222222" d="M501.269333 517.610667a277.333333 277.333333 0 0 1-81.664 197.546666l-5.12 4.906667-3.306666 2.858667a42.666667 42.666667 0 0 1-58.325334-61.696l3.029334-3.136 6.954666-6.954667a192.042667 192.042667 0 0 0-7.936-273.002667l-3.050666-3.136a42.666667 42.666667 0 0 1 61.248-59.264l5.12 4.906667a277.333333 277.333333 0 0 1 83.050666 196.970667z m187.648 10.197333A418.090667 418.090667 0 0 1 565.845333 814.933333l-7.68 7.466667-3.306666 2.837333a42.666667 42.666667 0 0 1-58.346667-61.674666l3.029333-3.157334 6.101334-5.952a332.928 332.928 0 0 0 97.962666-228.48l0.085334-8.533333a332.821333 332.821333 0 0 0-105.834667-242.24 42.666667 42.666667 0 0 1 58.197333-62.4 418.133333 418.133333 0 0 1 132.970667 304.32l-0.106667 10.709333zM625.877333 137.877333a42.666667 42.666667 0 0 1 58.176-62.421333l-58.176 62.421333z m250.730667 394.026667a606.208 606.208 0 0 1-48.853333 225.365333l-6.293334 14.165334a606.016 606.016 0 0 1-123.2 176.554666l-11.136 10.816-3.306666 2.837334a42.666667 42.666667 0 0 1-58.346667-61.696l3.029333-3.136 9.557334-9.28a520.661333 520.661333 0 0 0 105.856-151.722667l5.397333-12.16a520.853333 520.853333 0 0 0 41.984-193.6l0.128-13.333333a520.341333 520.341333 0 0 0-38.4-194.261334l-5.141333-12.288a520.533333 520.533333 0 0 0-122.026667-172.288l58.197333-62.421333a605.909333 605.909333 0 0 1 142.016 200.533333l6.016 14.293334a605.653333 605.653333 0 0 1 44.672 226.133333l-0.149333 15.509333zM170.666667 518.442667a64 64 0 1 1 128 0 64 64 0 0 1-128 0z"/></svg>';
@@ -1812,6 +1817,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         ICON_WIFI +
         ICON_BATT + '</span></div>';
 
+      var callBg = '';
+      if (this.call) {
+        try {
+          var cc = eng.findContact(this.call.name) || {};
+          var cimg = cc.avatar ? esc(W.Worldbook.imgUrl(cc.avatar)) : '';
+          callBg = (cimg ? '<img class="lzw-callfeed" src="' + cimg + '">' : '') + '<div class="lzw-callshade"></div>';
+        } catch (e) { callBg = '<div class="lzw-callshade"></div>'; }
+      }
+
       var body;
       if (this.call) {
         body = callHtml(this.call, userName);
@@ -1902,7 +1916,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + (this.call ? ' lzw-scr-call' : '') + '">' + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + (this.call ? ' lzw-scr-call' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
         (this.confirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条消息？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="cancel">取消</button><button class="lzw-cbtn yes" data-cact="del">删除</button></div></div></div>' : '') +
         '</div></div>';
 
@@ -1948,9 +1962,18 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
       ph.querySelectorAll('[data-act="reroll"]').forEach(function (el) { el.onclick = function () { UI.reroll(); }; });
       // 待发区：点红 ✕ 删一条
-      // 右键（PC）或长按 550ms（触屏）消息 → 弹确认窗，防止误删
+      // 右键（PC）或长按 550ms（触屏）→ 弹确认窗，防止误删。
+      // 聊天记录行走 data-del，通话字幕走 data-cdel，同一套交互。
       ph.oncontextmenu = function (e) {
-        var row = e.target && e.target.closest ? e.target.closest('[data-del]') : null;
+        var t = e.target && e.target.closest ? e.target : null;
+        var sub = t ? t.closest('[data-cdel]') : null;
+        if (sub) {
+          e.preventDefault();
+          UI.callDel = parseInt(sub.getAttribute('data-cdel'), 10);
+          UI.render();
+          return;
+        }
+        var row = t ? t.closest('[data-del]') : null;
         if (!row) return;
         e.preventDefault();
         UI.confirmDel = parseInt(row.getAttribute('data-del'), 10);
@@ -1958,9 +1981,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       };
       var lpTimer = null;
       ph.ontouchstart = function (e) {
-        var row = e.target && e.target.closest ? e.target.closest('[data-del]') : null;
-        lpTimer = row ? setTimeout(function () {
-          UI.confirmDel = parseInt(row.getAttribute('data-del'), 10);
+        var t = e.target && e.target.closest ? e.target : null;
+        var sub = t ? t.closest('[data-cdel]') : null;
+        var row = t ? t.closest('[data-del]') : null;
+        var hit = sub || row;
+        lpTimer = hit ? setTimeout(function () {
+          if (sub) UI.callDel = parseInt(sub.getAttribute('data-cdel'), 10);
+          else UI.confirmDel = parseInt(row.getAttribute('data-del'), 10);
           UI.render();
         }, 550) : null;
       };
@@ -2083,10 +2110,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           else if (a === 'delno') { UI.callDel = null; UI.render(); }
         };
       });
-      // 通话对白：点选 → 确认删除（与聊天记录同一套语义）
-      ph.querySelectorAll('[data-cdel]').forEach(function (el) {
-        el.onclick = function () { UI.callDel = parseInt(el.dataset.cdel, 10); UI.render(); };
-      });
+      // 通话字幕删除：由上方 contextmenu / 长按统一处理（data-cdel 仅作下标载体）
     },
 
     // 回车：攒一条进待发区（[+] 二级模式的输入除外，那仍是即发）
@@ -2290,7 +2314,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       call.busy = true;
       this.render();
       try {
-        var lines = await withTimeout(eng.callTurn(call.name, call.mode, t), 90000);
+        var lines = await withTimeout(eng.callTurn(call.name, call.mode, text), 90000);
         if (lines && lines.length) {
           W.Store.push(key, lines.map(function (l) { return { who: call.name, kind: 'text', text: l }; }), 200);
         }
@@ -2353,16 +2377,18 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     return h ? (h + ':' + mm + ':' + s2) : (mm + ':' + s2);
   }
 
-  // 通话屏：音频/视频都用对方头像做全屏背景（高斯模糊 + 厚黑遮罩），头像圈常显。字幕双人对白都上。
-  // 底部一左一右：麦克风（点开多行输入弹窗）/ 挂断（电话倒扣）。右上角重说。
-  // 点字幕 = 选中删除该条通话对白（确认条在按钮上方）。
+  // 通话屏：背景（模糊头像+厚遮罩）由 render() 铺在整个屏幕上，这里只排内容。
+  // 字幕双人对白都上；底部一左一右：麦克风（点开多行输入弹窗）/ 挂断（电话倒扣）。右上角重说。
+  // 右键/长按字幕 = 弹确认窗删除该条通话对白（与聊天记录同一套交互）。
   function callHtml(call, userName) {
     var W = window.LZWorld;
     var eng = W.Engine;
-    var c = eng.findContact(call.name) || { name: call.name, avatar: '' };
-    var imgUrl = c.avatar ? esc(W.Worldbook.imgUrl(c.avatar)) : '';
-    var feed = imgUrl ? '<img class="lzw-callfeed" src="' + imgUrl + '">' : '';
-    var av = imgUrl ? '<img src="' + imgUrl + '">' : esc(call.name.slice(0, 1));
+    var av;
+    try {
+      var c = eng.findContact(call.name) || { name: call.name, avatar: '' };
+      var imgUrl = c.avatar ? esc(W.Worldbook.imgUrl(c.avatar)) : '';
+      av = imgUrl ? '<img src="' + imgUrl + '">' : esc(call.name.slice(0, 1));
+    } catch (e) { av = esc(call.name.slice(0, 1)); }
     var hist = W.Store.history(eng.callKey(call.name));
     var subs = hist.map(function (m, i) {
       if (m.who === 'sys') return '';
@@ -2385,13 +2411,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '</div>';
     }
     var conf = (UI.callDel != null)
-      ? '<div class="lzw-callconf">删除这条通话对白？<button class="lzw-cbtn yes" data-cact="delok">删除</button><button class="lzw-cbtn no" data-cact="delno">取消</button></div>'
+      ? '<div class="lzw-scrim"><div class="lzw-confirm lzw-calldel">删除这条通话对白？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="delno">取消</button><button class="lzw-cbtn yes" data-cact="delok">删除</button></div></div></div>'
       : '';
     var pop = UI.callPop
-      ? '<div class="lzw-scrim"><div class="lzw-confirm lzw-callpop">你在通话里说：<textarea class="lzw-callta" id="lzw-calltext" rows="4" maxlength="500" placeholder="可以换行，一次说好几句"></textarea>' +
+      ? '<div class="lzw-scrim"><div class="lzw-confirm lzw-callpop"><textarea class="lzw-callta" id="lzw-calltext" rows="4" maxlength="500" placeholder="想说什么…（可换行）"></textarea>' +
         '<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="popcancel">取消</button><button class="lzw-cbtn yes" data-cact="popok">发送</button></div></div></div>'
       : '';
-    return '<div class="lzw-callbody">' + roll + feed + '<div class="lzw-callshade"></div>' +
+    return '<div class="lzw-callbody">' + roll +
       '<div class="lzw-calltop"><div class="lzw-callava">' + av + '</div>' +
       '<div class="lzw-callname">' + esc(call.name) + '</div>' +
       '<div class="lzw-callstatus" id="lzw-callstatus">' + esc(status) + '</div></div>' +
