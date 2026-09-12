@@ -127,6 +127,10 @@ eq('无user宏残留·系统块', sysPrompt.indexOf('{{user}}'), -1);
 eq('无user宏残留·user轮', req.ordered_prompts[1].content.indexOf('{{user}}'), -1);
 const greq = LW.Prompt.group({ name: '高三（2）班', open: true }, [{ name: '林溪', profile: '闺蜜' }], [], null);
 eq('群提示词含成员', greq.ordered_prompts[0].content.indexOf('林溪') !== -1, true);
+eq('群档案全量不截断', greq.ordered_prompts[0].content.indexOf('- 林溪：\n闺蜜') !== -1, true);
+const greqLong = LW.Prompt.group({ name: '长档案群', open: false },
+  [{ name: '林溪', profile: 'x'.repeat(900) }], [], null);
+eq('群档案超500字保留', greqLong.ordered_prompts[0].content.indexOf('x'.repeat(900)) !== -1, true);
 eq('开放群提示', greq.ordered_prompts[0].content.indexOf('未具名的其他成员') !== -1, true);
 eq('群无user宏残留', greq.ordered_prompts[0].content.indexOf('{{user}}'), -1);
 

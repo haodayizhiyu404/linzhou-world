@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T02:19:29.392Z
+//  构建时间：2026-09-12T02:39:15.178Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 02:19';
+var __LZW_BUILD__ = '2026-09-12 02:39';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -712,8 +712,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var nameList = members.map(function (m) { return m.name; });
       var crowdTxt = Array.isArray(group.crowd) ? group.crowd.join('\n') : (group.crowd || '');
       var voices = members.map(function (m) {
-        var brief = m.profile ? String(m.profile).replace(/\s+/g, ' ').slice(0, 500) : '（无档案）';
-        return '- ' + m.name + '：' + brief;
+        var brief = m.profile ? String(m.profile).trim() : '（无档案）';
+        return '- ' + m.name + '：\n' + brief;
       });
 
       var p = [
@@ -1430,9 +1430,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             var h = W.Store.history(cv.key);
             var last = h.length ? h[h.length - 1] : null;
             var prev = last ? (last.kind === 'text' ? last.text : '[' + (kindCn[last.kind] || last.kind) + ']') : '（暂无消息）';
-            var av = cv.group
-              ? '<div class="lzw-ava">👥</div>'
-              : (cv.avatar ? '<img class="lzw-ava" src="' + esc(W.Worldbook.imgUrl(cv.avatar)) + '">' : '<div class="lzw-ava">' + esc(cv.name.slice(0, 1)) + '</div>');
+            var av = cv.avatar
+              ? '<img class="lzw-ava" src="' + esc(W.Worldbook.imgUrl(cv.avatar)) + '">'
+              : (cv.group ? '<div class="lzw-ava">👥</div>' : '<div class="lzw-ava">' + esc(cv.name.slice(0, 1)) + '</div>');
             return '<div class="lzw-conv" data-key="' + esc(cv.key) + '" data-group="' + (cv.group ? 1 : 0) + '">' +
               av + '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(cv.name) + '</div>' +
               '<div class="lzw-conv-prev">' + esc(prev) + '</div></div></div>';

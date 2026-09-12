@@ -216,8 +216,8 @@
       var nameList = members.map(function (m) { return m.name; });
       var crowdTxt = Array.isArray(group.crowd) ? group.crowd.join('\n') : (group.crowd || '');
       var voices = members.map(function (m) {
-        var brief = m.profile ? String(m.profile).replace(/\s+/g, ' ').slice(0, 500) : '（无档案）';
-        return '- ' + m.name + '：' + brief;
+        var brief = m.profile ? String(m.profile).trim() : '（无档案）';
+        return '- ' + m.name + '：\n' + brief;
       });
 
       var p = [
