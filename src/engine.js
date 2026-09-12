@@ -736,6 +736,16 @@
     },
 
     // 通话轮：机主「说」了 userSays（可为空 = 接续对方上一句），生成对方台词
+    // 视频通话输出拆分：[画面]块 + 单独一行的 --- 分隔 + 台词。
+    // 没有分隔线时只剥掉标记行、全部当台词（保住对话流优先于画面）。
+    splitScene: function (text) {
+      var scene = '';
+      var m = String(text || '').match(/\[画面\][^\n]*\n?([\s\S]*?)\n?---[ \t]*\n?([\s\S]*)$/);
+      if (m) { scene = m[1].trim(); text = m[2]; }
+      else { text = String(text || '').replace(/^\[画面\][^\n]*\n?/, ''); }
+      return { scene: scene, text: String(text || '').trim() };
+    },
+
     callTurn: async function (name, mode, userSays) {
       var W = window.LZWorld;
       var c = this.findContact(name);
@@ -760,7 +770,13 @@
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       // 剥注释块防污染（极端情况：AI 在通话里输出主动块）
       text = text.replace(/<!--" + BS + "s*phone" + BS + "s*([" + BS + "s" + BS + "S]*?)-->/gi, '');
-      return text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 8);
+      // 视频通话拆出 [画面] 块（音频永远无画面）
+      var sp = { scene: '', text: text };
+      if (mode === 'video') sp = this.splitScene(text);
+      return {
+        scene: sp.scene,
+        lines: sp.text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 12)
+      };
     },
 
     // ── 快捷回复按钮自装 ──

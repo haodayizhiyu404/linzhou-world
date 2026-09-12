@@ -32,6 +32,8 @@
       case 'image':   body = '[图片:' + m.text + ']'; break;
       case 'poke':    body = '[戳一戳]'; break;
       case 'location':body = '[定位:' + m.text + ']'; break;
+      // 视频通话的画面条目（跨行压成一行，带标记便于模型区分可见状态与台词）
+      case 'scene':   body = '（画面：' + String(m.text || '').replace(/\n+/g, '　') + '）'; break;
       default:        body = String(m.text || '');
     }
     return who + '：' + body;
