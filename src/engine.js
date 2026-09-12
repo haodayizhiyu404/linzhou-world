@@ -34,6 +34,14 @@
   var CROSS_GROUP_TAIL = 20;
   var CROSS_PRIVATE_TAIL = 15;
 
+  // djb2 字符串哈希（主动消息防重键的一部分）
+  function hashStr(s) {
+    var h = 5381;
+    s = String(s || '');
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
+
   // 表情包同义词兜底（模型爱编名字；可继续扩充）
   var STICKER_SYN = {
     '探头': '偷看', '偷偷看': '偷看', '哭': '蛙蛙哭泣', '哭泣': '蛙蛙哭泣',
@@ -578,8 +586,12 @@
       var byWho = {};
       parsed.forEach(function (p) { (byWho[p.who] = byWho[p.who] || []).push(p); });
       var names = Object.keys(byWho);
+      var UI = W.Apps && W.Apps.wechat;
       names.forEach(function (n) {
         W.Store.push(n, byWho[n], 100);
+        // 未读：正开着该对话框看 = 已读；否则累加红点（打开即清零，见 wechat.openChat）
+        var viewing = UI && UI.screen === 'chat' && UI.chatKey === n;
+        if (!viewing) W.Store.bumpUnread(n, byWho[n].length);
         var arr = byWho[n];
         var last = arr[arr.length - 1];
         var headText = last.kind === 'text' ? last.text
@@ -588,7 +600,9 @@
       });
       return names;
     },
-    // 扫最近的 assistant 消息（默认 5 条，仅即时事件后调用），抓未处理 id 里的注释块。
+    // 扫最近的 assistant 消息（默认 5 条，仅即时事件后调用），抓未处理键里的注释块。
+    // 防重键 = 楼层id + swipe序号 + 块内容哈希：重 roll 同层新 swipe 会换新键正常
+    // 再捕捉；同层同 swipe 重复扫描才跳过。
     // 注意：酒馆助手的 getChatMessages 必须带范围参数（裸调会 throw），
     // 返回对象的楼层号是 message_id（不是 id）。
     sweepPhoneBlocks: function (backlog) {
@@ -605,16 +619,20 @@
         var mm = msgs[i];
         if (!mm || mm.role !== 'assistant') continue;
         var mid = mm.message_id != null ? mm.message_id : (mm.id != null ? mm.id : ('idx' + i));
-        var id = String(mid);
-        if (seen.indexOf(id) !== -1) continue;
+        var swipe = mm.swipe_id != null ? mm.swipe_id : 0;
+        var blockM = /<!--\s*phone\s*([\s\S]*?)-->/i.exec(String(mm.message || ''));
+        var key = mid + ':' + swipe + ':' + (blockM ? hashStr(blockM[1]) : '-');
+        if (seen.indexOf(key) !== -1) continue;
         var names = [];
-        try { names = this.capturePhoneBlock(mm); } catch (e) {
-          console.warn('[霖州引擎] 主动消息捕捉失败', e);
+        if (blockM) {
+          try { names = this.capturePhoneBlock(mm); } catch (e) {
+            console.warn('[霖州引擎] 主动消息捕捉失败', e);
+          }
         }
-        W.Store.markProcId(id);
-        seen.push(id);
+        W.Store.markProcId(key);
+        seen.push(key);
         if (names.length) {
-          console.log('[霖州引擎] 主动消息：' + names.join('、') + '（楼层 ' + id + '）');
+          console.log('[霖州引擎] 主动消息：' + names.join('、') + '（楼层 ' + mid + ' swipe ' + swipe + '）');
           try { toastr.info('📱 ' + names.join('、') + ' 发来了新消息', '霖州手机', { timeOut: 4000 }); } catch (e) {}
           try { W.Floor.renderAll(); } catch (e) {}
           try { var UI = W.Apps.wechat; if (UI && UI.screen) UI.render(); } catch (e) {}

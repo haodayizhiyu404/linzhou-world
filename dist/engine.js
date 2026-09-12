@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T11:34:58.372Z
+//  构建时间：2026-09-12T12:02:10.806Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 11:34';
+var __LZW_BUILD__ = '2026-09-12 12:02';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -112,6 +112,22 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var list = (Array.isArray(r.procIds) ? r.procIds : []).concat([String(id)]);
       r.procIds = list.slice(-200);
       writeRoot(r);
+    },
+
+    // 未读计数：消息落入时累加，打开会话即清零（「打开即已读」标准判定）。
+    // 计数挂在会话元信息里，随聊天变量走。
+    bumpUnread: function (chatKey, n) {
+      var r = readRoot();
+      r.meta = r.meta || {};
+      var m = r.meta[chatKey] || {};
+      m.unread = (m.unread || 0) + (n || 1);
+      r.meta[chatKey] = m;
+      writeRoot(r);
+    },
+    clearUnread: function (chatKey) {
+      var r = readRoot();
+      var m = ((r.meta || {})[chatKey]);
+      if (m && m.unread) { m.unread = 0; writeRoot(r); }
     },
 
     // 会话元信息：headline（一句话近况）、atMainCount（最近活跃时的主线楼数）、
@@ -1260,8 +1276,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     'background:rgba(255,255,255,.28);backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.4)}',
     '.lzw-app span{font-size:11px;text-shadow:0 1px 4px rgba(0,0,0,.45)}',
     // 会话列表
-    '.lzw-conv{display:flex;gap:10px;align-items:center;padding:11px 12px;background:#fff;',
+    '.lzw-conv{display:flex;gap:10px;align-items:center;padding:11px 12px;background:#fff;position:relative',
     'border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer}',
+    '.lzw-unread{position:absolute;right:12px;top:50%;transform:translateY(-50%);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#f43530;color:#fff;font-size:11px;line-height:18px;text-align:center;box-sizing:border-box}',
+    '.lzw-appdot{position:absolute;top:-5px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#f43530;color:#fff;font-size:10px;line-height:17px;text-align:center;box-sizing:border-box;border:1.5px solid #fff}',
     '.lzw-conv:hover{background:#f7f7f9}',
     '.lzw-ava{width:34px;height:34px;border-radius:9px;flex:none;object-fit:cover;background:#c9cfd6;',
     'display:flex;align-items:center;justify-content:center;color:#fff;font-size:13.5px;font-weight:600}',
@@ -1567,6 +1585,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       this.screen = 'chat';
       this.panel = null;
       this.staged = [];
+      try { window.LZWorld.Store.clearUnread(key); } catch (e) {}
       this.render();
     },
 
@@ -1648,11 +1667,16 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
       var body;
       if (this.screen === 'home') {
+        var totalUn = 0;
+        try {
+          W.Store.historyKeys().forEach(function (k) { totalUn += W.Store.meta(k).unread || 0; });
+        } catch (e0) {}
         body =
           '<div class="lzw-body"><div class="lzw-home-wall">' +
           '<div class="lzw-hometime"><div class="t">' + esc(clock) + '</div><div class="d">' + esc(dateShort || '霖州') + '</div></div>' +
           '<div class="lzw-homegrid">' +
-          '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none">' + ICON_WECHAT + '</div><span>微信</span></div>' +
+          '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none;position:relative">' + ICON_WECHAT +
+          (totalUn ? '<span class="lzw-appdot">' + (totalUn > 99 ? '99+' : totalUn) + '</span>' : '') + '</div><span>微信</span></div>' +
           '<div class="lzw-app" style="opacity:.55"><div class="lzw-app-ico">🧩</div><span>敬请期待</span></div>' +
           '</div></div></div>';
 
@@ -1673,7 +1697,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
               : (cv.group ? '<div class="lzw-ava">👥</div>' : '<div class="lzw-ava">' + esc(cv.name.slice(0, 1)) + '</div>');
             return '<div class="lzw-conv" data-key="' + esc(cv.key) + '" data-group="' + (cv.group ? 1 : 0) + '">' +
               av + '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(cv.name) + '</div>' +
-              '<div class="lzw-conv-prev">' + esc(prev) + '</div></div></div>';
+              '<div class="lzw-conv-prev">' + esc(prev) + '</div></div>' +
+              (function () { var un = W.Store.meta(cv.key).unread || 0; return un ? '<span class="lzw-unread">' + (un > 99 ? '99+' : un) + '</span>' : ''; })() +
+              '</div>';
           }).join('') || '<div class="lzw-sysrow">本世界线暂无联系人</div>';
         } else {
           rowsHtml = '<div class="lzw-sysrow">未定位到当前世界线<br>进行一次主对话生成后自动归位</div>';
@@ -2013,6 +2039,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         this.failed = false;
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(key, result.msgs, 100);
+          // 生成是异步的：发出后生成了回复、人已经切去别的会话/主页 → 记未读红点
+          if (this.screen !== 'chat' || this.chatKey !== key) W.Store.bumpUnread(key, result.msgs.length);
           // 正在看别的会话时不刷它的屏；列表/主页则刷新让预览跟上
           if (this.screen !== 'chat' || this.chatKey === key) this.render();
         }
@@ -2169,6 +2197,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // 跨会话上下文携带条数（群→私聊 / 私聊→群，均限当天）
   var CROSS_GROUP_TAIL = 20;
   var CROSS_PRIVATE_TAIL = 15;
+
+  // djb2 字符串哈希（主动消息防重键的一部分）
+  function hashStr(s) {
+    var h = 5381;
+    s = String(s || '');
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+    return h.toString(36);
+  }
 
   // 表情包同义词兜底（模型爱编名字；可继续扩充）
   var STICKER_SYN = {
@@ -2714,8 +2750,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var byWho = {};
       parsed.forEach(function (p) { (byWho[p.who] = byWho[p.who] || []).push(p); });
       var names = Object.keys(byWho);
+      var UI = W.Apps && W.Apps.wechat;
       names.forEach(function (n) {
         W.Store.push(n, byWho[n], 100);
+        // 未读：正开着该对话框看 = 已读；否则累加红点（打开即清零，见 wechat.openChat）
+        var viewing = UI && UI.screen === 'chat' && UI.chatKey === n;
+        if (!viewing) W.Store.bumpUnread(n, byWho[n].length);
         var arr = byWho[n];
         var last = arr[arr.length - 1];
         var headText = last.kind === 'text' ? last.text
@@ -2724,7 +2764,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       });
       return names;
     },
-    // 扫最近的 assistant 消息（默认 5 条，仅即时事件后调用），抓未处理 id 里的注释块。
+    // 扫最近的 assistant 消息（默认 5 条，仅即时事件后调用），抓未处理键里的注释块。
+    // 防重键 = 楼层id + swipe序号 + 块内容哈希：重 roll 同层新 swipe 会换新键正常
+    // 再捕捉；同层同 swipe 重复扫描才跳过。
     // 注意：酒馆助手的 getChatMessages 必须带范围参数（裸调会 throw），
     // 返回对象的楼层号是 message_id（不是 id）。
     sweepPhoneBlocks: function (backlog) {
@@ -2741,16 +2783,20 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var mm = msgs[i];
         if (!mm || mm.role !== 'assistant') continue;
         var mid = mm.message_id != null ? mm.message_id : (mm.id != null ? mm.id : ('idx' + i));
-        var id = String(mid);
-        if (seen.indexOf(id) !== -1) continue;
+        var swipe = mm.swipe_id != null ? mm.swipe_id : 0;
+        var blockM = /<!--\s*phone\s*([\s\S]*?)-->/i.exec(String(mm.message || ''));
+        var key = mid + ':' + swipe + ':' + (blockM ? hashStr(blockM[1]) : '-');
+        if (seen.indexOf(key) !== -1) continue;
         var names = [];
-        try { names = this.capturePhoneBlock(mm); } catch (e) {
-          console.warn('[霖州引擎] 主动消息捕捉失败', e);
+        if (blockM) {
+          try { names = this.capturePhoneBlock(mm); } catch (e) {
+            console.warn('[霖州引擎] 主动消息捕捉失败', e);
+          }
         }
-        W.Store.markProcId(id);
-        seen.push(id);
+        W.Store.markProcId(key);
+        seen.push(key);
         if (names.length) {
-          console.log('[霖州引擎] 主动消息：' + names.join('、') + '（楼层 ' + id + '）');
+          console.log('[霖州引擎] 主动消息：' + names.join('、') + '（楼层 ' + mid + ' swipe ' + swipe + '）');
           try { toastr.info('📱 ' + names.join('、') + ' 发来了新消息', '霖州手机', { timeOut: 4000 }); } catch (e) {}
           try { W.Floor.renderAll(); } catch (e) {}
           try { var UI = W.Apps.wechat; if (UI && UI.screen) UI.render(); } catch (e) {}

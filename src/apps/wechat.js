@@ -89,8 +89,10 @@
     'background:rgba(255,255,255,.28);backdrop-filter:blur(6px);box-shadow:0 4px 14px rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.4)}',
     '.lzw-app span{font-size:11px;text-shadow:0 1px 4px rgba(0,0,0,.45)}',
     // 会话列表
-    '.lzw-conv{display:flex;gap:10px;align-items:center;padding:11px 12px;background:#fff;',
+    '.lzw-conv{display:flex;gap:10px;align-items:center;padding:11px 12px;background:#fff;position:relative',
     'border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer}',
+    '.lzw-unread{position:absolute;right:12px;top:50%;transform:translateY(-50%);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#f43530;color:#fff;font-size:11px;line-height:18px;text-align:center;box-sizing:border-box}',
+    '.lzw-appdot{position:absolute;top:-5px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#f43530;color:#fff;font-size:10px;line-height:17px;text-align:center;box-sizing:border-box;border:1.5px solid #fff}',
     '.lzw-conv:hover{background:#f7f7f9}',
     '.lzw-ava{width:34px;height:34px;border-radius:9px;flex:none;object-fit:cover;background:#c9cfd6;',
     'display:flex;align-items:center;justify-content:center;color:#fff;font-size:13.5px;font-weight:600}',
@@ -396,6 +398,7 @@
       this.screen = 'chat';
       this.panel = null;
       this.staged = [];
+      try { window.LZWorld.Store.clearUnread(key); } catch (e) {}
       this.render();
     },
 
@@ -477,11 +480,16 @@
 
       var body;
       if (this.screen === 'home') {
+        var totalUn = 0;
+        try {
+          W.Store.historyKeys().forEach(function (k) { totalUn += W.Store.meta(k).unread || 0; });
+        } catch (e0) {}
         body =
           '<div class="lzw-body"><div class="lzw-home-wall">' +
           '<div class="lzw-hometime"><div class="t">' + esc(clock) + '</div><div class="d">' + esc(dateShort || '霖州') + '</div></div>' +
           '<div class="lzw-homegrid">' +
-          '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none">' + ICON_WECHAT + '</div><span>微信</span></div>' +
+          '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none;position:relative">' + ICON_WECHAT +
+          (totalUn ? '<span class="lzw-appdot">' + (totalUn > 99 ? '99+' : totalUn) + '</span>' : '') + '</div><span>微信</span></div>' +
           '<div class="lzw-app" style="opacity:.55"><div class="lzw-app-ico">🧩</div><span>敬请期待</span></div>' +
           '</div></div></div>';
 
@@ -502,7 +510,9 @@
               : (cv.group ? '<div class="lzw-ava">👥</div>' : '<div class="lzw-ava">' + esc(cv.name.slice(0, 1)) + '</div>');
             return '<div class="lzw-conv" data-key="' + esc(cv.key) + '" data-group="' + (cv.group ? 1 : 0) + '">' +
               av + '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(cv.name) + '</div>' +
-              '<div class="lzw-conv-prev">' + esc(prev) + '</div></div></div>';
+              '<div class="lzw-conv-prev">' + esc(prev) + '</div></div>' +
+              (function () { var un = W.Store.meta(cv.key).unread || 0; return un ? '<span class="lzw-unread">' + (un > 99 ? '99+' : un) + '</span>' : ''; })() +
+              '</div>';
           }).join('') || '<div class="lzw-sysrow">本世界线暂无联系人</div>';
         } else {
           rowsHtml = '<div class="lzw-sysrow">未定位到当前世界线<br>进行一次主对话生成后自动归位</div>';
@@ -842,6 +852,8 @@
         this.failed = false;
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(key, result.msgs, 100);
+          // 生成是异步的：发出后生成了回复、人已经切去别的会话/主页 → 记未读红点
+          if (this.screen !== 'chat' || this.chatKey !== key) W.Store.bumpUnread(key, result.msgs.length);
           // 正在看别的会话时不刷它的屏；列表/主页则刷新让预览跟上
           if (this.screen !== 'chat' || this.chatKey === key) this.render();
         }

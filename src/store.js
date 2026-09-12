@@ -105,6 +105,22 @@
       writeRoot(r);
     },
 
+    // 未读计数：消息落入时累加，打开会话即清零（「打开即已读」标准判定）。
+    // 计数挂在会话元信息里，随聊天变量走。
+    bumpUnread: function (chatKey, n) {
+      var r = readRoot();
+      r.meta = r.meta || {};
+      var m = r.meta[chatKey] || {};
+      m.unread = (m.unread || 0) + (n || 1);
+      r.meta[chatKey] = m;
+      writeRoot(r);
+    },
+    clearUnread: function (chatKey) {
+      var r = readRoot();
+      var m = ((r.meta || {})[chatKey]);
+      if (m && m.unread) { m.unread = 0; writeRoot(r); }
+    },
+
     // 会话元信息：headline（一句话近况）、atMainCount（最近活跃时的主线楼数）、
     // digested（已折进提要的条数）、digest（前文提要）
     meta: function (chatKey) {
