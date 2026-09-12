@@ -728,7 +728,7 @@
       var profile = this.profileFor(name);
       var snap = W.Status.snapshot(name);
       var userInfo = this.userBlock();
-      var req = W.Prompt.callInvite({ name: c.name, profile: profile }, snap, userInfo, mode,
+      var req = W.Prompt.callInvite({ name: c.name, profile: profile }, W.Store.history(name).slice(-30), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText));
       var raw = await generateRaw(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
@@ -750,7 +750,7 @@
         if (m.who === 'sys') continue;
         lines.push(W.Floor.msgToLine(m, this.userName()));
       }
-      var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), snap, userInfo, mode,
+      var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), W.Store.history(name).slice(-20), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText), userSays || '');
       var raw = await generateRaw(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');

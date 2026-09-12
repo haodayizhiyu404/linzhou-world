@@ -306,15 +306,20 @@ ctx.getWorldbook = async () => [
   eq('未读·打开清零', LW.Store.meta('沈锡元').unread, 0);
   // ── 8.8 通话：提示词构造 + 群夹带私聊路由 + sys 条目 ──
   console.log('[通话]');
-  const inv = LW.Prompt.callInvite({ name: '沈锡元', profile: '测试档案' }, { dateText: '2034年8月26日 星期五', npc: { relation: '竹马' } }, '机主资料', 'audio', []);
+  const invHist = [{ who: 'user', kind: 'text', text: '晚安，睡了', day: '2034年8月26日 星期五', time: '23:01' }];
+  const inv = LW.Prompt.callInvite({ name: '沈锡元', profile: '测试档案' }, invHist, { dateText: '2034年8月26日 星期五', npc: { relation: '竹马' } }, '机主资料', 'audio', []);
   const invTxt = inv.ordered_prompts[0].content;
   eq('通话·邀请任务', invTxt.indexOf('语音通话') !== -1, true);
   eq('通话·拒绝约定', invTxt.indexOf('[拒绝]') !== -1, true);
-  eq('通话·邀请不带聊天记录段', invTxt.indexOf('## 通话记录') === -1, true);
-  const turn = LW.Prompt.callTurn({ name: '沈锡元', profile: '测试档案' }, '沈锡元：喂\n裴知意：嗯', { dateText: '2034年8月26日 星期五' }, '机主资料', 'video', [], '你睡了吗');
+  eq('通话·邀请不带通话记录段', invTxt.indexOf('## 通话记录') === -1, true);
+  eq('通话·邀请带主线近况', invTxt.indexOf('## 主线近况') !== -1, true);
+  eq('通话·邀请带最近私聊', invTxt.indexOf('晚安，睡了') !== -1, true);
+  const turn = LW.Prompt.callTurn({ name: '沈锡元', profile: '测试档案' }, '沈锡元：喂\n裴知意：嗯', invHist, { dateText: '2034年8月26日 星期五' }, '机主资料', 'video', [], '你睡了吗');
   const turnTxt = turn.ordered_prompts[0].content;
   eq('通话·轮任务', turnTxt.indexOf('视频通话') !== -1, true);
   eq('通话·transcript带入', turnTxt.indexOf('沈锡元：喂') !== -1, true);
+  eq('通话·轮带主线近况', turnTxt.indexOf('## 主线近况') !== -1, true);
+  eq('通话·轮带近期私聊', turnTxt.indexOf('## 近期私聊记录') !== -1, true);
   eq('通话·机主话入user轮', turn.ordered_prompts[1].content.indexOf('你睡了吗') !== -1, true);
   // 群夹带私聊：群回复里的 <!--phone--> 块路由进私聊且从群记录剥掉
   global.__msgs = null;

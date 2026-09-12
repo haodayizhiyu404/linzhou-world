@@ -225,7 +225,7 @@
     // ── 通话邀请：机主拨打了语音/视频通话，AI 决定接/拒 ──
     // 约定：拒绝 → 第一行以 [拒绝] 开头，可附一句简短说明；接听 → 直接输出接通后的
     // 第一句话（口语台词，不要引号/动作/括号）。呼叫页等待期间的一次生成。
-    callInvite: function (contact, snapshot, userInfo, mode, crossGroups) {
+    callInvite: function (contact, hist, snapshot, userInfo, mode, crossGroups) {
       var myName = me();
       var kind = mode === 'video' ? '视频通话' : '语音通话';
       var p = [
@@ -239,11 +239,16 @@
         '',
         situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
         '',
+        mainContext() ? '## 主线近况（只作背景，下方规则优先）\n' + mainContext() : '',
+        '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场）\n' + crossGroups.map(function (g) {
               return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
             }).join('\n\n')
           : '',
+        '',
+        '## 聊天记录 · 与' + myName + '的微信对话（通话前的最近消息，供接续话题与语气）',
+        histText(hist || [], 20, true, snapshot && snapshot.dateText),
         '',
         consistencyRules('「' + contact.name + '」'),
         '',
@@ -265,7 +270,7 @@
 
     // ── 通话轮：通话进行中，机主说了一句（或要求接续），生成对方台词 ──
     // transcript = 「名字：…/机主：…」台词行；userSays = 机主本轮说的话（可空）
-    callTurn: function (contact, transcript, snapshot, userInfo, mode, crossGroups, userSays) {
+    callTurn: function (contact, transcript, hist, snapshot, userInfo, mode, crossGroups, userSays) {
       var myName = me();
       var kind = mode === 'video' ? '视频通话' : '语音通话';
       var p = [
@@ -279,11 +284,16 @@
         '',
         situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
         '',
+        mainContext() ? '## 主线近况（只作背景，下方规则优先）\n' + mainContext() : '',
+        '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场，可自然提及）\n' + crossGroups.map(function (g) {
               return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
             }).join('\n\n')
           : '',
+        '',
+        '## 近期私聊记录（通话之外的消息，供接续话题）',
+        histText(hist || [], 10, true, snapshot && snapshot.dateText),
         '',
         '## 通话记录（' + kind + ' · 双方已说的话）',
         transcript || '（刚接通）',

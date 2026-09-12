@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T13:01:13.571Z
+//  构建时间：2026-09-12T13:19:05.589Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 13:01';
+var __LZW_BUILD__ = '2026-09-12 13:19';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -865,7 +865,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // ── 通话邀请：机主拨打了语音/视频通话，AI 决定接/拒 ──
     // 约定：拒绝 → 第一行以 [拒绝] 开头，可附一句简短说明；接听 → 直接输出接通后的
     // 第一句话（口语台词，不要引号/动作/括号）。呼叫页等待期间的一次生成。
-    callInvite: function (contact, snapshot, userInfo, mode, crossGroups) {
+    callInvite: function (contact, hist, snapshot, userInfo, mode, crossGroups) {
       var myName = me();
       var kind = mode === 'video' ? '视频通话' : '语音通话';
       var p = [
@@ -879,11 +879,16 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '',
         situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
         '',
+        mainContext() ? '## 主线近况（只作背景，下方规则优先）\n' + mainContext() : '',
+        '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场）\n' + crossGroups.map(function (g) {
               return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
             }).join('\n\n')
           : '',
+        '',
+        '## 聊天记录 · 与' + myName + '的微信对话（通话前的最近消息，供接续话题与语气）',
+        histText(hist || [], 20, true, snapshot && snapshot.dateText),
         '',
         consistencyRules('「' + contact.name + '」'),
         '',
@@ -905,7 +910,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
     // ── 通话轮：通话进行中，机主说了一句（或要求接续），生成对方台词 ──
     // transcript = 「名字：…/机主：…」台词行；userSays = 机主本轮说的话（可空）
-    callTurn: function (contact, transcript, snapshot, userInfo, mode, crossGroups, userSays) {
+    callTurn: function (contact, transcript, hist, snapshot, userInfo, mode, crossGroups, userSays) {
       var myName = me();
       var kind = mode === 'video' ? '视频通话' : '语音通话';
       var p = [
@@ -919,11 +924,16 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '',
         situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
         '',
+        mainContext() ? '## 主线近况（只作背景，下方规则优先）\n' + mainContext() : '',
+        '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场，可自然提及）\n' + crossGroups.map(function (g) {
               return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
             }).join('\n\n')
           : '',
+        '',
+        '## 近期私聊记录（通话之外的消息，供接续话题）',
+        histText(hist || [], 10, true, snapshot && snapshot.dateText),
         '',
         '## 通话记录（' + kind + ' · 双方已说的话）',
         transcript || '（刚接通）',
@@ -1515,15 +1525,25 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-callinput{flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:17px;color:#fff;padding:8px 13px;font-size:13.5px;outline:none}',
     '.lzw-callinput::placeholder{color:rgba(255,255,255,.45)}',
     '.lzw-csend{background:#22c05e;border:none;color:#fff;border-radius:17px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap}',
-    '.lzw-cwait{position:relative;z-index:1;color:#c9d1d9;font-size:13px}'
+    '.lzw-cwait{position:relative;z-index:1;color:#c9d1d9;font-size:13px}',
+    '.lzw-scr-call .lzw-sbar{filter:invert(1)}', // 通话黑底：状态栏图标/时间反白
+    '.lzw-callmid{justify-content:space-between;width:100%;padding:0 42px;align-items:center}',
+    '.lzw-callbtn i{width:54px;height:54px;font-size:22px}',
+    '.lzw-callbtn.hang i{width:54px;height:54px}',
+    '.lzw-callroll{position:absolute;top:10px;right:12px;z-index:5;color:#fff;opacity:.85;cursor:pointer;padding:4px;line-height:0}',
+    '.lzw-callconf{position:relative;z-index:1;display:flex;gap:10px;align-items:center;justify-content:center;font-size:12.5px;color:#ffb4b4;background:rgba(229,72,77,.16);border-radius:10px;padding:7px 10px;width:100%}',
+    '.lzw-callta{width:100%;background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:10px;color:#111;padding:8px 10px;font-size:13.5px;resize:none;outline:none;margin-bottom:8px;font-family:inherit}',
+    '.lzw-sub{cursor:pointer}'
   ].join('\n');
 
   var ICON_VOICE = '<svg width="15" height="15" viewBox="0 0 1024 1024"><path fill="#222222" d="M501.269333 517.610667a277.333333 277.333333 0 0 1-81.664 197.546666l-5.12 4.906667-3.306666 2.858667a42.666667 42.666667 0 0 1-58.325334-61.696l3.029334-3.136 6.954666-6.954667a192.042667 192.042667 0 0 0-7.936-273.002667l-3.050666-3.136a42.666667 42.666667 0 0 1 61.248-59.264l5.12 4.906667a277.333333 277.333333 0 0 1 83.050666 196.970667z m187.648 10.197333A418.090667 418.090667 0 0 1 565.845333 814.933333l-7.68 7.466667-3.306666 2.837333a42.666667 42.666667 0 0 1-58.346667-61.674666l3.029333-3.157334 6.101334-5.952a332.928 332.928 0 0 0 97.962666-228.48l0.085334-8.533333a332.821333 332.821333 0 0 0-105.834667-242.24 42.666667 42.666667 0 0 1 58.197333-62.4 418.133333 418.133333 0 0 1 132.970667 304.32l-0.106667 10.709333zM625.877333 137.877333a42.666667 42.666667 0 0 1 58.176-62.421333l-58.176 62.421333z m250.730667 394.026667a606.208 606.208 0 0 1-48.853333 225.365333l-6.293334 14.165334a606.016 606.016 0 0 1-123.2 176.554666l-11.136 10.816-3.306666 2.837334a42.666667 42.666667 0 0 1-58.346667-61.696l3.029333-3.136 9.557334-9.28a520.661333 520.661333 0 0 0 105.856-151.722667l5.397333-12.16a520.853333 520.853333 0 0 0 41.984-193.6l0.128-13.333333a520.341333 520.341333 0 0 0-38.4-194.261334l-5.141333-12.288a520.533333 520.533333 0 0 0-122.026667-172.288l58.197333-62.421333a605.909333 605.909333 0 0 1 142.016 200.533333l6.016 14.293334a605.653333 605.653333 0 0 1 44.672 226.133333l-0.149333 15.509333zM170.666667 518.442667a64 64 0 1 1 128 0 64 64 0 0 1-128 0z"/></svg>';
 
   var ICON_REROLL = '<svg width="18" height="18" viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 85.333333c102.869333 0 199.509333 36.693333 275.029333 100.437334l93.866667-94.037334a21.333333 21.333333 0 0 1 36.437333 15.061334V384a21.333333 21.333333 0 0 1-21.333333 21.333333h-276.693333a21.333333 21.333333 0 0 1-15.104-36.394666l122.325333-122.496a341.333333 341.333333 0 1 0 118.314667 341.632 42.666667 42.666667 0 1 1 83.2 18.901333A426.794667 426.794667 0 0 1 512 938.666667C276.352 938.666667 85.333333 747.648 85.333333 512S276.352 85.333333 512 85.333333z"/></svg>';
 
-  var ICON_CALL = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l1.5 4-2.2 1.6a13 13 0 0 0 6.1 6.1L16 13.5l4 1.5v4a1.6 1.6 0 0 1-1.8 1.6C10.4 19.9 4.1 13.6 3.4 5.8A1.6 1.6 0 0 1 5 4z"/></svg>';
-  var ICON_VCALL = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12.5" height="12" rx="2.5"/><path d="M15.5 10.5l5-3v9l-5-3"/></svg>';
+  var ICON_CALL = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l1.5 4-2.2 1.6a13 13 0 0 0 6.1 6.1L16 13.5l4 1.5v4a1.6 1.6 0 0 1-1.8 1.6C10.4 19.9 4.1 13.6 3.4 5.8A1.6 1.6 0 0 1 5 4z"/></svg>';
+  var ICON_VCALL = '<svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12.5" height="12" rx="2.5"/><path d="M15.5 10.5l5-3v9l-5-3"/></svg>';
+  var ICON_MIC = '<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M8.5 21.5h7"/></svg>';
+  var ICON_HANG = '<svg width="26" height="26" viewBox="0 0 24 24"><path fill="#fff" d="M6.6 3.2c.5-.2 1.1 0 1.4.5l1.8 2.7c.3.5.2 1.1-.2 1.5L8 9.3a12.8 12.8 0 0 0 6.7 6.7l1.4-1.6c.4-.4 1-.5 1.5-.2l2.7 1.8c.5.3.7.9.5 1.4l-.7 2.1c-.2.6-.8 1-1.4.9C9.6 18.9 5.1 14.4 4.6 5.8c0-.6.4-1.2 1-1.4l1-.2z" transform="rotate(135 12 12)"/></svg>';
   var ICON_BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
   // 电池：iPhone 风格——小圆角细描边、电芯近满内腔、右侧圆帽（依用户参考图，深灰 #2c2c2c）
@@ -1872,7 +1892,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + '">' + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + (this.call ? ' lzw-scr-call' : '') + '">' + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
         (this.confirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条消息？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="cancel">取消</button><button class="lzw-cbtn yes" data-cact="del">删除</button></div></div></div>' : '') +
         '</div></div>';
 
@@ -1898,12 +1918,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           if (!c || !el) return;
           el.textContent = fmtDur(Math.max(0, Math.round((Date.now() - c.startAt) / 1000)));
         }, 1000);
-      }
-      if (this.call) {
-        var cin = ph.querySelector('#lzw-callinput');
-        if (cin) cin.addEventListener('keydown', function (e) {
-          if (e.key === 'Enter') { e.preventDefault(); UI.callSend(); }
-        });
       }
     },
 
@@ -2046,11 +2060,26 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           var a = el.dataset.cact;
           if (a === 'hangup') UI.hangup(false);
           else if (a === 'cancelcall') UI.hangup(true);
-          else if (a === 'callsend') UI.callSend();
           else if (a === 'callreroll') UI.callReroll();
-          else if (a === 'mute') { UI.callMute = !UI.callMute; UI.render(); }
-          else if (a === 'spkr') { UI.callSpkr = !UI.callSpkr; UI.render(); }
+          else if (a === 'micpop') { UI.callPop = true; UI.render(); }
+          else if (a === 'popok') {
+            var ta = ph.querySelector('#lzw-calltext');
+            var t = ta ? ta.value.trim() : '';
+            UI.callPop = false;
+            UI.render();
+            if (t) UI.callSend(t);
+          }
+          else if (a === 'popcancel') { UI.callPop = false; UI.render(); }
+          else if (a === 'delok') {
+            if (UI.callDel != null) { try { window.LZWorld.Store.removeAt(window.LZWorld.Engine.callKey(UI.call.name), UI.callDel); } catch (e) {} }
+            UI.callDel = null; UI.render();
+          }
+          else if (a === 'delno') { UI.callDel = null; UI.render(); }
         };
+      });
+      // 通话对白：点选 → 确认删除（与聊天记录同一套语义）
+      ph.querySelectorAll('[data-cdel]').forEach(function (el) {
+        el.onclick = function () { UI.callDel = parseInt(el.dataset.cdel, 10); UI.render(); };
       });
     },
 
@@ -2243,17 +2272,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       }
     },
 
-    // 通话轮：机主说一句 → 对方回台词（多行）
-    callSend: async function () {
+    // 通话轮：机主说了一段（可换行，拆成多条）→ 对方回台词（多行）
+    callSend: async function (text) {
       var W = window.LZWorld, eng = W.Engine;
       var call = this.call;
       if (!call || call.phase !== 'active' || call.busy) return;
-      var inp = pdoc().getElementById('lzw-callinput');
-      var t = inp ? inp.value.trim() : '';
-      if (!t) return;
-      if (inp) inp.value = '';
+      var lines = String(text || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 10);
+      if (!lines.length) return;
       var key = eng.callKey(call.name);
-      W.Store.push(key, [{ who: 'user', kind: 'text', text: t }], 200);
+      W.Store.push(key, lines.map(function (l) { return { who: 'user', kind: 'text', text: l }; }), 200);
       call.busy = true;
       this.render();
       try {
@@ -2321,6 +2348,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   }
 
   // 通话屏：音频 = 大头像黑屏；视频 = 头像图全屏当画面。字幕双人对白都上。
+  // 底部一左一右：麦克风（点开多行输入弹窗）/ 挂断（电话倒扣）。右上角重说。
+  // 点字幕 = 选中删除该条通话对白（确认条在按钮上方）。
   function callHtml(call, userName) {
     var W = window.LZWorld;
     var eng = W.Engine;
@@ -2329,36 +2358,40 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var feed = (call.mode === 'video' && imgUrl) ? '<img class="lzw-callfeed" src="' + imgUrl + '">' : '';
     var av = imgUrl ? '<img src="' + imgUrl + '">' : esc(call.name.slice(0, 1));
     var hist = W.Store.history(eng.callKey(call.name));
-    var subs = hist.filter(function (m) { return m.who !== 'sys'; }).slice(-8).map(function (m) {
+    var subs = hist.map(function (m, i) {
+      if (m.who === 'sys') return '';
       var isMe = m.who === 'user';
-      return '<div class="lzw-sub' + (isMe ? ' me' : '') + '">' + esc((isMe ? userName : m.who) + '：' + (m.text || '')) + '</div>';
+      return '<div class="lzw-sub' + (isMe ? ' me' : '') + '" data-cdel="' + i + '">' + esc((isMe ? userName : m.who) + '：' + (m.text || '')) + '</div>';
     }).join('');
     var status = call.phase === 'ringing'
       ? '正在呼叫…'
       : (call.busy ? '对方说话中…' : fmtDur(Math.max(0, Math.round((Date.now() - call.startAt) / 1000))));
+    var roll = (call.phase === 'active' && !call.busy)
+      ? '<span class="lzw-callroll" data-cact="callreroll" title="重说对方上一段">' + ICON_REROLL + '</span>'
+      : '';
     var btns;
     if (call.phase === 'ringing') {
-      btns = '<div class="lzw-callmid"><button class="lzw-callbtn hang" data-cact="cancelcall"><i>✕</i><span>取消</span></button></div>';
+      btns = '<div class="lzw-callmid" style="justify-content:center"><button class="lzw-callbtn hang" data-cact="cancelcall"><i>' + ICON_HANG + '</i><span>取消</span></button></div>';
     } else {
       btns = '<div class="lzw-callmid">' +
-        '<button class="lzw-callbtn' + (UI.callMute ? ' on' : '') + '" data-cact="mute"><i>' + (UI.callMute ? '🔇' : '🎙️') + '</i><span>静音</span></button>' +
-        '<button class="lzw-callbtn hang" data-cact="hangup"><i>✕</i><span>挂断</span></button>' +
-        '<button class="lzw-callbtn' + (UI.callSpkr ? ' on' : '') + '" data-cact="spkr"><i>📢</i><span>免提</span></button>' +
+        '<button class="lzw-callbtn" data-cact="micpop"><i>' + ICON_MIC + '</i><span>说话</span></button>' +
+        '<button class="lzw-callbtn hang" data-cact="hangup"><i>' + ICON_HANG + '</i><span>挂断</span></button>' +
         '</div>';
     }
-    var input = call.phase === 'active'
-      ? '<div class="lzw-callrow"><input class="lzw-callinput" id="lzw-callinput" placeholder="说点什么…回车发送" maxlength="300"' + (call.busy ? ' disabled' : '') + '>' +
-        '<button class="lzw-csend" data-cact="callsend">发送</button>' +
-        (call.busy ? '' : '<button class="lzw-csend" data-cact="callreroll" style="background:rgba(255,255,255,.16)" title="重说对方上一段">重说</button>') +
-        '</div>'
+    var conf = (UI.callDel != null)
+      ? '<div class="lzw-callconf">删除这条通话对白？<button class="lzw-cbtn yes" data-cact="delok">删除</button><button class="lzw-cbtn no" data-cact="delno">取消</button></div>'
       : '';
-    return '<div class="lzw-callbody">' + feed +
+    var pop = UI.callPop
+      ? '<div class="lzw-scrim"><div class="lzw-confirm">你在通话里说：<textarea class="lzw-callta" id="lzw-calltext" rows="3" maxlength="500" placeholder="可以换行，一次说好几句"></textarea>' +
+        '<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="popcancel">取消</button><button class="lzw-cbtn yes" data-cact="popok">发送</button></div></div></div>'
+      : '';
+    return '<div class="lzw-callbody">' + roll + feed +
       '<div class="lzw-calltop">' + (feed ? '' : '<div class="lzw-callava">' + av + '</div>') +
       '<div class="lzw-callname">' + esc(call.name) + '</div>' +
       '<div class="lzw-callstatus" id="lzw-callstatus">' + esc(status) + '</div></div>' +
       '<div class="lzw-callsubs">' + subs + '</div>' +
       (call.phase === 'ringing' ? '<div class="lzw-cwait">等待对方接听…（由对方人设决定这通电话的命运）</div>' : '') +
-      btns + input + '</div>';
+      conf + btns + '</div>' + pop;
   }
 
   // 生成超时保护：API 故障时 generateRaw 可能永远不返回，不兜底会让小飞机永远失灵
@@ -2401,13 +2434,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   }
 
   function appbarHtml(screen, disp, act) {
-    if (UI.call) return '<div class="lzw-appbar"><span class="lzw-appbar-t" style="color:#fff">' + esc(UI.call.name) + '</span><span class="lzw-appbar-r"></span></div>'; // 通话锁屏：无返回键
+    if (UI.call) return ''; // 通话界面：无顶栏（名字在通话屏里）
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
-    var dials = (screen === 'chat' && !UI.isGroup && UI.chatKey)
-      ? '<span class="lzw-dial" data-act="dial" data-dial="audio" title="语音通话">' + ICON_CALL + '</span><span class="lzw-dial" data-act="dial" data-dial="video" title="视频通话">' + ICON_VCALL + '</span>'
-      : '';
-    return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span>' + dials + '<span class="lzw-appbar-r">' +
+    return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
       (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
       '</span></div>';
   }
@@ -2440,6 +2470,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '<div class="lzw-act" data-mode="voice"><div class="lzw-act-ico">' + ICO.voice + '</div><span>语音</span></div>' +
       (UI.isGroup ? '' : '<div class="lzw-act" data-mode="poke"><div class="lzw-act-ico">' + ICO.poke + '</div><span>戳一戳</span></div>') +
       '<div class="lzw-act" data-mode="location"><div class="lzw-act-ico">' + ICO.location + '</div><span>定位</span></div>' +
+      (UI.isGroup ? '' :
+        '<div class="lzw-act" data-act="dial" data-dial="audio"><div class="lzw-act-ico" style="color:#22a04a">' + ICON_CALL + '</div><span>语音通话</span></div>' +
+        '<div class="lzw-act" data-act="dial" data-dial="video"><div class="lzw-act-ico" style="color:#22a04a">' + ICON_VCALL + '</div><span>视频通话</span></div>') +
       '</div></div>';
   }
 
@@ -3201,7 +3234,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var profile = this.profileFor(name);
       var snap = W.Status.snapshot(name);
       var userInfo = this.userBlock();
-      var req = W.Prompt.callInvite({ name: c.name, profile: profile }, snap, userInfo, mode,
+      var req = W.Prompt.callInvite({ name: c.name, profile: profile }, W.Store.history(name).slice(-30), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText));
       var raw = await generateRaw(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
@@ -3223,7 +3256,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         if (m.who === 'sys') continue;
         lines.push(W.Floor.msgToLine(m, this.userName()));
       }
-      var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), snap, userInfo, mode,
+      var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), W.Store.history(name).slice(-20), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText), userSays || '');
       var raw = await generateRaw(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
