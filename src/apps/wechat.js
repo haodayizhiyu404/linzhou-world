@@ -372,7 +372,7 @@
       return '<div class="lzw-poke"' + (pokeIt ? ' data-poke="1"' : '') + '>' + (isUser ? '你戳了戳 ' + esc(targetName || '对方') : esc(who) + ' 戳了戳你') + '</div>';
     }
     if (m.kind === 'voice') {
-      var vsec = Math.max(2, Math.min(40, Math.round(m.text.length * 0.7)));
+      var vsec = Math.max(2, Math.min(40, Math.round(m.text.length * 0.35)));
       return '<div class="lzw-bub lzw-voice' + (isUser ? ' me' : '') + '" data-voice="1" title="点击转文字查看内容"><span class="lzw-voice-play">' + ICON_VOICE + '</span><span class="lzw-voice-sec">' + vsec + '&#8243;</span><div class="lzw-voicetxt">' + esc(m.text) + '</div></div>';
     }
     if (m.kind === 'image') {
