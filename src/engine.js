@@ -282,11 +282,12 @@
           var hist0 = root.history(key);
           if (!hist0.length) continue;
           var meta0 = root.meta(key);
-          var nm = key.indexOf('group:') === 0 ? key.slice(6) + '（群）' : key;
+          var isGrp0 = key.indexOf('group:') === 0;
+          var nm = isGrp0 ? key.slice(6) : key;
           var hit = false;
           if (meta0.atMainCount != null && now - meta0.atMainCount <= this.INJECT_RECENT_FLOORS) hit = true;
-          if (!hit && recentText.indexOf(nm.replace(/（群）$/, '')) !== -1) hit = true;
-          if (hit) cands.push({ key: key, name: nm, meta: meta0 });
+          if (!hit && recentText.indexOf(nm) !== -1) hit = true;
+          if (hit) cands.push({ key: key, name: nm, isGrp: isGrp0, meta: meta0 });
         }
         // 最近活跃的会话优先（同活跃楼数按名字稳定排序，保证可预期）
         cands.sort(function (a, b) {
@@ -316,15 +317,15 @@
             }
             lines.push((m.who === 'user' ? myName : m.who) + '：' + W.Floor.msgToLine(m, myName).replace(/^[^：]*：/, ''));
           });
-          blocks.push('「' + name + '」' + when + '：\n' + lines.join('\n'));
+          blocks.push('「' + name + '」' + (cands[ci].isGrp ? '（群聊，仅群成员知情）' : '（私聊，仅对话双方知情）') + when + '：\n' + lines.join('\n'));
         }
         if (!blocks.length) return;
         injectPrompts([{
           id: 'lzw-phone-digest',
           position: 'in_chat',
-          depth: 0,   // 聊天记录最底部、规则区正上方（与正文贴在一起）
+          depth: 1,   // 历史正文内部、最后一楼之上——物理上位于所有 D0 规则上方
           role: 'system',
-          content: '【手机近况 · 微信】' + myName + '近期在手机上聊过天（仅作背景，正文不必提到；角色当面不得说出只有微信里才知道的细节，除非对方当时就在这些聊天里）：\n' + blocks.join('\n')
+          content: '【手机近况 · 微信】' + myName + '近期在手机上聊过天（仅作背景，正文不必专门提及。角色可自然引用自己参与过的聊天——私聊只限对话双方、群聊只限群成员知情；不得说出自己不在场的私聊内容）：\n' + blocks.join('\n')
         }], { once: true });
       } catch (e) { console.warn('[霖州引擎] 手机动态注入失败', e); }
     },
