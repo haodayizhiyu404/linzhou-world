@@ -104,7 +104,7 @@
     return map;
   }
 
-  // ── 通讯录区块规范化：把各种写法收成 {contacts:[{name,avatar}],groups:[{name,members,open}]} ──
+  // ── 通讯录区块规范化：把各种写法收成 {contacts:[{name,avatar}],groups:[{name,members,open,avatar,style,crowd}]} ──
   function normSection(sec) {
     sec = sec || {};
     var contacts = (sec.contacts || sec.friends || []).map(function (c) {
@@ -116,7 +116,10 @@
       return {
         name: String(g.name || '').trim(),
         members: (g.members || []).map(String),
-        open: !!g.open
+        open: !!g.open,
+        avatar: String(g.avatar || '').trim(),
+        style: g.style ? String(g.style) : '',
+        crowd: g.crowd || ''
       };
     }).filter(function (g) { return g.name; });
     return { contacts: contacts, groups: groups };

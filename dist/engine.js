@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T01:50:38.817Z
+//  构建时间：2026-09-12T01:58:04.471Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 01:50';
+var __LZW_BUILD__ = '2026-09-12 01:58';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -378,7 +378,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     return map;
   }
 
-  // ── 通讯录区块规范化：把各种写法收成 {contacts:[{name,avatar}],groups:[{name,members,open}]} ──
+  // ── 通讯录区块规范化：把各种写法收成 {contacts:[{name,avatar}],groups:[{name,members,open,avatar,style,crowd}]} ──
   function normSection(sec) {
     sec = sec || {};
     var contacts = (sec.contacts || sec.friends || []).map(function (c) {
@@ -390,7 +390,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return {
         name: String(g.name || '').trim(),
         members: (g.members || []).map(String),
-        open: !!g.open
+        open: !!g.open,
+        avatar: String(g.avatar || '').trim(),
+        style: g.style ? String(g.style) : '',
+        crowd: g.crowd || ''
       };
     }).filter(function (g) { return g.name; });
     return { contacts: contacts, groups: groups };

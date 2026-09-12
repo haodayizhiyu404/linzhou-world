@@ -150,5 +150,30 @@ eq('群crowd多行保留', gtxt3.indexOf('特殊规则：可同时存在多个�
 LW.Store.push('stampT', [{ who: 'user', kind: 'text', text: 'x', time: '22:00' }], 100);
 eq('落库自动补日期', LW.Store.history('stampT')[0].day, '2034年8月26日 星期五');
 
-console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
-process.exit(fail ? 1 : 0);
+// ── 8. 世界书通讯录：群字段透传 ──
+console.log('[世界书]');
+ctx.getCharLorebooks = () => ({ primary: '测试书' });
+ctx.getWorldbook = async () => [
+  { comment: '霖州手机::通讯录', enabled: true, content: JSON.stringify({
+    'IF线': {
+      contacts: [{ name: '周言', avatar: 'a.png' }],
+      groups: [{
+        name: '霖附吃瓜二手交易市场', open: true, avatar: 'g.png',
+        style: '节奏快', crowd: '超百人，多为陌生人',
+        members: ['周言']
+      }]
+    }
+  }) }
+];
+(async () => {
+  const wb = await LW.Worldbook.load();
+  const g0 = (wb.rosters['IF线'].groups || [])[0] || {};
+  eq('群avatar透传', g0.avatar, 'g.png');
+  eq('群style透传', g0.style, '节奏快');
+  eq('群crowd透传', g0.crowd, '超百人，多为陌生人');
+  eq('群open透传', g0.open, true);
+  eq('群members透传', JSON.stringify(g0.members), '["周言"]');
+  eq('联系人avatar透传', (wb.rosters['IF线'].contacts || [])[0].avatar, 'a.png');
+  console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
+  process.exit(fail ? 1 : 0);
+})();
