@@ -30,6 +30,10 @@
   // 五个主条目名（与卡组世界书一致；长的优先匹配；古代线放最后，多重误开时现代线优先）
   var LINES = ['成人时代-破镜重圆', '成人时代-同路而行', '高中时代', '大学时代', '古代架空-华胥之梦'];
 
+  // 跨会话上下文携带条数（群→私聊 / 私聊→群，均限当天）
+  var CROSS_GROUP_TAIL = 20;
+  var CROSS_PRIVATE_TAIL = 15;
+
   // 表情包同义词兜底（模型爱编名字；可继续扩充）
   var STICKER_SYN = {
     '探头': '偷看', '偷偷看': '偷看', '哭': '蛙蛙哭泣', '哭泣': '蛙蛙哭泣',
@@ -149,6 +153,33 @@
           : evo;
       }
       return this.deref(base);
+    },
+
+    // ── 跨会话上下文（当天时效）──
+    // 群→私聊：对方在的群当天有动静 → 带群记录尾巴（对方在场，与防开天眼规则自洽）
+    crossGroups: function (name, dateText) {
+      if (!dateText) return [];
+      var sec = this.section();
+      if (!sec) return [];
+      var W = window.LZWorld, out = [];
+      (sec.groups || []).forEach(function (g) {
+        if ((g.members || []).indexOf(name) === -1) return;
+        var h = W.Store.history('group:' + g.name);
+        if (!h.length || h[h.length - 1].day !== dateText) return;
+        out.push({ name: g.name, hist: h.slice(-CROSS_GROUP_TAIL) });
+      });
+      return out;
+    },
+    // 私聊→群：成员与机主当天的私聊 → 挂到该成员档案下（※ 仅本人知晓，规则侧封死其他人的引用）
+    crossPrivates: function (members, dateText) {
+      if (!dateText) return {};
+      var W = window.LZWorld, out = {};
+      (members || []).forEach(function (n) {
+        var h = W.Store.history(n);
+        if (!h.length || h[h.length - 1].day !== dateText) return;
+        out[n] = h.slice(-CROSS_PRIVATE_TAIL);
+      });
+      return out;
     },
 
     // 机主资料段：persona 描述 + 当前线的 [MAIN·{{user}}·演化后]，每次生成接进提示词末尾区。
@@ -549,7 +580,8 @@
         var tail = [];
         for (var hi = hist.length - 1; hi >= 0 && hist[hi].who === 'user'; hi--) tail.unshift(hist[hi]);
         var rest = hist.slice(0, hist.length - tail.length);
-        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo);
+        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo,
+          this.crossGroups(c.name, snap && snap.dateText));
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {
@@ -565,7 +597,8 @@
         var tail2 = [];
         for (var hj = hist2.length - 1; hj >= 0 && hist2[hj].who === 'user'; hj--) tail2.unshift(hist2[hj]);
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
-        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest, userInfo);
+        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest, userInfo,
+          this.crossPrivates(g.members, snap2 && snap2.dateText));
         raw = await generateRaw(req2);
         title = g.name + ' 群聊';
         parseGroup = true;

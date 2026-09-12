@@ -236,6 +236,34 @@ ctx.getWorldbook = async () => [
   eq('用户段·衔接句', LW.Engine.userBlock().indexOf('叠加于上方机主资料') !== -1, true);
   eq('用户段·线user演化', LW.Engine.userBlock().indexOf('新闻与传播学院') !== -1, true);
   eq('用户段·user宏替换', LW.Engine.userBlock().indexOf('{{user}}') === -1, true);
+
+  // ── 8.6 跨会话上下文：群→私聊 / 私聊→群，当天门控 ──
+  console.log('[跨会话上下文]');
+  LW.Store.push('group:霖附吃瓜二手交易市场', [
+    { who: 'user', kind: 'text', text: '群里水的消息', day: '2034年8月26日 星期五', time: '23:00' },
+    { who: '周言', kind: 'text', text: '哈哈+1', day: '2034年8月26日 星期五', time: '23:01' },
+  ], 100);
+  LW.Store.push('陆飞', [
+    { who: 'user', kind: 'text', text: '晚安，睡了', day: '2034年8月26日 星期五', time: '23:30' },
+  ], 100);
+  LW.Engine.applyLine('IF线', '测试');
+  const cg = LW.Engine.crossGroups('陆飞', '2034年8月26日 星期五');
+  eq('跨群·命中群数', cg.length, 1);
+  eq('跨群·群名', cg[0].name, '霖附吃瓜二手交易市场');
+  eq('跨群·尾巴条数', cg[0].hist.length, 2);
+  eq('跨群·非成员不命中', LW.Engine.crossGroups('张裕民', '2034年8月26日 星期五').length, 0);
+  eq('跨群·跨天不携带', LW.Engine.crossGroups('陆飞', '2034年8月27日 星期六').length, 0);
+  const cp = LW.Engine.crossPrivates(['陆飞', '周言'], '2034年8月26日 星期五');
+  eq('跨私聊·命中', (cp['陆飞'] || []).length, 1);
+  eq('跨私聊·无记录成员跳过', '周言' in cp, false);
+  eq('跨私聊·跨天不携带', Object.keys(LW.Engine.crossPrivates(['陆飞'], '2034年8月27日 星期六')).length, 0);
+  const reqX = LW.Prompt.private({ name: '陆飞', profile: '大学版档案' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, cg);
+  eq('私聊提示词·带群近况节', reqX.ordered_prompts[0].content.indexOf('相关群聊近况') !== -1, true);
+  eq('私聊提示词·群内容进入', reqX.ordered_prompts[0].content.indexOf('哈哈+1') !== -1, true);
+  const gtxtX = LW.Prompt.group({ name: '霖附吃瓜二手交易市场', open: false }, [{ name: '陆飞', profile: '大学版档案' }], [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, cp).ordered_prompts[0].content;
+  eq('群提示词·scoped情报', gtxtX.indexOf('※ 仅 陆飞 本人知晓') !== -1, true);
+  eq('群提示词·私聊内容进入', gtxtX.indexOf('晚安，睡了') !== -1, true);
+  eq('群提示词·防泄漏规则', gtxtX.indexOf('引用一字即出戏') !== -1, true);
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
   process.exit(fail ? 1 : 0);

@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T09:51:25.670Z
+//  构建时间：2026-09-12T10:05:33.038Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 09:51';
+var __LZW_BUILD__ = '2026-09-12 10:05';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -780,7 +780,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // ── 私聊 ──
     // tail = 本轮最新一批用户消息：不混在系统块里，作为最后的 user 轮单独给出
     // userInfo = 机主资料（persona 描述 + 当前线演化层），所有会话统一带上
-    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo) {
+    // crossGroups = 对方在的群当天记录尾巴（群→私聊跨会话上下文；对方在场，与防开天眼自洽）
+    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo, crossGroups) {
       var myName = me();
       var tailLines = (tail && tail.length) ? histText(tail, 8, false) : '';
       var p = [
@@ -800,6 +801,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
         histText(hist, HIST_PRIVATE, true, snapshot && snapshot.dateText),
+        '',
+        (crossGroups && crossGroups.length)
+          ? '## 相关群聊近况（下列记录中对方本人均在场，可自由承接其中的话题、情绪与玩笑）\n' + crossGroups.map(function (g) {
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+            }).join('\n\n')
+          : '',
         '',
         consistencyRules('「' + contact.name + '」'),
         '',
@@ -829,13 +836,19 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
     // ── 群聊 ──
     // userInfo = 机主资料，与私聊同一份
-    group: function (group, members, hist, snapshot, stickerNames, tail, digest, userInfo) {
+    // crossPriv = {成员名: 当天私聊尾巴}（私聊→群跨会话上下文；挂到该成员档案下，※ 仅本人知晓）
+    group: function (group, members, hist, snapshot, stickerNames, tail, digest, userInfo, crossPriv) {
       var myName = me();
       var tailLines2 = (tail && tail.length) ? histText(tail, 8, true) : '';
       var nameList = members.map(function (m) { return m.name; });
       var crowdTxt = Array.isArray(group.crowd) ? group.crowd.join('\n') : (group.crowd || '');
       var voices = members.map(function (m) {
         var brief = m.profile ? String(m.profile).trim() : '（无档案）';
+        var priv = crossPriv && crossPriv[m.name];
+        if (priv && priv.length) {
+          brief += '\n※ 仅 ' + m.name + ' 本人知晓：机主今日与 ' + m.name + ' 的私聊——\n'
+            + histText(priv, 15, true, snapshot && snapshot.dateText);
+        }
         return '- ' + m.name + '：\n' + brief;
       });
 
@@ -863,7 +876,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
         histText(hist, HIST_GROUP, true, snapshot && snapshot.dateText),
         '',
-        consistencyRules('每名成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。',
+        consistencyRules('每名成员各自')
+          + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。'
+          + ((crossPriv && Object.keys(crossPriv).length)
+              ? '\n- 成员档案内「※ 仅本人知晓」的私聊内容，其他成员引用一字即出戏；仅该成员本人可自然提及（包括调侃、阴阳怪气、翻旧账）。'
+              : ''),
         '',
         '## 输出要求',
         '- 输出 3~8 条群消息，每条一行，格式严格为「成员名：消息」',
@@ -2137,6 +2154,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // 五个主条目名（与卡组世界书一致；长的优先匹配；古代线放最后，多重误开时现代线优先）
   var LINES = ['成人时代-破镜重圆', '成人时代-同路而行', '高中时代', '大学时代', '古代架空-华胥之梦'];
 
+  // 跨会话上下文携带条数（群→私聊 / 私聊→群，均限当天）
+  var CROSS_GROUP_TAIL = 20;
+  var CROSS_PRIVATE_TAIL = 15;
+
   // 表情包同义词兜底（模型爱编名字；可继续扩充）
   var STICKER_SYN = {
     '探头': '偷看', '偷偷看': '偷看', '哭': '蛙蛙哭泣', '哭泣': '蛙蛙哭泣',
@@ -2256,6 +2277,33 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           : evo;
       }
       return this.deref(base);
+    },
+
+    // ── 跨会话上下文（当天时效）──
+    // 群→私聊：对方在的群当天有动静 → 带群记录尾巴（对方在场，与防开天眼规则自洽）
+    crossGroups: function (name, dateText) {
+      if (!dateText) return [];
+      var sec = this.section();
+      if (!sec) return [];
+      var W = window.LZWorld, out = [];
+      (sec.groups || []).forEach(function (g) {
+        if ((g.members || []).indexOf(name) === -1) return;
+        var h = W.Store.history('group:' + g.name);
+        if (!h.length || h[h.length - 1].day !== dateText) return;
+        out.push({ name: g.name, hist: h.slice(-CROSS_GROUP_TAIL) });
+      });
+      return out;
+    },
+    // 私聊→群：成员与机主当天的私聊 → 挂到该成员档案下（※ 仅本人知晓，规则侧封死其他人的引用）
+    crossPrivates: function (members, dateText) {
+      if (!dateText) return {};
+      var W = window.LZWorld, out = {};
+      (members || []).forEach(function (n) {
+        var h = W.Store.history(n);
+        if (!h.length || h[h.length - 1].day !== dateText) return;
+        out[n] = h.slice(-CROSS_PRIVATE_TAIL);
+      });
+      return out;
     },
 
     // 机主资料段：persona 描述 + 当前线的 [MAIN·{{user}}·演化后]，每次生成接进提示词末尾区。
@@ -2656,7 +2704,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var tail = [];
         for (var hi = hist.length - 1; hi >= 0 && hist[hi].who === 'user'; hi--) tail.unshift(hist[hi]);
         var rest = hist.slice(0, hist.length - tail.length);
-        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo);
+        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo,
+          this.crossGroups(c.name, snap && snap.dateText));
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {
@@ -2672,7 +2721,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var tail2 = [];
         for (var hj = hist2.length - 1; hj >= 0 && hist2[hj].who === 'user'; hj--) tail2.unshift(hist2[hj]);
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
-        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest, userInfo);
+        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest, userInfo,
+          this.crossPrivates(g.members, snap2 && snap2.dateText));
         raw = await generateRaw(req2);
         title = g.name + ' 群聊';
         parseGroup = true;

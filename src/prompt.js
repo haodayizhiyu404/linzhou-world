@@ -168,7 +168,8 @@
     // ── 私聊 ──
     // tail = 本轮最新一批用户消息：不混在系统块里，作为最后的 user 轮单独给出
     // userInfo = 机主资料（persona 描述 + 当前线演化层），所有会话统一带上
-    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo) {
+    // crossGroups = 对方在的群当天记录尾巴（群→私聊跨会话上下文；对方在场，与防开天眼自洽）
+    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo, crossGroups) {
       var myName = me();
       var tailLines = (tail && tail.length) ? histText(tail, 8, false) : '';
       var p = [
@@ -188,6 +189,12 @@
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
         histText(hist, HIST_PRIVATE, true, snapshot && snapshot.dateText),
+        '',
+        (crossGroups && crossGroups.length)
+          ? '## 相关群聊近况（下列记录中对方本人均在场，可自由承接其中的话题、情绪与玩笑）\n' + crossGroups.map(function (g) {
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+            }).join('\n\n')
+          : '',
         '',
         consistencyRules('「' + contact.name + '」'),
         '',
@@ -217,13 +224,19 @@
 
     // ── 群聊 ──
     // userInfo = 机主资料，与私聊同一份
-    group: function (group, members, hist, snapshot, stickerNames, tail, digest, userInfo) {
+    // crossPriv = {成员名: 当天私聊尾巴}（私聊→群跨会话上下文；挂到该成员档案下，※ 仅本人知晓）
+    group: function (group, members, hist, snapshot, stickerNames, tail, digest, userInfo, crossPriv) {
       var myName = me();
       var tailLines2 = (tail && tail.length) ? histText(tail, 8, true) : '';
       var nameList = members.map(function (m) { return m.name; });
       var crowdTxt = Array.isArray(group.crowd) ? group.crowd.join('\n') : (group.crowd || '');
       var voices = members.map(function (m) {
         var brief = m.profile ? String(m.profile).trim() : '（无档案）';
+        var priv = crossPriv && crossPriv[m.name];
+        if (priv && priv.length) {
+          brief += '\n※ 仅 ' + m.name + ' 本人知晓：机主今日与 ' + m.name + ' 的私聊——\n'
+            + histText(priv, 15, true, snapshot && snapshot.dateText);
+        }
         return '- ' + m.name + '：\n' + brief;
       });
 
@@ -251,7 +264,11 @@
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
         histText(hist, HIST_GROUP, true, snapshot && snapshot.dateText),
         '',
-        consistencyRules('每名成员各自') + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。',
+        consistencyRules('每名成员各自')
+          + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。'
+          + ((crossPriv && Object.keys(crossPriv).length)
+              ? '\n- 成员档案内「※ 仅本人知晓」的私聊内容，其他成员引用一字即出戏；仅该成员本人可自然提及（包括调侃、阴阳怪气、翻旧账）。'
+              : ''),
         '',
         '## 输出要求',
         '- 输出 3~8 条群消息，每条一行，格式严格为「成员名：消息」',
