@@ -309,7 +309,7 @@
         injectPrompts([{
           id: 'lzw-phone-digest',
           position: 'in_chat',
-          depth: 4,
+          depth: 0,   // 聊天记录最底部、规则区正上方（与正文贴在一起）
           role: 'system',
           content: '【手机近况 · 微信】' + myName + '近期在手机上聊过天（仅作背景，正文不必提到；角色当面不得说出只有微信里才知道的细节，除非对方当时就在这些聊天里）：\n' + blocks.join('\n')
         }], { once: true });
