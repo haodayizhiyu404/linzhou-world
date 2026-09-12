@@ -98,6 +98,16 @@
     '.lzw-conv-main{flex:1;min-width:0}',
     '.lzw-conv-name{font-weight:500;font-size:14px}',
     '.lzw-conv-prev{font-size:12px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}',
+    // 选线界面：徽标 + 行态
+    '.lzw-ltags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}',
+    '.lzw-ltag{font-size:10px;line-height:1;padding:3px 6px;border-radius:8px;background:#eef1f5;color:#7a828d;white-space:nowrap}',
+    '.lzw-ltag.rec{background:#22c05e;color:#fff}',
+    '.lzw-ltag.cur{background:#e8b04b;color:#fff}',
+    '.lzw-ltag.bad{background:#f6eaea;color:#c07878}',
+    '.lzw-lineava{display:flex;align-items:center;justify-content:center;font-size:18px;background:#eef1f5}',
+    '.lzw-linerow{cursor:pointer}',
+    '.lzw-linerow:active{background:#f2f4f7}',
+    '.lzw-linedis{opacity:.55}',
     // 聊天
     '.lzw-chatbg{background:#f2f2f5;min-height:100%;padding:4px 0 10px}',
     '.lzw-chatrow{display:flex;gap:7px;margin:11px 12px;align-items:flex-start}',
@@ -311,11 +321,12 @@
   }
 
   var UI = {
-    screen: 'home',      // home | list | chat
+    screen: 'home',      // home | list | chat | lines
     panel: null,         // null | 'actions' | 'sticker' | 'image' | 'voice' | 'location'
     chatKey: null,
     isGroup: false,
     busy: false,
+    lineBusy: false,       // 选线写入世界书进行中，防连点
     staged: [],          // 待发消息 [{kind,text}]，回车攒入，小飞机一起发
     failed: false,        // 上次生成失败（消息已发出但对方没回成）→ 小飞机/↻ 变为重试
     peek: {},             // 撤回偷看集合：chatKey:index → true
@@ -373,6 +384,49 @@
       this.render();
     },
 
+    // 选线界面：不依赖当前世界线有没有手机——古代线也要能由此换回现代线
+    showLines: function () {
+      this.inject();
+      var ph = pdoc().getElementById(ID.phone);
+      if (!ph) return;
+      ph.classList.add('lzw-open');
+      placePhone();
+      this.screen = 'lines';
+      this.panel = null;
+      this.staged = [];
+      this.render();
+    },
+
+    // 玩家在选线界面拍板：写世界书条目 + 更新记录，两边一起动（唯一合法的换线动作）
+    switchLine: async function (line) {
+      if (this.lineBusy) return;
+      var W = window.LZWorld;
+      var eng = W.Engine;
+      if (!eng.entryKnown(line)) {
+        try { toastr.warning('世界书里找不到【' + line + '】条目，无法切换', '📱 霖州引擎'); } catch (e) {}
+        return;
+      }
+      this.lineBusy = true;
+      try {
+        await W.Worldbook.setEntriesEnabled(eng.lineOps(line));
+        W.Store.setLine(line);
+        eng.noteLineEntries(line);
+        eng.locateLine(); // 记录与快照已一致，这里只归位显示，不会二次写条目
+        var hasPhone = !!eng.section();
+        try {
+          toastr.info(hasPhone
+            ? ('已切换到【' + line + '】')
+            : ('已切换到【' + line + '】（该世界线没有手机，已收起）'), '📱 霖州引擎');
+        } catch (e) {}
+        if (hasPhone) { this.screen = 'home'; this.panel = null; this.render(); }
+        // 无手机（古代线）：locateLine → syncMount 已收起手机
+      } catch (e) {
+        console.warn('[霖州引擎] 切换世界线失败', e);
+        try { toastr.error('切换世界线失败：' + (e && e.message || e), '📱 霖州引擎'); } catch (e2) {}
+        this.render();
+      } finally { this.lineBusy = false; }
+    },
+
     render: function () {
       var ph = pdoc().getElementById(ID.phone);
       if (!ph) return;
@@ -423,6 +477,10 @@
           rowsHtml = '<div class="lzw-sysrow">未定位到当前世界线<br>进行一次主对话生成后自动归位</div>';
         }
         body = '<div class="lzw-body">' + rowsHtml + '</div>';
+
+      } else if (this.screen === 'lines') {
+        body = '<div class="lzw-body">' + linesRowsHtml() +
+          '<div class="lzw-sysrow" style="margin:14px 12px 0">点一条线 = 代劳开关世界书条目<br>并记入本聊天记录（手动开关从此不认）</div></div>';
 
       } else { // chat
         var key = this.chatKey || '';
@@ -501,8 +559,11 @@
           UI.render();
         };
       });
-      ph.querySelectorAll('.lzw-conv').forEach(function (el) {
+      ph.querySelectorAll('.lzw-conv:not(.lzw-linerow)').forEach(function (el) {
         el.onclick = function () { UI.openChat(el.dataset.key, el.dataset.group === '1'); };
+      });
+      ph.querySelectorAll('.lzw-linerow').forEach(function (el) {
+        el.onclick = function () { UI.switchLine(el.dataset.line); };
       });
       ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
       ph.querySelectorAll('[data-act="reroll"]').forEach(function (el) { el.onclick = function () { UI.reroll(); }; });
@@ -782,9 +843,39 @@
     ]);
   }
 
+  // 选线列表：五条线，标出「此聊天」的记录线与开关实况——
+  // 记录和开关不一致时（带错线进聊天/中途手动翻过）两种徽标同时出现，一眼可见
+  function linesRowsHtml() {
+    var W = window.LZWorld;
+    var eng = W.Engine;
+    var saved = W.Store.line();
+    var states = eng.entryStates();
+    var cur = eng.line();
+    var norm = function (s) { return String(s || '').replace(/[【】\s]/g, ''); };
+    return eng.LINES.map(function (ln) {
+      var st = null;
+      for (var k in states) {
+        if (norm(k) === norm(ln)) { st = states[k]; break; }
+      }
+      var ros = eng.roster(ln);
+      var hasPhone = !!(ros && ((ros.contacts || []).length || (ros.groups || []).length));
+      var tags = '';
+      if (saved === ln) tags += '<span class="lzw-ltag rec">此聊天</span>';
+      else if (cur === ln) tags += '<span class="lzw-ltag cur">当前</span>';
+      if (st === null) tags += '<span class="lzw-ltag bad">条目未找到</span>';
+      else tags += '<span class="lzw-ltag">' + (st ? '开关·开' : '开关·关') + '</span>';
+      if (!hasPhone) tags += '<span class="lzw-ltag bad">无手机</span>';
+      return '<div class="lzw-conv lzw-linerow' + (st === null ? ' lzw-linedis' : '') + '" data-line="' + esc(ln) + '">' +
+        '<div class="lzw-ava lzw-lineava">' + (hasPhone ? '📱' : '🏮') + '</div>' +
+        '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(ln) + '</div>' +
+        '<div class="lzw-ltags">' + tags + '</div></div></div>';
+    }).join('');
+  }
+
   function appbarHtml(screen, disp, act) {
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'lines') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">世界线</span><span class="lzw-appbar-r"></span></div>';
     return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
       (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
       '</span></div>';

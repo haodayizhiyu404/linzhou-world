@@ -234,6 +234,48 @@
       return states;
     },
 
+    // 按条目标题批量开关条目（世界线归位/选线界面用）。
+    // ops = [{match: '高中时代', enable: true}]，按去掉【】与空白后的标题匹配；
+    // 只改匹配到的条目，其余原样保留，整本结构不动。
+    // 新接口 updateWorldbookWith（回调式，天然防误伤）优先，老接口 getWorldbook+replaceWorldbook 兜底。
+    setEntriesEnabled: async function (ops) {
+      var names = await bookNames();
+      if (!names.length) throw new Error('未找到角色卡世界书');
+      var norm = function (s) { return String(s || '').replace(/[【】\s]/g, ''); };
+      var want = {};
+      ops.forEach(function (o) { want[norm(o.match)] = !!o.enable; });
+      var render = { render: 'immediate' };   // 翻完立即重估注入，不等界面防抖
+      var flip = function (entries) {
+        for (var j = 0; j < entries.length; j++) {
+          var t = norm(titleOf(entries[j]));
+          if (t in want) {
+            entries[j].enabled = want[t];        // 酒馆助手封装字段
+            entries[j].disable = !want[t];       // ST 原生字段，双保险
+          }
+        }
+        return entries;
+      };
+      if (typeof updateWorldbookWith === 'function') {
+        for (var i = 0; i < names.length; i++) {
+          try { await updateWorldbookWith(names[i], flip, render); } catch (e) {}
+        }
+        return;
+      }
+      if (typeof getWorldbook === 'function' && typeof replaceWorldbook === 'function') {
+        for (var k = 0; k < names.length; k++) {
+          try {
+            var es = await getWorldbook(names[k]);
+            if (!es || !es.length) continue;
+            var hit = false;
+            for (var m = 0; m < es.length; m++) {
+              if (norm(titleOf(es[m])) in want) { hit = true; break; }
+            }
+            if (hit) await replaceWorldbook(names[k], flip(es), render);
+          } catch (e) {}
+        }
+      }
+    },
+
     imgUrl: function (file) {
       file = String(file || '').trim();
       if (!file) return '';
