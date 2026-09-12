@@ -48,19 +48,29 @@ const feed = `<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back">${BA
   ${post(ava('lu'), '陆飞', '求一个数学大题的解法，在线等，挺急的', '', '2天前 22:40', false, '', '', false)}
 </div>`;
 
-// 周言个人主页：封面 + 大头像 + 最近至多 5 条
-const prof = `<div class="lzw-appbar"><span class="lzw-back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>
+// 周言个人主页：与封面页同款头部（覆盖状态栏、右下名字+头像、无相机）+ 时间戳时间轴
+function profPost(stamp, text, img, menu, like, cmts, cmtbar) {
+  return `<div class="lzw-post"><div class="lzw-post-stamp">${stamp}</div><div class="lzw-post-main">
+    <div class="lzw-post-text">${text}</div>
+    ${img ? `<div class="lzw-post-img">${img}</div>` : ''}
+    <div class="lzw-post-meta"><span class="sp"></span>${menu ? `<div class="lzw-pmenu"><button>${HEART} 赞</button><button>${BUBBLE} 评论</button></div>` : ''}<button class="lzw-post-more">⋯</button></div>
+    ${like ? `<div class="lzw-plike">❤ ${like}</div>` : ''}
+    ${cmts ? `<div class="lzw-pcmts">${cmts}</div>` : ''}
+    ${cmtbar ? '<div class="lzw-cmtbar"><input placeholder="说点什么…"><button>发送</button></div>' : ''}
+  </div></div>`;
+}
+const prof = `<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back">${BACK}</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>
 <div class="lzw-mfeed">
-  <div class="lzw-mpf-cov"><img src="https://picsum.photos/seed/zycover/400/200"></div>
-  <div class="lzw-mpf-id"><img class="lzw-mpf-av" src="${AV('zhou')}"><span class="lzw-mpf-nm">周言</span></div>
+  <div class="lzw-mcover"><img src="https://picsum.photos/seed/zycover/400/260"><div class="lzw-mcover-shade"></div><div class="lzw-mme"><span class="nm">周言</span><div class="av">周</div></div></div>
   <div class="lzw-mpad"></div>
-  ${post(ava('zhou'), '周言', '月考成绩出了，还活着。年级第七，比某人高了整整两名🙂', '', '2小时前', false, '林溪、陆飞', '', false)}
-  ${post(ava('zhou'), '周言', '球馆的灯修好了，周末可以打全场', '空荡的室内球场，灯光明亮', '3天前 20:02', false, '', '', false)}
+  ${profPost('今天', '月考成绩出了，还活着。年级第七，比某人高了整整两名🙂', '', true, '林溪、陆飞', '<div><span class="n">林溪</span>：<span class="c">年级第七你要不要这么平静</span></div>', false)}
+  ${profPost('昨天', '球馆的灯修好了，周末可以打全场', '空荡的室内球场，灯光明亮，木地板反着光', false, '', '', false)}
+  ${profPost('9月11', '求一个数学大题的解法，在线等，挺急的', '', false, '', '', false)}
 </div>`;
 
-const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;font-family:system-ui,"Microsoft YaHei",sans-serif;display:flex;gap:24px;padding:24px;justify-content:center;align-items:flex-start;flex-wrap:wrap}</style><style>${css}</style><style>.lzw-bezel{width:320px;height:640px;box-sizing:content-box;flex:none}</style></head><body>${phone(discover)}${phone(feed, 'lzw-scr-moments')}${phone(prof)}</body></html>`;
+const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;font-family:system-ui,"Microsoft YaHei",sans-serif;display:flex;gap:24px;padding:24px;justify-content:center;align-items:flex-start;flex-wrap:wrap}</style><style>${css}</style><style>.lzw-bezel{width:320px;height:640px;box-sizing:content-box;flex:none}</style></head><body>${phone(discover)}${phone(feed, 'lzw-scr-moments')}${phone(prof, 'lzw-scr-moments')}</body></html>`;
 fs.writeFileSync(__dirname + '/sbv-moments.html', html);
-// 单屏放大版：封面区特写检查用
-const zoom = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif}</style><style>${css}</style><style>.lzw-bezel{width:400px;height:800px;box-sizing:content-box;zoom:1.6;margin:20px auto}</style></head><body>${phone(feed, 'lzw-scr-moments')}</body></html>`;
+// 单屏放大版：个人主页头部特写检查用
+const zoom = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif}</style><style>${css}</style><style>.lzw-bezel{width:400px;height:800px;box-sizing:content-box;zoom:1.6;margin:20px auto}</style></head><body>${phone(prof, 'lzw-scr-moments')}</body></html>`;
 fs.writeFileSync(__dirname + '/sbv-moments-zoom.html', zoom);
 console.log('written sbv-moments.html + sbv-moments-zoom.html');

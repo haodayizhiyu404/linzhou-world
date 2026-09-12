@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T18:14:29.978Z
+//  构建时间：2026-09-12T18:47:17.005Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 18:14';
+var __LZW_BUILD__ = '2026-09-12 18:47';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1787,16 +1787,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-plike{margin-top:6px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;color:#576b95;line-height:1.5;word-break:break-word;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-pcmts{margin-top:3px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;line-height:1.65;word-break:break-word;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-pcmts .c{color:#111}',
-    '.lzw-pcmts .n{color:#576b95;font-weight:600}',
+    '.lzw-pcmts .n{color:#576b95;font-weight:400}',
+    '.lzw-post-stamp{width:37px;flex:none;font-size:11px;color:#8a8f99;line-height:1.4;padding-top:1px}',
     '.lzw-cmtbar{display:flex;gap:6px;margin-top:6px;align-items:center}',
     '.lzw-cmtbar input{flex:1;min-width:0;border:1px solid rgba(0,0,0,.12);border-radius:14px;padding:6px 11px;font-size:13px;outline:none;background:#fff;color:#111;font-family:inherit}',
-    '.lzw-cmtbar button{border:none;background:#22c05e;color:#fff;border-radius:14px;padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-family:inherit}',
-    // 个人主页：封面 + 大头像压边 + 最近至多 5 条
-    '.lzw-mpf-cov{height:116px;position:relative;background:linear-gradient(160deg,#8a76a8,#b9a8cf 60%,#e0d6ee);overflow:hidden}',
-    '.lzw-mpf-cov img{width:100%;height:100%;object-fit:cover;display:block}',
-    '.lzw-mpf-id{display:flex;align-items:flex-end;gap:10px;padding:0 14px;margin-top:-24px;position:relative;z-index:1}',
-    '.lzw-mpf-av{width:62px;height:62px;border-radius:11px;border:2.5px solid #fff;object-fit:cover;background:#c9cfd6;display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:600;box-sizing:border-box}',
-    '.lzw-mpf-nm{font-size:16px;font-weight:600;color:#111;padding-bottom:6px}'
+    '.lzw-cmtbar button{border:none;background:#22c05e;color:#fff;border-radius:14px;padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-family:inherit}'
   ].join('\n');
 
   var ICON_VOICE = '<svg width="15" height="15" viewBox="0 0 1024 1024"><path fill="#222222" d="M501.269333 517.610667a277.333333 277.333333 0 0 1-81.664 197.546666l-5.12 4.906667-3.306666 2.858667a42.666667 42.666667 0 0 1-58.325334-61.696l3.029334-3.136 6.954666-6.954667a192.042667 192.042667 0 0 0-7.936-273.002667l-3.050666-3.136a42.666667 42.666667 0 0 1 61.248-59.264l5.12 4.906667a277.333333 277.333333 0 0 1 83.050666 196.970667z m187.648 10.197333A418.090667 418.090667 0 0 1 565.845333 814.933333l-7.68 7.466667-3.306666 2.837333a42.666667 42.666667 0 0 1-58.346667-61.674666l3.029333-3.157334 6.101334-5.952a332.928 332.928 0 0 0 97.962666-228.48l0.085334-8.533333a332.821333 332.821333 0 0 0-105.834667-242.24 42.666667 42.666667 0 0 1 58.197333-62.4 418.133333 418.133333 0 0 1 132.970667 304.32l-0.106667 10.709333zM625.877333 137.877333a42.666667 42.666667 0 0 1 58.176-62.421333l-58.176 62.421333z m250.730667 394.026667a606.208 606.208 0 0 1-48.853333 225.365333l-6.293334 14.165334a606.016 606.016 0 0 1-123.2 176.554666l-11.136 10.816-3.306666 2.837334a42.666667 42.666667 0 0 1-58.346667-61.696l3.029333-3.136 9.557334-9.28a520.661333 520.661333 0 0 0 105.856-151.722667l5.397333-12.16a520.853333 520.853333 0 0 0 41.984-193.6l0.128-13.333333a520.341333 520.341333 0 0 0-38.4-194.261334l-5.141333-12.288a520.533333 520.533333 0 0 0-122.026667-172.288l58.197333-62.421333a605.909333 605.909333 0 0 1 142.016 200.533333l6.016 14.293334a605.653333 605.653333 0 0 1 44.672 226.133333l-0.149333 15.509333zM170.666667 518.442667a64 64 0 1 1 128 0 64 64 0 0 1-128 0z"/></svg>';
@@ -2227,7 +2222,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         try { uav = eng.userAvatar(); } catch (e0) {}
         var mfeed2 = eng.momentsFeed();
         var postsHtml = '';
-        for (var mi = mfeed2.length - 1; mi >= 0; mi--) postsHtml += momentsPostHtml(mfeed2[mi], mi, userName, eng, W, true);
+        for (var mi = mfeed2.length - 1; mi >= 0; mi--) postsHtml += momentsPostHtml(mfeed2[mi], mi, userName, eng, W, true, snap.dateText || '');
         body = '<div class="lzw-mfeed">' +
           '<div class="lzw-mcover">' + (coverU ? '<img src="' + esc(coverU) + '" alt="">' : '') +
           '<div class="lzw-mcover-shade"></div>' +
@@ -2243,14 +2238,21 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var pc = eng.findContact(pn) || {};
         var covF2 = pc.cover || ((eng.section() || {}).moments || {}).cover || '';
         var covU2 = covF2 ? W.Worldbook.imgUrl(covF2) : '';
-        var his = eng.momentsFeed().filter(function (e) { return e.who === pn; }).slice(-5);
+        // feed 只取一次、下标就地记录：沙箱桥接里 getVariables 每次返回的是副本，
+        // 跨两次调用 indexOf 必然 -1——而 idx=-1 会让「UI.mMenu===idx」对所有动态恒真：
+        // 进主页默认每条都弹菜单、点 ⋯ 切换失灵
+        var feedAll = eng.momentsFeed();
+        var hisIdx = [];
+        for (var fi2 = feedAll.length - 1; fi2 >= 0 && hisIdx.length < 5; fi2--) {
+          if (feedAll[fi2].who === pn) hisIdx.push(fi2);
+        }
         var hisHtml = '';
-        for (var hi2 = his.length - 1; hi2 >= 0; hi2--) hisHtml += momentsPostHtml(his[hi2], eng.momentsFeed().indexOf(his[hi2]), userName, eng, W, false);
+        for (var hi2 = 0; hi2 < hisIdx.length; hi2++) hisHtml += momentsPostHtml(feedAll[hisIdx[hi2]], hisIdx[hi2], userName, eng, W, false, snap.dateText || '');
         body = '<div class="lzw-mfeed">' +
-          '<div class="lzw-mpf-cov">' + (covU2 ? '<img src="' + esc(covU2) + '" alt="">' : '') + '</div>' +
-          '<div class="lzw-mpf-id">' +
-          (pc.avatar ? '<img class="lzw-mpf-av" src="' + esc(W.Worldbook.imgUrl(pc.avatar)) + '" alt="">' : '<div class="lzw-mpf-av">' + esc(pn.slice(0, 1)) + '</div>') +
-          '<span class="lzw-mpf-nm">' + esc(pn) + '</span></div>' +
+          '<div class="lzw-mcover">' + (covU2 ? '<img src="' + esc(covU2) + '" alt="">' : '') +
+          '<div class="lzw-mcover-shade"></div>' +
+          '<div class="lzw-mme"><span class="nm">' + esc(pn) + '</span>' +
+          (pc.avatar ? '<img class="av" src="' + esc(W.Worldbook.imgUrl(pc.avatar)) + '" alt="">' : '<div class="av">' + esc(pn.slice(0, 1)) + '</div>') + '</div></div>' +
           '<div class="lzw-mpad"></div>' +
           (hisHtml || '<div class="lzw-sysrow" style="margin-top:36px">TA 还没有动态</div>') +
           '</div>';
@@ -2309,7 +2311,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + (this.screen === 'moments' ? ' lzw-scr-moments' : '') + (this.call ? ' lzw-scr-call' : '') + (this.call && this.call.mode === 'video' ? ' lzw-scr-video' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + ((this.screen === 'moments' || this.screen === 'mprofile') ? ' lzw-scr-moments' : '') + (this.call ? ' lzw-scr-call' : '') + (this.call && this.call.mode === 'video' ? ' lzw-scr-video' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
         (this.confirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条消息？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="cancel">取消</button><button class="lzw-cbtn yes" data-cact="del">删除</button></div></div></div>' : '') +
         '</div></div>';
 
@@ -2403,11 +2405,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           UI.mCmt = -1;
           UI.render();
           // 点菜单外任意处收起（当前这次点击不生效，所以延迟挂监听）
+          // 注意必须挂在 pdoc()（父页文档）——手机 UI 注入在父页，挂在沙箱自己的
+          // document 上永远收不到点击，「点空白收起」会表现为完全失灵
           if (UI.mMenu !== -1) {
             setTimeout(function () {
-              document.addEventListener('click', function onDocTap(ev2) {
+              var doc = pdoc();
+              doc.addEventListener('click', function onDocTap(ev2) {
                 if (ev2.target.closest && (ev2.target.closest('.lzw-pmenu') || ev2.target.closest('[data-mmenu]'))) return;
-                document.removeEventListener('click', onDocTap);
+                doc.removeEventListener('click', onDocTap);
                 UI.mMenu = -1;
                 UI.mCmt = -1;
                 if (UI.screen === 'moments' || UI.screen === 'mprofile') UI.render();
@@ -2981,21 +2986,37 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
-    if (screen === 'mprofile') return '<div class="lzw-appbar"><span class="lzw-back" data-act="moments">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="moments">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
       (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
       '</span></div>';
   }
 
-  // 朋友圈动态卡片：头像(可进主页) + 文字 + 文字配图 + 时间 + ⋯菜单(赞/评论) + 赞列表 + 平铺评论
+  // 朋友圈动态卡片。
+  // feedMode=true  动态流：头像(可进主页) + 名字 + 文字 + 配图 + 时间label + ⋯菜单(赞/评论)
+  // feedMode=false 个人主页时间轴：不要头像/名字，头像位换成 今天/昨天/M月D日，meta 不再重复时间
   // idx = 动态在 Store 里的下标（点赞/评论按下标回写）
-  function momentsPostHtml(e, idx, userName, eng, W, nameLink) {
+  function momentsPostHtml(e, idx, userName, eng, W, feedMode, curDay) {
     var c = {};
     try { c = eng.findContact(e.who) || {}; } catch (e0) {}
     var mpfAttr = ' data-mpf="' + esc(e.who) + '"';
-    var av = c.avatar
-      ? '<img class="lzw-post-ava" src="' + esc(W.Worldbook.imgUrl(c.avatar)) + '"' + mpfAttr + ' alt="">'
-      : '<div class="lzw-post-ava"' + mpfAttr + '>' + esc(e.who.slice(0, 1)) + '</div>';
+    var head;
+    if (feedMode) {
+      head = (c.avatar
+        ? '<img class="lzw-post-ava" src="' + esc(W.Worldbook.imgUrl(c.avatar)) + '"' + mpfAttr + ' alt="">'
+        : '<div class="lzw-post-ava"' + mpfAttr + '>' + esc(e.who.slice(0, 1)) + '</div>') +
+        '<div class="lzw-post-main"><div class="lzw-post-name"' + mpfAttr + '>' + esc(e.who) + '</div>';
+    } else {
+      // 主页时间戳：今天/昨天/M月D日；无日期档（兜底生成）退回原 label
+      var a2 = parseDay(e.day), b2 = parseDay(curDay), st;
+      if (!a2 || e.day === '__nodate__') st = e.label || '';
+      else if (!b2) st = a2.mo + '月' + a2.d;
+      else {
+        var df = (b2.y * 372 + b2.mo * 31 + b2.d) - (a2.y * 372 + a2.mo * 31 + a2.d);
+        st = df === 0 ? '今天' : df === 1 ? '昨天' : a2.mo + '月' + a2.d;
+      }
+      head = '<div class="lzw-post-stamp">' + esc(st) + '</div><div class="lzw-post-main">';
+    }
     var menu = UI.mMenu === idx
       ? '<div class="lzw-pmenu"><button data-mlike="' + idx + '">' + ICON_HEART + ' 赞</button><button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button></div>'
       : '';    var cmtbar = UI.mCmt === idx
@@ -3010,12 +3031,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '：<span class="c">' + esc(cm.text) + '</span></div>';
     }).join('');
     var cmtBlock = cmtRows ? '<div class="lzw-pcmts">' + cmtRows + '</div>' : '';
-    return '<div class="lzw-post">' + av +
-      '<div class="lzw-post-main">' +
-      '<div class="lzw-post-name"' + (nameLink ? mpfAttr : '') + '>' + esc(e.who) + '</div>' +
+    return '<div class="lzw-post">' + head +
       '<div class="lzw-post-text">' + esc(e.text) + '</div>' +
       (e.img ? '<div class="lzw-post-img">' + esc(e.img) + '</div>' : '') +
-      '<div class="lzw-post-meta"><span>' + esc(e.label || '') + '</span><span class="sp"></span>' +
+      '<div class="lzw-post-meta">' + (feedMode ? '<span>' + esc(e.label || '') + '</span>' : '') + '<span class="sp"></span>' +
       menu +
       '<button class="lzw-post-more" data-mmenu="' + idx + '">⋯</button></div>' +
       likeRow + cmtBlock + cmtbar +
