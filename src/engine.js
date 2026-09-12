@@ -588,24 +588,33 @@
       });
       return names;
     },
-    // 扫最近的 assistant 消息（默认 5 条，仅即时事件后调用），抓未处理 id 里的注释块
+    // 扫最近的 assistant 消息（默认 5 条，仅即时事件后调用），抓未处理 id 里的注释块。
+    // 注意：酒馆助手的 getChatMessages 必须带范围参数（裸调会 throw），
+    // 返回对象的楼层号是 message_id（不是 id）。
     sweepPhoneBlocks: function (backlog) {
       var msgs;
-      try { msgs = getChatMessages(); } catch (e) { return; }
+      try { msgs = getChatMessages('0-{{lastMessageId}}'); } catch (e) {
+        console.warn('[霖州引擎] 主动消息扫描：getChatMessages 失败', e);
+        return;
+      }
       if (!msgs || !msgs.length) return;
+      msgs = msgs.slice(-(backlog || 5));
       var W = window.LZWorld;
       var seen = W.Store.procIds();
-      var from = Math.max(0, msgs.length - (backlog || 5));
-      for (var i = from; i < msgs.length; i++) {
+      for (var i = 0; i < msgs.length; i++) {
         var mm = msgs[i];
         if (!mm || mm.role !== 'assistant') continue;
-        var id = String(mm.id != null ? mm.id : ('idx' + i));
+        var mid = mm.message_id != null ? mm.message_id : (mm.id != null ? mm.id : ('idx' + i));
+        var id = String(mid);
         if (seen.indexOf(id) !== -1) continue;
         var names = [];
-        try { names = this.capturePhoneBlock(mm); } catch (e) {}
+        try { names = this.capturePhoneBlock(mm); } catch (e) {
+          console.warn('[霖州引擎] 主动消息捕捉失败', e);
+        }
         W.Store.markProcId(id);
         seen.push(id);
         if (names.length) {
+          console.log('[霖州引擎] 主动消息：' + names.join('、') + '（楼层 ' + id + '）');
           try { toastr.info('📱 ' + names.join('、') + ' 发来了新消息', '霖州手机', { timeOut: 4000 }); } catch (e) {}
           try { W.Floor.renderAll(); } catch (e) {}
           try { var UI = W.Apps.wechat; if (UI && UI.screen) UI.render(); } catch (e) {}

@@ -9,7 +9,7 @@ const __vars = {};
 const ctx = {
   window: {},
   console,
-  getChatMessages: () => global.__msgs || [],
+  getChatMessages: (range) => { global.__lastRange = range; return global.__msgs || []; },
   getVariables: () => __vars,
   replaceVariables: (v) => { const snap = JSON.parse(JSON.stringify(v)); for (const k of Object.keys(__vars)) delete __vars[k]; Object.assign(__vars, snap); },
 };
@@ -279,11 +279,12 @@ ctx.getWorldbook = async () => [
   // ── 8.7 主动消息捕捉：<!--phone--> 注释块 ──
   console.log('[主动消息捕捉]');
   global.__msgs = [
-    { id: 101, role: 'assistant', message: '正文内容<!--phone\n沈锡元：[语音:早点睡]\n沈锡元：在？\n-->可见尾巴' },
-    { id: 102, role: 'user', message: '普通 user 消息' },
+    { message_id: 101, role: 'assistant', message: '正文内容<!--phone\n沈锡元：[语音:早点睡]\n沈锡元：在？\n-->可见尾巴' },
+    { message_id: 102, role: 'user', message: '普通 user 消息' },
   ];
   LW.Engine.sweepPhoneBlocks(5);
   const capHist = LW.Store.history('沈锡元');
+  eq('捕捉·带范围参数', global.__lastRange, '0-{{lastMessageId}}');
   eq('捕捉·写入联系人记录', capHist.length, 2);
   eq('捕捉·语音契约解析', capHist[0].kind, 'voice');
   eq('捕捉·文字行解析', capHist[1].text, '在？');
