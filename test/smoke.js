@@ -383,6 +383,10 @@ ctx.getWorldbook = async () => [
   eq('朋友圈·生成期评论挂上', mposts[0].comments.length, 1);
   eq('朋友圈·生成期评论指向作者', mposts[0].comments[0].replyTo, '周言');
   eq('朋友圈·无互动动态空表', mposts[1].likes.length + mposts[1].comments.length, 0);
+  // 发布时间行：挂在紧跟的那条动态下（动态自身时间，由 AI 生成）
+  const mpostsT = LW.Engine.parseMoments('[动态:周言:第一条]\n[时间:8月26日 21:05]\n[动态:林溪:第二条没写时间]');
+  eq('朋友圈·时间行挂上', mpostsT[0].ptRaw, '8月26日 21:05');
+  eq('朋友圈·没时间行留空', mpostsT[1].ptRaw == null, true);
   // @回复评论者：挂在紧跟的那条动态下，不回溯到被回复者自己的动态（曾错挂）
   const mposts2 = LW.Engine.parseMoments('[动态:沈锡元:有些人这消失的功夫真是见长]\n[评论:林溪:笑死，被谁家闭门羹喂饱了]\n[评论:沈锡元@林溪:滚蛋]\n[动态:林溪:糖水铺快乐老家]\n[评论:周言:哈哈哈]');
   eq('朋友圈·回复挂跟随动态', mposts2[0].comments.length, 2);
@@ -398,6 +402,8 @@ ctx.getWorldbook = async () => [
   eq('朋友圈·填充任务', mfTxt.indexOf('朋友圈') !== -1, true);
   eq('朋友圈·填充带档案', mfTxt.indexOf('班长档案') !== -1, true);
   eq('朋友圈·动态契约', mfTxt.indexOf('[动态:名字:动态文字]') !== -1, true);
+  eq('朋友圈·时间契约', mfTxt.indexOf('[时间:M月D日 HH:MM]') !== -1, true);
+  eq('朋友圈·时间不晚于当前', mfTxt.indexOf('不得晚于当前时刻') !== -1, true);
   eq('朋友圈·配图契约', mfTxt.indexOf('[配图:名字:画面描述]') !== -1, true);
   eq('朋友圈·点赞契约', mfTxt.indexOf('[点赞:点赞者1、点赞者2]') !== -1, true);
   eq('朋友圈·生成期评论契约', mfTxt.indexOf('[评论:评论者@被回复的人:') !== -1, true);
@@ -416,14 +422,23 @@ ctx.getWorldbook = async () => [
     '机主在动态「月考成绩出了」下评论「请客吗」');
   eq('朋友圈·互动痕迹段', reqMN.ordered_prompts[0].content.indexOf('## 今日朋友圈互动') !== -1, true);
   eq('朋友圈·互动痕迹内容', reqMN.ordered_prompts[0].content.indexOf('请客吗') !== -1, true);
+  // 带日期：AI 写 [时间:] 的归一化、晚于快照时刻的被驳回走兜底、兜底不越过「现在」
+  global.__msgs = [{ role: 'assistant', message: statusText }];
+  ctx.generateRaw = async (req) => '[动态:周言:带时间的动态]\n[时间:8月26日 21:05]\n[动态:林溪:没写时间的动态]\n[动态:陆飞:写了个未来时间]\n[时间:8月26日 23:59]';
+  eq('朋友圈·带日期生成', await LW.Engine.momentsEnsure(), true);
+  const mfd = LW.Engine.momentsFeed();
+  eq('朋友圈·AI时间归一化', mfd.some(function (e) { return e.pt === '2034年8月26日 21:05'; }), true);
+  eq('朋友圈·未来时间被驳回', mfd.every(function (e) { return e.pt !== '2034年8月26日 23:59'; }), true);
+  eq('朋友圈·缺省时间兜底', mfd.every(function (e) { return /^\d{4}年\d{1,2}月\d{1,2}日 \d{2}:\d{2}$/.test(e.pt); }), true);
+  eq('朋友圈·时间不越过快照', mfd.filter(function (e) { return e.pt.indexOf('8月26日') !== -1; }).every(function (e) { return e.pt.slice(-5) <= '22:49'; }), true);
   // 无日期兜底：状态栏解析不到日期也能生成一次（修复曾静默 return false、前端永远空态的 bug）
+  while (LW.Engine.momentsFeed().length) LW.Store.popLast(LW.Engine.momentsKey, 1);   // 清空上一段带日期的 3 条
   global.__msgs = [{ role: 'assistant', message: '没有任何状态栏块的普通楼层' }];
   ctx.generateRaw = async (req) => '[动态:周言:无日期也能正常发动态]\n[动态:林溪:第二条兜底]';
   eq('朋友圈·无日期兜底生成', await LW.Engine.momentsEnsure(), true);
   eq('朋友圈·哨兵打卡', LW.Store.meta(LW.Engine.momentsKey).filledDay, '__nodate__');
   eq('朋友圈·兜底条数', LW.Engine.momentsFeed().length, 2);
-  eq('朋友圈·最新标今天', /^今天 \d{2}:\d{2}$/.test(LW.Engine.momentsFeed()[1].label), true);
-  eq('朋友圈·时间标不是NaN', LW.Engine.momentsFeed().every(function (e) { return /^\d{2}:\d{2}$/.test(e.label.slice(-5)); }), true);
+  eq('朋友圈·兜底无伪造时间', LW.Engine.momentsFeed().every(function (e) { return e.pt === '' && e.label === ''; }), true);
   eq('朋友圈·兜底不重复生成', await LW.Engine.momentsEnsure(), false);
   // 群夹带私聊：群回复里的 <!--phone--> 块路由进私聊且从群记录剥掉
   global.__msgs = null;

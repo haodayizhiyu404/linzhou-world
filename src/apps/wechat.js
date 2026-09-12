@@ -28,6 +28,30 @@
     if (diff === 1) return '昨天';
     return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d + '日';
   }
+  // 动态自身时间 pt → 显示标签：今天/昨天/N天前/M月D日（带 HH:MM）；
+  // 7 天以外写完整日期。无 pt（无日期兜底档/旧数据）退回 legacy label
+  function momentLabel(pt, legacy, curDay) {
+    var m = /(\d{4})年(\d{1,2})月(\d{1,2})日\s*(\d{1,2}:\d{2})/.exec(pt || '');
+    if (!m) return legacy || '';
+    var a = { y: +m[1], mo: +m[2], d: +m[3] }, t = m[4], b = parseDay(curDay);
+    if (!b) return a.mo + '月' + a.d + '日 ' + t;
+    var diff = (b.y * 372 + b.mo * 31 + b.d) - (a.y * 372 + a.mo * 31 + a.d);
+    if (diff === 0) return '今天 ' + t;
+    if (diff === 1) return '昨天 ' + t;
+    if (diff >= 2 && diff < 7) return diff + '天前 ' + t;
+    return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d + '日 ' + t;
+  }
+  // 主页时间轴左侧戳：今天/昨天/M月D（跨年加年份）；无 pt 退回 legacy label
+  function momentStamp(pt, legacy, curDay) {
+    var m = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec(pt || '');
+    if (!m) return legacy || '';
+    var a = { y: +m[1], mo: +m[2], d: +m[3] }, b = parseDay(curDay);
+    if (!b) return a.mo + '月' + a.d;
+    var diff = (b.y * 372 + b.mo * 31 + b.d) - (a.y * 372 + a.mo * 31 + a.d);
+    if (diff === 0) return '今天';
+    if (diff === 1) return '昨天';
+    return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d;
+  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -329,7 +353,7 @@
     '.lzw-pcmts{margin-top:3px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;line-height:1.65;word-break:break-word;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-pcmts .c{color:#111}',
     '.lzw-pcmts .n{color:#576b95;font-weight:400}',
-    '.lzw-post-stamp{width:37px;flex:none;font-size:11px;color:#8a8f99;line-height:1.4;padding-top:1px}',
+    '.lzw-post-stamp{width:37px;flex:none;font-size:12px;color:#8a8f99;line-height:1.45;padding-top:4px}',
     '.lzw-cmtbar{display:flex;gap:6px;margin-top:6px;align-items:center}',
     '.lzw-cmtbar input{flex:1;min-width:0;border:1px solid rgba(0,0,0,.12);border-radius:14px;padding:6px 11px;font-size:13px;outline:none;background:#fff;color:#111;font-family:inherit}',
     '.lzw-cmtbar button{border:none;background:#22c05e;color:#fff;border-radius:14px;padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-family:inherit}'
@@ -1548,15 +1572,8 @@
         : '<div class="lzw-post-ava"' + mpfAttr + '>' + esc(e.who.slice(0, 1)) + '</div>') +
         '<div class="lzw-post-main"><div class="lzw-post-name"' + mpfAttr + '>' + esc(e.who) + '</div>';
     } else {
-      // 主页时间戳：今天/昨天/M月D日；无日期档（兜底生成）退回原 label
-      var a2 = parseDay(e.day), b2 = parseDay(curDay), st;
-      if (!a2 || e.day === '__nodate__') st = e.label || '';
-      else if (!b2) st = a2.mo + '月' + a2.d;
-      else {
-        var df = (b2.y * 372 + b2.mo * 31 + b2.d) - (a2.y * 372 + a2.mo * 31 + a2.d);
-        st = df === 0 ? '今天' : df === 1 ? '昨天' : a2.mo + '月' + a2.d;
-      }
-      head = '<div class="lzw-post-stamp">' + esc(st) + '</div><div class="lzw-post-main">';
+      // 主页时间戳：与 feed 同源自 pt（动态自身时间），两边永远不会再打架
+      head = '<div class="lzw-post-stamp">' + esc(momentStamp(e.pt, e.label, curDay)) + '</div><div class="lzw-post-main">';
     }
     var menu = UI.mMenu === idx
       ? '<div class="lzw-pmenu"><button data-mlike="' + idx + '">' + ICON_HEART + ' 赞</button><button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button></div>'
@@ -1575,7 +1592,7 @@
     return '<div class="lzw-post">' + head +
       '<div class="lzw-post-text">' + esc(e.text) + '</div>' +
       (e.img ? '<div class="lzw-post-img">' + esc(e.img) + '</div>' : '') +
-      '<div class="lzw-post-meta">' + (feedMode ? '<span>' + esc(e.label || '') + '</span>' : '') + '<span class="sp"></span>' +
+      '<div class="lzw-post-meta">' + (feedMode ? '<span>' + esc(momentLabel(e.pt, e.label, curDay)) + '</span>' : '') + '<span class="sp"></span>' +
       menu +
       '<button class="lzw-post-more" data-mmenu="' + idx + '">⋯</button></div>' +
       likeRow + cmtBlock + cmtbar +

@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T18:47:17.005Z
+//  构建时间：2026-09-12T19:08:30.216Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 18:47';
+var __LZW_BUILD__ = '2026-09-12 19:08';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1037,8 +1037,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       people.map(function (pp) { return '- ' + pp.name + '：\n' + (pp.profile ? String(pp.profile).trim() : '（无档案）'); }).join('\n'),
       '',
       '## 输出要求（严格遵守）',
-      '- 每位各输出一条动态，按时间从早到晚排列（最早的最先输出）',
+      '- 每位各输出一条动态，按发布时间从早到晚排列（最早的最先输出）',
       '- 格式严格为：[动态:名字:动态文字]（单行，标记外不要任何其他内容）',
+      '- 每条动态后紧跟一行发布时间：[时间:M月D日 HH:MM]（24 小时制；以当前情境时间为准，不得晚于当前时刻；几条动态的时刻彼此拉开，昨天到今天为主，个别可早到几天前的白天）',
       '- 动态文字 ≤70 字，可以只有几个字——篇幅和文风看这个人：有的人一张图就是全部（配文极短），有的人一两句碎碎念，有的人写小作文甚至写诗，有的人发疯抽象。不要"为了发动态而发动态"的流水账，不要凑字数的抒情小作文',
       '- 内容优先是这个人自己的生活：学业/工作/爱好/朋友/家人/吐槽/偶然撞见的小事，与主线轻微相关即可，不必围着机主转',
       '- 口吻必须符合各人人设；不要刻意凑 emoji（不是每条动态都需要）',
@@ -1048,7 +1049,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '  · 评论一行：[评论:评论者@被回复的人:评论内容]（每条动态至多 2 条，≤25 字；@后面是被回复的人，可以是作者也可以是前面的评论者；普通评论省略@写成 [评论:评论者:评论内容]）',
       '- 互动口吻要符合关系：损友互怼、熟人捧场、长辈式关心，不要客套水军味',
       '- 不要点名单「' + myName + '」，不要写需要机主回复的问句（机主只是刷到，还没互动）',
-      '- 各人的动态主题互不重复；除 [动态]/[配图]/[点赞]/[评论] 行外不要输出任何其他内容'
+      '- 各人的动态主题互不重复；除 [动态]/[时间]/[配图]/[点赞]/[评论] 行外不要输出任何其他内容'
     ].filter(function (s) { return s !== ''; }).join('\n');
     return {
       ordered_prompts: [
@@ -1081,7 +1082,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '## 涉及的人',
       people.map(function (pp) { return '- ' + pp.name + '：\n' + (pp.profile ? String(pp.profile).trim() : '（无档案）'); }).join('\n'),
       '',
-      '## 动态（' + post.who + '发布' + (post.img ? '，配图：' + post.img : '') + '）',
+      '## 动态（' + post.who + '发布' + (post.when ? '于 ' + post.when : '') + (post.img ? '，配图：' + post.img : '') + '）',
       post.text,
       '',
       '## 已有评论',
@@ -1487,6 +1488,30 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     if (diff === 1) return '昨天';
     return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d + '日';
   }
+  // 动态自身时间 pt → 显示标签：今天/昨天/N天前/M月D日（带 HH:MM）；
+  // 7 天以外写完整日期。无 pt（无日期兜底档/旧数据）退回 legacy label
+  function momentLabel(pt, legacy, curDay) {
+    var m = /(\d{4})年(\d{1,2})月(\d{1,2})日\s*(\d{1,2}:\d{2})/.exec(pt || '');
+    if (!m) return legacy || '';
+    var a = { y: +m[1], mo: +m[2], d: +m[3] }, t = m[4], b = parseDay(curDay);
+    if (!b) return a.mo + '月' + a.d + '日 ' + t;
+    var diff = (b.y * 372 + b.mo * 31 + b.d) - (a.y * 372 + a.mo * 31 + a.d);
+    if (diff === 0) return '今天 ' + t;
+    if (diff === 1) return '昨天 ' + t;
+    if (diff >= 2 && diff < 7) return diff + '天前 ' + t;
+    return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d + '日 ' + t;
+  }
+  // 主页时间轴左侧戳：今天/昨天/M月D（跨年加年份）；无 pt 退回 legacy label
+  function momentStamp(pt, legacy, curDay) {
+    var m = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec(pt || '');
+    if (!m) return legacy || '';
+    var a = { y: +m[1], mo: +m[2], d: +m[3] }, b = parseDay(curDay);
+    if (!b) return a.mo + '月' + a.d;
+    var diff = (b.y * 372 + b.mo * 31 + b.d) - (a.y * 372 + a.mo * 31 + a.d);
+    if (diff === 0) return '今天';
+    if (diff === 1) return '昨天';
+    return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d;
+  }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -1788,7 +1813,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-pcmts{margin-top:3px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;line-height:1.65;word-break:break-word;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-pcmts .c{color:#111}',
     '.lzw-pcmts .n{color:#576b95;font-weight:400}',
-    '.lzw-post-stamp{width:37px;flex:none;font-size:11px;color:#8a8f99;line-height:1.4;padding-top:1px}',
+    '.lzw-post-stamp{width:37px;flex:none;font-size:12px;color:#8a8f99;line-height:1.45;padding-top:4px}',
     '.lzw-cmtbar{display:flex;gap:6px;margin-top:6px;align-items:center}',
     '.lzw-cmtbar input{flex:1;min-width:0;border:1px solid rgba(0,0,0,.12);border-radius:14px;padding:6px 11px;font-size:13px;outline:none;background:#fff;color:#111;font-family:inherit}',
     '.lzw-cmtbar button{border:none;background:#22c05e;color:#fff;border-radius:14px;padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-family:inherit}'
@@ -3007,15 +3032,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         : '<div class="lzw-post-ava"' + mpfAttr + '>' + esc(e.who.slice(0, 1)) + '</div>') +
         '<div class="lzw-post-main"><div class="lzw-post-name"' + mpfAttr + '>' + esc(e.who) + '</div>';
     } else {
-      // 主页时间戳：今天/昨天/M月D日；无日期档（兜底生成）退回原 label
-      var a2 = parseDay(e.day), b2 = parseDay(curDay), st;
-      if (!a2 || e.day === '__nodate__') st = e.label || '';
-      else if (!b2) st = a2.mo + '月' + a2.d;
-      else {
-        var df = (b2.y * 372 + b2.mo * 31 + b2.d) - (a2.y * 372 + a2.mo * 31 + a2.d);
-        st = df === 0 ? '今天' : df === 1 ? '昨天' : a2.mo + '月' + a2.d;
-      }
-      head = '<div class="lzw-post-stamp">' + esc(st) + '</div><div class="lzw-post-main">';
+      // 主页时间戳：与 feed 同源自 pt（动态自身时间），两边永远不会再打架
+      head = '<div class="lzw-post-stamp">' + esc(momentStamp(e.pt, e.label, curDay)) + '</div><div class="lzw-post-main">';
     }
     var menu = UI.mMenu === idx
       ? '<div class="lzw-pmenu"><button data-mlike="' + idx + '">' + ICON_HEART + ' 赞</button><button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button></div>'
@@ -3034,7 +3052,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     return '<div class="lzw-post">' + head +
       '<div class="lzw-post-text">' + esc(e.text) + '</div>' +
       (e.img ? '<div class="lzw-post-img">' + esc(e.img) + '</div>' : '') +
-      '<div class="lzw-post-meta">' + (feedMode ? '<span>' + esc(e.label || '') + '</span>' : '') + '<span class="sp"></span>' +
+      '<div class="lzw-post-meta">' + (feedMode ? '<span>' + esc(momentLabel(e.pt, e.label, curDay)) + '</span>' : '') + '<span class="sp"></span>' +
       menu +
       '<button class="lzw-post-more" data-mmenu="' + idx + '">⋯</button></div>' +
       likeRow + cmtBlock + cmtbar +
@@ -3792,25 +3810,32 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             }
           }
         } catch (e) { callLog = null; }
-        // 今日朋友圈互动痕迹（不带 feed 全文，只带机主在对方动态下留过的赞/评）
+        // 近期朋友圈互动痕迹（不带 feed 全文，只带机主在对方动态下留过的赞/评；
+        // 按动态自身时间取 3 天内的，接话时能感知早晚——深夜的动态回「早点休息」才合理）
         var momentsNote = '';
         try {
           var mToday = snap && snap.dateText;
           if (mToday) {
             var myName0 = this.userName();
             var mfeed = W.Store.history(this.momentsKey);
+            var ba = this.ptParts(mToday);
             var touched = mfeed.filter(function (e2) {
-              if (e2.day !== mToday || e2.who !== c.name) return false;
+              if (e2.who !== c.name) return false;
+              var ea = this.ptParts(e2.pt);
+              if (!ea || !ba) return false;
+              var dd = this.dayDiff(ea, ba);
+              if (dd < 0 || dd > 3) return false;   // 动态自身时间在快照前 0~3 天
               if ((e2.likes || []).indexOf(myName0) !== -1) return true;
               return (e2.comments || []).some(function (cm) { return cm.who === myName0; });
-            });
+            }, this);
             if (touched.length) {
               momentsNote = touched.slice(-2).map(function (e2) {
                 var bits = [];
                 if ((e2.likes || []).indexOf(myName0) !== -1) bits.push('点了赞');
                 (e2.comments || []).forEach(function (cm) { if (cm.who === myName0) bits.push('评论「' + cm.text + '」'); });
-                return '机主在动态「' + String(e2.text).slice(0, 30) + '」下' + bits.join('、');
-              }).join('\n');
+                var when = this.ptShort(e2.pt);
+                return '机主在' + (when ? when + '的' : '') + '动态「' + String(e2.text).slice(0, 30) + '」下' + bits.join('、');
+              }, this).join('\n');
             }
           }
         } catch (e) { momentsNote = ''; }
@@ -3865,7 +3890,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
 
     // ── 朋友圈 ──
-    // 动态存在 Store key「__moments__」，条目 = {who, text, img, label, likes:[名], comments:[{who,replyTo,text}]}
+    // 动态存在 Store key「__moments__」，条目 = {who, text, img, pt, label, likes:[名], comments:[{who,replyTo,text}]}
+    // pt = 动态自身发布时间 'YYYY年M月D日 HH:MM'（AI 生成 or 兜底推算）；day/time = 入库戳（真实刷出时间，判重/未读用）
     // 首次进入按故事日生成一次（filledDay 打卡）；互动痕迹（不带全文）进同日私聊上下文。
     momentsKey: '__moments__',
     momentsFeed: function () { return window.LZWorld.Store.history(this.momentsKey); },
@@ -3884,6 +3910,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           for (var i = posts.length - 1; i >= 0; i--) {
             if (posts[i].who === g[1].trim()) { posts[i].img = g[2].trim(); break; }
           }
+          return;
+        }
+        var tm = line.match(/^\[时间[:：]([\s\S]+)\]$/);
+        if (tm) {
+          // 发布时间挂在紧跟的那条动态下（动态自身时间，AI 生成；缺省引擎兜底推算）
+          var tp = posts[posts.length - 1];
+          if (tp) tp.ptRaw = tm[1].trim();
           return;
         }
         var lk = line.match(/^\[点赞:([\s\S]+)\]$/);
@@ -3907,6 +3940,29 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       });
       return posts.filter(function (p) { return p.who && p.text; }).slice(0, 6);
     },
+    // 动态自身时间的三件小工具：解析 'YYYY年M月D日 HH:MM' / 短格式 / 天数差
+    ptParts: function (pt) { var m = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec(pt || ''); return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null; },
+    dayDiff: function (a, b) { return (b.y * 372 + b.mo * 31 + b.d) - (a.y * 372 + a.mo * 31 + a.d); },
+    ptShort: function (pt) { var m = /^\d{4}年(\d{1,2})月(\d{1,2})日\s*(\d{1,2}:\d{2})/.exec(pt || ''); return m ? m[1] + '月' + m[2] + '日 ' + m[3] : ''; },
+
+    // 把 AI 写的 [时间:] 行归一化成 'YYYY年M月D日 HH:MM'；解析失败 / 晚于快照时刻 → null（走兜底）
+    // 年份取快照年；月日比快照还靠后视为去年的事；只写了时刻没写月日当兜底失败（信息不足不瞎编日期）
+    normMomentTime: function (raw, snap) {
+      var m = /(\d{1,2})\s*月\s*(\d{1,2})\s*日\s*(\d{1,2})\s*[:：时]\s*(\d{1,2})/.exec(String(raw || ''));
+      if (!m) return null;
+      var mo = +m[1], d = +m[2], hh = +m[3], mm = +m[4];
+      if (mo < 1 || mo > 12 || d < 1 || d > 31 || hh > 23 || mm > 59) return null;
+      var sy = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec((snap && snap.dateText) || '');
+      if (!sy) return null;
+      var y = +sy[1], smo = +sy[2], sd = +sy[3];
+      if (mo > smo || (mo === smo && d > sd)) y -= 1;
+      if (y === +sy[1] && mo === smo && d === sd) {
+        var st = /(\d{1,2}):(\d{2})/.exec((snap && snap.time) || '');
+        if (st && (hh > +st[1] || (hh === +st[1] && mm > +st[2]))) return null;
+      }
+      return y + '年' + mo + '月' + d + '日 ' + ('0' + hh).slice(-2) + ':' + ('0' + mm).slice(-2);
+    },
+
     parseMomentsReplies: function (text) {
       var out = [];
       String(text || '').split('\n').forEach(function (line) {
@@ -3945,15 +4001,26 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var posts = this.parseMoments(text);
       if (!posts.length) throw new Error('朋友圈生成结果为空');
-      // 时间标：最新一条"今天"，依次往前推；时刻由 who+text 哈希定（重渲染不跳变）
-      var entries = posts.map(function (p, idx) {
-        var age = posts.length - 1 - idx;
-        var h = parseInt(hashStr(p.who + p.text), 36);
-        var hh = ('0' + (8 + h % 12)).slice(-2), mm = ('0' + ((h >> 4) % 60)).slice(-2);
-        var label = age === 0 ? '今天 ' + hh + ':' + mm
-          : age === 1 ? '昨天 ' + hh + ':' + mm
-          : age + '天前 ' + hh + ':' + mm;
-        return { who: p.who, text: p.text, img: p.img || '', label: label, likes: p.likes || [], comments: p.comments || [] };
+      // 动态自身时间 pt：优先 AI 的 [时间:] 行（归一化、不得晚于快照时刻）；
+      // 缺省按快照时刻往前 hash 散布（最新 0~90 分钟前，更早的逐条再退 2~8 小时）——
+      // 伪造钟点绝不越过「现在」：状态栏 7 点就不会冒出「今天 12:xx」的动态
+      var sb = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec((snap && snap.dateText) || '');
+      var st0 = /(\d{1,2}):(\d{2})/.exec((snap && snap.time) || '');
+      var cur = sb ? new Date(+sb[1], +sb[2] - 1, +sb[3], st0 ? +st0[1] : 23, st0 ? +st0[2] : 59) : null;
+      for (var pi = posts.length - 1; pi >= 0; pi--) {
+        var pt = posts[pi].ptRaw ? this.normMomentTime(posts[pi].ptRaw, snap) : null;
+        if (!pt && cur) {
+          var h = parseInt(hashStr(posts[pi].who + posts[pi].text), 36);
+          var back = pi === posts.length - 1 ? h % 90 : 120 + (h % 360);
+          var dt = new Date(cur.getTime() - back * 60000);
+          pt = dt.getFullYear() + '年' + (dt.getMonth() + 1) + '月' + dt.getDate() + '日 ' +
+            ('0' + dt.getHours()).slice(-2) + ':' + ('0' + dt.getMinutes()).slice(-2);
+        }
+        posts[pi].pt = pt || '';
+        delete posts[pi].ptRaw;
+      }
+      var entries = posts.map(function (p) {
+        return { who: p.who, text: p.text, img: p.img || '', pt: p.pt || '', label: '', likes: p.likes || [], comments: p.comments || [] };
       });
       W.Store.push(key, entries, 100);
       W.Store.setMeta(key, { filledDay: today });
@@ -3990,7 +4057,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       try {
         var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
         var people = involved.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
-        var req = W.Prompt.momentsReply({ who: entry.who, text: entry.text, img: entry.img }, comments, userSays, people, snap, this.userBlock());
+        var req = W.Prompt.momentsReply({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, comments, userSays, people, snap, this.userBlock());
         var raw = await generateRaw(req);
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         replies = this.parseMomentsReplies(text);
