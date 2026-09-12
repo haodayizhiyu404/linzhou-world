@@ -26,8 +26,8 @@
     // 外壳：机身 + 屏幕
     '#lzw-phone{position:fixed;z-index:99991;display:none;font-family:system-ui,"Microsoft YaHei",sans-serif}',
     '#lzw-phone.lzw-open{display:block}',
-    '.lzw-sbar,.lzw-appbar{cursor:grab;touch-action:none}',
-    '.lzw-sbar:active,.lzw-appbar:active{cursor:grabbing}',
+    '.lzw-sbar{cursor:grab;touch-action:none}',
+    '.lzw-sbar:active{cursor:grabbing}',
     '.lzw-bezel{width:100%;height:100%;background:#0b0d10;border-radius:48px;padding:11px;position:relative;',
     'box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 2px #2b3138;box-sizing:border-box}',
     '.lzw-btn-side{position:absolute;background:#1d2228;border-radius:3px}',
@@ -523,17 +523,17 @@
         };
       });
       // 顶部拖动挪位置
-      ph.querySelectorAll('.lzw-sbar,.lzw-appbar').forEach(function (hd) {
+      ph.querySelectorAll('.lzw-sbar').forEach(function (hd) {
         hd.addEventListener('pointerdown', function (ev) {
           if (ev.button !== undefined && ev.button !== 0) return;
           var sx = ev.clientX, sy = ev.clientY;
           var stL = parseFloat(ph.style.left) || 0, stT = parseFloat(ph.style.top) || 0;
           var moved = false;
-          try { hd.setPointerCapture(ev.pointerId); } catch (e) {}
           var mv = function (e2) {
             var dx = e2.clientX - sx, dy = e2.clientY - sy;
             if (!moved && dx * dx + dy * dy < 16) return;
             moved = true;
+            try { hd.setPointerCapture(ev.pointerId); } catch (e) {}
             var vw2 = pwin().innerWidth, vh2 = pwin().innerHeight;
             var L = Math.max(4, Math.min(stL + dx, vw2 - ph.offsetWidth - 4));
             var T = Math.max(4, Math.min(stT + dy, vh2 - ph.offsetHeight - 4));
