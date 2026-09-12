@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T09:30:37.086Z
+//  构建时间：2026-09-12T09:41:06.183Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 09:30';
+var __LZW_BUILD__ = '2026-09-12 09:41';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2207,26 +2207,43 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return String(t || '').replace(/\{\{\s*user\s*\}\}/gi, n);
     },
 
-    // 酒馆 persona 描述：酒馆助手沙盒自带 getPersona('current') 优先（ST 原生绑定接口），
-    // 父页 ctx.personaDescription / power_user.persona_description 兜底。
+    // 酒馆 persona 描述，按可靠性排：
+    // ① 酒馆助手沙盒自带 getPersona('current')（新版才有，旧版 undefined）
+    // ② 父页 ctx.powerUserSettings.persona_description——ST 核心字段，即当前绑定 persona 的正文
+    //    （power_user 是 ES 模块内部变量，window.parent 拿不到，必须走 getContext 的暴露字段）
     // 每次生成现读——换 persona 立刻跟上，不用刷新。
     userPersona: function () {
+      var desc = '';
+      var src = '';
       try {
         if (typeof getPersona === 'function') {
           var p = getPersona('current');
-          if (p && p.description) return String(p.description);
+          if (p && p.description) { desc = String(p.description); src = 'getPersona'; }
         }
       } catch (e) {}
       try {
-        var st = window.parent.SillyTavern;
-        var ctx = st && st.getContext && st.getContext();
-        if (ctx && ctx.personaDescription) return String(ctx.personaDescription);
+        if (!desc) {
+          var st = window.parent.SillyTavern;
+          var ctx = st && st.getContext && st.getContext();
+          if (ctx && ctx.powerUserSettings && ctx.powerUserSettings.persona_description) {
+            desc = String(ctx.powerUserSettings.persona_description); src = 'powerUserSettings';
+          } else if (ctx && ctx.personaDescription) {
+            desc = String(ctx.personaDescription); src = 'ctx.personaDescription';
+          }
+        }
       } catch (e) {}
       try {
-        var pu = window.parent.power_user;
-        if (pu && pu.persona_description) return String(pu.persona_description);
+        if (!desc) {
+          var pu = window.parent.power_user;
+          if (pu && pu.persona_description) { desc = String(pu.persona_description); src = 'power_user'; }
+        }
       } catch (e) {}
-      return '';
+      if (!this._personaLogged) {
+        this._personaLogged = true;
+        console.log('[霖州引擎] persona 诊断：来源=' + (src || '无') + '，长度=' + desc.length +
+          (typeof getPersona === 'function' ? '' : '，getPersona 不存在（酒馆助手版本较旧）'));
+      }
+      return desc;
     },
 
     // 取某人在当前线的档案：线NPC库有 → 只读它（各线重写的独立档案）；

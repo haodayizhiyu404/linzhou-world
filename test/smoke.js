@@ -210,7 +210,11 @@ ctx.getWorldbook = async () => [
   console.log('[引擎·线档案]');
   LW.Apps = { wechat: { inject() {}, render() {}, remove() {} } };
   LW.Engine.userName = () => '陈默';
-  ctx.getPersona = () => ({ avatar_id: 1, name: '陈默', description: 'persona描述：陈默，住天禧城3幢901。' });
+  ctx.getPersona = undefined;   // 模拟旧版酒馆助手：无 getPersona，走父页 powerUserSettings
+  ctx.window.parent = { SillyTavern: { getContext: () => ({
+    name1: '陈默',
+    powerUserSettings: { persona_description: 'persona描述：陈默，住天禧城3幢901。' },
+  }) } };
   await LW.Engine.load();
   eq('作用域→线名·高中', LW.Engine.lineOfScope('高中线-核心人员'), '高中时代');
   eq('作用域→线名·大学', LW.Engine.lineOfScope('大学线'), '大学时代');
