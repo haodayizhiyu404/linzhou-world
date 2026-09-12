@@ -373,12 +373,16 @@ ctx.getWorldbook = async () => [
   eq('通话·记录行格式视频', LW.Floor.msgToLine({ who: 'user', kind: 'calllog', mode: 'video', text: '对方已拒绝' }, '裴知意'), '裴知意：[视频通话 · 对方已拒绝]');
   // ── 8.9 朋友圈：契约解析 + 提示词装配 + 互动痕迹 ──
   console.log('[朋友圈]');
-  const mposts = LW.Engine.parseMoments('[动态:周言:月考成绩出了，还活着]\n[配图:周言:公告栏前挤满人的成绩单]\n[动态:林溪:救命 数学最后一道大题是什么鬼]\n这是游离行不要');
+  const mposts = LW.Engine.parseMoments('[动态:周言:月考成绩出了，还活着]\n[配图:周言:公告栏前挤满人的成绩单]\n[点赞:周言:林溪、陆飞]\n[评论:陆飞@周言:年级第七请客]\n[动态:林溪:救命 数学最后一道大题是什么鬼]\n这是游离行不要');
   eq('朋友圈·动态条数', mposts.length, 2);
   eq('朋友圈·动态作者', mposts[0].who, '周言');
   eq('朋友圈·配图挂上', mposts[0].img.indexOf('成绩单') !== -1, true);
   eq('朋友圈·无图动态', mposts[1].img, '');
   eq('朋友圈·游离行丢弃', mposts.some(x => x.text.indexOf('游离') !== -1), false);
+  eq('朋友圈·点赞挂上', mposts[0].likes.join('、'), '林溪、陆飞');
+  eq('朋友圈·生成期评论挂上', mposts[0].comments.length, 1);
+  eq('朋友圈·生成期评论指向作者', mposts[0].comments[0].replyTo, '周言');
+  eq('朋友圈·无互动动态空表', mposts[1].likes.length + mposts[1].comments.length, 0);
   const mreps = LW.Engine.parseMomentsReplies('[评论:周言@陈默:就你话多]\n[评论:林溪:哈哈哈哈]');
   eq('朋友圈·接话条数', mreps.length, 2);
   eq('朋友圈·接话回复指向', mreps[0].replyTo, '陈默');
@@ -390,6 +394,9 @@ ctx.getWorldbook = async () => [
   eq('朋友圈·填充带档案', mfTxt.indexOf('班长档案') !== -1, true);
   eq('朋友圈·动态契约', mfTxt.indexOf('[动态:名字:动态文字]') !== -1, true);
   eq('朋友圈·配图契约', mfTxt.indexOf('[配图:名字:画面描述]') !== -1, true);
+  eq('朋友圈·点赞契约', mfTxt.indexOf('[点赞:作者名:') !== -1, true);
+  eq('朋友圈·生成期评论契约', mfTxt.indexOf('[评论:评论者@作者名:') !== -1, true);
+  eq('朋友圈·不刻意emoji', mfTxt.indexOf('不要刻意凑 emoji') !== -1, true);
   eq('朋友圈·静默生成', mf.should_silence, true);
   const mr = LW.Prompt.momentsReply({ who: '周言', text: '月考出分了', img: '成绩单' },
     [{ who: '林溪', replyTo: '', text: '牛啊' }], '请客吗', [{ name: '周言', profile: '班长' }, { name: '林溪', profile: '闺蜜' }],

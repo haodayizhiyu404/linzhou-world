@@ -70,6 +70,10 @@
     '.lzw-appbar-r{width:24px}',
     '.lzw-reroll{display:inline-flex;color:#666;cursor:pointer;padding:5px;border-radius:8px;align-items:center;justify-content:center}',
     '.lzw-reroll:hover{background:rgba(0,0,0,.06)}',
+    // 朋友圈顶栏：透明浮在封面上（无标题，保留返回/相机）；-51px = 顶栏占位高度(40+2+8+1)，把封面吸上来盖住
+    '.lzw-appbar-ovl{position:relative;z-index:6;background:transparent;border-bottom:none;margin-bottom:-51px}',
+    '.lzw-appbar-ovl .lzw-back,.lzw-appbar-ovl .lzw-reroll{color:#111;text-shadow:0 0 6px rgba(255,255,255,.95),0 0 14px rgba(255,255,255,.6)}',
+    '.lzw-appbar-ovl .lzw-back:hover,.lzw-appbar-ovl .lzw-reroll:hover{background:rgba(255,255,255,.35)}',
     // 主体
     '.lzw-body{flex:1;min-height:0;overflow-y:auto;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
@@ -294,7 +298,6 @@
     '.lzw-disc-ico svg{width:30px;height:30px}',
     '.lzw-disc-main{flex:1;min-width:0}',
     '.lzw-disc-name{font-size:14.5px;color:#111}',
-    '.lzw-disc-prev{font-size:12px;color:#9aa0a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}',
     '.lzw-disc-chev{flex:none;display:flex}',
     '.lzw-disc-gap{height:9px;background:#f2f3f5;border-top:1px solid rgba(0,0,0,.05)}',
     '.lzw-mfeed{flex:1;min-height:0;overflow-y:auto;background:#fff;padding-bottom:14px}',
@@ -311,14 +314,15 @@
     '.lzw-post-name{font-size:14px;font-weight:600;color:#576b95;cursor:pointer}',
     '.lzw-post-text{font-size:14px;line-height:1.55;color:#111;margin-top:2px;word-break:break-word}',
     '.lzw-post-img{margin-top:5px;background:#f2f3f5;border:1px solid rgba(0,0,0,.04);border-radius:7px;padding:7px 9px;font-size:12px;color:#5a6577;line-height:1.5;word-break:break-word}',
-    '.lzw-post-meta{display:flex;align-items:center;margin-top:6px;font-size:12px;color:#999}',
+    '.lzw-post-meta{position:relative;display:flex;align-items:center;margin-top:6px;font-size:12px;color:#999;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-post-meta .sp{flex:1}',
-    '.lzw-post-more{width:27px;height:19px;border:none;border-radius:5px;background:#f0f1f3;color:#576b95;font-size:13px;line-height:1;cursor:pointer;padding:0}',
+    '.lzw-post-more{width:27px;height:19px;border:none;border-radius:5px;background:#f0f1f3;color:#576b95;font-size:13px;line-height:1;cursor:pointer;padding:0;flex:none}',
     '.lzw-post-more:hover{background:#e7e9ec}',
-    '.lzw-pmenu{display:flex;background:#4c4c4c;border-radius:7px;overflow:hidden;margin-top:5px;align-self:flex-start;width:max-content}',
-    '.lzw-pmenu button{border:none;background:none;color:#fff;font-size:13px;padding:7px 15px;cursor:pointer;white-space:nowrap;font-family:inherit}',
-    '.lzw-plike{margin-top:6px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;color:#576b95;line-height:1.5;word-break:break-word}',
-    '.lzw-pcmts{margin-top:3px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;line-height:1.65;word-break:break-word}',
+    // ⋯菜单：紧贴按钮左侧浮出的横向灰色长条，不占高度不换行
+    '.lzw-pmenu{position:absolute;right:31px;top:50%;transform:translateY(-50%);display:flex;height:30px;background:#4c4c4c;border-radius:6px;overflow:hidden;z-index:4;box-shadow:0 2px 8px rgba(0,0,0,.22);align-items:stretch}',
+    '.lzw-pmenu button{border:none;background:none;color:#fff;font-size:12.5px;padding:0 13px;cursor:pointer;white-space:nowrap;font-family:inherit;display:flex;align-items:center;gap:4px}',
+    '.lzw-plike{margin-top:6px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;color:#576b95;line-height:1.5;word-break:break-word;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
+    '.lzw-pcmts{margin-top:3px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;line-height:1.65;word-break:break-word;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-pcmts .c{color:#111}',
     '.lzw-pcmts .n{color:#576b95;font-weight:600}',
     '.lzw-cmtbar{display:flex;gap:6px;margin-top:6px;align-items:center}',
@@ -703,15 +707,12 @@
         var sec = eng.section();
         var rowsHtml = '';
         if (this.tab === 'discover') {
-          // 发现页：朋友圈入口（红点 = 机主不在场时新产生的接话评论数）
+          // 发现页：朋友圈入口（红点 = 机主不在场时新产生的接话评论数），无缩略行
           var mUn = 0;
           try { mUn = W.Store.meta(eng.momentsKey).unread || 0; } catch (e0) {}
-          var mfeed = eng.momentsFeed();
-          var lastP = mfeed.length ? mfeed[mfeed.length - 1] : null;
           rowsHtml =
             '<div class="lzw-disc-row" data-mom="1"><div class="lzw-disc-ico">' + ICON_MOMENTS + '</div>' +
-            '<div class="lzw-disc-main"><div class="lzw-disc-name">朋友圈</div>' +
-            '<div class="lzw-disc-prev">' + esc(lastP ? lastP.who + '：' + String(lastP.text).slice(0, 18) : '朋友们的生活动态') + '</div></div>' +
+            '<div class="lzw-disc-main"><div class="lzw-disc-name">朋友圈</div></div>' +
             (mUn ? '<span class="lzw-unread">' + (mUn > 99 ? '99+' : mUn) + '</span>' : '') +
             '<span class="lzw-disc-chev">' + ICON_CHEV + '</span></div>';
         } else if (sec) {
@@ -1492,7 +1493,7 @@
     if (UI.call) return ''; // 通话界面：无顶栏（名字在通话屏里）
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
-    if (screen === 'moments') return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">朋友圈</span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
+    if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar"><span class="lzw-back" data-act="moments">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
       (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
@@ -1510,8 +1511,7 @@
       : '<div class="lzw-post-ava"' + mpfAttr + '>' + esc(e.who.slice(0, 1)) + '</div>';
     var menu = UI.mMenu === idx
       ? '<div class="lzw-pmenu"><button data-mlike="' + idx + '">👍 赞</button><button data-mcmt="' + idx + '">💬 评论</button></div>'
-      : '';
-    var cmtbar = UI.mCmt === idx
+      : '';    var cmtbar = UI.mCmt === idx
       ? '<div class="lzw-cmtbar"><input id="lzw-cmtin" maxlength="60" placeholder="说点什么…"><button data-msend="' + idx + '">发送</button></div>'
       : '';
     var likeRow = (e.likes && e.likes.length)
@@ -1527,10 +1527,11 @@
       '<div class="lzw-post-main">' +
       '<div class="lzw-post-name"' + (nameLink ? mpfAttr : '') + '>' + esc(e.who) + '</div>' +
       '<div class="lzw-post-text">' + esc(e.text) + '</div>' +
-      (e.img ? '<div class="lzw-post-img">🖼 ' + esc(e.img) + '</div>' : '') +
+      (e.img ? '<div class="lzw-post-img">' + esc(e.img) + '</div>' : '') +
       '<div class="lzw-post-meta"><span>' + esc(e.label || '') + '</span><span class="sp"></span>' +
+      menu +
       '<button class="lzw-post-more" data-mmenu="' + idx + '">⋯</button></div>' +
-      menu + likeRow + cmtBlock + cmtbar +
+      likeRow + cmtBlock + cmtbar +
       '</div></div>';
   }
 

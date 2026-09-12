@@ -765,18 +765,43 @@
     momentsKey: '__moments__',
     momentsFeed: function () { return window.LZWorld.Store.history(this.momentsKey); },
 
-    // 契约输出解析：[动态:名:文字] / [配图:名:描述]（跟在对应动态后）/ [评论:名@回复对象:内容]
+    // 契约输出解析：[动态:名:文字] / [配图:名:描述]（跟在对应动态后）
+    //           [点赞:名:名单] / [评论:名@回复对象:内容]（熟人互动，跟在对应动态后）
     parseMoments: function (text) {
       var posts = [];
       String(text || '').split('\n').forEach(function (line) {
         line = line.trim();
         if (!line) return;
         var m = line.match(/^\[动态:([^:：\]]{1,12})[:：]([\s\S]+)\]$/);
-        if (m) { posts.push({ who: m[1].trim(), text: m[2].trim(), img: '' }); return; }
+        if (m) { posts.push({ who: m[1].trim(), text: m[2].trim(), img: '', likes: [], comments: [] }); return; }
         var g = line.match(/^\[配图:([^:：\]]{1,12})[:：]([\s\S]+)\]$/);
         if (g) {
           for (var i = posts.length - 1; i >= 0; i--) {
             if (posts[i].who === g[1].trim()) { posts[i].img = g[2].trim(); break; }
+          }
+          return;
+        }
+        var lk = line.match(/^\[点赞:([^:：\]]{1,12})[:：]([\s\S]+)\]$/);
+        if (lk) {
+          for (var j = posts.length - 1; j >= 0; j--) {
+            if (posts[j].who === lk[1].trim()) {
+              var names = lk[2].split(/[、,，]/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 5);
+              names.forEach(function (n) { if (posts[j].likes.indexOf(n) === -1) posts[j].likes.push(n); });
+              posts[j].likes = posts[j].likes.slice(0, 5);
+              break;
+            }
+          }
+          return;
+        }
+        var cm = line.match(/^\[评论:([^:：@\]]{1,12})(?:@([^:：\]]{1,12}))?[:：]([\s\S]+)\]$/);
+        if (cm) {
+          // 评论行归到最近一条该作者动态（无@回复对象时归到最近一条动态）；有@时校验作者匹配，防张冠李戴
+          var wantAuthor = cm[2] ? cm[2].trim() : null;
+          for (var k2 = posts.length - 1; k2 >= 0; k2--) {
+            if (wantAuthor ? posts[k2].who === wantAuthor : true) {
+              if (posts[k2].comments.length < 3) posts[k2].comments.push({ who: cm[1].trim(), replyTo: cm[2] ? cm[2].trim() : '', text: cm[3].trim() });
+              break;
+            }
           }
         }
       });
@@ -828,7 +853,7 @@
         var label = age === 0 ? '今天 ' + hh + ':' + mm
           : age === 1 ? '昨天 ' + hh + ':' + mm
           : age + '天前 ' + hh + ':' + mm;
-        return { who: p.who, text: p.text, img: p.img || '', label: label, likes: [], comments: [] };
+        return { who: p.who, text: p.text, img: p.img || '', label: label, likes: p.likes || [], comments: p.comments || [] };
       });
       W.Store.push(key, entries, 100);
       W.Store.setMeta(key, { filledDay: today });

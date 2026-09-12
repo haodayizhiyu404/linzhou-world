@@ -16,7 +16,7 @@ function phone(inner) {
 
 // 发现页（tab 栏 + 朋友圈红点）
 const discover = appbar('微信') + `<div class="lzw-body">
-  <div class="lzw-disc-row"><div class="lzw-disc-ico">${MOM}</div><div class="lzw-disc-main"><div class="lzw-disc-name">朋友圈</div><div class="lzw-disc-prev">周言：月考成绩出了，还活着</div></div><span class="lzw-unread">2</span><span class="lzw-disc-chev">${CHEV}</span></div>
+  <div class="lzw-disc-row"><div class="lzw-disc-ico">${MOM}</div><div class="lzw-disc-main"><div class="lzw-disc-name">朋友圈</div></div><span class="lzw-unread">2</span><span class="lzw-disc-chev">${CHEV}</span></div>
 </div><div class="lzw-tabbar">
   <button class="lzw-tab">${TAB_CHAT}<span>微信</span></button>
   <button class="lzw-tab on">${TAB_DISC}<span>发现</span><span class="lzw-tabdot">2</span></button>
@@ -26,23 +26,23 @@ function post(ava, name, text, img, label, menu, like, cmts, cmtbar) {
   return `<div class="lzw-post">${ava}<div class="lzw-post-main">
     <div class="lzw-post-name">${name}</div>
     <div class="lzw-post-text">${text}</div>
-    ${img ? `<div class="lzw-post-img">🖼 ${img}</div>` : ''}
-    <div class="lzw-post-meta"><span>${label}</span><span class="sp"></span><button class="lzw-post-more">⋯</button></div>
-    ${menu ? '<div class="lzw-pmenu"><button>👍 赞</button><button>💬 评论</button></div>' : ''}
+    ${img ? `<div class="lzw-post-img">${img}</div>` : ''}
+    <div class="lzw-post-meta"><span>${label}</span><span class="sp"></span>${menu ? '<div class="lzw-pmenu"><button>👍 赞</button><button>💬 评论</button></div>' : ''}<button class="lzw-post-more">⋯</button></div>
     ${like ? `<div class="lzw-plike">❤ ${like}</div>` : ''}
     ${cmts ? `<div class="lzw-pcmts">${cmts}</div>` : ''}
     ${cmtbar ? '<div class="lzw-cmtbar"><input placeholder="说点什么…"><button>发送</button></div>' : ''}
   </div></div>`;
 }
 const ava = n => `<img class="lzw-post-ava" src="${AV(n)}">`;
+const BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
 
-// 朋友圈 feed：封面 + 两条动态（第一条展开菜单+赞+评论+输入框，第二条带图）
-const feed = `<div class="lzw-appbar"><span class="lzw-back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></span><span class="lzw-appbar-t">朋友圈</span><span class="lzw-appbar-r"><span class="lzw-reroll">${CAM}</span></span></div>
+// 朋友圈 feed：封面（盖住顶栏、无标题）+ 两条动态（第一条展开菜单+赞+评论+输入框，第二条带图带赞）
+const feed = `<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back">${BACK}</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll">${CAM}</span></span></div>
 <div class="lzw-mfeed">
   <div class="lzw-mcover"><div class="lzw-mcover-shade"></div><div class="lzw-mme"><span class="nm">裴知意</span><div class="av">裴</div></div></div>
   <div class="lzw-mpad"></div>
-  ${post(ava('zhou'), '周言', '月考成绩出了，还活着。年级第七，比某人高了整整两名🙂', '', '2小时前', true, '林溪、陆飞', '<div><span class="n">林溪</span>：<span class="c">年级第七你要不要这么平静</span></div><div><span class="n">陆飞</span>：<span class="c">请客！</span></div><div><span class="n">周言</span> 回复 <span class="n">陆飞</span>：<span class="c">你就惦记这口</span></div>', true)}
-  ${post(ava('lin'), '林溪', '晚自习后的糖水铺就是快乐老家', '一碗双皮奶加红豆，老板娘多给了一勺', '昨天 21:14', false, '', '', false)}
+  ${post(ava('zhou'), '周言', '月考成绩出了，还活着。年级第七，比某人高了整整两名', '', '2小时前', true, '林溪、陆飞', '<div><span class="n">林溪</span>：<span class="c">年级第七你要不要这么平静</span></div><div><span class="n">陆飞</span>：<span class="c">请客！</span></div><div><span class="n">周言</span> 回复 <span class="n">陆飞</span>：<span class="c">你就惦记这口</span></div>', true)}
+  ${post(ava('lin'), '林溪', '晚自习后的糖水铺就是快乐老家', '一碗双皮奶加红豆，老板娘多给了一勺', '昨天 21:14', false, '陆飞', '', false)}
   ${post(ava('lu'), '陆飞', '求一个数学大题的解法，在线等，挺急的', '', '2天前 22:40', false, '', '', false)}
 </div>`;
 

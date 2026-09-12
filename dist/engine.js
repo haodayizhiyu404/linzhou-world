@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T17:28:52.292Z
+//  构建时间：2026-09-12T17:51:57.130Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 17:28';
+var __LZW_BUILD__ = '2026-09-12 17:51';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1018,6 +1018,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // ── 朋友圈 · 首次填充：为抽中的几位各写一条近期动态 ──
   // people = [{name, profile}]（引擎侧已随机抽好 3~4 位，按时间从早到晚排）
   // 契约语法：[动态:名字:文字] 一人一条，[配图:名字:描述] 可选（至多一半人配）
+  //           [点赞:名字:点赞者1、点赞者2] / [评论:评论者@作者:内容] 可选（熟人互动，跟着对应动态）
   momentsFill: function (people, snapshot, userInfo) {
     var myName = me();
     var p = [
@@ -1038,10 +1039,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '## 输出要求（严格遵守）',
       '- 每位各输出一条动态，按时间从早到晚排列（最早的最先输出）',
       '- 格式严格为：[动态:名字:动态文字]（单行，标记外不要任何其他内容）',
-      '- 动态文字 ≤70 字，像真人发朋友圈：生活碎片、吐槽、小确幸、碎碎念都可，可带 emoji，符合各人人设',
+      '- 动态文字 ≤70 字，像真人发朋友圈：生活碎片、吐槽、小确幸、碎碎念都可，口吻必须符合各人人设；不要刻意凑 emoji（不是每条动态都需要）',
       '- 至多一半的人配图片；配图单独一行：[配图:名字:画面描述]（描述 ≤40 字，写看得见的内容），跟在对应动态之后',
+      '- 朋友圈是活的：可在动态后给一两条配上熟人互动，像真实社交场——',
+      '  · 点赞一行：[点赞:作者名:点赞者1、点赞者2]（至多 5 人，从共同熟人里挑，不是每人都需要）',
+      '  · 评论一行：[评论:评论者@作者名:评论内容]（每条动态至多 2 条，≤25 字，口吻符合评论者与作者的关系；普通评论省略@部分写成 [评论:评论者:评论内容]）',
       '- 不要点名单「' + myName + '」，不要写需要机主回复的问句（机主只是刷到，还没互动）',
-      '- 各人的动态主题互不重复；除 [动态]/[配图] 行外不要输出任何其他内容'
+      '- 各人的动态主题互不重复；除 [动态]/[配图]/[点赞]/[评论] 行外不要输出任何其他内容'
     ].filter(function (s) { return s !== ''; }).join('\n');
     return {
       ordered_prompts: [
@@ -1522,6 +1526,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-appbar-r{width:24px}',
     '.lzw-reroll{display:inline-flex;color:#666;cursor:pointer;padding:5px;border-radius:8px;align-items:center;justify-content:center}',
     '.lzw-reroll:hover{background:rgba(0,0,0,.06)}',
+    // 朋友圈顶栏：透明浮在封面上（无标题，保留返回/相机）；-51px = 顶栏占位高度(40+2+8+1)，把封面吸上来盖住
+    '.lzw-appbar-ovl{position:relative;z-index:6;background:transparent;border-bottom:none;margin-bottom:-51px}',
+    '.lzw-appbar-ovl .lzw-back,.lzw-appbar-ovl .lzw-reroll{color:#111;text-shadow:0 0 6px rgba(255,255,255,.95),0 0 14px rgba(255,255,255,.6)}',
+    '.lzw-appbar-ovl .lzw-back:hover,.lzw-appbar-ovl .lzw-reroll:hover{background:rgba(255,255,255,.35)}',
     // 主体
     '.lzw-body{flex:1;min-height:0;overflow-y:auto;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
@@ -1746,7 +1754,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-disc-ico svg{width:30px;height:30px}',
     '.lzw-disc-main{flex:1;min-width:0}',
     '.lzw-disc-name{font-size:14.5px;color:#111}',
-    '.lzw-disc-prev{font-size:12px;color:#9aa0a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}',
     '.lzw-disc-chev{flex:none;display:flex}',
     '.lzw-disc-gap{height:9px;background:#f2f3f5;border-top:1px solid rgba(0,0,0,.05)}',
     '.lzw-mfeed{flex:1;min-height:0;overflow-y:auto;background:#fff;padding-bottom:14px}',
@@ -1763,14 +1770,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-post-name{font-size:14px;font-weight:600;color:#576b95;cursor:pointer}',
     '.lzw-post-text{font-size:14px;line-height:1.55;color:#111;margin-top:2px;word-break:break-word}',
     '.lzw-post-img{margin-top:5px;background:#f2f3f5;border:1px solid rgba(0,0,0,.04);border-radius:7px;padding:7px 9px;font-size:12px;color:#5a6577;line-height:1.5;word-break:break-word}',
-    '.lzw-post-meta{display:flex;align-items:center;margin-top:6px;font-size:12px;color:#999}',
+    '.lzw-post-meta{position:relative;display:flex;align-items:center;margin-top:6px;font-size:12px;color:#999;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-post-meta .sp{flex:1}',
-    '.lzw-post-more{width:27px;height:19px;border:none;border-radius:5px;background:#f0f1f3;color:#576b95;font-size:13px;line-height:1;cursor:pointer;padding:0}',
+    '.lzw-post-more{width:27px;height:19px;border:none;border-radius:5px;background:#f0f1f3;color:#576b95;font-size:13px;line-height:1;cursor:pointer;padding:0;flex:none}',
     '.lzw-post-more:hover{background:#e7e9ec}',
-    '.lzw-pmenu{display:flex;background:#4c4c4c;border-radius:7px;overflow:hidden;margin-top:5px;align-self:flex-start;width:max-content}',
-    '.lzw-pmenu button{border:none;background:none;color:#fff;font-size:13px;padding:7px 15px;cursor:pointer;white-space:nowrap;font-family:inherit}',
-    '.lzw-plike{margin-top:6px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;color:#576b95;line-height:1.5;word-break:break-word}',
-    '.lzw-pcmts{margin-top:3px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;line-height:1.65;word-break:break-word}',
+    // ⋯菜单：紧贴按钮左侧浮出的横向灰色长条，不占高度不换行
+    '.lzw-pmenu{position:absolute;right:31px;top:50%;transform:translateY(-50%);display:flex;height:30px;background:#4c4c4c;border-radius:6px;overflow:hidden;z-index:4;box-shadow:0 2px 8px rgba(0,0,0,.22);align-items:stretch}',
+    '.lzw-pmenu button{border:none;background:none;color:#fff;font-size:12.5px;padding:0 13px;cursor:pointer;white-space:nowrap;font-family:inherit;display:flex;align-items:center;gap:4px}',
+    '.lzw-plike{margin-top:6px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;color:#576b95;line-height:1.5;word-break:break-word;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
+    '.lzw-pcmts{margin-top:3px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;line-height:1.65;word-break:break-word;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-pcmts .c{color:#111}',
     '.lzw-pcmts .n{color:#576b95;font-weight:600}',
     '.lzw-cmtbar{display:flex;gap:6px;margin-top:6px;align-items:center}',
@@ -2155,15 +2163,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var sec = eng.section();
         var rowsHtml = '';
         if (this.tab === 'discover') {
-          // 发现页：朋友圈入口（红点 = 机主不在场时新产生的接话评论数）
+          // 发现页：朋友圈入口（红点 = 机主不在场时新产生的接话评论数），无缩略行
           var mUn = 0;
           try { mUn = W.Store.meta(eng.momentsKey).unread || 0; } catch (e0) {}
-          var mfeed = eng.momentsFeed();
-          var lastP = mfeed.length ? mfeed[mfeed.length - 1] : null;
           rowsHtml =
             '<div class="lzw-disc-row" data-mom="1"><div class="lzw-disc-ico">' + ICON_MOMENTS + '</div>' +
-            '<div class="lzw-disc-main"><div class="lzw-disc-name">朋友圈</div>' +
-            '<div class="lzw-disc-prev">' + esc(lastP ? lastP.who + '：' + String(lastP.text).slice(0, 18) : '朋友们的生活动态') + '</div></div>' +
+            '<div class="lzw-disc-main"><div class="lzw-disc-name">朋友圈</div></div>' +
             (mUn ? '<span class="lzw-unread">' + (mUn > 99 ? '99+' : mUn) + '</span>' : '') +
             '<span class="lzw-disc-chev">' + ICON_CHEV + '</span></div>';
         } else if (sec) {
@@ -2944,7 +2949,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     if (UI.call) return ''; // 通话界面：无顶栏（名字在通话屏里）
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
-    if (screen === 'moments') return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">朋友圈</span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
+    if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar"><span class="lzw-back" data-act="moments">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
       (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
@@ -2962,8 +2967,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       : '<div class="lzw-post-ava"' + mpfAttr + '>' + esc(e.who.slice(0, 1)) + '</div>';
     var menu = UI.mMenu === idx
       ? '<div class="lzw-pmenu"><button data-mlike="' + idx + '">👍 赞</button><button data-mcmt="' + idx + '">💬 评论</button></div>'
-      : '';
-    var cmtbar = UI.mCmt === idx
+      : '';    var cmtbar = UI.mCmt === idx
       ? '<div class="lzw-cmtbar"><input id="lzw-cmtin" maxlength="60" placeholder="说点什么…"><button data-msend="' + idx + '">发送</button></div>'
       : '';
     var likeRow = (e.likes && e.likes.length)
@@ -2979,10 +2983,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '<div class="lzw-post-main">' +
       '<div class="lzw-post-name"' + (nameLink ? mpfAttr : '') + '>' + esc(e.who) + '</div>' +
       '<div class="lzw-post-text">' + esc(e.text) + '</div>' +
-      (e.img ? '<div class="lzw-post-img">🖼 ' + esc(e.img) + '</div>' : '') +
+      (e.img ? '<div class="lzw-post-img">' + esc(e.img) + '</div>' : '') +
       '<div class="lzw-post-meta"><span>' + esc(e.label || '') + '</span><span class="sp"></span>' +
+      menu +
       '<button class="lzw-post-more" data-mmenu="' + idx + '">⋯</button></div>' +
-      menu + likeRow + cmtBlock + cmtbar +
+      likeRow + cmtBlock + cmtbar +
       '</div></div>';
   }
 
@@ -3815,18 +3820,43 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     momentsKey: '__moments__',
     momentsFeed: function () { return window.LZWorld.Store.history(this.momentsKey); },
 
-    // 契约输出解析：[动态:名:文字] / [配图:名:描述]（跟在对应动态后）/ [评论:名@回复对象:内容]
+    // 契约输出解析：[动态:名:文字] / [配图:名:描述]（跟在对应动态后）
+    //           [点赞:名:名单] / [评论:名@回复对象:内容]（熟人互动，跟在对应动态后）
     parseMoments: function (text) {
       var posts = [];
       String(text || '').split('\n').forEach(function (line) {
         line = line.trim();
         if (!line) return;
         var m = line.match(/^\[动态:([^:：\]]{1,12})[:：]([\s\S]+)\]$/);
-        if (m) { posts.push({ who: m[1].trim(), text: m[2].trim(), img: '' }); return; }
+        if (m) { posts.push({ who: m[1].trim(), text: m[2].trim(), img: '', likes: [], comments: [] }); return; }
         var g = line.match(/^\[配图:([^:：\]]{1,12})[:：]([\s\S]+)\]$/);
         if (g) {
           for (var i = posts.length - 1; i >= 0; i--) {
             if (posts[i].who === g[1].trim()) { posts[i].img = g[2].trim(); break; }
+          }
+          return;
+        }
+        var lk = line.match(/^\[点赞:([^:：\]]{1,12})[:：]([\s\S]+)\]$/);
+        if (lk) {
+          for (var j = posts.length - 1; j >= 0; j--) {
+            if (posts[j].who === lk[1].trim()) {
+              var names = lk[2].split(/[、,，]/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 5);
+              names.forEach(function (n) { if (posts[j].likes.indexOf(n) === -1) posts[j].likes.push(n); });
+              posts[j].likes = posts[j].likes.slice(0, 5);
+              break;
+            }
+          }
+          return;
+        }
+        var cm = line.match(/^\[评论:([^:：@\]]{1,12})(?:@([^:：\]]{1,12}))?[:：]([\s\S]+)\]$/);
+        if (cm) {
+          // 评论行归到最近一条该作者动态（无@回复对象时归到最近一条动态）；有@时校验作者匹配，防张冠李戴
+          var wantAuthor = cm[2] ? cm[2].trim() : null;
+          for (var k2 = posts.length - 1; k2 >= 0; k2--) {
+            if (wantAuthor ? posts[k2].who === wantAuthor : true) {
+              if (posts[k2].comments.length < 3) posts[k2].comments.push({ who: cm[1].trim(), replyTo: cm[2] ? cm[2].trim() : '', text: cm[3].trim() });
+              break;
+            }
           }
         }
       });
@@ -3878,7 +3908,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var label = age === 0 ? '今天 ' + hh + ':' + mm
           : age === 1 ? '昨天 ' + hh + ':' + mm
           : age + '天前 ' + hh + ':' + mm;
-        return { who: p.who, text: p.text, img: p.img || '', label: label, likes: [], comments: [] };
+        return { who: p.who, text: p.text, img: p.img || '', label: label, likes: p.likes || [], comments: p.comments || [] };
       });
       W.Store.push(key, entries, 100);
       W.Store.setMeta(key, { filledDay: today });
