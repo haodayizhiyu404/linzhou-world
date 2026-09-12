@@ -42,6 +42,9 @@
     rosters: {},
     stickers: {},
     profiles: {},
+    npcLine: {},       // {线: {名字: 档案文本}}　线专属 NPC 档案（重写，只读它）
+    evolLine: {},      // {线: {名字: 演化文本}}　[MAIN·名字·演化后]，叠加在基础人设后
+    userEvol: {},      // {线: 文本}　[MAIN·{{user}}·演化后]，用户段的线增量
     entryStates: {},   // {条目标题: 是否勾选开启}
     line: null,        // 当前世界线（主条目名）
     lineSource: null,  // 这条线是怎么定出来的（日志用）
@@ -90,6 +93,52 @@
         if (k.replace(/[【】\s]/g, '') === want) return true;
       }
       return false;
+    },
+
+    // ── 人物档案取用（线感知 + 宏替换）──
+    // 世界书原文里的 {{user}} 一律换成 persona 真名——generateRaw 不做宏替换，
+    // 原文直发会让 NPC 对着「{{user}}」三个字聊天。
+    deref: function (t) {
+      var n = this.userName();
+      return String(t || '').replace(/\{\{\s*user\s*\}\}/gi, n);
+    },
+
+    // 酒馆 persona 描述（父页自带数据）：ctx 新字段 → power_user 全局，两层兜底。
+    // 每次生成现读——换 persona 立刻跟上，不用刷新。
+    userPersona: function () {
+      try {
+        var st = window.parent.SillyTavern;
+        var ctx = st && st.getContext && st.getContext();
+        if (ctx && ctx.personaDescription) return String(ctx.personaDescription);
+      } catch (e) {}
+      try {
+        var pu = window.parent.power_user;
+        if (pu && pu.persona_description) return String(pu.persona_description);
+      } catch (e) {}
+      return '';
+    },
+
+    // 取某人在当前线的档案：线NPC库有 → 只读它（各线重写的独立档案）；
+    // 否则 基础人设 + 当前线演化层（叠加，不替换）。
+    profileFor: function (name) {
+      var line = state.line;
+      if (line && state.npcLine[line] && state.npcLine[line][name]) {
+        return this.deref(state.npcLine[line][name]);
+      }
+      var base = state.profiles[name] || '';
+      if (line && state.evolLine[line] && state.evolLine[line][name]) {
+        base = base ? base + '\n' + state.evolLine[line][name] : state.evolLine[line][name];
+      }
+      return this.deref(base);
+    },
+
+    // 机主资料段：persona 描述 + 当前线的 [MAIN·{{user}}·演化后]，每次生成接进提示词末尾区
+    userBlock: function () {
+      var parts = [];
+      var persona = this.userPersona();
+      if (persona) parts.push(persona);
+      if (state.line && state.userEvol[state.line]) parts.push(state.userEvol[state.line]);
+      return this.deref(parts.join('\n'));
     },
 
     userName: function () {
@@ -151,9 +200,66 @@
       state.stickers = data.stickers;
       state.profiles = data.profiles;
       state.entryStates = data.states || {};
+      // 线作用域档案归线：NPC（…）/ 主角人设（…）里的块按括号里的线名分派，
+      // 各线各读各的，根治「同一个人两条线共用一版档案」的串线
+      state.npcLine = {}; state.evolLine = {}; state.userEvol = {};
+      var raws = [{ list: data.npcLineRaw, into: 'npc' }, { list: data.evolLineRaw, into: 'evol' }];
+      for (var ri = 0; ri < raws.length; ri++) {
+        for (var rj = 0; rj < (raws[ri].list || []).length; rj++) {
+          var line = this.lineOfScope(raws[ri].list[rj].scope);
+          if (!line) {
+            console.warn('[霖州引擎] 条目作用域「' + raws[ri].list[rj].scope + '」认不出属于哪条线，该条目不生效');
+            continue;
+          }
+          var blocks = raws[ri].list[rj].blocks || {};
+          for (var bn in blocks) {
+            if (bn === '{{user}}' || bn === 'user') {
+              if (raws[ri].into === 'evol') {
+                state.userEvol[line] = state.userEvol[line] ? state.userEvol[line] + '\n' + blocks[bn] : blocks[bn];
+              }
+              continue; // NPC 条目里的 user 块不作档案
+            }
+            var bucket = raws[ri].into === 'npc' ? state.npcLine : state.evolLine;
+            bucket[line] = bucket[line] || {};
+            if (!(bn in bucket[line])) bucket[line][bn] = blocks[bn];
+          }
+        }
+      }
       state.ready = true;
       console.log('[霖州引擎] 世界书装载完成：世界线 ' + Object.keys(state.rosters).join(' / ') +
-        '｜表情包 ' + Object.keys(state.stickers).length + '｜人设 ' + Object.keys(state.profiles).join('、'));
+        '｜表情包 ' + Object.keys(state.stickers).length + '｜人设 ' + Object.keys(state.profiles).join('、') +
+        '｜线NPC库 ' + Object.keys(state.npcLine).join('、') +
+        '｜演化层 ' + Object.keys(state.evolLine).map(function (l) { return l + '(' + Object.keys(state.evolLine[l]).join('/') + ')'; }).join('、'));
+    },
+
+    // 「高中线-核心人员」「大学线」「成人线-破镜重圆」这类作用域 → LINES 线名。
+    // 取 '-' 前的字头（去掉线/时代尾缀）匹配 LINES 前缀；
+    // 命中多条时（成人两条）再用 '-' 后的尾巴收窄；尾巴只是条目内分类（核心/编外）时无影响。
+    lineOfScope: function (scope) {
+      var s = String(scope || '').replace(/[【】\s]/g, '');
+      var tail = '';
+      var di = s.indexOf('-');
+      if (di !== -1) { tail = s.slice(di + 1); s = s.slice(0, di); }
+      s = s.replace(/(?:时代|线)$/, '');
+      if (!s) return null;
+      var hits = [];
+      for (var i = 0; i < LINES.length; i++) {
+        var ln = LINES[i].replace(/[【】\s]/g, '');
+        if (ln.indexOf(s) === 0) hits.push(LINES[i]);
+      }
+      if (hits.length === 1) return hits[0];
+      if (hits.length > 1) {
+        var tailed = hits.filter(function (h) {
+          return !tail || h.replace(/[【】\s]/g, '').indexOf(tail) !== -1;
+        });
+        if (tailed.length) {
+          if (tailed.length > 1) console.warn('[霖州引擎] 作用域「' + scope + '」同时命中 ' + tailed.join('、') + '，取第一条');
+          return tailed[0];
+        }
+        console.warn('[霖州引擎] 作用域「' + scope + '」同时命中 ' + hits.join('、') + '，取第一条');
+        return hits[0];
+      }
+      return null;
     },
 
     // 注意 entryStates 是加载时的快照，玩家随后手动开关条目必须先调 refreshStates()。
@@ -406,19 +512,20 @@
 
       var digest = await this.compress(chatKey);
       var stickerNames = Object.keys(state.stickers).slice(0, 120);
+      var userInfo = this.userBlock();
       var raw, title, parseGroup = false;
 
       if (!isGroup) {
         var c = this.findContact(chatKey);
         if (!c) throw new Error('联系人不在本线通讯录：' + chatKey);
-        var profile = state.profiles[c.name] || '';
+        var profile = this.profileFor(c.name);
         var snap = W.Status.snapshot(c.name);
         var hist = W.Store.history(chatKey);
         // 最新一批连续的用户消息摘出来作为最终 user 轮次，其余留在系统块的应用内记录里
         var tail = [];
         for (var hi = hist.length - 1; hi >= 0 && hist[hi].who === 'user'; hi--) tail.unshift(hist[hi]);
         var rest = hist.slice(0, hist.length - tail.length);
-        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest);
+        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo);
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {
@@ -427,14 +534,14 @@
         for (var i = 0; i < sec.groups.length; i++) if (sec.groups[i].name === gname) g = sec.groups[i];
         if (!g) throw new Error('群不在本线通讯录：' + gname);
         var members = (g.members || []).map(function (n) {
-          return { name: n, profile: state.profiles[n] || '' };
-        });
+          return { name: n, profile: this.profileFor(n) };
+        }, this);
         var snap2 = W.Status.snapshot(null);
         var hist2 = W.Store.history(chatKey);
         var tail2 = [];
         for (var hj = hist2.length - 1; hj >= 0 && hist2[hj].who === 'user'; hj--) tail2.unshift(hist2[hj]);
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
-        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest);
+        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest, userInfo);
         raw = await generateRaw(req2);
         title = g.name + ' 群聊';
         parseGroup = true;

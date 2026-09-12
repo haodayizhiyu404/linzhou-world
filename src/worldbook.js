@@ -2,9 +2,11 @@
 //  worldbook.js —— 世界书读取与解析
 //
 //  约定（设计文档 §5.1，条目按「备注/标题」识别）：
-//    霖州手机::通讯录        → 全部 IF 线联系人/群 JSON
-//    霖州手机::表情包        → 表情名→catbox 文件名（JSON 或逐行 名: 文件）
-//    霖州手机::人设::周言    → 角色「周言」的生成资料（可多条）
+//    霖州手机::通讯录          → 全部 IF 线联系人/群 JSON
+//    霖州手机::表情包          → 表情名→catbox 文件名（JSON 或逐行 名: 文件）
+//    霖州手机::人设::周言      → 角色「周言」的生成资料（可多条，自动拼接）
+//    NPC（高中线-核心人员）    → 线专属 NPC 档案：内容里 [NPC·名字] 块只在该线生效（重写式）
+//    主角人设（大学线）        → 线演化层：内容里 [MAIN·名字·演化后] 块叠加到该人基础人设后
 //
 //  酒馆助手不同版本函数名有差异，这里做容错适配。
 // ═══════════════════════════════════════════════════════════
@@ -106,9 +108,20 @@
 
   // 多人条目拆分：内容里的 [NPC·名字] 块 → {名字: 块内容}（直到下一个块头或文末）
   function parseNpcBlocks(text) {
+    return parseTaggedBlocks(text, 'NPC');
+  }
+  // [MAIN·名字·演化后] 块（时代演化档案用）；块名尾缀「·演化后」剥掉
+  function parseMainBlocks(text) {
+    var raw = parseTaggedBlocks(text, 'MAIN');
+    var out = {};
+    for (var k in raw) out[k.replace(/·演化后$/, '').trim()] = raw[k];
+    return out;
+  }
+  // 通用块拆分：tag = NPC | MAIN
+  function parseTaggedBlocks(text, tag) {
     var src = String(text || '');
     var out = {};
-    var re = /\[NPC·([^\]\n]+)\]/g;
+    var re = new RegExp('\\[' + tag + '·([^\\]\\n]+)\\]', 'g');
     var m, marks = [];
     while ((m = re.exec(src))) {
       marks.push({ name: m[1].trim(), start: m.index, headEnd: re.lastIndex });
@@ -121,6 +134,13 @@
       }
     }
     return out;
+  }
+
+  // 条目名的线作用域识别：NPC（高中线-核心人员）/ NPC（大学线）/ 主角人设（大学线）
+  // 括号里的内容即「线作用域」，由 engine 映射到具体世界线；不匹配返回 null（归全局池）
+  function scopeOfTitle(t) {
+    var m = /^(?:NPC|主角人设)（(.+)）$/.exec(String(t || '').replace(/[【】]/g, ''));
+    return m ? m[1] : null;
   }
 
   // ── 通讯录区块规范化：把各种写法收成 {contacts:[{name,avatar}],groups:[{name,members,open,avatar,style,crowd}]} ──
@@ -161,9 +181,22 @@
         if (tt && tt.length <= 15 && !(tt in titleMap)) titleMap[tt] = contentOf(es[ti]);
       }
 
-      // 多人条目索引：内容里 [NPC·名字] 块拆出来，供「人设兜底」用
+      // 多人条目索引：内容里 [NPC·名字] 块拆出来，供「人设兜底」用。
+      // 名字带线作用域的条目（NPC（高中线-核心人员）/NPC（大学线）/主角人设（大学线））
+      // 不进全局池——各自归各线，免得两条线共用同一个人的同一版档案（静默串线）。
       var npcBlocks = {};
+      var npcLineRaw = [];    // [{scope, blocks:{名字:文本}}]　线专属 NPC 档案，engine 映射线名
+      var evolLineRaw = [];   // [{scope, blocks:{名字:文本}}]　[MAIN·名字·演化后] 时代演化层
       for (var bi = 0; bi < es.length; bi++) {
+        var scope = scopeOfTitle(titleOf(es[bi]));
+        if (scope) {
+          if (/^NPC/.test(titleOf(es[bi]).replace(/[【】]/g, ''))) {
+            npcLineRaw.push({ scope: scope, blocks: parseNpcBlocks(contentOf(es[bi])) });
+          } else {
+            evolLineRaw.push({ scope: scope, blocks: parseMainBlocks(contentOf(es[bi])) });
+          }
+          continue;
+        }
         var nb = parseNpcBlocks(contentOf(es[bi]));
         for (var bn in nb) {
           if (!(bn in npcBlocks)) npcBlocks[bn] = nb[bn];
@@ -220,6 +253,8 @@
         for (var sk in result.stickers) preAdd(result.stickers[sk]);
         for (var pi = 0; pi < preList.length; pi++) { var pim = new Image(); pim.src = preList[pi]; }
       } catch (e) {}
+      result.npcLineRaw = npcLineRaw;
+      result.evolLineRaw = evolLineRaw;
       return result;
     },
 

@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T08:31:12.096Z
+//  构建时间：2026-09-12T09:09:50.601Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 08:31';
+var __LZW_BUILD__ = '2026-09-12 09:09';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -279,9 +279,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 //  worldbook.js —— 世界书读取与解析
 //
 //  约定（设计文档 §5.1，条目按「备注/标题」识别）：
-//    霖州手机::通讯录        → 全部 IF 线联系人/群 JSON
-//    霖州手机::表情包        → 表情名→catbox 文件名（JSON 或逐行 名: 文件）
-//    霖州手机::人设::周言    → 角色「周言」的生成资料（可多条）
+//    霖州手机::通讯录          → 全部 IF 线联系人/群 JSON
+//    霖州手机::表情包          → 表情名→catbox 文件名（JSON 或逐行 名: 文件）
+//    霖州手机::人设::周言      → 角色「周言」的生成资料（可多条，自动拼接）
+//    NPC（高中线-核心人员）    → 线专属 NPC 档案：内容里 [NPC·名字] 块只在该线生效（重写式）
+//    主角人设（大学线）        → 线演化层：内容里 [MAIN·名字·演化后] 块叠加到该人基础人设后
 //
 //  酒馆助手不同版本函数名有差异，这里做容错适配。
 // ═══════════════════════════════════════════════════════════
@@ -383,9 +385,20 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 多人条目拆分：内容里的 [NPC·名字] 块 → {名字: 块内容}（直到下一个块头或文末）
   function parseNpcBlocks(text) {
+    return parseTaggedBlocks(text, 'NPC');
+  }
+  // [MAIN·名字·演化后] 块（时代演化档案用）；块名尾缀「·演化后」剥掉
+  function parseMainBlocks(text) {
+    var raw = parseTaggedBlocks(text, 'MAIN');
+    var out = {};
+    for (var k in raw) out[k.replace(/·演化后$/, '').trim()] = raw[k];
+    return out;
+  }
+  // 通用块拆分：tag = NPC | MAIN
+  function parseTaggedBlocks(text, tag) {
     var src = String(text || '');
     var out = {};
-    var re = /\[NPC·([^\]\n]+)\]/g;
+    var re = new RegExp('\\[' + tag + '·([^\\]\\n]+)\\]', 'g');
     var m, marks = [];
     while ((m = re.exec(src))) {
       marks.push({ name: m[1].trim(), start: m.index, headEnd: re.lastIndex });
@@ -398,6 +411,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       }
     }
     return out;
+  }
+
+  // 条目名的线作用域识别：NPC（高中线-核心人员）/ NPC（大学线）/ 主角人设（大学线）
+  // 括号里的内容即「线作用域」，由 engine 映射到具体世界线；不匹配返回 null（归全局池）
+  function scopeOfTitle(t) {
+    var m = /^(?:NPC|主角人设)（(.+)）$/.exec(String(t || '').replace(/[【】]/g, ''));
+    return m ? m[1] : null;
   }
 
   // ── 通讯录区块规范化：把各种写法收成 {contacts:[{name,avatar}],groups:[{name,members,open,avatar,style,crowd}]} ──
@@ -438,9 +458,22 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         if (tt && tt.length <= 15 && !(tt in titleMap)) titleMap[tt] = contentOf(es[ti]);
       }
 
-      // 多人条目索引：内容里 [NPC·名字] 块拆出来，供「人设兜底」用
+      // 多人条目索引：内容里 [NPC·名字] 块拆出来，供「人设兜底」用。
+      // 名字带线作用域的条目（NPC（高中线-核心人员）/NPC（大学线）/主角人设（大学线））
+      // 不进全局池——各自归各线，免得两条线共用同一个人的同一版档案（静默串线）。
       var npcBlocks = {};
+      var npcLineRaw = [];    // [{scope, blocks:{名字:文本}}]　线专属 NPC 档案，engine 映射线名
+      var evolLineRaw = [];   // [{scope, blocks:{名字:文本}}]　[MAIN·名字·演化后] 时代演化层
       for (var bi = 0; bi < es.length; bi++) {
+        var scope = scopeOfTitle(titleOf(es[bi]));
+        if (scope) {
+          if (/^NPC/.test(titleOf(es[bi]).replace(/[【】]/g, ''))) {
+            npcLineRaw.push({ scope: scope, blocks: parseNpcBlocks(contentOf(es[bi])) });
+          } else {
+            evolLineRaw.push({ scope: scope, blocks: parseMainBlocks(contentOf(es[bi])) });
+          }
+          continue;
+        }
         var nb = parseNpcBlocks(contentOf(es[bi]));
         for (var bn in nb) {
           if (!(bn in npcBlocks)) npcBlocks[bn] = nb[bn];
@@ -497,6 +530,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         for (var sk in result.stickers) preAdd(result.stickers[sk]);
         for (var pi = 0; pi < preList.length; pi++) { var pim = new Image(); pim.src = preList[pi]; }
       } catch (e) {}
+      result.npcLineRaw = npcLineRaw;
+      result.evolLineRaw = evolLineRaw;
       return result;
     },
 
@@ -733,7 +768,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
     // ── 私聊 ──
     // tail = 本轮最新一批用户消息：不混在系统块里，作为最后的 user 轮单独给出
-    private: function (contact, hist, snapshot, stickerNames, tail, digest) {
+    // userInfo = 机主资料（persona 描述 + 当前线演化层），所有会话统一带上
+    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo) {
       var myName = me();
       var tailLines = (tail && tail.length) ? histText(tail, 8, false) : '';
       var p = [
@@ -742,6 +778,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '你是一款数字生活应用的模拟引擎。本次任务：生成应用「微信」里，来自「' + contact.name + '」的新消息。',
         '',
         contact.profile ? '## 人物档案\n' + contact.profile : '## 人物档案\n（暂无档案，依据对话上下文自然演绎）',
+        '',
+        userInfo ? '## 机主资料 · ' + myName + '\n（微信这头的人，与「' + contact.name + '」对话的主角）\n' + userInfo : '',
         '',
         situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
         '',
@@ -779,7 +817,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     },
 
     // ── 群聊 ──
-    group: function (group, members, hist, snapshot, stickerNames, tail, digest) {
+    // userInfo = 机主资料，与私聊同一份
+    group: function (group, members, hist, snapshot, stickerNames, tail, digest, userInfo) {
       var myName = me();
       var tailLines2 = (tail && tail.length) ? histText(tail, 8, true) : '';
       var nameList = members.map(function (m) { return m.name; });
@@ -801,6 +840,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '',
         '## 成员档案',
         voices.join('\n'),
+        '',
+        userInfo ? '## 机主资料 · ' + myName + '\n（群里的人，群的实际使用者）\n' + userInfo : '',
         '',
         situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
         '',
@@ -2097,6 +2138,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     rosters: {},
     stickers: {},
     profiles: {},
+    npcLine: {},       // {线: {名字: 档案文本}}　线专属 NPC 档案（重写，只读它）
+    evolLine: {},      // {线: {名字: 演化文本}}　[MAIN·名字·演化后]，叠加在基础人设后
+    userEvol: {},      // {线: 文本}　[MAIN·{{user}}·演化后]，用户段的线增量
     entryStates: {},   // {条目标题: 是否勾选开启}
     line: null,        // 当前世界线（主条目名）
     lineSource: null,  // 这条线是怎么定出来的（日志用）
@@ -2145,6 +2189,52 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         if (k.replace(/[【】\s]/g, '') === want) return true;
       }
       return false;
+    },
+
+    // ── 人物档案取用（线感知 + 宏替换）──
+    // 世界书原文里的 {{user}} 一律换成 persona 真名——generateRaw 不做宏替换，
+    // 原文直发会让 NPC 对着「{{user}}」三个字聊天。
+    deref: function (t) {
+      var n = this.userName();
+      return String(t || '').replace(/\{\{\s*user\s*\}\}/gi, n);
+    },
+
+    // 酒馆 persona 描述（父页自带数据）：ctx 新字段 → power_user 全局，两层兜底。
+    // 每次生成现读——换 persona 立刻跟上，不用刷新。
+    userPersona: function () {
+      try {
+        var st = window.parent.SillyTavern;
+        var ctx = st && st.getContext && st.getContext();
+        if (ctx && ctx.personaDescription) return String(ctx.personaDescription);
+      } catch (e) {}
+      try {
+        var pu = window.parent.power_user;
+        if (pu && pu.persona_description) return String(pu.persona_description);
+      } catch (e) {}
+      return '';
+    },
+
+    // 取某人在当前线的档案：线NPC库有 → 只读它（各线重写的独立档案）；
+    // 否则 基础人设 + 当前线演化层（叠加，不替换）。
+    profileFor: function (name) {
+      var line = state.line;
+      if (line && state.npcLine[line] && state.npcLine[line][name]) {
+        return this.deref(state.npcLine[line][name]);
+      }
+      var base = state.profiles[name] || '';
+      if (line && state.evolLine[line] && state.evolLine[line][name]) {
+        base = base ? base + '\n' + state.evolLine[line][name] : state.evolLine[line][name];
+      }
+      return this.deref(base);
+    },
+
+    // 机主资料段：persona 描述 + 当前线的 [MAIN·{{user}}·演化后]，每次生成接进提示词末尾区
+    userBlock: function () {
+      var parts = [];
+      var persona = this.userPersona();
+      if (persona) parts.push(persona);
+      if (state.line && state.userEvol[state.line]) parts.push(state.userEvol[state.line]);
+      return this.deref(parts.join('\n'));
     },
 
     userName: function () {
@@ -2206,9 +2296,66 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       state.stickers = data.stickers;
       state.profiles = data.profiles;
       state.entryStates = data.states || {};
+      // 线作用域档案归线：NPC（…）/ 主角人设（…）里的块按括号里的线名分派，
+      // 各线各读各的，根治「同一个人两条线共用一版档案」的串线
+      state.npcLine = {}; state.evolLine = {}; state.userEvol = {};
+      var raws = [{ list: data.npcLineRaw, into: 'npc' }, { list: data.evolLineRaw, into: 'evol' }];
+      for (var ri = 0; ri < raws.length; ri++) {
+        for (var rj = 0; rj < (raws[ri].list || []).length; rj++) {
+          var line = this.lineOfScope(raws[ri].list[rj].scope);
+          if (!line) {
+            console.warn('[霖州引擎] 条目作用域「' + raws[ri].list[rj].scope + '」认不出属于哪条线，该条目不生效');
+            continue;
+          }
+          var blocks = raws[ri].list[rj].blocks || {};
+          for (var bn in blocks) {
+            if (bn === '{{user}}' || bn === 'user') {
+              if (raws[ri].into === 'evol') {
+                state.userEvol[line] = state.userEvol[line] ? state.userEvol[line] + '\n' + blocks[bn] : blocks[bn];
+              }
+              continue; // NPC 条目里的 user 块不作档案
+            }
+            var bucket = raws[ri].into === 'npc' ? state.npcLine : state.evolLine;
+            bucket[line] = bucket[line] || {};
+            if (!(bn in bucket[line])) bucket[line][bn] = blocks[bn];
+          }
+        }
+      }
       state.ready = true;
       console.log('[霖州引擎] 世界书装载完成：世界线 ' + Object.keys(state.rosters).join(' / ') +
-        '｜表情包 ' + Object.keys(state.stickers).length + '｜人设 ' + Object.keys(state.profiles).join('、'));
+        '｜表情包 ' + Object.keys(state.stickers).length + '｜人设 ' + Object.keys(state.profiles).join('、') +
+        '｜线NPC库 ' + Object.keys(state.npcLine).join('、') +
+        '｜演化层 ' + Object.keys(state.evolLine).map(function (l) { return l + '(' + Object.keys(state.evolLine[l]).join('/') + ')'; }).join('、'));
+    },
+
+    // 「高中线-核心人员」「大学线」「成人线-破镜重圆」这类作用域 → LINES 线名。
+    // 取 '-' 前的字头（去掉线/时代尾缀）匹配 LINES 前缀；
+    // 命中多条时（成人两条）再用 '-' 后的尾巴收窄；尾巴只是条目内分类（核心/编外）时无影响。
+    lineOfScope: function (scope) {
+      var s = String(scope || '').replace(/[【】\s]/g, '');
+      var tail = '';
+      var di = s.indexOf('-');
+      if (di !== -1) { tail = s.slice(di + 1); s = s.slice(0, di); }
+      s = s.replace(/(?:时代|线)$/, '');
+      if (!s) return null;
+      var hits = [];
+      for (var i = 0; i < LINES.length; i++) {
+        var ln = LINES[i].replace(/[【】\s]/g, '');
+        if (ln.indexOf(s) === 0) hits.push(LINES[i]);
+      }
+      if (hits.length === 1) return hits[0];
+      if (hits.length > 1) {
+        var tailed = hits.filter(function (h) {
+          return !tail || h.replace(/[【】\s]/g, '').indexOf(tail) !== -1;
+        });
+        if (tailed.length) {
+          if (tailed.length > 1) console.warn('[霖州引擎] 作用域「' + scope + '」同时命中 ' + tailed.join('、') + '，取第一条');
+          return tailed[0];
+        }
+        console.warn('[霖州引擎] 作用域「' + scope + '」同时命中 ' + hits.join('、') + '，取第一条');
+        return hits[0];
+      }
+      return null;
     },
 
     // 注意 entryStates 是加载时的快照，玩家随后手动开关条目必须先调 refreshStates()。
@@ -2461,19 +2608,20 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
       var digest = await this.compress(chatKey);
       var stickerNames = Object.keys(state.stickers).slice(0, 120);
+      var userInfo = this.userBlock();
       var raw, title, parseGroup = false;
 
       if (!isGroup) {
         var c = this.findContact(chatKey);
         if (!c) throw new Error('联系人不在本线通讯录：' + chatKey);
-        var profile = state.profiles[c.name] || '';
+        var profile = this.profileFor(c.name);
         var snap = W.Status.snapshot(c.name);
         var hist = W.Store.history(chatKey);
         // 最新一批连续的用户消息摘出来作为最终 user 轮次，其余留在系统块的应用内记录里
         var tail = [];
         for (var hi = hist.length - 1; hi >= 0 && hist[hi].who === 'user'; hi--) tail.unshift(hist[hi]);
         var rest = hist.slice(0, hist.length - tail.length);
-        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest);
+        var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo);
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {
@@ -2482,14 +2630,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         for (var i = 0; i < sec.groups.length; i++) if (sec.groups[i].name === gname) g = sec.groups[i];
         if (!g) throw new Error('群不在本线通讯录：' + gname);
         var members = (g.members || []).map(function (n) {
-          return { name: n, profile: state.profiles[n] || '' };
-        });
+          return { name: n, profile: this.profileFor(n) };
+        }, this);
         var snap2 = W.Status.snapshot(null);
         var hist2 = W.Store.history(chatKey);
         var tail2 = [];
         for (var hj = hist2.length - 1; hj >= 0 && hist2[hj].who === 'user'; hj--) tail2.unshift(hist2[hj]);
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
-        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest);
+        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest, userInfo);
         raw = await generateRaw(req2);
         title = g.name + ' 群聊';
         parseGroup = true;

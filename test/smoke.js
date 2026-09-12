@@ -14,7 +14,7 @@ const ctx = {
   replaceVariables: (v) => { const snap = JSON.parse(JSON.stringify(v)); for (const k of Object.keys(__vars)) delete __vars[k]; Object.assign(__vars, snap); },
 };
 vm.createContext(ctx);
-for (const f of ['src/store.js', 'src/status.js', 'src/worldbook.js', 'src/prompt.js', 'src/floor.js']) {
+for (const f of ['src/store.js', 'src/status.js', 'src/worldbook.js', 'src/prompt.js', 'src/floor.js', 'src/engine.js']) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
 }
 const LW = ctx.window.LZWorld;
@@ -169,12 +169,15 @@ ctx.getWorldbook = async () => [
       groups: [{
         name: '霖附吃瓜二手交易市场', open: true, avatar: 'g.png',
         style: '节奏快', crowd: '超百人，多为陌生人',
-        members: ['周言', '{{user}}', '陆飞']
+        members: ['周言', '{{user}}', '陆飞', '外校生']
       }]
     }
   }) },
   { comment: '周言', enabled: true, content: '周言的单人条目内容（短标题兜底）' },
-  { comment: 'NPC（高中线-核心人员）', enabled: true, content: '[NPC·陆飞]\n性别: 男。\n身份: 篮球队。\n\n[NPC·张裕民]\n性别: 男。\n身份: 班主任。' },
+  { comment: 'NPC（高中线-核心人员）', enabled: true, content: '[NPC·陆飞]\n性别: 男。\n身份: 篮球队（高中版）。\n\n[NPC·张裕民]\n性别: 男。\n身份: 班主任。' },
+  { comment: 'NPC（大学线）', enabled: true, content: '[NPC·陆飞]\n性别: 男。\n身份: 运动康复专业（大学版），与{{user}}同住一栋公寓。' },
+  { comment: '主角人设（大学线）', enabled: true, content: '[MAIN·周言·演化后]\n- 法学院学生，戴金丝边眼镜。\n\n[MAIN·{{user}}·演化后]\n- 新闻与传播学院学生，住校内宿舍。' },
+  { comment: '世界设定杂项', enabled: true, content: '[NPC·外校生]\n性别: 女。\n身份: 来打友谊赛的。' },
   { comment: '霖州手机::人设::林溪', enabled: true, content: '林溪的手机专用档案' }
 ];
 (async () => {
@@ -184,14 +187,43 @@ ctx.getWorldbook = async () => [
   eq('群style透传', g0.style, '节奏快');
   eq('群crowd透传', g0.crowd, '超百人，多为陌生人');
   eq('群open透传', g0.open, true);
-  eq('群members透传', JSON.stringify(g0.members), '["周言","陆飞"]');
+  eq('群members透传', JSON.stringify(g0.members), '["周言","陆飞","外校生"]');
   eq('群members滤掉user宏', g0.members.indexOf('{{user}}') === -1, true);
   eq('联系人avatar透传', (wb.rosters['IF线'].contacts || [])[0].avatar, 'a.png');
   eq('短标题条目兜底档案', wb.profiles['周言'], '周言的单人条目内容（短标题兜底）');
-  eq('NPC块拆分·陆飞', (wb.profiles['陆飞'] || '').indexOf('篮球队') !== -1, true);
-  eq('NPC块拆分·不串块', (wb.profiles['陆飞'] || '').indexOf('班主任') === -1, true);
-  eq('NPC块拆分·张裕民', (wb.profiles['张裕民'] || '').indexOf('班主任') !== -1, true);
   eq('人设条目优先于块', wb.profiles['林溪'], '林溪的手机专用档案');
+  // 线作用域条目：只进线库，不再进全局池（防两条线共用一版档案）
+  const rawNpcGz = (wb.npcLineRaw.filter(r => r.scope === '高中线-核心人员')[0] || { blocks: {} }).blocks;
+  const rawNpcDx = (wb.npcLineRaw.filter(r => r.scope === '大学线')[0] || { blocks: {} }).blocks;
+  eq('线NPC库raw·高中陆飞', (rawNpcGz['陆飞'] || '').indexOf('高中版') !== -1, true);
+  eq('线NPC库raw·不串块', (rawNpcGz['陆飞'] || '').indexOf('班主任') === -1, true);
+  eq('线NPC库raw·大学陆飞', (rawNpcDx['陆飞'] || '').indexOf('大学版') !== -1, true);
+  eq('作用域条目不进全局池', wb.profiles['陆飞'], '');
+  eq('未作用域条目全局池仍生效', (wb.profiles['外校生'] || '').indexOf('友谊赛') !== -1, true);
+  const rawEvol = (wb.evolLineRaw.filter(r => r.scope === '大学线')[0] || { blocks: {} }).blocks;
+  eq('演化块·剥演化后缀', (rawEvol['周言'] || '').indexOf('法学院') !== -1, true);
+  eq('演化块·user块单列', (rawEvol['{{user}}'] || '').indexOf('新闻与传播学院') !== -1, true);
+
+  // ── 8.5 引擎线作用域：拼装、串线隔离、user 宏替换 ──
+  console.log('[引擎·线档案]');
+  LW.Apps = { wechat: { inject() {}, render() {}, remove() {} } };
+  LW.Engine.userName = () => '陈默';
+  await LW.Engine.load();
+  eq('作用域→线名·高中', LW.Engine.lineOfScope('高中线-核心人员'), '高中时代');
+  eq('作用域→线名·大学', LW.Engine.lineOfScope('大学线'), '大学时代');
+  eq('作用域→线名·成人带尾', LW.Engine.lineOfScope('成人线-破镜重圆'), '成人时代-破镜重圆');
+  eq('作用域→线名·古代', LW.Engine.lineOfScope('古代线'), '古代架空-华胥之梦');
+  eq('作用域→线名·认不出', LW.Engine.lineOfScope('未来线'), null);
+  LW.Engine.applyLine('高中时代', '测试');
+  eq('高中线陆飞读高中版', LW.Engine.profileFor('陆飞').indexOf('高中版') !== -1, true);
+  LW.Engine.applyLine('大学时代', '测试');
+  eq('大学线陆飞读大学版·串线隔离', LW.Engine.profileFor('陆飞').indexOf('高中版') === -1 && LW.Engine.profileFor('陆飞').indexOf('大学版') !== -1, true);
+  eq('大学线user宏替换', LW.Engine.profileFor('陆飞').indexOf('{{user}}') === -1 && LW.Engine.profileFor('陆飞').indexOf('陈默') !== -1, true);
+  const zy = LW.Engine.profileFor('周言');
+  eq('基础人设+演化层叠加', zy.indexOf('短标题兜底') !== -1 && zy.indexOf('法学院') !== -1, true);
+  eq('用户段·线user演化', LW.Engine.userBlock().indexOf('新闻与传播学院') !== -1, true);
+  eq('用户段·user宏替换', LW.Engine.userBlock().indexOf('{{user}}') === -1, true);
+  LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
   process.exit(fail ? 1 : 0);
 })();

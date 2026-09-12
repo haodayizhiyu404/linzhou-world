@@ -164,7 +164,8 @@
 
     // ── 私聊 ──
     // tail = 本轮最新一批用户消息：不混在系统块里，作为最后的 user 轮单独给出
-    private: function (contact, hist, snapshot, stickerNames, tail, digest) {
+    // userInfo = 机主资料（persona 描述 + 当前线演化层），所有会话统一带上
+    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo) {
       var myName = me();
       var tailLines = (tail && tail.length) ? histText(tail, 8, false) : '';
       var p = [
@@ -173,6 +174,8 @@
         '你是一款数字生活应用的模拟引擎。本次任务：生成应用「微信」里，来自「' + contact.name + '」的新消息。',
         '',
         contact.profile ? '## 人物档案\n' + contact.profile : '## 人物档案\n（暂无档案，依据对话上下文自然演绎）',
+        '',
+        userInfo ? '## 机主资料 · ' + myName + '\n（微信这头的人，与「' + contact.name + '」对话的主角）\n' + userInfo : '',
         '',
         situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
         '',
@@ -210,7 +213,8 @@
     },
 
     // ── 群聊 ──
-    group: function (group, members, hist, snapshot, stickerNames, tail, digest) {
+    // userInfo = 机主资料，与私聊同一份
+    group: function (group, members, hist, snapshot, stickerNames, tail, digest, userInfo) {
       var myName = me();
       var tailLines2 = (tail && tail.length) ? histText(tail, 8, true) : '';
       var nameList = members.map(function (m) { return m.name; });
@@ -232,6 +236,8 @@
         '',
         '## 成员档案',
         voices.join('\n'),
+        '',
+        userInfo ? '## 机主资料 · ' + myName + '\n（群里的人，群的实际使用者）\n' + userInfo : '',
         '',
         situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
         '',
