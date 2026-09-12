@@ -106,6 +106,15 @@ eq('括号旁白被丢弃', parsed.some(x => x.text.indexOf('思考') !== -1), f
 const grpParsed = LW.Floor.parseNpcLines('林溪：啊啊啊\n陆飞：[图片|一张试卷]\n路人甲：围观', null);
 eq('群聊发件人', grpParsed.map(x => x.who), ['林溪', '陆飞', '路人甲']);
 eq('群聊图片类型', grpParsed[1].kind, 'image');
+// 黏行剥离：AI 忘换行，把类型消息和文字写在一行 → 剥成两条，文字照常走文字行
+const glued = LW.Floor.parseNpcLines('林溪：[表情:看戏吃瓜] 哎哟，正主终于舍得在群里冒泡了？', null);
+eq('黏行剥为两条', glued.length, 2);
+eq('黏行表情条保留', glued[0].who === '林溪' && glued[0].text.indexOf('看戏吃瓜') !== -1, true);
+eq('黏行文字条', glued[1].kind, 'text');
+eq('黏行文字内容', glued[1].text, '哎哟，正主终于舍得在群里冒泡了？');
+const gluedV = LW.Floor.parseNpcLines('[语音:早点睡] 晚安', '周言');
+eq('黏行语音条', gluedV[0].kind, 'voice');
+eq('黏行语音尾巴', gluedV[1] && gluedV[1].text, '晚安');
 
 // ── 4. 提示词装配 ──
 console.log('[提示词]');
@@ -137,6 +146,8 @@ const greqLong = LW.Prompt.group({ name: '长档案群', open: false },
   [{ name: '林溪', profile: 'x'.repeat(900) }], [], null);
 eq('群档案超500字保留', greqLong.ordered_prompts[0].content.indexOf('x'.repeat(900)) !== -1, true);
 eq('开放群提示', greq.ordered_prompts[0].content.indexOf('未具名的其他成员') !== -1, true);
+eq('群phone块·起始标记', greq.ordered_prompts[0].content.indexOf('<!--phone') !== -1, true);
+eq('群phone块·占位示例', greq.ordered_prompts[0].content.indexOf('{成员名}：{私聊内容}') !== -1, true);
 eq('群无user宏残留', greq.ordered_prompts[0].content.indexOf('{{user}}'), -1);
 
 const reqR = LW.Prompt.private({ name: '周言', profile: '' }, [{ who: '周言', kind: 'text', text: '在的', recalled: true }], null, null, null, null);
@@ -150,6 +161,13 @@ eq('私聊记录带对方名', spN.indexOf('周言：嗯') !== -1, true);
 eq('私聊记录带user名', spN.indexOf('陈默：早') !== -1, true);
 eq('跨天时间标·昨天', spN.indexOf('[昨天 22:00]') !== -1, true);
 eq('跨天时间标·今天', spN.indexOf('[今天 08:00]') !== -1, true);
+// 今日通话尾巴：同故事日的通话记录带进私聊提示词
+const reqCall = LW.Prompt.private({ name: '周言', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null,
+  { kind: '视频通话', dur: '03:24', video: true, lines: ['周言：你那边风好大', '（画面：把镜头对准了江面）', '陈默：看到了'] });
+const spCall = reqCall.ordered_prompts[0].content;
+eq('今日通话段头', spCall.indexOf('## 今日通话（视频通话 · 03:24') !== -1, true);
+eq('通话对白进提示词', spCall.indexOf('你那边风好大') !== -1, true);
+eq('通话画面进提示词', spCall.indexOf('把镜头对准了江面') !== -1, true);
 const greq2 = LW.Prompt.group({ name: '高三（2）班', open: false, style: '有班主任在，发言收敛' }, [{ name: '林溪', profile: '闺蜜' }], [], null);
 eq('群氛围字段', greq2.ordered_prompts[0].content.indexOf('有班主任在，发言收敛') !== -1, true);
 const greq3 = LW.Prompt.group({ name: '霖附吃瓜二手交易市场', open: true, crowd: '类型：校园公共群，超百人。\n风格：信息量大、节奏快。\n特殊规则：可同时存在多个话题，成员不一定会直接回应。' }, [], [], null);

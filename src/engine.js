@@ -666,8 +666,29 @@
         var tail = [];
         for (var hi = hist.length - 1; hi >= 0 && hist[hi].who === 'user'; hi--) tail.unshift(hist[hi]);
         var rest = hist.slice(0, hist.length - tail.length);
+        // 今日通话尾巴：同一故事日内两人通话里的对白/画面也要带到私聊里（双方都记得）
+        var callLog = null;
+        try {
+          var callDay = snap && snap.dateText;
+          if (callDay) {
+            var chist = W.Store.history(this.callKey(c.name));
+            var cday = chist.filter(function (m) { return m.day === callDay; });
+            if (cday.length) {
+              var dur = '';
+              for (var ci = cday.length - 1; ci >= 0; ci--) {
+                var dm = String(cday[ci].text || '').match(/^通话结束 · (.+)$/);
+                if (dm) { dur = dm[1]; break; }
+              }
+              var video = cday.some(function (m) { return m.kind === 'scene'; });
+              var lines = cday.filter(function (m) { return m.who !== 'sys'; })
+                .slice(-20)
+                .map(function (m) { return W.Floor.msgToLine(m, this.userName()); }, this);
+              if (lines.length) callLog = { kind: video ? '视频通话' : '语音通话', dur: dur || '未接通', video: video, lines: lines };
+            }
+          }
+        } catch (e) { callLog = null; }
         var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo,
-          this.crossGroups(c.name, snap && snap.dateText));
+          this.crossGroups(c.name, snap && snap.dateText), callLog);
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {

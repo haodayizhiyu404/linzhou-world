@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T16:09:18.213Z
+//  构建时间：2026-09-12T16:22:50.436Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 16:09';
+var __LZW_BUILD__ = '2026-09-12 16:22';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -813,7 +813,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // tail = 本轮最新一批用户消息：不混在系统块里，作为最后的 user 轮单独给出
     // userInfo = 机主资料（persona 描述 + 当前线演化层），所有会话统一带上
     // crossGroups = 对方在的群当天记录尾巴（群→私聊跨会话上下文；对方在场，与防开天眼自洽）
-    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo, crossGroups) {
+    // callLog = 当日通话尾巴 {kind, dur, lines}：两人今天还在通话里说过的话，双方都记得
+    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo, crossGroups, callLog) {
       var myName = me();
       var tailLines = (tail && tail.length) ? histText(tail, 8, false) : '';
       var p = [
@@ -834,6 +835,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
         histText(hist, HIST_PRIVATE, true, snapshot && snapshot.dateText),
         '',
+        callLog
+          ? '## 今日通话（' + callLog.kind + ' · ' + callLog.dur + ' · 双方已说的话' + (callLog.video ? '与画面' : '') + '）\n' +
+            '（私聊之外，今天两人还在' + callLog.kind + '里说过这些——机主记得，「' + contact.name + '」也记得；承接其中话题、承诺、玩笑时必须一致）\n' +
+            callLog.lines.join('\n')
+          : '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场，可自由承接其中的话题、情绪与玩笑）\n' + crossGroups.map(function (g) {
               return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
@@ -1043,7 +1049,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '- 直接输出消息，不要以寒暄开头',
         // 群夹带私聊：成员借群里的话题顺势私聊机主的通道（引擎侧已配捕捉路由）。
         // 引导写保守——仅充分理由时用，防每轮都发。
-        '- 若某成员有充分理由借机主在群里的话单独私聊机主（如回应机主的需求、私下提醒、单独吐槽群里的的事），可在全部群消息之后追加一个注释块，格式：<!--phone 换行 「成员名：私聊内容」 换行 -->；一条充分理由至多一位成员；没有理由就不要输出该块'
+        // 格式给整块多行示例（花括号占位），AI 对示例的遵守远好于文字描述，
+        // 不给「」这类引号——笨 AI 会把引号本身打进输出。
+        '- 若某成员有充分理由借机主在群里的话单独私聊机主（如回应机主的需求、私下提醒、单独吐槽群里的事），可在全部群消息之后追加一个注释块，严格按此格式（三行：起始标记、内容行、结束标记；花括号是占位说明，输出时替换成实际内容，不要把花括号/说明文字本身打出来）：',
+        '<!--phone',
+        '{成员名}：{私聊内容}',
+        '-->',
+        '- 一条充分理由至多一位成员，没有理由就不要输出该块'
       ].filter(function (s) { return s !== ''; }).join('\n');
 
       return {
@@ -1292,20 +1304,29 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         }
         if (/^\[撤回\]$/.test(body)) { out.push({ who: who, kind: 'recall', text: '', time: '' }); return; }
         if (/^\[戳一戳\]$/.test(body)) { out.push({ who: who, kind: 'poke', text: '', time: '' }); return; }
-        var typed = body.match(/^\[(表情|语音|图片|定位)(?::|\||｜)([\s\S]*)\]$/);
+        // 前缀匹配：AI 忘换行把类型消息和文字黏在一行（如「[表情:看戏吃瓜] 哎哟……」）
+        // → 类型消息单独成一条，尾巴文字走下面的普通文字行流程
+        var typed = body.match(/^\[(表情|语音|图片|戳一戳|定位)(?::|\||｜)([^\]]*)\]\s*([\s\S]*)$/);
         if (typed) {
           var kindMap = { '表情': 'sticker', '语音': 'voice', '图片': 'image', '戳一戳': 'poke', '定位': 'location' };
           var kind = kindMap[typed[1]];
           var arg = (typed[2] || '').trim();
-          if (kind === 'poke') { out.push({ who: who, kind: kind, text: '', time: '' }); return; }
-          if (!arg) return;
-          if (kind === 'sticker') {
-            var real = window.LZWorld.Engine.resolveSticker(arg);
-            if (!real) { out.push({ who: who, kind: 'text', text: '[表情:' + arg + ']', time: '' }); return; }
-            arg = real;
+          if (kind === 'poke') {
+            out.push({ who: who, kind: kind, text: '', time: '' });
+          } else if (arg) {
+            if (kind === 'sticker') {
+              var real = window.LZWorld.Engine.resolveSticker(arg);
+              if (real) {
+                out.push({ who: who, kind: kind, text: real, time: '' });
+              } else {
+                out.push({ who: who, kind: 'text', text: '[表情:' + arg + ']', time: '' });
+              }
+            } else {
+              out.push({ who: who, kind: kind, text: arg, time: '' });
+            }
           }
-          out.push({ who: who, kind: kind, text: arg, time: '' });
-          return;
+          body = (typed[3] || '').trim();
+          if (!body) return;
         }
         // 普通文字行；寒暄废话与纯括号旁白丢弃
         if (/^(好的[，。！]?|收到|明白了|当然)/.test(body) && body.length < 8) return;
@@ -3318,8 +3339,29 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var tail = [];
         for (var hi = hist.length - 1; hi >= 0 && hist[hi].who === 'user'; hi--) tail.unshift(hist[hi]);
         var rest = hist.slice(0, hist.length - tail.length);
+        // 今日通话尾巴：同一故事日内两人通话里的对白/画面也要带到私聊里（双方都记得）
+        var callLog = null;
+        try {
+          var callDay = snap && snap.dateText;
+          if (callDay) {
+            var chist = W.Store.history(this.callKey(c.name));
+            var cday = chist.filter(function (m) { return m.day === callDay; });
+            if (cday.length) {
+              var dur = '';
+              for (var ci = cday.length - 1; ci >= 0; ci--) {
+                var dm = String(cday[ci].text || '').match(/^通话结束 · (.+)$/);
+                if (dm) { dur = dm[1]; break; }
+              }
+              var video = cday.some(function (m) { return m.kind === 'scene'; });
+              var lines = cday.filter(function (m) { return m.who !== 'sys'; })
+                .slice(-20)
+                .map(function (m) { return W.Floor.msgToLine(m, this.userName()); }, this);
+              if (lines.length) callLog = { kind: video ? '视频通话' : '语音通话', dur: dur || '未接通', video: video, lines: lines };
+            }
+          }
+        } catch (e) { callLog = null; }
         var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo,
-          this.crossGroups(c.name, snap && snap.dateText));
+          this.crossGroups(c.name, snap && snap.dateText), callLog);
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {

@@ -222,20 +222,29 @@
         }
         if (/^\[撤回\]$/.test(body)) { out.push({ who: who, kind: 'recall', text: '', time: '' }); return; }
         if (/^\[戳一戳\]$/.test(body)) { out.push({ who: who, kind: 'poke', text: '', time: '' }); return; }
-        var typed = body.match(/^\[(表情|语音|图片|定位)(?::|\||｜)([\s\S]*)\]$/);
+        // 前缀匹配：AI 忘换行把类型消息和文字黏在一行（如「[表情:看戏吃瓜] 哎哟……」）
+        // → 类型消息单独成一条，尾巴文字走下面的普通文字行流程
+        var typed = body.match(/^\[(表情|语音|图片|戳一戳|定位)(?::|\||｜)([^\]]*)\]\s*([\s\S]*)$/);
         if (typed) {
           var kindMap = { '表情': 'sticker', '语音': 'voice', '图片': 'image', '戳一戳': 'poke', '定位': 'location' };
           var kind = kindMap[typed[1]];
           var arg = (typed[2] || '').trim();
-          if (kind === 'poke') { out.push({ who: who, kind: kind, text: '', time: '' }); return; }
-          if (!arg) return;
-          if (kind === 'sticker') {
-            var real = window.LZWorld.Engine.resolveSticker(arg);
-            if (!real) { out.push({ who: who, kind: 'text', text: '[表情:' + arg + ']', time: '' }); return; }
-            arg = real;
+          if (kind === 'poke') {
+            out.push({ who: who, kind: kind, text: '', time: '' });
+          } else if (arg) {
+            if (kind === 'sticker') {
+              var real = window.LZWorld.Engine.resolveSticker(arg);
+              if (real) {
+                out.push({ who: who, kind: kind, text: real, time: '' });
+              } else {
+                out.push({ who: who, kind: 'text', text: '[表情:' + arg + ']', time: '' });
+              }
+            } else {
+              out.push({ who: who, kind: kind, text: arg, time: '' });
+            }
           }
-          out.push({ who: who, kind: kind, text: arg, time: '' });
-          return;
+          body = (typed[3] || '').trim();
+          if (!body) return;
         }
         // 普通文字行；寒暄废话与纯括号旁白丢弃
         if (/^(好的[，。！]?|收到|明白了|当然)/.test(body) && body.length < 8) return;
