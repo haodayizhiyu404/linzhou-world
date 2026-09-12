@@ -59,14 +59,23 @@
     IMG_BASE: IMG_BASE,
 
     section: function () {
-      return (state.line && state.rosters[state.line]) || null;
+      return (state.line && this.roster(state.line)) || null;
     },
     stickers: function () { return state.stickers; },
     profiles: function () { return state.profiles; },
     line: function () { return state.line; },
     LINES: LINES.slice(0),
     entryStates: function () { return state.entryStates; },
-    roster: function (line) { return state.rosters[line] || null; },
+    // 按线名取通讯录：先精确，再忽略【】与空白比对（JSON key 和条目名略有差异也能对上）
+    roster: function (line) {
+      if (!line) return null;
+      if (state.rosters[line]) return state.rosters[line];
+      var want = String(line).replace(/[【】\s]/g, '');
+      for (var k in state.rosters) {
+        if (k.replace(/[【】\s]/g, '') === want) return state.rosters[k];
+      }
+      return null;
+    },
 
     // 目标线对应的条目开关操作表：开目标、关其余四条
     lineOps: function (target) {
@@ -177,7 +186,7 @@
       }
       // 开关读不出（全关/多开/条目缺失）且无记录：不猜不记，仅临时兜底显示
       for (var lj = 0; lj < LINES.length; lj++) {
-        var sec0 = state.rosters[LINES[lj]];
+        var sec0 = this.roster(LINES[lj]);
         if (sec0 && (sec0.contacts.length || sec0.groups.length)) {
           this.applyLine(LINES[lj], '兜底（开关读不出且无记录，未写入记录）');
           return;
