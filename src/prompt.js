@@ -174,7 +174,8 @@
     // userInfo = 机主资料（persona 描述 + 当前线演化层），所有会话统一带上
     // crossGroups = 对方在的群当天记录尾巴（群→私聊跨会话上下文；对方在场，与防开天眼自洽）
     // callLog = 当日通话尾巴 {kind, dur, lines}：两人今天还在通话里说过的话，双方都记得
-    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo, crossGroups, callLog) {
+    // momentsNote = 今日朋友圈互动摘要（机主给对方动态点过赞/留过言，对方记得）
+    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo, crossGroups, callLog, momentsNote) {
       var myName = me();
       var tailLines = (tail && tail.length) ? histText(tail, 8, false) : '';
       var p = [
@@ -199,6 +200,9 @@
           ? '## 今日通话（' + callLog.kind + ' · ' + callLog.dur + ' · 双方已说的话' + (callLog.video ? '与画面' : '') + '）\n' +
             '（私聊之外，今天两人还在' + callLog.kind + '里说过这些——机主记得，「' + contact.name + '」也记得；承接其中话题、承诺、玩笑时必须一致）\n' +
             callLog.lines.join('\n')
+          : '',
+        momentsNote
+          ? '## 今日朋友圈互动\n（机主今天在这位的朋友圈留下过痕迹，对方一直记得；对方可以自然提起、调侃或耿耿于怀）\n' + momentsNote
           : '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场，可自由承接其中的话题、情绪与玩笑）\n' + crossGroups.map(function (g) {
@@ -353,7 +357,91 @@
       };
     },
 
-    // ── 群聊 ──
+  // ── 朋友圈 · 首次填充：为抽中的几位各写一条近期动态 ──
+  // people = [{name, profile}]（引擎侧已随机抽好 3~4 位，按时间从早到晚排）
+  // 契约语法：[动态:名字:文字] 一人一条，[配图:名字:描述] 可选（至多一半人配）
+  momentsFill: function (people, snapshot, userInfo) {
+    var myName = me();
+    var p = [
+      '# 数字世界 · 朋友圈动态生成',
+      '',
+      '你是一款数字生活应用的模拟引擎。本次任务：为应用「微信·朋友圈」生成几位联系人的近期动态。',
+      '机主「' + myName + '」刚打开朋友圈，看到朋友们这几天陆续发过这些动态。',
+      '',
+      '## 当前情境\n' + (situationBlock(snapshot) || '（暂无）'),
+      '',
+      mainContext() ? '## 主线近况（只作背景，动态可与当天的事轻微相关，但不必强行呼应）\n' + mainContext() : '',
+      '',
+      userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
+      '',
+      '## 要发动态的人（各自独立写各自的生活）',
+      people.map(function (pp) { return '- ' + pp.name + '：\n' + (pp.profile ? String(pp.profile).trim() : '（无档案）'); }).join('\n'),
+      '',
+      '## 输出要求（严格遵守）',
+      '- 每位各输出一条动态，按时间从早到晚排列（最早的最先输出）',
+      '- 格式严格为：[动态:名字:动态文字]（单行，标记外不要任何其他内容）',
+      '- 动态文字 ≤70 字，像真人发朋友圈：生活碎片、吐槽、小确幸、碎碎念都可，可带 emoji，符合各人人设',
+      '- 至多一半的人配图片；配图单独一行：[配图:名字:画面描述]（描述 ≤40 字，写看得见的内容），跟在对应动态之后',
+      '- 不要点名单「' + myName + '」，不要写需要机主回复的问句（机主只是刷到，还没互动）',
+      '- 各人的动态主题互不重复；除 [动态]/[配图] 行外不要输出任何其他内容'
+    ].filter(function (s) { return s !== ''; }).join('\n');
+    return {
+      ordered_prompts: [
+        { role: 'system', content: p },
+        { role: 'user', content: '（请按输出要求生成上述 ' + people.length + ' 位联系人的朋友圈动态。）' }
+      ],
+      should_silence: true,
+      max_chat_history: 0
+    };
+  },
+
+  // ── 朋友圈 · 评论回复：机主评论了某条动态，生成 NPC 们的接话 ──
+  // post = 动态条目 {who, text, img?}；comments = 现有平铺评论
+  // people = 涉及的人（作者+已有评论者）的 [{name, profile}]
+  // 契约语法：[评论:名字:内容]；回复机主 → [评论:名字@机主名:内容]
+  momentsReply: function (post, comments, userSays, people, snapshot, userInfo) {
+    var myName = me();
+    var cmtLines = (comments || []).map(function (c) {
+      return (c.replyTo ? c.who + ' 回复 ' + c.replyTo : c.who) + '：' + c.text;
+    });
+    var p = [
+      '# 数字世界 · 朋友圈评论回复',
+      '',
+      '你是一款数字生活应用的模拟引擎。本次任务：机主「' + myName + '」刚评论了「' + post.who + '」的朋友圈动态，生成之后接话的评论。',
+      '',
+      situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+      '',
+      userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
+      '',
+      '## 涉及的人',
+      people.map(function (pp) { return '- ' + pp.name + '：\n' + (pp.profile ? String(pp.profile).trim() : '（无档案）'); }).join('\n'),
+      '',
+      '## 动态（' + post.who + '发布' + (post.img ? '，配图：' + post.img : '') + '）',
+      post.text,
+      '',
+      '## 已有评论',
+      cmtLines.length ? cmtLines.join('\n') : '（暂无）',
+      '',
+      '## 机主刚发布的评论',
+      myName + '：' + userSays,
+      '',
+      '## 输出要求（严格遵守）',
+      '- 生成 0~3 条接话评论，每条一行，格式严格为：[评论:名字:评论内容]',
+      '- 回复机主时格式为：[评论:名字@' + myName + ':评论内容]；回复其他评论者同理 @ 对方名字',
+      '- 朋友圈口吻：短（≤25 字）、轻松、可玩梗可阴阳，但须符合各人与机主的关系阶段',
+      '- 没有谁接话就不输出那一条；至多 3 条；除 [评论] 行外不要输出任何其他内容'
+    ].filter(function (s) { return s !== ''; }).join('\n');
+    return {
+      ordered_prompts: [
+        { role: 'system', content: p },
+        { role: 'user', content: '（机主刚评论了这条动态。请按输出要求生成接话评论，可 0 条。）' }
+      ],
+      should_silence: true,
+      max_chat_history: 0
+    };
+  },
+
+
     // userInfo = 机主资料，与私聊同一份
     // crossPriv = {成员名: 当天私聊尾巴}（私聊→群跨会话上下文；挂到该成员档案下，※ 仅本人知晓）
     group: function (group, members, hist, snapshot, stickerNames, tail, digest, userInfo, crossPriv) {

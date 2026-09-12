@@ -147,6 +147,17 @@
       writeRoot(r);
     },
 
+    // 按下标改一条（朋友圈动态的点赞/评论增量用）
+    patchAt: function (chatKey, index, patch) {
+      var r = readRoot();
+      var h = (r.history || {})[chatKey];
+      if (!h || index < 0 || index >= h.length) return false;
+      h[index] = Object.assign({}, h[index], patch);
+      r.history[chatKey] = h;
+      writeRoot(r);
+      return true;
+    },
+
     line: function () {
       return readRoot().line || null;
     },

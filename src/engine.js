@@ -687,8 +687,30 @@
             }
           }
         } catch (e) { callLog = null; }
+        // 今日朋友圈互动痕迹（不带 feed 全文，只带机主在对方动态下留过的赞/评）
+        var momentsNote = '';
+        try {
+          var mToday = snap && snap.dateText;
+          if (mToday) {
+            var myName0 = this.userName();
+            var mfeed = W.Store.history(this.momentsKey);
+            var touched = mfeed.filter(function (e2) {
+              if (e2.day !== mToday || e2.who !== c.name) return false;
+              if ((e2.likes || []).indexOf(myName0) !== -1) return true;
+              return (e2.comments || []).some(function (cm) { return cm.who === myName0; });
+            });
+            if (touched.length) {
+              momentsNote = touched.slice(-2).map(function (e2) {
+                var bits = [];
+                if ((e2.likes || []).indexOf(myName0) !== -1) bits.push('点了赞');
+                (e2.comments || []).forEach(function (cm) { if (cm.who === myName0) bits.push('评论「' + cm.text + '」'); });
+                return '机主在动态「' + String(e2.text).slice(0, 30) + '」下' + bits.join('、');
+              }).join('\n');
+            }
+          }
+        } catch (e) { momentsNote = ''; }
         var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo,
-          this.crossGroups(c.name, snap && snap.dateText), callLog);
+          this.crossGroups(c.name, snap && snap.dateText), callLog, momentsNote);
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {
@@ -733,6 +755,129 @@
         : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[lastMsg.kind] || '消息') + ']';
       W.Store.setMeta(chatKey, { headline: String(headText).slice(0, 40), atMainCount: this.mainCount() });
       return { key: chatKey, title: title, msgs: msgs };
+    },
+
+
+
+    // ── 朋友圈 ──
+    // 动态存在 Store key「__moments__」，条目 = {who, text, img, label, likes:[名], comments:[{who,replyTo,text}]}
+    // 首次进入按故事日生成一次（filledDay 打卡）；互动痕迹（不带全文）进同日私聊上下文。
+    momentsKey: '__moments__',
+    momentsFeed: function () { return window.LZWorld.Store.history(this.momentsKey); },
+
+    // 契约输出解析：[动态:名:文字] / [配图:名:描述]（跟在对应动态后）/ [评论:名@回复对象:内容]
+    parseMoments: function (text) {
+      var posts = [];
+      String(text || '').split('\n').forEach(function (line) {
+        line = line.trim();
+        if (!line) return;
+        var m = line.match(/^\[动态:([^:：\]]{1,12})[:：]([\s\S]+)\]$/);
+        if (m) { posts.push({ who: m[1].trim(), text: m[2].trim(), img: '' }); return; }
+        var g = line.match(/^\[配图:([^:：\]]{1,12})[:：]([\s\S]+)\]$/);
+        if (g) {
+          for (var i = posts.length - 1; i >= 0; i--) {
+            if (posts[i].who === g[1].trim()) { posts[i].img = g[2].trim(); break; }
+          }
+        }
+      });
+      return posts.filter(function (p) { return p.who && p.text; }).slice(0, 6);
+    },
+    parseMomentsReplies: function (text) {
+      var out = [];
+      String(text || '').split('\n').forEach(function (line) {
+        line = line.trim();
+        var m = line.match(/^\[评论:([^:：@\]]{1,12})(?:@([^:：\]]{1,12}))?[:：]([\s\S]+)\]$/);
+        if (m) out.push({ who: m[1].trim(), replyTo: m[2] ? m[2].trim() : '', text: m[3].trim() });
+      });
+      return out.slice(0, 3);
+    },
+
+    // 首次填充：抽 3~4 位联系人/群成员，各写一条动态（日期散在"今天/昨天/前几天"）
+    momentsEnsure: async function () {
+      var W = window.LZWorld;
+      var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
+      var today = snap && snap.dateText;
+      if (!today) return false;
+      var key = this.momentsKey;
+      if (W.Store.meta(key).filledDay === today) return false;
+      var sec = this.section(); if (!sec) return false;
+      var pool = [], seen = {};
+      (sec.contacts || []).forEach(function (c) { if (c.name && !seen[c.name]) { seen[c.name] = 1; pool.push(c.name); } });
+      (sec.groups || []).forEach(function (g) {
+        (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
+      });
+      var want = Math.min(pool.length, 3 + (hashStr(today) % 2)); // 3~4 位
+      var picks = [];
+      while (picks.length < want && pool.length) {
+        var i = Math.abs(hashStr(today + ':' + picks.length + ':' + pool.length)) % pool.length;
+        picks.push(pool.splice(i, 1)[0]);
+      }
+      if (!picks.length) return false;
+      var people = picks.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
+      var req = W.Prompt.momentsFill(people, snap, this.userBlock());
+      var raw = await generateRaw(req);
+      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      var posts = this.parseMoments(text);
+      if (!posts.length) throw new Error('朋友圈生成结果为空');
+      // 时间标：最新一条"今天"，依次往前推；时刻由 who+text 哈希定（重渲染不跳变）
+      var entries = posts.map(function (p, idx) {
+        var age = posts.length - 1 - idx;
+        var h = Math.abs(hashStr(p.who + p.text));
+        var hh = ('0' + (8 + h % 12)).slice(-2), mm = ('0' + ((h >> 4) % 60)).slice(-2);
+        var label = age === 0 ? '今天 ' + hh + ':' + mm
+          : age === 1 ? '昨天 ' + hh + ':' + mm
+          : age + '天前 ' + hh + ':' + mm;
+        return { who: p.who, text: p.text, img: p.img || '', label: label, likes: [], comments: [] };
+      });
+      W.Store.push(key, entries, 100);
+      W.Store.setMeta(key, { filledDay: today });
+      return true;
+    },
+
+    // 机主点赞：纯本地往返，不调 API
+    momentsLike: function (index) {
+      var W = window.LZWorld, key = this.momentsKey;
+      var entry = W.Store.history(key)[index];
+      if (!entry) return false;
+      var myName = this.userName();
+      var likes = (entry.likes || []).slice();
+      var i = likes.indexOf(myName);
+      if (i === -1) likes.push(myName); else likes.splice(i, 1);
+      W.Store.patchAt(key, index, { likes: likes });
+      return i === -1;
+    },
+
+    // 机主评论：先落库，再生成的 0~3 条接话追加进同一条；不在朋友圈页时未读红点挂发现
+    momentsComment: async function (index, userSays) {
+      var W = window.LZWorld, key = this.momentsKey;
+      var entry = W.Store.history(key)[index];
+      userSays = String(userSays || '').trim();
+      if (!entry || !userSays) return [];
+      var myName = this.userName();
+      var comments = (entry.comments || []).concat([{ who: myName, replyTo: '', text: userSays }]);
+      W.Store.patchAt(key, index, { comments: comments });
+      var involved = [], iv = {};
+      [entry.who].concat(comments.map(function (c) { return c.who; })).forEach(function (n) {
+        if (n && n !== myName && !iv[n]) { iv[n] = 1; involved.push(n); }
+      });
+      var replies = [];
+      try {
+        var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
+        var people = involved.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
+        var req = W.Prompt.momentsReply({ who: entry.who, text: entry.text, img: entry.img }, comments, userSays, people, snap, this.userBlock());
+        var raw = await generateRaw(req);
+        var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+        replies = this.parseMomentsReplies(text);
+      } catch (e) { console.warn('[霖州引擎] 朋友圈接话生成失败', e); }
+      if (replies.length) {
+        comments = comments.concat(replies);
+        W.Store.patchAt(key, index, { comments: comments });
+        try {
+          var UI = W.Apps && W.Apps.wechat;
+          if (!UI || UI.screen !== 'moments') W.Store.bumpUnread(key, replies.length);
+        } catch (e) {}
+      }
+      return replies;
     },
 
 

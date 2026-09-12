@@ -71,6 +71,12 @@ eq('定点删除', LW.Store.removeAt('撤回测试', 0), true);
 eq('删除后条数', LW.Store.history('撤回测试').length, 1);
 LW.Store.removeAt('撤回测试', 0);
 eq('删空后元信息清除', LW.Store.meta('撤回测试').headline === undefined && Object.keys(LW.Store.meta('撤回测试')).length === 0, true);
+// patchAt：按下标改一条（朋友圈点赞/评论用）
+LW.Store.push('momPatch', [{ who: '周言', kind: 'moments', text: 't1' }, { who: '林溪', kind: 'moments', text: 't2' }], 100);
+eq('patchAt 返回值', LW.Store.patchAt('momPatch', 1, { likes: ['陈默'] }), true);
+eq('patchAt 生效', LW.Store.history('momPatch')[1].likes[0], '陈默');
+eq('patchAt 不动邻居', LW.Store.history('momPatch')[0].likes === undefined, true);
+eq('patchAt 越界', LW.Store.patchAt('momPatch', 9, { x: 1 }), false);
 LW.Store.wipeHistory();
 
 // ── 2. 记录块往返 ──
@@ -365,6 +371,38 @@ ctx.getWorldbook = async () => [
   // 通话记录灰泡：楼层存档与列表页预览统一压成 [语音通话]/[视频通话]
   eq('通话·记录行格式音频', LW.Floor.msgToLine({ who: 'user', kind: 'calllog', mode: 'audio', text: '通话时长 00:09' }, '裴知意'), '裴知意：[语音通话 · 00:09]');
   eq('通话·记录行格式视频', LW.Floor.msgToLine({ who: 'user', kind: 'calllog', mode: 'video', text: '对方已拒绝' }, '裴知意'), '裴知意：[视频通话 · 对方已拒绝]');
+  // ── 8.9 朋友圈：契约解析 + 提示词装配 + 互动痕迹 ──
+  console.log('[朋友圈]');
+  const mposts = LW.Engine.parseMoments('[动态:周言:月考成绩出了，还活着]\n[配图:周言:公告栏前挤满人的成绩单]\n[动态:林溪:救命 数学最后一道大题是什么鬼]\n这是游离行不要');
+  eq('朋友圈·动态条数', mposts.length, 2);
+  eq('朋友圈·动态作者', mposts[0].who, '周言');
+  eq('朋友圈·配图挂上', mposts[0].img.indexOf('成绩单') !== -1, true);
+  eq('朋友圈·无图动态', mposts[1].img, '');
+  eq('朋友圈·游离行丢弃', mposts.some(x => x.text.indexOf('游离') !== -1), false);
+  const mreps = LW.Engine.parseMomentsReplies('[评论:周言@陈默:就你话多]\n[评论:林溪:哈哈哈哈]');
+  eq('朋友圈·接话条数', mreps.length, 2);
+  eq('朋友圈·接话回复指向', mreps[0].replyTo, '陈默');
+  eq('朋友圈·接话无指向', mreps[1].replyTo, '');
+  const mf = LW.Prompt.momentsFill([{ name: '周言', profile: '班长档案' }, { name: '林溪', profile: '闺蜜档案' }],
+    { dateText: '2034年8月26日 星期五', time: '22:49' }, '机主资料');
+  const mfTxt = mf.ordered_prompts[0].content;
+  eq('朋友圈·填充任务', mfTxt.indexOf('朋友圈') !== -1, true);
+  eq('朋友圈·填充带档案', mfTxt.indexOf('班长档案') !== -1, true);
+  eq('朋友圈·动态契约', mfTxt.indexOf('[动态:名字:动态文字]') !== -1, true);
+  eq('朋友圈·配图契约', mfTxt.indexOf('[配图:名字:画面描述]') !== -1, true);
+  eq('朋友圈·静默生成', mf.should_silence, true);
+  const mr = LW.Prompt.momentsReply({ who: '周言', text: '月考出分了', img: '成绩单' },
+    [{ who: '林溪', replyTo: '', text: '牛啊' }], '请客吗', [{ name: '周言', profile: '班长' }, { name: '林溪', profile: '闺蜜' }],
+    { dateText: '2034年8月26日 星期五' }, '机主资料');
+  const mrTxt = mr.ordered_prompts[0].content;
+  eq('朋友圈·回复带动态', mrTxt.indexOf('月考出分了') !== -1, true);
+  eq('朋友圈·回复带机主评论', mrTxt.indexOf('请客吗') !== -1, true);
+  eq('朋友圈·评论契约', mrTxt.indexOf('[评论:名字:评论内容]') !== -1, true);
+  eq('朋友圈·回复指向契约', mrTxt.indexOf('@') !== -1, true);
+  const reqMN = LW.Prompt.private({ name: '周言', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null, null,
+    '机主在动态「月考成绩出了」下评论「请客吗」');
+  eq('朋友圈·互动痕迹段', reqMN.ordered_prompts[0].content.indexOf('## 今日朋友圈互动') !== -1, true);
+  eq('朋友圈·互动痕迹内容', reqMN.ordered_prompts[0].content.indexOf('请客吗') !== -1, true);
   // 群夹带私聊：群回复里的 <!--phone--> 块路由进私聊且从群记录剥掉
   global.__msgs = null;
   const sideNames = LW.Engine.capturePhoneText('陆飞：哈哈<!--phone\n许嘉文：我有，直接送你\n-->还有');

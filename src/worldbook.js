@@ -155,7 +155,7 @@
     sec = sec || {};
     var contacts = (sec.contacts || sec.friends || []).map(function (c) {
       if (typeof c === 'string') return { name: c, avatar: '' };
-      return { name: String(c.name || '').trim(), avatar: String(c.avatar || c.avatar_file || '').trim() };
+      return { name: String(c.name || '').trim(), avatar: String(c.avatar || c.avatar_file || '').trim(), cover: String(c.cover || '').trim() };
     }).filter(function (c) { return c.name; });
     var groups = (sec.groups || []).map(function (g) {
       if (typeof g === 'string') return { name: g, members: [] };
@@ -168,7 +168,10 @@
         crowd: g.crowd || ''
       };
     }).filter(function (g) { return g.name; });
-    return { contacts: contacts, groups: groups };
+    return {
+      contacts: contacts, groups: groups,
+      moments: { cover: String((sec.moments || {}).cover || '').trim() }
+    };
   }
 
   var Worldbook = {
@@ -254,8 +257,12 @@
         };
         for (var rn in result.rosters) {
           var rsec = result.rosters[rn];
-          (rsec.contacts || []).forEach(function (c) { if (c.avatar) preAdd(c.avatar); });
+          (rsec.contacts || []).forEach(function (c) {
+            if (c.avatar) preAdd(c.avatar);
+            if (c.cover) preAdd(c.cover);
+          });
           (rsec.groups || []).forEach(function (g) { if (g.avatar) preAdd(g.avatar); });
+          if (rsec.moments && rsec.moments.cover) preAdd(rsec.moments.cover);
         }
         for (var sk in result.stickers) preAdd(result.stickers[sk]);
         for (var pi = 0; pi < preList.length; pi++) { var pim = new Image(); pim.src = preList[pi]; }
