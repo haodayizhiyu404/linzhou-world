@@ -104,6 +104,25 @@
     return map;
   }
 
+  // 多人条目拆分：内容里的 [NPC·名字] 块 → {名字: 块内容}（直到下一个块头或文末）
+  function parseNpcBlocks(text) {
+    var src = String(text || '');
+    var out = {};
+    var re = /\[NPC·([^\]\n]+)\]/g;
+    var m, marks = [];
+    while ((m = re.exec(src))) {
+      marks.push({ name: m[1].trim(), start: m.index, headEnd: re.lastIndex });
+    }
+    for (var i = 0; i < marks.length; i++) {
+      var end = (i + 1 < marks.length) ? marks[i + 1].start : src.length;
+      var body = src.slice(marks[i].headEnd, end).trim();
+      if (marks[i].name && body) {
+        out[marks[i].name] = out[marks[i].name] ? out[marks[i].name] + '\n' + body : body;
+      }
+    }
+    return out;
+  }
+
   // ── 通讯录区块规范化：把各种写法收成 {contacts:[{name,avatar}],groups:[{name,members,open,avatar,style,crowd}]} ──
   function normSection(sec) {
     sec = sec || {};
@@ -143,6 +162,15 @@
         if (tt && tt.length <= 15 && !(tt in titleMap)) titleMap[tt] = contentOf(es[ti]);
       }
 
+      // 多人条目索引：内容里 [NPC·名字] 块拆出来，供「人设兜底」用
+      var npcBlocks = {};
+      for (var bi = 0; bi < es.length; bi++) {
+        var nb = parseNpcBlocks(contentOf(es[bi]));
+        for (var bn in nb) {
+          if (!(bn in npcBlocks)) npcBlocks[bn] = nb[bn];
+        }
+      }
+
       for (var i = 0; i < es.length; i++) {
         var t = titleOf(es[i]);
         if (t && !(t in result.states)) result.states[t] = es[i].enabled !== false;
@@ -165,12 +193,14 @@
         }
       }
 
-      // 人设兜底：通讯录里有的人物，若条目名正好是该角色名，直接取其内容当档案
+      // 人设兜底：通讯录/群成员里有档案的人，按 条目名=角色名 > [NPC·名字]块 的顺序补
       for (var ln in result.rosters) {
-        var cs = result.rosters[ln].contacts || [];
+        var sec = result.rosters[ln];
+        var cs = (sec.contacts || []).map(function (c) { return c.name; });
+        (sec.groups || []).forEach(function (g) { cs = cs.concat(g.members || []); });
         for (var ci = 0; ci < cs.length; ci++) {
-          var cn = cs[ci].name;
-          if (!result.profiles[cn] && titleMap[cn]) result.profiles[cn] = titleMap[cn];
+          var cn = cs[ci];
+          if (!result.profiles[cn]) result.profiles[cn] = titleMap[cn] || npcBlocks[cn] || '';
         }
       }
       return result;

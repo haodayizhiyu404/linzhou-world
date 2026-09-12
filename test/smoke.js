@@ -156,14 +156,17 @@ ctx.getCharLorebooks = () => ({ primary: '测试书' });
 ctx.getWorldbook = async () => [
   { comment: '霖州手机::通讯录', enabled: true, content: JSON.stringify({
     'IF线': {
-      contacts: [{ name: '周言', avatar: 'a.png' }],
+      contacts: [{ name: '周言', avatar: 'a.png' }, { name: '张裕民', avatar: 'z.png' }],
       groups: [{
         name: '霖附吃瓜二手交易市场', open: true, avatar: 'g.png',
         style: '节奏快', crowd: '超百人，多为陌生人',
-        members: ['周言', '{{user}}']
+        members: ['周言', '{{user}}', '陆飞']
       }]
     }
-  }) }
+  }) },
+  { comment: '周言', enabled: true, content: '周言的单人条目内容（短标题兜底）' },
+  { comment: 'NPC（高中线-核心人员）', enabled: true, content: '[NPC·陆飞]\n性别: 男。\n身份: 篮球队。\n\n[NPC·张裕民]\n性别: 男。\n身份: 班主任。' },
+  { comment: '霖州手机::人设::林溪', enabled: true, content: '林溪的手机专用档案' }
 ];
 (async () => {
   const wb = await LW.Worldbook.load();
@@ -172,9 +175,14 @@ ctx.getWorldbook = async () => [
   eq('群style透传', g0.style, '节奏快');
   eq('群crowd透传', g0.crowd, '超百人，多为陌生人');
   eq('群open透传', g0.open, true);
-  eq('群members透传', JSON.stringify(g0.members), '["周言"]');
+  eq('群members透传', JSON.stringify(g0.members), '["周言","陆飞"]');
   eq('群members滤掉user宏', g0.members.indexOf('{{user}}') === -1, true);
   eq('联系人avatar透传', (wb.rosters['IF线'].contacts || [])[0].avatar, 'a.png');
+  eq('短标题条目兜底档案', wb.profiles['周言'], '周言的单人条目内容（短标题兜底）');
+  eq('NPC块拆分·陆飞', (wb.profiles['陆飞'] || '').indexOf('篮球队') !== -1, true);
+  eq('NPC块拆分·不串块', (wb.profiles['陆飞'] || '').indexOf('班主任') === -1, true);
+  eq('NPC块拆分·张裕民', (wb.profiles['张裕民'] || '').indexOf('班主任') !== -1, true);
+  eq('人设条目优先于块', wb.profiles['林溪'], '林溪的手机专用档案');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
   process.exit(fail ? 1 : 0);
 })();
