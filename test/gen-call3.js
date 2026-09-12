@@ -10,7 +10,7 @@ function phone(inner, cls, bg) {
 }
 
 // A: 通话中（音频，整屏头像模糊背景）
-const subsA = `<div class="lzw-sub">沈锡元：到了吱一声，我去接你</div><div class="lzw-sub me">李晓：不用，我自己过去</div><div class="lzw-sub">沈锡元：那行，路上小心</div>`;
+const subsA = Array.from({length:12},(_,i)=>i%2? `<div class="lzw-sub me">李晓：第${i}句，我在测试滚动</div>` : `<div class="lzw-sub">沈锡元：第${i}句，你在测试滚动</div>`).join('');
 const btnsA = `<div class="lzw-callmid"><button class="lzw-callbtn"><i>&#127908;</i><span>说话</span></button><button class="lzw-callbtn hang"><i>&#9742;</i><span>挂断</span></button></div>`;
 const callA = `<div class="lzw-callbody"><div class="lzw-calltop"><div class="lzw-callava"><img src="${AV}"></div><div class="lzw-callname">沈锡元</div><div class="lzw-callstatus">03:24</div></div><div class="lzw-callsubs">${subsA}</div>${btnsA}</div>`;
 

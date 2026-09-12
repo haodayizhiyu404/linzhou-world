@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T14:16:21.304Z
+//  构建时间：2026-09-12T14:27:47.021Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 14:16';
+var __LZW_BUILD__ = '2026-09-12 14:27';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1520,9 +1520,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-callava img{width:100%;height:100%;object-fit:cover}',
     '.lzw-callname{font-size:19px;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.5)}',
     '.lzw-callstatus{font-size:13px;color:#c9d1d9;min-height:18px}',
-    '.lzw-callsubs{position:relative;z-index:1;flex:1;min-height:0;width:100%;overflow-y:auto;display:flex;flex-direction:column;justify-content:flex-end;gap:7px;padding:6px 4px}',
-    // 仿玻璃气泡：char 靠左、user 靠右，内容靠左不居中
-    '.lzw-sub{max-width:85%;align-self:flex-start;text-align:left;font-size:13.5px;line-height:1.5;color:#f2f5f8;padding:7px 12px;border-radius:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}',
+    // 字幕区：顶部占位条把短内容顶到底部；内容超高时占位条收缩为 0，可向上滚动翻记录。
+    // 隐藏滚动条（带不带无所谓，藏了更干净）。
+    '.lzw-callsubs{position:relative;z-index:1;flex:1;min-height:0;width:100%;overflow-y:auto;display:flex;flex-direction:column;gap:7px;padding:6px 4px;scrollbar-width:none}',
+    '.lzw-callsubs::-webkit-scrollbar{display:none}',
+    '.lzw-callsubs:before{content:"";flex:1;min-height:0}',
+    // 仿玻璃气泡：char 靠左、user 靠右，内容靠左不居中。
+    // 注意：这里刻意不用 backdrop-filter——Chromium 在焦点变化（点击/alt+tab）时会重绘
+    // 背景滤镜层，造成刺眼的白色闪烁（已知 bug），半透明底+高光边已经足够"玻璃"。
+    '.lzw-sub{max-width:85%;align-self:flex-start;text-align:left;font-size:13.5px;line-height:1.5;color:#f2f5f8;padding:7px 12px;border-radius:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}',
     '.lzw-sub.me{align-self:flex-end;background:rgba(120,190,100,.15);border-color:rgba(120,190,100,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}',
     '.lzw-callmid{position:relative;z-index:1;display:flex;gap:26px;margin-top:2px;align-items:flex-end}',
     '.lzw-callbtn{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;color:#e6edf3;font-size:10.5px;cursor:pointer}',
@@ -1915,6 +1921,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         prevScroll = opn.scrollTop;
         prevNearBottom = (opn.scrollHeight - opn.clientHeight - opn.scrollTop) < 60;
       }
+      var prevSubs = -1;
+      var oldSubs = ph.querySelector('.lzw-callsubs');
+      if (oldSubs) prevSubs = oldSubs.scrollTop;
 
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
@@ -1935,6 +1944,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           if (e.key === 'Enter') { e.preventDefault(); UI.sendText(); }
           // 空输入框按 Backspace 不弹删待发消息——删错别字按多了会误删；要删待发请点其右上角 ×
         });
+      }
+      // 通话字幕区：首次渲染滚到底（看最新），重渲染尽量保住原滚动位置
+      if (this.call) {
+        var cs = ph.querySelector('.lzw-callsubs');
+        if (cs) cs.scrollTop = (prevSubs < 0) ? cs.scrollHeight : Math.min(prevSubs, cs.scrollHeight);
       }
       // 通话：每秒刷时长；通话输入框回车即发
       if (this._ct) { clearInterval(this._ct); this._ct = null; }
@@ -2399,7 +2413,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var subs = hist.map(function (m, i) {
       if (m.who === 'sys') return '';
       var isMe = m.who === 'user';
-      return '<div class="lzw-sub' + (isMe ? ' me' : '') + '" data-cdel="' + i + '">' + esc((isMe ? userName : m.who) + '：' + (m.text || '')) + '</div>';
+      return '<div class="lzw-sub' + (isMe ? ' me' : '') + '" data-cdel="' + i + '">' + esc(m.text || '') + '</div>';
     }).join('');
     var status = call.phase === 'ringing'
       ? '正在呼叫…'
