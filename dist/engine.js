@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T02:57:51.344Z
+//  构建时间：2026-09-12T03:05:37.424Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 02:57';
+var __LZW_BUILD__ = '2026-09-12 03:05';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1829,12 +1829,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '<div class="lzw-modebtns"><button class="lzw-modeok" data-modesend="' + panel + '">确定</button>' +
         '<button class="lzw-modecancel" data-act="modecancel">取消</button></div></div></div>';
     }
-    // actions
+    // actions（戳一戳只能私聊用：群里没有指定对象）
     return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-actions">' +
       '<div class="lzw-act" data-mode="sticker"><div class="lzw-act-ico">' + ICO.sticker + '</div><span>表情</span></div>' +
       '<div class="lzw-act" data-mode="image"><div class="lzw-act-ico">' + ICO.image + '</div><span>图片</span></div>' +
       '<div class="lzw-act" data-mode="voice"><div class="lzw-act-ico">' + ICO.voice + '</div><span>语音</span></div>' +
-      '<div class="lzw-act" data-mode="poke"><div class="lzw-act-ico">' + ICO.poke + '</div><span>戳一戳</span></div>' +
+      (UI.isGroup ? '' : '<div class="lzw-act" data-mode="poke"><div class="lzw-act-ico">' + ICO.poke + '</div><span>戳一戳</span></div>') +
       '<div class="lzw-act" data-mode="location"><div class="lzw-act-ico">' + ICO.location + '</div><span>定位</span></div>' +
       '</div></div>';
   }
