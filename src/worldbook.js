@@ -147,8 +147,7 @@
   var Worldbook = {
     // 返回 { rosters, stickers, profiles, states }
     // states = { 条目标题: 是否勾选开启 }——世界线主条目定位用（enabled 字段读不到时按"开"记）
-    load: async function () {
-      var result = { rosters: {}, stickers: {}, profiles: {}, states: {} };
+    load: async function () {      var result = { rosters: {}, stickers: {}, profiles: {}, states: {} };
       var names = await bookNames();
       console.log('[霖州引擎] 世界书：' + names.length + ' 本 → ' + names.join(' / '));
       var es = await allEntries();
@@ -222,6 +221,17 @@
         for (var pi = 0; pi < preList.length; pi++) { var pim = new Image(); pim.src = preList[pi]; }
       } catch (e) {}
       return result;
+    },
+
+    // 重读全部条目的勾选状态（玩家在世界书界面手动开关条目后，加载时的快照已过时）
+    readStates: async function () {
+      var es = await allEntries();
+      var states = {};
+      for (var i = 0; i < es.length; i++) {
+        var t = titleOf(es[i]);
+        if (t && !(t in states)) states[t] = es[i].enabled !== false;
+      }
+      return states;
     },
 
     imgUrl: function (file) {

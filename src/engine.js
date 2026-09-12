@@ -132,6 +132,11 @@
     // ── 世界线定位 ──
     // 优先读主条目自身的勾选状态（玩家选线时卡内代码会开关对应主条目，读这个最准，不用猜）。
     // mode='chat'：切聊天时聊天记录里存的线优先（每条聊天记自己的线）。
+    // 注意 entryStates 是加载时的快照，玩家随后手动开关条目必须先调 refreshStates()。
+    refreshStates: async function () {
+      try { state.entryStates = await window.LZWorld.Worldbook.readStates(); } catch (e) {}
+    },
+
     locateLine: function (mode) {
       var W = window.LZWorld;
 
@@ -426,9 +431,10 @@
 
       // 快捷回复入口：QR 按钮命令 /event-emit event="lzw-phone-toggle"
       try {
-        on('lzw-phone-toggle', function () {
+        on('lzw-phone-toggle', async function () {
           // 开场白选线等卡内代码可能刚切过世界线开关（页面加载后发生），
-          // 重开手机时重新归位，否则引擎仍停在加载时的旧定位
+          // 重开手机时重新归位；开关状态是加载时的快照，须先重读
+          await Engine.refreshStates();
           Engine.locateLine();
           var ui = W.Apps.wechat;
           if (!Engine.section()) {
@@ -460,6 +466,7 @@
         on(tavern_events.CHAT_CHANGED, function () {
           clearTimeout(reinitTimer);
           reinitTimer = setTimeout(async function () {
+            await Engine.refreshStates();
             Engine.locateLine('chat');
             Engine.syncMount();
             try { W.Floor.renderAll(); } catch (e) {}

@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T05:47:45.052Z
+//  构建时间：2026-09-12T06:05:39.496Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 05:47';
+var __LZW_BUILD__ = '2026-09-12 06:05';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -424,8 +424,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   var Worldbook = {
     // 返回 { rosters, stickers, profiles, states }
     // states = { 条目标题: 是否勾选开启 }——世界线主条目定位用（enabled 字段读不到时按"开"记）
-    load: async function () {
-      var result = { rosters: {}, stickers: {}, profiles: {}, states: {} };
+    load: async function () {      var result = { rosters: {}, stickers: {}, profiles: {}, states: {} };
       var names = await bookNames();
       console.log('[霖州引擎] 世界书：' + names.length + ' 本 → ' + names.join(' / '));
       var es = await allEntries();
@@ -499,6 +498,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         for (var pi = 0; pi < preList.length; pi++) { var pim = new Image(); pim.src = preList[pi]; }
       } catch (e) {}
       return result;
+    },
+
+    // 重读全部条目的勾选状态（玩家在世界书界面手动开关条目后，加载时的快照已过时）
+    readStates: async function () {
+      var es = await allEntries();
+      var states = {};
+      for (var i = 0; i < es.length; i++) {
+        var t = titleOf(es[i]);
+        if (t && !(t in states)) states[t] = es[i].enabled !== false;
+      }
+      return states;
     },
 
     imgUrl: function (file) {
@@ -1239,8 +1249,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   var ICON_BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
-  // 电池：素材/电池.svg（iconfont 路径，填充 #111 与状态栏一致），第三段改为 72% 电量
-  var ICON_BATT = '<svg width="18" height="15" viewBox="0 0 1024 1024" fill="#111"><path d="M938.667 426.667v-85.334c0-46.933-38.4-85.333-85.334-85.333H128c-46.933 0-85.333 38.4-85.333 85.333v341.334C42.667 729.6 81.067 768 128 768h725.333c46.934 0 85.334-38.4 85.334-85.333v-85.334c23.466 0 42.666-19.2 42.666-42.666v-85.334c0-23.466-19.2-42.666-42.666-42.666zM896 469.333v213.334c0 23.466-19.2 42.666-42.667 42.666H128c-23.467 0-42.667-19.2-42.667-42.666V341.333c0-23.466 19.2-42.666 42.667-42.666h725.333c23.467 0 42.667 19.2 42.667 42.666v128zM128 682.667h399.4V341.333H128v341.334z"/></svg>';
+  // 电池：粗描边圆角框 + 实心电芯/电极帽，与信号、WiFi 的实心风格一致（viewBox 贴合图形，避免悬空）
+  var ICON_BATT = '<svg width="25" height="15" viewBox="0 0 25 15" fill="#111"><rect x="1.4" y="1.4" width="19.2" height="12.2" rx="3.6" fill="none" stroke="#111" stroke-width="2.6"/><rect x="4.1" y="4.1" width="11.2" height="6.8" rx="1.8"/><rect x="21.9" y="4.7" width="2.7" height="5.6" rx="1.3"/></svg>';
   var ICON_PLANE = '<svg width="23" height="23" viewBox="0 0 1024 1024" fill="#555"><path d="M972.48 40.64c-17.38666667-8.64-34.77333333-8.64-43.41333333 0L60.16 472.10666667C42.88 472.10666667 34.13333333 489.38666667 34.13333333 506.66666667s8.64 34.56 17.38666667 34.56l208.53333333 129.49333333c17.38666667 8.64 34.77333333 8.64 52.16-8.64l460.48-414.18666667 17.38666667 8.64-417.06666667 439.89333334c-8.64 8.64-8.64 17.28-8.64 25.92v189.86666666c0 17.28 8.64 34.56 26.02666667 43.2 17.38666667 8.64 34.77333333 0 43.41333333-8.64l104.32-103.57333333L746.66666667 981.22666667c8.64 8.64 17.38666667 8.64 26.02666666 8.64h17.38666667c17.38666667-8.64 26.02666667-17.28 26.02666667-34.56l173.76-862.93333334c0-25.92 0-43.09333333-17.38666667-51.73333333z"/></svg>';
   var ICON_PLUS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5.4v13.2M5.4 12h13.2" stroke="#454545" stroke-width="3" stroke-linecap="round"/></svg>';
   // 主屏微信图标（绿色圆角块 + 白色对话泡）
@@ -2021,6 +2031,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // ── 世界线定位 ──
     // 优先读主条目自身的勾选状态（玩家选线时卡内代码会开关对应主条目，读这个最准，不用猜）。
     // mode='chat'：切聊天时聊天记录里存的线优先（每条聊天记自己的线）。
+    // 注意 entryStates 是加载时的快照，玩家随后手动开关条目必须先调 refreshStates()。
+    refreshStates: async function () {
+      try { state.entryStates = await window.LZWorld.Worldbook.readStates(); } catch (e) {}
+    },
+
     locateLine: function (mode) {
       var W = window.LZWorld;
 
@@ -2315,9 +2330,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
       // 快捷回复入口：QR 按钮命令 /event-emit event="lzw-phone-toggle"
       try {
-        on('lzw-phone-toggle', function () {
+        on('lzw-phone-toggle', async function () {
           // 开场白选线等卡内代码可能刚切过世界线开关（页面加载后发生），
-          // 重开手机时重新归位，否则引擎仍停在加载时的旧定位
+          // 重开手机时重新归位；开关状态是加载时的快照，须先重读
+          await Engine.refreshStates();
           Engine.locateLine();
           var ui = W.Apps.wechat;
           if (!Engine.section()) {
@@ -2349,6 +2365,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         on(tavern_events.CHAT_CHANGED, function () {
           clearTimeout(reinitTimer);
           reinitTimer = setTimeout(async function () {
+            await Engine.refreshStates();
             Engine.locateLine('chat');
             Engine.syncMount();
             try { W.Floor.renderAll(); } catch (e) {}
