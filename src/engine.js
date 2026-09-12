@@ -21,6 +21,11 @@
     if (diff === 1) return '昨天';
     return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d + '日';
   }
+  function dayDiffE(a, b) {
+    var pa = parseDayE(a), pb = parseDayE(b);
+    if (!pa || !pb) return null;
+    return (pb.y * 372 + pb.mo * 31 + pb.d) - (pa.y * 372 + pa.mo * 31 + pa.d);
+  }
 
   // 四个主条目名（与卡组世界书一致；长的优先匹配）
   var LINES = ['成人时代-破镜重圆', '成人时代-同路而行', '高中时代', '大学时代'];
@@ -294,16 +299,24 @@
           var meta = cands[ci].meta;
           var name = cands[ci].name;
           var ago = meta.atMainCount != null ? Math.max(0, now - meta.atMainCount) : null;
+          var slice = hist.slice(-this.INJECT_ROUNDS);
+          var firstDay = null;
+          for (var fi = 0; fi < slice.length; fi++) { if (slice[fi].day) { firstDay = slice[fi].day; break; } }
+          // 头部时间标：优先按消息自身的故事日期算时间差；旧记录没有 day 才退回楼层差
+          var when = '';
+          var dd = firstDay ? dayDiffE(firstDay, curDay) : null;
+          if (dd != null) when = dd === 0 ? '（今天）' : dd === 1 ? '（昨天）' : (dd <= 31 ? '（' + dd + '天前）' : '（' + dayRelE(firstDay, curDay) + '）');
+          else if (ago != null) when = '（' + ago + ' 楼前）';
           var prevDay = null;
           var lines = [];
-          hist.slice(-this.INJECT_ROUNDS).forEach(function (m) {
+          slice.forEach(function (m) {
             if (m.day && m.day !== prevDay) {
               lines.push('〔' + dayRelE(m.day, curDay) + (m.time ? ' ' + m.time : '') + '〕');
               prevDay = m.day;
             }
             lines.push((m.who === 'user' ? myName : m.who) + '：' + W.Floor.msgToLine(m, myName).replace(/^[^：]*：/, ''));
           });
-          blocks.push('「' + name + '」' + (ago != null ? '（' + ago + ' 楼前）' : '') + '：\n' + lines.join('\n'));
+          blocks.push('「' + name + '」' + when + '：\n' + lines.join('\n'));
         }
         if (!blocks.length) return;
         injectPrompts([{
