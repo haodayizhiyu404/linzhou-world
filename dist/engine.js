@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T12:16:31.218Z
+//  构建时间：2026-09-12T12:54:42.582Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 12:16';
+var __LZW_BUILD__ = '2026-09-12 12:54';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -862,6 +862,93 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       };
     },
 
+    // ── 通话邀请：机主拨打了语音/视频通话，AI 决定接/拒 ──
+    // 约定：拒绝 → 第一行以 [拒绝] 开头，可附一句简短说明；接听 → 直接输出接通后的
+    // 第一句话（口语台词，不要引号/动作/括号）。呼叫页等待期间的一次生成。
+    callInvite: function (contact, snapshot, userInfo, mode, crossGroups) {
+      var myName = me();
+      var kind = mode === 'video' ? '视频通话' : '语音通话';
+      var p = [
+        '# 数字世界 · ' + kind + '邀请',
+        '',
+        '你是一款数字生活应用的模拟引擎。本次任务：机主「' + myName + '」给「' + contact.name + '」发起了' + kind + '，生成对方的反应。',
+        '',
+        contact.profile ? '## 人物档案 · ' + contact.name + '\n' + contact.profile : '',
+        '',
+        userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
+        '',
+        situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+        '',
+        (crossGroups && crossGroups.length)
+          ? '## 相关群聊近况（下列记录中对方本人均在场）\n' + crossGroups.map(function (g) {
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+            }).join('\n\n')
+          : '',
+        '',
+        consistencyRules('「' + contact.name + '」'),
+        '',
+        '## 输出要求（严格遵守，二选一）',
+        '- 接听：直接输出接通后的第一句话，1~3 行口语台词，像真人打电话的开场',
+        '- 拒绝：第一行以 [拒绝] 开头，其后可附一句简短说明（如「在忙，晚点回」），也可不附',
+        '- 不得输出引号、动作描写、心理括号、时间戳',
+        '- 决定须符合上方「关系」阶段与当前情境（深夜/工作时间/在群里刚聊过等）'
+      ].filter(function (s2) { return s2 !== ''; }).join('\n');
+      return {
+        ordered_prompts: [
+          { role: 'system', content: p },
+          { role: 'user', content: '（' + myName + '的' + kind + '正在呼叫' + contact.name + '。请按输出要求生成对方的反应。）' }
+        ],
+        should_silence: true,
+        max_chat_history: 0
+      };
+    },
+
+    // ── 通话轮：通话进行中，机主说了一句（或要求接续），生成对方台词 ──
+    // transcript = 「名字：…/机主：…」台词行；userSays = 机主本轮说的话（可空）
+    callTurn: function (contact, transcript, snapshot, userInfo, mode, crossGroups, userSays) {
+      var myName = me();
+      var kind = mode === 'video' ? '视频通话' : '语音通话';
+      var p = [
+        '# 数字世界 · ' + kind + '进行中的台词',
+        '',
+        '你是一款数字生活应用的模拟引擎。本次任务：生成' + kind + '中「' + contact.name + '」接下来的台词。',
+        '',
+        contact.profile ? '## 人物档案 · ' + contact.name + '\n' + contact.profile : '',
+        '',
+        userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
+        '',
+        situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+        '',
+        (crossGroups && crossGroups.length)
+          ? '## 相关群聊近况（下列记录中对方本人均在场，可自然提及）\n' + crossGroups.map(function (g) {
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+            }).join('\n\n')
+          : '',
+        '',
+        '## 通话记录（' + kind + ' · 双方已说的话）',
+        transcript || '（刚接通）',
+        '',
+        consistencyRules('「' + contact.name + '」'),
+        '',
+        '## 输出要求',
+        '- 只输出「' + contact.name + '」的台词，1~5 行，按情绪与话题自然增减（激动时可更多）',
+        '- 口语化，像真人打电话：短句、停顿感、可有语气词；不要书面腔',
+        '- 每行独立，不要引号、动作描写、心理括号、时间戳',
+        '- 情感与态度符合上方「关系」阶段；吵架、撒娇、汇报都按当前关系该有度',
+        '- 不要复述机主刚说的话'
+      ].filter(function (s2) { return s2 !== ''; }).join('\n');
+      return {
+        ordered_prompts: [
+          { role: 'system', content: p },
+          { role: 'user', content: userSays
+              ? '（' + myName + '在' + kind + '里说：「' + userSays + '」。请生成「' + contact.name + '」的台词。）'
+              : '（' + kind + '沉默了几秒。请生成「' + contact.name + '」接下来的台词。）' }
+        ],
+        should_silence: true,
+        max_chat_history: 0
+      };
+    },
+
     // ── 群聊 ──
     // userInfo = 机主资料，与私聊同一份
     // crossPriv = {成员名: 当天私聊尾巴}（私聊→群跨会话上下文；挂到该成员档案下，※ 仅本人知晓）
@@ -965,6 +1052,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // ── 消息 → 楼层行 ──
   function msgToLine(m, userName) {
+    if (m.who === 'sys') return String(m.text || ''); // 系统条目（通话时长等）不带人名前缀
     var who = m.who === 'user' ? userName : m.who;
     var body;
     switch (m.kind) {
@@ -1401,13 +1489,38 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-screen ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.32)}',
     // 底部 home 指示条
     '.lzw-homebar{flex:none;height:18px;display:flex;align-items:center;justify-content:center;background:#f7f7f9;position:relative;z-index:3}',
-    '.lzw-homebar:after{content:"";display:block;width:110px;height:4px;border-radius:2px;background:rgba(0,0,0,.75)}'
+    '.lzw-homebar:after{content:"";display:block;width:110px;height:4px;border-radius:2px;background:rgba(0,0,0,.75)}',
+    // ── 通话屏 ──
+    '.lzw-dial{display:inline-flex;color:#111;padding:4px;border-radius:8px;cursor:pointer}',
+    '.lzw-dial:hover{background:rgba(0,0,0,.06)}',
+    '.lzw-callbody{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;gap:10px;padding:22px 16px 12px;background:#101418;color:#fff;position:relative;overflow:hidden}',
+    '.lzw-callfeed{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.5}',
+    '.lzw-calltop{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;z-index:1}',
+    '.lzw-callava{width:88px;height:88px;border-radius:50%;overflow:hidden;background:#232a33;display:flex;align-items:center;justify-content:center;font-size:34px;font-weight:600;box-shadow:0 4px 18px rgba(0,0,0,.4)}',
+    '.lzw-callava img{width:100%;height:100%;object-fit:cover}',
+    '.lzw-callname{font-size:19px;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.5)}',
+    '.lzw-callstatus{font-size:13px;color:#c9d1d9;min-height:18px}',
+    '.lzw-callsubs{position:relative;z-index:1;flex:1;min-height:0;width:100%;overflow-y:auto;display:flex;flex-direction:column;justify-content:flex-end;gap:7px;text-align:center;padding:6px 4px}',
+    '.lzw-sub{font-size:13.5px;line-height:1.5;text-shadow:0 1px 4px rgba(0,0,0,.65)}',
+    '.lzw-sub.me{color:#8fe388}',
+    '.lzw-callmid{position:relative;z-index:1;display:flex;gap:26px;margin-top:2px;align-items:flex-end}',
+    '.lzw-callbtn{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;color:#e6edf3;font-size:10.5px;cursor:pointer}',
+    '.lzw-callbtn i{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:19px}',
+    '.lzw-callbtn.on i{background:rgba(255,255,255,.34)}',
+    '.lzw-callbtn.hang i{background:#e5484d;width:54px;height:54px;font-size:22px}',
+    '.lzw-callrow{position:relative;z-index:1;display:flex;align-items:center;gap:8px;width:100%;margin-top:4px}',
+    '.lzw-callinput{flex:1;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:17px;color:#fff;padding:8px 13px;font-size:13.5px;outline:none}',
+    '.lzw-callinput::placeholder{color:rgba(255,255,255,.45)}',
+    '.lzw-csend{background:#22c05e;border:none;color:#fff;border-radius:17px;padding:8px 14px;font-size:13px;cursor:pointer;white-space:nowrap}',
+    '.lzw-cwait{position:relative;z-index:1;color:#c9d1d9;font-size:13px}'
   ].join('\n');
 
   var ICON_VOICE = '<svg width="15" height="15" viewBox="0 0 1024 1024"><path fill="#222222" d="M501.269333 517.610667a277.333333 277.333333 0 0 1-81.664 197.546666l-5.12 4.906667-3.306666 2.858667a42.666667 42.666667 0 0 1-58.325334-61.696l3.029334-3.136 6.954666-6.954667a192.042667 192.042667 0 0 0-7.936-273.002667l-3.050666-3.136a42.666667 42.666667 0 0 1 61.248-59.264l5.12 4.906667a277.333333 277.333333 0 0 1 83.050666 196.970667z m187.648 10.197333A418.090667 418.090667 0 0 1 565.845333 814.933333l-7.68 7.466667-3.306666 2.837333a42.666667 42.666667 0 0 1-58.346667-61.674666l3.029333-3.157334 6.101334-5.952a332.928 332.928 0 0 0 97.962666-228.48l0.085334-8.533333a332.821333 332.821333 0 0 0-105.834667-242.24 42.666667 42.666667 0 0 1 58.197333-62.4 418.133333 418.133333 0 0 1 132.970667 304.32l-0.106667 10.709333zM625.877333 137.877333a42.666667 42.666667 0 0 1 58.176-62.421333l-58.176 62.421333z m250.730667 394.026667a606.208 606.208 0 0 1-48.853333 225.365333l-6.293334 14.165334a606.016 606.016 0 0 1-123.2 176.554666l-11.136 10.816-3.306666 2.837334a42.666667 42.666667 0 0 1-58.346667-61.696l3.029333-3.136 9.557334-9.28a520.661333 520.661333 0 0 0 105.856-151.722667l5.397333-12.16a520.853333 520.853333 0 0 0 41.984-193.6l0.128-13.333333a520.341333 520.341333 0 0 0-38.4-194.261334l-5.141333-12.288a520.533333 520.533333 0 0 0-122.026667-172.288l58.197333-62.421333a605.909333 605.909333 0 0 1 142.016 200.533333l6.016 14.293334a605.653333 605.653333 0 0 1 44.672 226.133333l-0.149333 15.509333zM170.666667 518.442667a64 64 0 1 1 128 0 64 64 0 0 1-128 0z"/></svg>';
 
   var ICON_REROLL = '<svg width="18" height="18" viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 85.333333c102.869333 0 199.509333 36.693333 275.029333 100.437334l93.866667-94.037334a21.333333 21.333333 0 0 1 36.437333 15.061334V384a21.333333 21.333333 0 0 1-21.333333 21.333333h-276.693333a21.333333 21.333333 0 0 1-15.104-36.394666l122.325333-122.496a341.333333 341.333333 0 1 0 118.314667 341.632 42.666667 42.666667 0 1 1 83.2 18.901333A426.794667 426.794667 0 0 1 512 938.666667C276.352 938.666667 85.333333 747.648 85.333333 512S276.352 85.333333 512 85.333333z"/></svg>';
 
+  var ICON_CALL = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l1.5 4-2.2 1.6a13 13 0 0 0 6.1 6.1L16 13.5l4 1.5v4a1.6 1.6 0 0 1-1.8 1.6C10.4 19.9 4.1 13.6 3.4 5.8A1.6 1.6 0 0 1 5 4z"/></svg>';
+  var ICON_VCALL = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#111" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12.5" height="12" rx="2.5"/><path d="M15.5 10.5l5-3v9l-5-3"/></svg>';
   var ICON_BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="#111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_WIFI = '<svg width="15" height="11" viewBox="0 0 16 12" fill="#111"><path d="M8 9.9a1.5 1.5 0 100 3 1.5 1.5 0 000-3zM8 6.2c-1.8 0-3.4.7-4.6 1.9l1.5 1.5a4.5 4.5 0 016.2 0l1.5-1.5A6.5 6.5 0 008 6.2zM8 1.4C4.9 1.4 2.1 2.8.2 5l1.5 1.5A9.2 9.2 0 018 3.8c2.5 0 4.8 1 6.3 2.7L15.8 5A11.4 11.4 0 008 1.4z" transform="scale(0.95)"/></svg>';
   // 电池：iPhone 风格——小圆角细描边、电芯近满内腔、右侧圆帽（依用户参考图，深灰 #2c2c2c）
@@ -1428,6 +1541,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // ── 手机内气泡行 ──
   // targetName：会话对象显示名（私聊=联系人，群聊=群名），用户戳一戳时显示「你戳了戳 TA」
   function chatRowHtml(m, userName, contactMap, targetName, idx, peeked, showName) {
+    if (m.who === 'sys') return '<div class="lzw-sysrow">' + esc(m.text || '') + '</div>'; // 系统条目：挂断/拒接记录
     var isUser = m.who === 'user';
     var who = isUser ? userName : m.who;
     // 撤回未偷看：只留一行可点击的撤回提示
@@ -1666,7 +1780,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         ICON_BATT + '</span></div>';
 
       var body;
-      if (this.screen === 'home') {
+      if (this.call) {
+        body = callHtml(this.call, userName);
+      } else if (this.screen === 'home') {
         var totalUn = 0;
         try {
           W.Store.historyKeys().forEach(function (k) { totalUn += W.Store.meta(k).unread || 0; });
@@ -1768,6 +1884,22 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         if (inp) inp.addEventListener('keydown', function (e) {
           if (e.key === 'Enter') { e.preventDefault(); UI.sendText(); }
           // 空输入框按 Backspace 不弹删待发消息——删错别字按多了会误删；要删待发请点其右上角 ×
+        });
+      }
+      // 通话：每秒刷时长；通话输入框回车即发
+      if (this._ct) { clearInterval(this._ct); this._ct = null; }
+      if (this.call && this.call.phase === 'active') {
+        this._ct = setInterval(function () {
+          var c = UI.call;
+          var el = pdoc().getElementById('lzw-callstatus');
+          if (!c || !el) return;
+          el.textContent = fmtDur(Math.max(0, Math.round((Date.now() - c.startAt) / 1000)));
+        }, 1000);
+      }
+      if (this.call) {
+        var cin = ph.querySelector('#lzw-callinput');
+        if (cin) cin.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter') { e.preventDefault(); UI.callSend(); }
         });
       }
     },
@@ -1900,6 +2032,21 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           var t = inp ? inp.value.trim() : '';
           if (!t) return;
           UI.stageTyped(kind, t);
+        };
+      });
+      // 通话：拨打入口 + 通话屏按钮组
+      ph.querySelectorAll('[data-act="dial"]').forEach(function (el) {
+        el.onclick = function () { UI.dial(el.dataset.dial); };
+      });
+      ph.querySelectorAll('[data-cact]').forEach(function (el) {
+        el.onclick = function () {
+          var a = el.dataset.cact;
+          if (a === 'hangup') UI.hangup(false);
+          else if (a === 'cancelcall') UI.hangup(true);
+          else if (a === 'callsend') UI.callSend();
+          else if (a === 'callreroll') UI.callReroll();
+          else if (a === 'mute') { UI.callMute = !UI.callMute; UI.render(); }
+          else if (a === 'spkr') { UI.callSpkr = !UI.callSpkr; UI.render(); }
         };
       });
     },
@@ -2053,8 +2200,163 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       } finally {
         this.busy = false;
       }
+    },
+
+    // ── 语音/视频通话 ──
+    // 拨打：呼叫页等一次「邀请生成」——AI 以 [拒绝] 开头 = 拒接（理由落聊天记录，
+    // 回聊天页）；否则开场白进 transcript 直接接通。通话中锁屏，仅挂断可退。
+    dial: async function (mode) {
+      if (this.busy || this.call) return;
+      if (this.isGroup || !this.chatKey) return;
+      var W = window.LZWorld, eng = W.Engine;
+      var name = this.chatKey;
+      this.panel = null;
+      this.callMute = false; this.callSpkr = false;
+      this.call = { name: name, mode: mode, phase: 'ringing', startAt: Date.now(), busy: false };
+      this.render();
+      try {
+        var text = await withTimeout(eng.callInvite(name, mode), 90000);
+        text = String(text || '').trim();
+        if (!text) throw new Error('对方没有响应，请稍后再拨');
+        if (!this.call || this.call.name !== name) return; // 等待中被取消
+        if (/^\[拒绝\]/.test(text)) {
+          var reason = text.replace(/^\[拒绝\]\s*/, '').trim();
+          var kindCn1 = mode === 'video' ? '视频通话' : '语音通话';
+          var back = [];
+          if (reason) back.push({ who: name, kind: 'text', text: reason });
+          back.push({ who: 'sys', kind: 'sys', text: kindCn1 + ' · 对方拒接' });
+          W.Store.push(name, back, 100);
+          try { W.Store.setMeta(name, { headline: kindCn1 + ' · 未接', atMainCount: eng.mainCount() }); } catch (e) {}
+          this.call = null; this.render();
+          return;
+        }
+        W.Store.push(eng.callKey(name), [{ who: name, kind: 'text', text: text }], 200);
+        this.call.phase = 'active';
+        this.call.startAt = Date.now();
+        this.render();
+      } catch (e) {
+        this.call = null; this.render();
+        try { toastr.error('拨打失败：' + (e && e.message || e), '📱 霖州引擎'); } catch (e2) {}
+      }
+    },
+
+    // 通话轮：机主说一句 → 对方回台词（多行）
+    callSend: async function () {
+      var W = window.LZWorld, eng = W.Engine;
+      var call = this.call;
+      if (!call || call.phase !== 'active' || call.busy) return;
+      var inp = pdoc().getElementById('lzw-callinput');
+      var t = inp ? inp.value.trim() : '';
+      if (!t) return;
+      if (inp) inp.value = '';
+      var key = eng.callKey(call.name);
+      W.Store.push(key, [{ who: 'user', kind: 'text', text: t }], 200);
+      call.busy = true;
+      this.render();
+      try {
+        var lines = await withTimeout(eng.callTurn(call.name, call.mode, t), 90000);
+        if (lines && lines.length) {
+          W.Store.push(key, lines.map(function (l) { return { who: call.name, kind: 'text', text: l }; }), 200);
+        }
+      } catch (e) {
+        try { toastr.error('对方信号不好，再试一次', '📱 霖州引擎'); } catch (e2) {}
+      }
+      if (this.call === call) { call.busy = false; this.render(); }
+    },
+
+    // 重说：弹掉对方最近一段台词，原地重生（带着机主最后一句的语境）
+    callReroll: async function () {
+      var W = window.LZWorld, eng = W.Engine;
+      var call = this.call;
+      if (!call || call.phase !== 'active' || call.busy) return;
+      var key = eng.callKey(call.name);
+      var h = W.Store.history(key);
+      var n = 0;
+      for (var i = h.length - 1; i >= 0 && h[i].who !== 'user' && h[i].who !== 'sys' && n < 10; i--) n++;
+      if (!n) return;
+      W.Store.popLast(key, n);
+      call.busy = true;
+      this.render();
+      try {
+        var lines = await withTimeout(eng.callTurn(call.name, call.mode, ''), 90000);
+        if (lines && lines.length) {
+          W.Store.push(key, lines.map(function (l) { return { who: call.name, kind: 'text', text: l }; }), 200);
+        }
+      } catch (e) {
+        try { toastr.error('重说失败，再试一次', '📱 霖州引擎'); } catch (e2) {}
+      }
+      if (this.call === call) { call.busy = false; this.render(); }
+    },
+
+    // 挂断：写时长（transcript 末尾 + 私聊系统条目），回聊天页。
+    // cancelled = 呼叫未接通时取消，不留记录。
+    hangup: function (cancelled) {
+      var call = this.call; if (!call) return;
+      var W = window.LZWorld, eng = W.Engine;
+      this.call = null;
+      if (this._ct) { clearInterval(this._ct); this._ct = null; }
+      if (!cancelled && call.phase === 'active') {
+        var sec = Math.max(1, Math.round((Date.now() - call.startAt) / 1000));
+        var dur = fmtDur(sec);
+        var kindCn2 = call.mode === 'video' ? '视频通话' : '语音通话';
+        W.Store.push(eng.callKey(call.name), [{ who: 'sys', kind: 'sys', text: '通话结束 · ' + dur }], 200);
+        W.Store.push(call.name, [{ who: 'sys', kind: 'sys', text: kindCn2 + ' · ' + dur }], 100);
+        try { W.Store.setMeta(call.name, { headline: kindCn2 + ' ' + dur, atMainCount: eng.mainCount() }); } catch (e) {}
+      }
+      this.screen = 'chat';
+      this.chatKey = call.name;
+      this.isGroup = false;
+      this.render();
     }
   };
+
+  function fmtDur(sec) {
+    sec = Math.max(0, Math.round(sec));
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), ss = sec % 60;
+    var mm = (m < 10 ? '0' : '') + m, s2 = (ss < 10 ? '0' : '') + ss;
+    return h ? (h + ':' + mm + ':' + s2) : (mm + ':' + s2);
+  }
+
+  // 通话屏：音频 = 大头像黑屏；视频 = 头像图全屏当画面。字幕双人对白都上。
+  function callHtml(call, userName) {
+    var W = window.LZWorld;
+    var eng = W.Engine;
+    var c = eng.findContact(call.name) || { name: call.name, avatar: '' };
+    var imgUrl = c.avatar ? esc(W.Worldbook.imgUrl(c.avatar)) : '';
+    var feed = (call.mode === 'video' && imgUrl) ? '<img class="lzw-callfeed" src="' + imgUrl + '">' : '';
+    var av = imgUrl ? '<img src="' + imgUrl + '">' : esc(call.name.slice(0, 1));
+    var hist = W.Store.history(eng.callKey(call.name));
+    var subs = hist.filter(function (m) { return m.who !== 'sys'; }).slice(-8).map(function (m) {
+      var isMe = m.who === 'user';
+      return '<div class="lzw-sub' + (isMe ? ' me' : '') + '">' + esc((isMe ? userName : m.who) + '：' + (m.text || '')) + '</div>';
+    }).join('');
+    var status = call.phase === 'ringing'
+      ? '正在呼叫…'
+      : (call.busy ? '对方说话中…' : fmtDur(Math.max(0, Math.round((Date.now() - call.startAt) / 1000))));
+    var btns;
+    if (call.phase === 'ringing') {
+      btns = '<div class="lzw-callmid"><button class="lzw-callbtn hang" data-cact="cancelcall"><i>✕</i><span>取消</span></button></div>';
+    } else {
+      btns = '<div class="lzw-callmid">' +
+        '<button class="lzw-callbtn' + (UI.callMute ? ' on' : '') + '" data-cact="mute"><i>' + (UI.callMute ? '🔇' : '🎙️') + '</i><span>静音</span></button>' +
+        '<button class="lzw-callbtn hang" data-cact="hangup"><i>✕</i><span>挂断</span></button>' +
+        '<button class="lzw-callbtn' + (UI.callSpkr ? ' on' : '') + '" data-cact="spkr"><i>📢</i><span>免提</span></button>' +
+        '</div>';
+    }
+    var input = call.phase === 'active'
+      ? '<div class="lzw-callrow"><input class="lzw-callinput" id="lzw-callinput" placeholder="说点什么…回车发送" maxlength="300"' + (call.busy ? ' disabled' : '') + '>' +
+        '<button class="lzw-csend" data-cact="callsend">发送</button>' +
+        (call.busy ? '' : '<button class="lzw-csend" data-cact="callreroll" style="background:rgba(255,255,255,.16)" title="重说对方上一段">重说</button>') +
+        '</div>'
+      : '';
+    return '<div class="lzw-callbody">' + feed +
+      '<div class="lzw-calltop">' + (feed ? '' : '<div class="lzw-callava">' + av + '</div>') +
+      '<div class="lzw-callname">' + esc(call.name) + '</div>' +
+      '<div class="lzw-callstatus" id="lzw-callstatus">' + esc(status) + '</div></div>' +
+      '<div class="lzw-callsubs">' + subs + '</div>' +
+      (call.phase === 'ringing' ? '<div class="lzw-cwait">等待对方接听…（由对方人设决定这通电话的命运）</div>' : '') +
+      btns + input + '</div>';
+  }
 
   // 生成超时保护：API 故障时 generateRaw 可能永远不返回，不兜底会让小飞机永远失灵
   function withTimeout(promise, ms) {
@@ -2096,9 +2398,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   }
 
   function appbarHtml(screen, disp, act) {
+    if (UI.call) return '<div class="lzw-appbar"><span class="lzw-appbar-t" style="color:#fff">' + esc(UI.call.name) + '</span><span class="lzw-appbar-r"></span></div>'; // 通话锁屏：无返回键
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
-    return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
+    var dials = (screen === 'chat' && !UI.isGroup && UI.chatKey)
+      ? '<span class="lzw-dial" data-act="dial" data-dial="audio" title="语音通话">' + ICON_CALL + '</span><span class="lzw-dial" data-act="dial" data-dial="video" title="视频通话">' + ICON_VCALL + '</span>'
+      : '';
+    return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span>' + dials + '<span class="lzw-appbar-r">' +
       (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
       '</span></div>';
   }
@@ -2738,11 +3044,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 已处理消息 id 落聊天变量防重——重进聊天文件不会二次触发。
     // 只挂即时生成事件、不做历史补扫（避免扫全楼层）。
     capturePhoneBlock: function (msg) {
+      return this.capturePhoneText(String((msg && msg.message) || ''));
+    },
+    // 从任意文本里抠 <!--phone--> 主动块并按人路由进私聊（带未读/近况元信息）。
+    // 正文末位捕捉与手机群聊生成夹带私聊，两条管道共用此函数。
+    capturePhoneText: function (text) {
       var W = window.LZWorld;
-      var text = String((msg && msg.message) || '');
       var re = /<!--\s*phone\s*([\s\S]*?)-->/gi;
       var m, body = '';
-      while ((m = re.exec(text))) body += (body ? '\n' : '') + m[1];
+      while ((m = re.exec(String(text || '')))) body += (body ? '\n' : '') + m[1];
       if (!body.trim()) return [];
       var parsed;
       try { parsed = W.Floor.parseNpcLines(body, null); } catch (e) { return []; }
@@ -2850,6 +3160,18 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       }
 
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      // 群聊生成可夹带 <!--phone--> 私聊主动块（成员借群里的话题顺势私聊机主）：
+      // 路由进各私聊 + 红点 + toast，然后从回复里剥掉，免得被群解析器吃进记录
+      if (parseGroup && /<!--\s*phone/i.test(text)) {
+        var sideNames = [];
+        try { sideNames = this.capturePhoneText(text); } catch (e) { console.warn('[霖州引擎] 群聊夹带私聊捕捉失败', e); }
+        if (sideNames.length) {
+          try { toastr.info('📱 ' + sideNames.join('、') + ' 借机私聊了你', '霖州手机', { timeOut: 4000 }); } catch (e) {}
+          try { W.Floor.renderAll(); } catch (e) {}
+          try { var UI0 = W.Apps && W.Apps.wechat; if (UI0 && UI0.screen && !UI0.call) UI0.render(); } catch (e) {}
+        }
+        text = text.replace(/<!--\s*phone\s*([\s\S]*?)-->/gi, '');
+      }
       var msgs = W.Floor.parseNpcLines(text, parseGroup ? null : chatKey);
       if (!msgs.length) throw new Error('生成结果为空');
       // 一行近况（正文注入用）：取最后一条消息的核心内容
@@ -2857,6 +3179,54 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var headText = lastMsg.kind === 'text' ? lastMsg.text : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[lastMsg.kind] || '消息') + ']';
       W.Store.setMeta(chatKey, { headline: String(headText).slice(0, 40), atMainCount: this.mainCount() });
       return { key: chatKey, title: title, msgs: msgs };
+    },
+
+
+
+    // ── 语音/视频通话 ──
+    // transcript 存 Store key「call:名字」，与聊天记录平级的一级历史：
+    // 挂断时把时长写进私聊系统条目，跨场景/摘要/红点管道全部现成可用。
+    // 拨打流程：呼叫页（等 AI）→ AI 以 [拒绝] 开头 = 拒接回聊天页；否则开场白
+    // 进 transcript 直接接通。通话轮 = 「机主说一句 → 对方回台词」循环。
+    callKey: function (name) { return 'call:' + name; },
+
+    // 拨打邀请：AI 决定接/拒
+    callInvite: async function (name, mode) {
+      var W = window.LZWorld;
+      var c = this.findContact(name);
+      if (!c) throw new Error('联系人不在本线通讯录：' + name);
+      var profile = this.profileFor(name);
+      var snap = W.Status.snapshot(name);
+      var userInfo = this.userBlock();
+      var req = W.Prompt.callInvite({ name: c.name, profile: profile }, snap, userInfo, mode,
+        this.crossGroups(c.name, snap && snap.dateText));
+      var raw = await generateRaw(req);
+      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      return text.trim();
+    },
+
+    // 通话轮：机主「说」了 userSays（可为空 = 接续对方上一句），生成对方台词
+    callTurn: async function (name, mode, userSays) {
+      var W = window.LZWorld;
+      var c = this.findContact(name);
+      if (!c) throw new Error('联系人不在本线通讯录：' + name);
+      var profile = this.profileFor(name);
+      var snap = W.Status.snapshot(name);
+      var userInfo = this.userBlock();
+      var hist = W.Store.history(this.callKey(name));
+      var lines = [];
+      for (var i = Math.max(0, hist.length - 30); i < hist.length; i++) {
+        var m = hist[i];
+        if (m.who === 'sys') continue;
+        lines.push(W.Floor.msgToLine(m, this.userName()));
+      }
+      var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), snap, userInfo, mode,
+        this.crossGroups(c.name, snap && snap.dateText), userSays || '');
+      var raw = await generateRaw(req);
+      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      // 剥注释块防污染（极端情况：AI 在通话里输出主动块）
+      text = text.replace(/<!--" + BS + "s*phone" + BS + "s*([" + BS + "s" + BS + "S]*?)-->/gi, '');
+      return text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 8);
     },
 
     // ── 快捷回复按钮自装 ──

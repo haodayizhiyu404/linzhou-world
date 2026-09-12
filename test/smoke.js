@@ -304,6 +304,26 @@ ctx.getWorldbook = async () => [
   eq('未读·已有计数', capUn1 > 0, true);
   LW.Store.clearUnread('沈锡元');
   eq('未读·打开清零', LW.Store.meta('沈锡元').unread, 0);
+  // ── 8.8 通话：提示词构造 + 群夹带私聊路由 + sys 条目 ──
+  console.log('[通话]');
+  const inv = LW.Prompt.callInvite({ name: '沈锡元', profile: '测试档案' }, { dateText: '2034年8月26日 星期五', npc: { relation: '竹马' } }, '机主资料', 'audio', []);
+  const invTxt = inv.ordered_prompts[0].content;
+  eq('通话·邀请任务', invTxt.indexOf('语音通话') !== -1, true);
+  eq('通话·拒绝约定', invTxt.indexOf('[拒绝]') !== -1, true);
+  eq('通话·邀请不带聊天记录段', invTxt.indexOf('## 通话记录') === -1, true);
+  const turn = LW.Prompt.callTurn({ name: '沈锡元', profile: '测试档案' }, '沈锡元：喂\n裴知意：嗯', { dateText: '2034年8月26日 星期五' }, '机主资料', 'video', [], '你睡了吗');
+  const turnTxt = turn.ordered_prompts[0].content;
+  eq('通话·轮任务', turnTxt.indexOf('视频通话') !== -1, true);
+  eq('通话·transcript带入', turnTxt.indexOf('沈锡元：喂') !== -1, true);
+  eq('通话·机主话入user轮', turn.ordered_prompts[1].content.indexOf('你睡了吗') !== -1, true);
+  // 群夹带私聊：群回复里的 <!--phone--> 块路由进私聊且从群记录剥掉
+  global.__msgs = null;
+  const sideNames = LW.Engine.capturePhoneText('陆飞：哈哈<!--phone\n许嘉文：我有，直接送你\n-->还有');
+  eq('群夹带·路由到人', sideNames.indexOf('许嘉文') !== -1, true);
+  eq('群夹带·写入私聊', LW.Store.history('许嘉文').some(function (m) { return m.text.indexOf('直接送你') !== -1; }), true);
+  // sys 条目：msgToLine 不带人名前缀（跨场景携带里就是干净的「语音通话 · 03:24」）
+  eq('通话·sys行格式', LW.Floor.msgToLine({ who: 'sys', kind: 'sys', text: '语音通话 · 03:24' }, '裴知意'), '语音通话 · 03:24');
+  eq('通话·callKey', LW.Engine.callKey('沈锡元'), 'call:沈锡元');
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
   process.exit(fail ? 1 : 0);

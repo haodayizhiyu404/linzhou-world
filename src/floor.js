@@ -23,6 +23,7 @@
 
   // ── 消息 → 楼层行 ──
   function msgToLine(m, userName) {
+    if (m.who === 'sys') return String(m.text || ''); // 系统条目（通话时长等）不带人名前缀
     var who = m.who === 'user' ? userName : m.who;
     var body;
     switch (m.kind) {

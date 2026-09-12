@@ -574,11 +574,15 @@
     // 已处理消息 id 落聊天变量防重——重进聊天文件不会二次触发。
     // 只挂即时生成事件、不做历史补扫（避免扫全楼层）。
     capturePhoneBlock: function (msg) {
+      return this.capturePhoneText(String((msg && msg.message) || ''));
+    },
+    // 从任意文本里抠 <!--phone--> 主动块并按人路由进私聊（带未读/近况元信息）。
+    // 正文末位捕捉与手机群聊生成夹带私聊，两条管道共用此函数。
+    capturePhoneText: function (text) {
       var W = window.LZWorld;
-      var text = String((msg && msg.message) || '');
       var re = /<!--\s*phone\s*([\s\S]*?)-->/gi;
       var m, body = '';
-      while ((m = re.exec(text))) body += (body ? '\n' : '') + m[1];
+      while ((m = re.exec(String(text || '')))) body += (body ? '\n' : '') + m[1];
       if (!body.trim()) return [];
       var parsed;
       try { parsed = W.Floor.parseNpcLines(body, null); } catch (e) { return []; }
@@ -686,6 +690,18 @@
       }
 
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      // 群聊生成可夹带 <!--phone--> 私聊主动块（成员借群里的话题顺势私聊机主）：
+      // 路由进各私聊 + 红点 + toast，然后从回复里剥掉，免得被群解析器吃进记录
+      if (parseGroup && /<!--\s*phone/i.test(text)) {
+        var sideNames = [];
+        try { sideNames = this.capturePhoneText(text); } catch (e) { console.warn('[霖州引擎] 群聊夹带私聊捕捉失败', e); }
+        if (sideNames.length) {
+          try { toastr.info('📱 ' + sideNames.join('、') + ' 借机私聊了你', '霖州手机', { timeOut: 4000 }); } catch (e) {}
+          try { W.Floor.renderAll(); } catch (e) {}
+          try { var UI0 = W.Apps && W.Apps.wechat; if (UI0 && UI0.screen && !UI0.call) UI0.render(); } catch (e) {}
+        }
+        text = text.replace(/<!--\s*phone\s*([\s\S]*?)-->/gi, '');
+      }
       var msgs = W.Floor.parseNpcLines(text, parseGroup ? null : chatKey);
       if (!msgs.length) throw new Error('生成结果为空');
       // 一行近况（正文注入用）：取最后一条消息的核心内容
@@ -693,6 +709,54 @@
       var headText = lastMsg.kind === 'text' ? lastMsg.text : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[lastMsg.kind] || '消息') + ']';
       W.Store.setMeta(chatKey, { headline: String(headText).slice(0, 40), atMainCount: this.mainCount() });
       return { key: chatKey, title: title, msgs: msgs };
+    },
+
+
+
+    // ── 语音/视频通话 ──
+    // transcript 存 Store key「call:名字」，与聊天记录平级的一级历史：
+    // 挂断时把时长写进私聊系统条目，跨场景/摘要/红点管道全部现成可用。
+    // 拨打流程：呼叫页（等 AI）→ AI 以 [拒绝] 开头 = 拒接回聊天页；否则开场白
+    // 进 transcript 直接接通。通话轮 = 「机主说一句 → 对方回台词」循环。
+    callKey: function (name) { return 'call:' + name; },
+
+    // 拨打邀请：AI 决定接/拒
+    callInvite: async function (name, mode) {
+      var W = window.LZWorld;
+      var c = this.findContact(name);
+      if (!c) throw new Error('联系人不在本线通讯录：' + name);
+      var profile = this.profileFor(name);
+      var snap = W.Status.snapshot(name);
+      var userInfo = this.userBlock();
+      var req = W.Prompt.callInvite({ name: c.name, profile: profile }, snap, userInfo, mode,
+        this.crossGroups(c.name, snap && snap.dateText));
+      var raw = await generateRaw(req);
+      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      return text.trim();
+    },
+
+    // 通话轮：机主「说」了 userSays（可为空 = 接续对方上一句），生成对方台词
+    callTurn: async function (name, mode, userSays) {
+      var W = window.LZWorld;
+      var c = this.findContact(name);
+      if (!c) throw new Error('联系人不在本线通讯录：' + name);
+      var profile = this.profileFor(name);
+      var snap = W.Status.snapshot(name);
+      var userInfo = this.userBlock();
+      var hist = W.Store.history(this.callKey(name));
+      var lines = [];
+      for (var i = Math.max(0, hist.length - 30); i < hist.length; i++) {
+        var m = hist[i];
+        if (m.who === 'sys') continue;
+        lines.push(W.Floor.msgToLine(m, this.userName()));
+      }
+      var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), snap, userInfo, mode,
+        this.crossGroups(c.name, snap && snap.dateText), userSays || '');
+      var raw = await generateRaw(req);
+      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      // 剥注释块防污染（极端情况：AI 在通话里输出主动块）
+      text = text.replace(/<!--" + BS + "s*phone" + BS + "s*([" + BS + "s" + BS + "S]*?)-->/gi, '');
+      return text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 8);
     },
 
     // ── 快捷回复按钮自装 ──

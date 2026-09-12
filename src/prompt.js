@@ -222,6 +222,93 @@
       };
     },
 
+    // ── 通话邀请：机主拨打了语音/视频通话，AI 决定接/拒 ──
+    // 约定：拒绝 → 第一行以 [拒绝] 开头，可附一句简短说明；接听 → 直接输出接通后的
+    // 第一句话（口语台词，不要引号/动作/括号）。呼叫页等待期间的一次生成。
+    callInvite: function (contact, snapshot, userInfo, mode, crossGroups) {
+      var myName = me();
+      var kind = mode === 'video' ? '视频通话' : '语音通话';
+      var p = [
+        '# 数字世界 · ' + kind + '邀请',
+        '',
+        '你是一款数字生活应用的模拟引擎。本次任务：机主「' + myName + '」给「' + contact.name + '」发起了' + kind + '，生成对方的反应。',
+        '',
+        contact.profile ? '## 人物档案 · ' + contact.name + '\n' + contact.profile : '',
+        '',
+        userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
+        '',
+        situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+        '',
+        (crossGroups && crossGroups.length)
+          ? '## 相关群聊近况（下列记录中对方本人均在场）\n' + crossGroups.map(function (g) {
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+            }).join('\n\n')
+          : '',
+        '',
+        consistencyRules('「' + contact.name + '」'),
+        '',
+        '## 输出要求（严格遵守，二选一）',
+        '- 接听：直接输出接通后的第一句话，1~3 行口语台词，像真人打电话的开场',
+        '- 拒绝：第一行以 [拒绝] 开头，其后可附一句简短说明（如「在忙，晚点回」），也可不附',
+        '- 不得输出引号、动作描写、心理括号、时间戳',
+        '- 决定须符合上方「关系」阶段与当前情境（深夜/工作时间/在群里刚聊过等）'
+      ].filter(function (s2) { return s2 !== ''; }).join('\n');
+      return {
+        ordered_prompts: [
+          { role: 'system', content: p },
+          { role: 'user', content: '（' + myName + '的' + kind + '正在呼叫' + contact.name + '。请按输出要求生成对方的反应。）' }
+        ],
+        should_silence: true,
+        max_chat_history: 0
+      };
+    },
+
+    // ── 通话轮：通话进行中，机主说了一句（或要求接续），生成对方台词 ──
+    // transcript = 「名字：…/机主：…」台词行；userSays = 机主本轮说的话（可空）
+    callTurn: function (contact, transcript, snapshot, userInfo, mode, crossGroups, userSays) {
+      var myName = me();
+      var kind = mode === 'video' ? '视频通话' : '语音通话';
+      var p = [
+        '# 数字世界 · ' + kind + '进行中的台词',
+        '',
+        '你是一款数字生活应用的模拟引擎。本次任务：生成' + kind + '中「' + contact.name + '」接下来的台词。',
+        '',
+        contact.profile ? '## 人物档案 · ' + contact.name + '\n' + contact.profile : '',
+        '',
+        userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
+        '',
+        situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+        '',
+        (crossGroups && crossGroups.length)
+          ? '## 相关群聊近况（下列记录中对方本人均在场，可自然提及）\n' + crossGroups.map(function (g) {
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+            }).join('\n\n')
+          : '',
+        '',
+        '## 通话记录（' + kind + ' · 双方已说的话）',
+        transcript || '（刚接通）',
+        '',
+        consistencyRules('「' + contact.name + '」'),
+        '',
+        '## 输出要求',
+        '- 只输出「' + contact.name + '」的台词，1~5 行，按情绪与话题自然增减（激动时可更多）',
+        '- 口语化，像真人打电话：短句、停顿感、可有语气词；不要书面腔',
+        '- 每行独立，不要引号、动作描写、心理括号、时间戳',
+        '- 情感与态度符合上方「关系」阶段；吵架、撒娇、汇报都按当前关系该有度',
+        '- 不要复述机主刚说的话'
+      ].filter(function (s2) { return s2 !== ''; }).join('\n');
+      return {
+        ordered_prompts: [
+          { role: 'system', content: p },
+          { role: 'user', content: userSays
+              ? '（' + myName + '在' + kind + '里说：「' + userSays + '」。请生成「' + contact.name + '」的台词。）'
+              : '（' + kind + '沉默了几秒。请生成「' + contact.name + '」接下来的台词。）' }
+        ],
+        should_silence: true,
+        max_chat_history: 0
+      };
+    },
+
     // ── 群聊 ──
     // userInfo = 机主资料，与私聊同一份
     // crossPriv = {成员名: 当天私聊尾巴}（私聊→群跨会话上下文；挂到该成员档案下，※ 仅本人知晓）
