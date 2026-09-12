@@ -153,6 +153,9 @@ eq('群crowd逐字进提示词', gtxt3.indexOf('其余成员设定：\n类型：
 eq('群crowd多行保留', gtxt3.indexOf('特殊规则：可同时存在多个话题') !== -1, true);
 LW.Store.push('stampT', [{ who: 'user', kind: 'text', text: 'x', time: '22:00' }], 100);
 eq('落库自动补日期', LW.Store.history('stampT')[0].day, '2034年8月26日 星期五');
+LW.Store.push('stampT2', [{ who: '周言', kind: 'text', text: 'y', time: '' }], 100);
+eq('NPC消息自动补时钟', LW.Store.history('stampT2')[0].time, '22:49');
+eq('NPC消息自动补日期', LW.Store.history('stampT2')[0].day, '2034年8月26日 星期五');
 
 // ── 8. 世界书通讯录：群字段透传 ──
 console.log('[世界书]');

@@ -44,12 +44,13 @@
     push: function (chatKey, msgs, cap) {
       var r = readRoot();
       var h = (r.history || {})[chatKey] || [];
-      var stampDay = null;
+      var stampDay = null, stampTime = null;
       for (var i = 0; i < msgs.length; i++) {
         var m = msgs[i];
-        if (m && m.kind !== 'recall' && m.day == null) {
+        if (m && m.kind !== 'recall' && (m.day == null || !m.time)) {
           if (stampDay === null) { try { stampDay = window.LZWorld.Status.nowDay() || ''; } catch (e) { stampDay = ''; } }
-          m = Object.assign({}, m, { day: stampDay });
+          if (stampTime === null) { try { stampTime = window.LZWorld.Status.nowText() || ''; } catch (e) { stampTime = ''; } }
+          m = Object.assign({}, m, { day: m.day == null ? stampDay : m.day, time: m.time || stampTime });
           msgs[i] = m;
         }
         if (m && m.kind === 'recall') {

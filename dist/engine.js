@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T02:48:40.920Z
+//  构建时间：2026-09-12T02:57:51.344Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 02:48';
+var __LZW_BUILD__ = '2026-09-12 02:57';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -53,12 +53,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     push: function (chatKey, msgs, cap) {
       var r = readRoot();
       var h = (r.history || {})[chatKey] || [];
-      var stampDay = null;
+      var stampDay = null, stampTime = null;
       for (var i = 0; i < msgs.length; i++) {
         var m = msgs[i];
-        if (m && m.kind !== 'recall' && m.day == null) {
+        if (m && m.kind !== 'recall' && (m.day == null || !m.time)) {
           if (stampDay === null) { try { stampDay = window.LZWorld.Status.nowDay() || ''; } catch (e) { stampDay = ''; } }
-          m = Object.assign({}, m, { day: stampDay });
+          if (stampTime === null) { try { stampTime = window.LZWorld.Status.nowText() || ''; } catch (e) { stampTime = ''; } }
+          m = Object.assign({}, m, { day: m.day == null ? stampDay : m.day, time: m.time || stampTime });
           msgs[i] = m;
         }
         if (m && m.kind === 'recall') {
