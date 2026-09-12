@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T04:04:24.967Z
+//  构建时间：2026-09-12T04:15:39.535Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 04:04';
+var __LZW_BUILD__ = '2026-09-12 04:15';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1789,12 +1789,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       this.busy = true;
       var W = window.LZWorld;
       var eng = W.Engine;
+      // 生成是异步的，期间用户可能已切到别的会话——key 必须先抓快照，
+      // 否则回复会落进当前打开的会话（角色串聊）
+      var key = this.chatKey;
+      var grp = this.isGroup;
       try {
-        var result = await withTimeout(eng.generateFor(this.chatKey, this.isGroup), 90000);
+        var result = await withTimeout(eng.generateFor(key, grp), 90000);
         this.failed = false;
         if (result && result.msgs && result.msgs.length) {
-          W.Store.push(this.chatKey, result.msgs, 100);
-          if (this.screen === 'chat' && this.chatKey === result.key) this.render();
+          W.Store.push(key, result.msgs, 100);
+          // 正在看别的会话时不刷它的屏；列表/主页则刷新让预览跟上
+          if (this.screen !== 'chat' || this.chatKey === key) this.render();
         }
       } catch (e) {
         // API 故障有两类：直接报错、或永远挂起（由 withTimeout 兜底）。两种都要能重试。

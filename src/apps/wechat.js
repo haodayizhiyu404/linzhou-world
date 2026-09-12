@@ -753,12 +753,17 @@
       this.busy = true;
       var W = window.LZWorld;
       var eng = W.Engine;
+      // 生成是异步的，期间用户可能已切到别的会话——key 必须先抓快照，
+      // 否则回复会落进当前打开的会话（角色串聊）
+      var key = this.chatKey;
+      var grp = this.isGroup;
       try {
-        var result = await withTimeout(eng.generateFor(this.chatKey, this.isGroup), 90000);
+        var result = await withTimeout(eng.generateFor(key, grp), 90000);
         this.failed = false;
         if (result && result.msgs && result.msgs.length) {
-          W.Store.push(this.chatKey, result.msgs, 100);
-          if (this.screen === 'chat' && this.chatKey === result.key) this.render();
+          W.Store.push(key, result.msgs, 100);
+          // 正在看别的会话时不刷它的屏；列表/主页则刷新让预览跟上
+          if (this.screen !== 'chat' || this.chatKey === key) this.render();
         }
       } catch (e) {
         // API 故障有两类：直接报错、或永远挂起（由 withTimeout 兜底）。两种都要能重试。
