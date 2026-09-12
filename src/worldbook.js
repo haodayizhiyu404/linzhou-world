@@ -115,7 +115,7 @@
       if (typeof g === 'string') return { name: g, members: [] };
       return {
         name: String(g.name || '').trim(),
-        members: (g.members || []).map(String),
+        members: (g.members || []).map(String).filter(function (n) { return n.trim() && !/^\{\{user\}\}$/i.test(n.trim()); }),
         open: !!g.open,
         avatar: String(g.avatar || '').trim(),
         style: g.style ? String(g.style) : '',

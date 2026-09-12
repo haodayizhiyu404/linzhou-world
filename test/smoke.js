@@ -160,7 +160,7 @@ ctx.getWorldbook = async () => [
       groups: [{
         name: '霖附吃瓜二手交易市场', open: true, avatar: 'g.png',
         style: '节奏快', crowd: '超百人，多为陌生人',
-        members: ['周言']
+        members: ['周言', '{{user}}']
       }]
     }
   }) }
@@ -173,6 +173,7 @@ ctx.getWorldbook = async () => [
   eq('群crowd透传', g0.crowd, '超百人，多为陌生人');
   eq('群open透传', g0.open, true);
   eq('群members透传', JSON.stringify(g0.members), '["周言"]');
+  eq('群members滤掉user宏', g0.members.indexOf('{{user}}') === -1, true);
   eq('联系人avatar透传', (wb.rosters['IF线'].contacts || [])[0].avatar, 'a.png');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
   process.exit(fail ? 1 : 0);

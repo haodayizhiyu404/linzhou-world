@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T01:58:04.471Z
+//  构建时间：2026-09-12T02:09:01.922Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 01:58';
+var __LZW_BUILD__ = '2026-09-12 02:09';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -389,7 +389,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (typeof g === 'string') return { name: g, members: [] };
       return {
         name: String(g.name || '').trim(),
-        members: (g.members || []).map(String),
+        members: (g.members || []).map(String).filter(function (n) { return n.trim() && !/^\{\{user\}\}$/i.test(n.trim()); }),
         open: !!g.open,
         avatar: String(g.avatar || '').trim(),
         style: g.style ? String(g.style) : '',
