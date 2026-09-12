@@ -69,6 +69,8 @@ eq('撤回不打断条数', rh.length, 2);
 eq('撤回标落到上一条', rh[1].recalled, true);
 eq('定点删除', LW.Store.removeAt('撤回测试', 0), true);
 eq('删除后条数', LW.Store.history('撤回测试').length, 1);
+LW.Store.removeAt('撤回测试', 0);
+eq('删空后元信息清除', LW.Store.meta('撤回测试').headline === undefined && Object.keys(LW.Store.meta('撤回测试')).length === 0, true);
 LW.Store.wipeHistory();
 
 // ── 2. 记录块往返 ──

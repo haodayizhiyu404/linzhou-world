@@ -76,6 +76,8 @@
       if (!h || index < 0 || index >= h.length) return false;
       h.splice(index, 1);
       r.history[chatKey] = h;
+      // 删空会话时连元信息一起清，免得变量里留下永不使用的残留
+      if (!h.length && r.meta) delete r.meta[chatKey];
       writeRoot(r);
       return true;
     },

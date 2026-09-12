@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T04:15:39.535Z
+//  构建时间：2026-09-12T04:22:42.903Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 04:15';
+var __LZW_BUILD__ = '2026-09-12 04:22';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -85,6 +85,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!h || index < 0 || index >= h.length) return false;
       h.splice(index, 1);
       r.history[chatKey] = h;
+      // 删空会话时连元信息一起清，免得变量里留下永不使用的残留
+      if (!h.length && r.meta) delete r.meta[chatKey];
       writeRoot(r);
       return true;
     },
