@@ -118,6 +118,8 @@
     return out;
   }
   // 通用块拆分：tag = NPC | MAIN
+  // 末块收尾注意：块后面常跟章节（# III. 时代锚点事件 / # IV. 叙事指导），
+  // 不截断会被末块整段吞进块体。顶格 # 标题视作块体结束。
   function parseTaggedBlocks(text, tag) {
     var src = String(text || '');
     var out = {};
@@ -126,8 +128,14 @@
     while ((m = re.exec(src))) {
       marks.push({ name: m[1].trim(), start: m.index, headEnd: re.lastIndex });
     }
+    var topRe = /^#{1,6}\s+/m;
     for (var i = 0; i < marks.length; i++) {
       var end = (i + 1 < marks.length) ? marks[i + 1].start : src.length;
+      if (end === src.length) {
+        var seg = src.slice(marks[i].headEnd, end);
+        var hm = topRe.exec(seg);
+        if (hm) end = marks[i].headEnd + hm.index;
+      }
       var body = src.slice(marks[i].headEnd, end).trim();
       if (marks[i].name && body) {
         out[marks[i].name] = out[marks[i].name] ? out[marks[i].name] + '\n' + body : body;

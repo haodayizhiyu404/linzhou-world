@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T09:09:50.601Z
+//  构建时间：2026-09-12T09:30:37.086Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 09:09';
+var __LZW_BUILD__ = '2026-09-12 09:30';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -395,6 +395,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     return out;
   }
   // 通用块拆分：tag = NPC | MAIN
+  // 末块收尾注意：块后面常跟章节（# III. 时代锚点事件 / # IV. 叙事指导），
+  // 不截断会被末块整段吞进块体。顶格 # 标题视作块体结束。
   function parseTaggedBlocks(text, tag) {
     var src = String(text || '');
     var out = {};
@@ -403,8 +405,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     while ((m = re.exec(src))) {
       marks.push({ name: m[1].trim(), start: m.index, headEnd: re.lastIndex });
     }
+    var topRe = /^#{1,6}\s+/m;
     for (var i = 0; i < marks.length; i++) {
       var end = (i + 1 < marks.length) ? marks[i + 1].start : src.length;
+      if (end === src.length) {
+        var seg = src.slice(marks[i].headEnd, end);
+        var hm = topRe.exec(seg);
+        if (hm) end = marks[i].headEnd + hm.index;
+      }
       var body = src.slice(marks[i].headEnd, end).trim();
       if (marks[i].name && body) {
         out[marks[i].name] = out[marks[i].name] ? out[marks[i].name] + '\n' + body : body;
@@ -2199,9 +2207,16 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return String(t || '').replace(/\{\{\s*user\s*\}\}/gi, n);
     },
 
-    // 酒馆 persona 描述（父页自带数据）：ctx 新字段 → power_user 全局，两层兜底。
+    // 酒馆 persona 描述：酒馆助手沙盒自带 getPersona('current') 优先（ST 原生绑定接口），
+    // 父页 ctx.personaDescription / power_user.persona_description 兜底。
     // 每次生成现读——换 persona 立刻跟上，不用刷新。
     userPersona: function () {
+      try {
+        if (typeof getPersona === 'function') {
+          var p = getPersona('current');
+          if (p && p.description) return String(p.description);
+        }
+      } catch (e) {}
       try {
         var st = window.parent.SillyTavern;
         var ctx = st && st.getContext && st.getContext();
@@ -2223,7 +2238,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       }
       var base = state.profiles[name] || '';
       if (line && state.evolLine[line] && state.evolLine[line][name]) {
-        base = base ? base + '\n' + state.evolLine[line][name] : state.evolLine[line][name];
+        var evo = state.evolLine[line][name];
+        base = base
+          ? base + '\n\n当前时间线【' + line + '】的最新人设演化如下（叠加于上方基础人设，不替换）：\n' + evo
+          : evo;
       }
       return this.deref(base);
     },

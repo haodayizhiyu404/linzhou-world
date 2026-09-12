@@ -103,9 +103,16 @@
       return String(t || '').replace(/\{\{\s*user\s*\}\}/gi, n);
     },
 
-    // 酒馆 persona 描述（父页自带数据）：ctx 新字段 → power_user 全局，两层兜底。
+    // 酒馆 persona 描述：酒馆助手沙盒自带 getPersona('current') 优先（ST 原生绑定接口），
+    // 父页 ctx.personaDescription / power_user.persona_description 兜底。
     // 每次生成现读——换 persona 立刻跟上，不用刷新。
     userPersona: function () {
+      try {
+        if (typeof getPersona === 'function') {
+          var p = getPersona('current');
+          if (p && p.description) return String(p.description);
+        }
+      } catch (e) {}
       try {
         var st = window.parent.SillyTavern;
         var ctx = st && st.getContext && st.getContext();
@@ -127,7 +134,10 @@
       }
       var base = state.profiles[name] || '';
       if (line && state.evolLine[line] && state.evolLine[line][name]) {
-        base = base ? base + '\n' + state.evolLine[line][name] : state.evolLine[line][name];
+        var evo = state.evolLine[line][name];
+        base = base
+          ? base + '\n\n当前时间线【' + line + '】的最新人设演化如下（叠加于上方基础人设，不替换）：\n' + evo
+          : evo;
       }
       return this.deref(base);
     },

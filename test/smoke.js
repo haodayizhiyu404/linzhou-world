@@ -176,7 +176,7 @@ ctx.getWorldbook = async () => [
   { comment: '周言', enabled: true, content: '周言的单人条目内容（短标题兜底）' },
   { comment: 'NPC（高中线-核心人员）', enabled: true, content: '[NPC·陆飞]\n性别: 男。\n身份: 篮球队（高中版）。\n\n[NPC·张裕民]\n性别: 男。\n身份: 班主任。' },
   { comment: 'NPC（大学线）', enabled: true, content: '[NPC·陆飞]\n性别: 男。\n身份: 运动康复专业（大学版），与{{user}}同住一栋公寓。' },
-  { comment: '主角人设（大学线）', enabled: true, content: '[MAIN·周言·演化后]\n- 法学院学生，戴金丝边眼镜。\n\n[MAIN·{{user}}·演化后]\n- 新闻与传播学院学生，住校内宿舍。' },
+  { comment: '主角人设（大学线）', enabled: true, content: '[MAIN·周言·演化后]\n- 法学院学生，戴金丝边眼镜。\n\n[MAIN·{{user}}·演化后]\n- 新闻与传播学院学生，住校内宿舍。\n\n## III. 时代锚点事件\n- 第一次送别。\n\n# IV. 叙事指导\n- 这段不该进手机提示词。' },
   { comment: '世界设定杂项', enabled: true, content: '[NPC·外校生]\n性别: 女。\n身份: 来打友谊赛的。' },
   { comment: '霖州手机::人设::林溪', enabled: true, content: '林溪的手机专用档案' }
 ];
@@ -203,11 +203,14 @@ ctx.getWorldbook = async () => [
   const rawEvol = (wb.evolLineRaw.filter(r => r.scope === '大学线')[0] || { blocks: {} }).blocks;
   eq('演化块·剥演化后缀', (rawEvol['周言'] || '').indexOf('法学院') !== -1, true);
   eq('演化块·user块单列', (rawEvol['{{user}}'] || '').indexOf('新闻与传播学院') !== -1, true);
+  eq('末块不吞后续章节', (rawEvol['{{user}}'] || '').indexOf('叙事指导') === -1
+    && (rawEvol['{{user}}'] || '').indexOf('时代锚点事件') === -1, true);
 
   // ── 8.5 引擎线作用域：拼装、串线隔离、user 宏替换 ──
   console.log('[引擎·线档案]');
   LW.Apps = { wechat: { inject() {}, render() {}, remove() {} } };
   LW.Engine.userName = () => '陈默';
+  ctx.getPersona = () => ({ avatar_id: 1, name: '陈默', description: 'persona描述：陈默，住天禧城3幢901。' });
   await LW.Engine.load();
   eq('作用域→线名·高中', LW.Engine.lineOfScope('高中线-核心人员'), '高中时代');
   eq('作用域→线名·大学', LW.Engine.lineOfScope('大学线'), '大学时代');
@@ -221,6 +224,8 @@ ctx.getWorldbook = async () => [
   eq('大学线user宏替换', LW.Engine.profileFor('陆飞').indexOf('{{user}}') === -1 && LW.Engine.profileFor('陆飞').indexOf('陈默') !== -1, true);
   const zy = LW.Engine.profileFor('周言');
   eq('基础人设+演化层叠加', zy.indexOf('短标题兜底') !== -1 && zy.indexOf('法学院') !== -1, true);
+  eq('演化层衔接句', zy.indexOf('最新人设演化如下') !== -1 && zy.indexOf('【大学时代】') !== -1, true);
+  eq('用户段·persona描述', LW.Engine.userBlock().indexOf('天禧城3幢901') !== -1, true);
   eq('用户段·线user演化', LW.Engine.userBlock().indexOf('新闻与传播学院') !== -1, true);
   eq('用户段·user宏替换', LW.Engine.userBlock().indexOf('{{user}}') === -1, true);
   LW.Engine.applyLine(null, '收尾');
