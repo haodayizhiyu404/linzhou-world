@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T00:47:17.731Z
+//  构建时间：2026-09-12T01:28:36.840Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 00:47';
+var __LZW_BUILD__ = '2026-09-12 01:28';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1087,6 +1087,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 聊天
     '.lzw-chatbg{background:#f2f2f5;min-height:100%;padding:4px 0 10px}',
     '.lzw-chatrow{display:flex;gap:7px;margin:11px 12px;align-items:flex-start}',
+    '.lzw-col{display:flex;flex-direction:column;min-width:0}',
+    '.lzw-sender{font-size:11px;color:#9aa0a8;margin:0 0 3px}',
     '.lzw-chatrow.me{flex-direction:row-reverse}',
     '.lzw-bub{max-width:62%;padding:8px 11px;border-radius:9px;background:#fff;color:#111;line-height:1.45;font-size:13.5px;',
     'word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.05)}',
@@ -1199,7 +1201,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // ── 手机内气泡行 ──
   // targetName：会话对象显示名（私聊=联系人，群聊=群名），用户戳一戳时显示「你戳了戳 TA」
-  function chatRowHtml(m, userName, contactMap, targetName, idx, peeked) {
+  function chatRowHtml(m, userName, contactMap, targetName, idx, peeked, showName) {
     var isUser = m.who === 'user';
     var who = isUser ? userName : m.who;
     // 撤回未偷看：只留一行可点击的撤回提示
@@ -1242,6 +1244,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         bub = '<div class="lzw-bub" style="padding:6px">' + peektg + bub + '</div>';
       }
     }
+    if (showName && !isUser && m.who) bub = '<div class="lzw-col"><div class="lzw-sender">' + esc(m.who) + '</div>' + bub + '</div>';
     return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '" data-del="' + idx + '">' + avatar + bub + '</div>';
   }
 
@@ -1426,7 +1429,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             pre = '<div class="lzw-sysrow">' + esc(relDay(m.day, curDay) + (m.time ? ' ' + m.time : '')) + '</div>';
             prevDay = m.day;
           }
-          return pre + chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i]);
+          return pre + chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i], this.isGroup);
         }, this).join('');
         if (this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
         if (this.staged.length) rows += stagedHtml(userName);
