@@ -311,6 +311,7 @@ ctx.getWorldbook = async () => [
   const invTxt = inv.ordered_prompts[0].content;
   eq('通话·邀请任务', invTxt.indexOf('语音通话') !== -1, true);
   eq('通话·拒绝约定', invTxt.indexOf('[拒绝]') !== -1, true);
+  eq('通话·接听约定', invTxt.indexOf('[接听]') !== -1, true);
   eq('通话·邀请不带通话记录段', invTxt.indexOf('## 通话记录') === -1, true);
   eq('通话·邀请带主线近况', invTxt.indexOf('## 主线近况') !== -1, true);
   eq('通话·邀请带最近私聊', invTxt.indexOf('晚安，睡了') !== -1, true);

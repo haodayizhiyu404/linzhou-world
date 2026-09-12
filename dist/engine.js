@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T14:04:35.183Z
+//  构建时间：2026-09-12T14:16:21.304Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 14:04';
+var __LZW_BUILD__ = '2026-09-12 14:16';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -866,8 +866,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     },
 
     // ── 通话邀请：机主拨打了语音/视频通话，AI 决定接/拒 ──
-    // 约定：拒绝 → 第一行以 [拒绝] 开头，可附一句简短说明；接听 → 直接输出接通后的
-    // 第一句话（口语台词，不要引号/动作/括号）。呼叫页等待期间的一次生成。
+    // 约定：两种反应都带标识便于解析剔除——拒绝 → 第一行以 [拒绝] 开头，可附一句简短说明；
+    // 接听 → 以 [接听] 开头，其后接接通后的第一句话（口语台词，不要引号/动作/括号）。
+    // 呼叫页等待期间的一次生成。
     callInvite: function (contact, hist, snapshot, userInfo, mode, crossGroups) {
       var myName = me();
       var kind = mode === 'video' ? '视频通话' : '语音通话';
@@ -896,8 +897,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         consistencyRules('「' + contact.name + '」'),
         '',
         '## 输出要求（严格遵守，二选一）',
-        '- 接听：直接输出接通后的第一句话，1~3 行口语台词，像真人打电话的开场',
+        '- 接听：第一行以 [接听] 开头，其后接 1~3 行口语台词，像真人打电话的开场',
         '- 拒绝：第一行以 [拒绝] 开头，其后可附一句简短说明（如「在忙，晚点回」），也可不附',
+        '- [接听]/[拒绝] 是程序解析用的标记，只输出标记本身，不要给标记加引号或其他说明',
         '- 不得输出引号、动作描写、心理括号、时间戳',
         '- 决定须符合上方「关系」阶段与当前情境（深夜/工作时间/在群里刚聊过等）'
       ].filter(function (s2) { return s2 !== ''; }).join('\n');
@@ -1518,9 +1520,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-callava img{width:100%;height:100%;object-fit:cover}',
     '.lzw-callname{font-size:19px;font-weight:600;text-shadow:0 1px 6px rgba(0,0,0,.5)}',
     '.lzw-callstatus{font-size:13px;color:#c9d1d9;min-height:18px}',
-    '.lzw-callsubs{position:relative;z-index:1;flex:1;min-height:0;width:100%;overflow-y:auto;display:flex;flex-direction:column;justify-content:flex-end;gap:7px;text-align:center;padding:6px 4px}',
-    '.lzw-sub{font-size:13.5px;line-height:1.5;text-shadow:0 1px 4px rgba(0,0,0,.65)}',
-    '.lzw-sub.me{color:#8fe388}',
+    '.lzw-callsubs{position:relative;z-index:1;flex:1;min-height:0;width:100%;overflow-y:auto;display:flex;flex-direction:column;justify-content:flex-end;gap:7px;padding:6px 4px}',
+    // 仿玻璃气泡：char 靠左、user 靠右，内容靠左不居中
+    '.lzw-sub{max-width:85%;align-self:flex-start;text-align:left;font-size:13.5px;line-height:1.5;color:#f2f5f8;padding:7px 12px;border-radius:14px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.1);box-shadow:inset 0 1px 0 rgba(255,255,255,.06);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}',
+    '.lzw-sub.me{align-self:flex-end;background:rgba(120,190,100,.15);border-color:rgba(120,190,100,.24);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}',
     '.lzw-callmid{position:relative;z-index:1;display:flex;gap:26px;margin-top:2px;align-items:flex-end}',
     '.lzw-callbtn{display:flex;flex-direction:column;align-items:center;gap:5px;background:none;border:none;color:#e6edf3;font-size:10.5px;cursor:pointer}',
     '.lzw-callbtn i{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:19px}',
@@ -1543,8 +1546,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-callroll{position:absolute;top:10px;right:12px;z-index:5;color:#fff;opacity:.85;cursor:pointer;padding:4px;line-height:0}',
     // 说话弹窗 + 删除确认：灰黑半透明面板，贴合通话暗色场景；输入区聚焦保持暗色不刺眼
     '.lzw-callta{width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#fff;caret-color:#fff;padding:9px 11px;font-size:13.5px;line-height:1.55;resize:none;outline:none;margin-bottom:2px;font-family:inherit}',
-    '.lzw-callta::placeholder{color:rgba(255,255,255,.4)}',
-    '.lzw-callta:focus{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.32)}',
+    '.lzw-callta::placeholder{color:rgba(255,255,255,.55) !important}', // 个别前端主题会给 placeholder 上奇色，强制柔和白
+    '.lzw-callta:focus{background:rgba(255,255,255,.08)}',
     '.lzw-callpop{width:266px;background:rgba(28,32,38,.96);color:#e6edf3;padding:14px 14px 12px;text-align:left;font-size:13.5px;box-shadow:0 10px 34px rgba(0,0,0,.5)}',
     '.lzw-callpop .lzw-cbtns{margin-top:10px}',
     '.lzw-callpop .lzw-cbtn.no,.lzw-calldel .lzw-cbtn.no{background:rgba(255,255,255,.12);color:#e6edf3}',
@@ -2292,7 +2295,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           this.call = null; this.render();
           return;
         }
-        W.Store.push(eng.callKey(name), [{ who: name, kind: 'text', text: text }], 200);
+        // 接听：剥掉 [接听] 标记（兼容笨 AI 的「接听：」写法），正文进通话记录；
+        // 标记后没有正文也不碍事——先进通话，由机主先开口
+        text = text.replace(/^\[接听\]\s*/, '').replace(/^接听[：:]\s*/, '').trim();
+        if (text) W.Store.push(eng.callKey(name), [{ who: name, kind: 'text', text: text }], 200);
         this.call.phase = 'active';
         this.call.startAt = Date.now();
         this.render();
