@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T03:05:37.424Z
+//  构建时间：2026-09-12T03:20:30.745Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 03:05';
+var __LZW_BUILD__ = '2026-09-12 03:20';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1876,6 +1876,21 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   var IMG_BASE = 'https://files.catbox.moe/';
 
+  // 注入块的日期相对标签（与手机界面/提示词同一套口径）
+  function parseDayE(s) {
+    var m = /(\d+)年(\d+)月(\d+)日/.exec(s || '');
+    return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null;
+  }
+  function dayRelE(day, cur) {
+    var a = parseDayE(day), b = parseDayE(cur);
+    if (!a) return day || '';
+    if (!b) return a.mo + '月' + a.d + '日';
+    var diff = (b.y * 372 + b.mo * 31 + b.d) - (a.y * 372 + a.mo * 31 + a.d);
+    if (diff === 0) return '今天';
+    if (diff === 1) return '昨天';
+    return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d + '日';
+  }
+
   // 四个主条目名（与卡组世界书一致；长的优先匹配）
   var LINES = ['成人时代-破镜重圆', '成人时代-同路而行', '高中时代', '大学时代'];
 
@@ -2103,11 +2118,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       try { return getChatMessages('0-{{lastMessageId}}').length; } catch (e) { return 0; }
     },
 
-    // ── 正文生成前的手机动态注入：每个入选会话带最近 5 轮完整对话 ──
-    INJECT_RECENT_FLOORS: 12,   // 最近 N 楼内聊过 → 带
+    // ── 正文生成前的手机动态注入：每个入选会话带最近 10 轮完整对话 ──
+    INJECT_RECENT_FLOORS: 8,    // 最近 N 楼内聊过 → 带
     INJECT_MENTION_FLOORS: 4,   // 名字出现在最近 N 楼 → 带（哪怕聊得早）
-    INJECT_MAX_CHATS: 3,        // 最多带几个会话
-    INJECT_ROUNDS: 10,          // 每会话带最近几条（5 轮 user+对方）
+    INJECT_MAX_CHATS: 3,        // 最多带几个会话（按最近活跃优先）
+    INJECT_ROUNDS: 20,          // 每会话带最近几条（约 10 轮 user+对方）
 
     injectDigest: function () {
       try {
@@ -2125,19 +2140,37 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         } catch (e) {}
         var blocks = [];
         var keys = root.historyKeys();
-        for (var i = 0; i < keys.length && blocks.length < this.INJECT_MAX_CHATS; i++) {
+        var cands = [];
+        for (var i = 0; i < keys.length; i++) {
           var key = keys[i];
-          var hist = root.history(key);
-          if (!hist.length) continue;
-          var meta = root.meta(key);
-          var name = key.indexOf('group:') === 0 ? key.slice(6) + '（群）' : key;
+          var hist0 = root.history(key);
+          if (!hist0.length) continue;
+          var meta0 = root.meta(key);
+          var nm = key.indexOf('group:') === 0 ? key.slice(6) + '（群）' : key;
           var hit = false;
-          if (meta.atMainCount != null && now - meta.atMainCount <= this.INJECT_RECENT_FLOORS) hit = true;
-          if (!hit && recentText.indexOf(name.replace(/（群）$/, '')) !== -1) hit = true;
-          if (!hit) continue;
+          if (meta0.atMainCount != null && now - meta0.atMainCount <= this.INJECT_RECENT_FLOORS) hit = true;
+          if (!hit && recentText.indexOf(nm.replace(/（群）$/, '')) !== -1) hit = true;
+          if (hit) cands.push({ key: key, name: nm, meta: meta0 });
+        }
+        // 最近活跃的会话优先（同活跃楼数按名字稳定排序，保证可预期）
+        cands.sort(function (a, b) {
+          var d = (b.meta.atMainCount || 0) - (a.meta.atMainCount || 0);
+          return d !== 0 ? d : (a.key < b.key ? -1 : (a.key > b.key ? 1 : 0));
+        });
+        var curDay = ''; try { curDay = W.Status.nowDay(); } catch (e0) {}
+        for (var ci = 0; ci < cands.length && blocks.length < this.INJECT_MAX_CHATS; ci++) {
+          var hist = root.history(cands[ci].key);
+          var meta = cands[ci].meta;
+          var name = cands[ci].name;
           var ago = meta.atMainCount != null ? Math.max(0, now - meta.atMainCount) : null;
-          var lines = hist.slice(-this.INJECT_ROUNDS).map(function (m) {
-            return (m.who === 'user' ? myName : m.who) + '：' + W.Floor.msgToLine(m, myName).replace(/^[^：]*：/, '');
+          var prevDay = null;
+          var lines = [];
+          hist.slice(-this.INJECT_ROUNDS).forEach(function (m) {
+            if (m.day && m.day !== prevDay) {
+              lines.push('〔' + dayRelE(m.day, curDay) + (m.time ? ' ' + m.time : '') + '〕');
+              prevDay = m.day;
+            }
+            lines.push((m.who === 'user' ? myName : m.who) + '：' + W.Floor.msgToLine(m, myName).replace(/^[^：]*：/, ''));
           });
           blocks.push('「' + name + '」' + (ago != null ? '（' + ago + ' 楼前）' : '') + '：\n' + lines.join('\n'));
         }
