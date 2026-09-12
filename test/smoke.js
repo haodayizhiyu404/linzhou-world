@@ -345,8 +345,8 @@ ctx.getWorldbook = async () => [
   eq('通话·旧格式画面内容', sp2[0].text.indexOf('眨了眨眼') !== -1, true);
   eq('通话·旧格式台词保留', sp2[1].text, '喂，听得到吗');
   // 通话记录灰泡：楼层存档与列表页预览统一压成 [语音通话]/[视频通话]
-  eq('通话·记录行格式音频', LW.Floor.msgToLine({ who: 'user', kind: 'calllog', mode: 'audio', text: '通话时长 00:09' }, '裴知意'), '裴知意：[语音通话]');
-  eq('通话·记录行格式视频', LW.Floor.msgToLine({ who: 'user', kind: 'calllog', mode: 'video', text: '对方已拒绝' }, '裴知意'), '裴知意：[视频通话]');
+  eq('通话·记录行格式音频', LW.Floor.msgToLine({ who: 'user', kind: 'calllog', mode: 'audio', text: '通话时长 00:09' }, '裴知意'), '裴知意：[语音通话 · 00:09]');
+  eq('通话·记录行格式视频', LW.Floor.msgToLine({ who: 'user', kind: 'calllog', mode: 'video', text: '对方已拒绝' }, '裴知意'), '裴知意：[视频通话 · 对方已拒绝]');
   // 群夹带私聊：群回复里的 <!--phone--> 块路由进私聊且从群记录剥掉
   global.__msgs = null;
   const sideNames = LW.Engine.capturePhoneText('陆飞：哈哈<!--phone\n许嘉文：我有，直接送你\n-->还有');

@@ -31,8 +31,8 @@
       case 'voice':   body = '[语音:' + m.text + ']'; break;
       case 'image':   body = '[图片:' + m.text + ']'; break;
       case 'poke':    body = '[戳一戳]'; break;
-      // 通话记录灰泡在楼层存档里就是一行类型标（与列表页预览一致）
-      case 'calllog': body = '[' + (m.mode === 'video' ? '视频通话' : '语音通话') + ']'; break;
+      // 通话记录灰泡在楼层存档里就是一行类型标（与列表页预览一致，带上时长/结果）
+      case 'calllog': body = '[' + (m.mode === 'video' ? '视频通话' : '语音通话') + (m.text ? ' · ' + String(m.text).replace(/^通话时长 /, '') : '') + ']'; break;
       case 'location':body = '[定位:' + m.text + ']'; break;
       // 视频通话的画面条目（跨行压成一行，带标记便于模型区分可见状态与台词）
       case 'scene':   body = '（画面：' + String(m.text || '').replace(/\n+/g, '　') + '）'; break;

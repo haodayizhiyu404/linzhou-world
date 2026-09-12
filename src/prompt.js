@@ -75,7 +75,7 @@
       case 'voice':    return '[语音:' + m.text + ']';
       case 'image':    return '[图片:' + m.text + ']';
       case 'poke':     return '[戳一戳]';
-      case 'calllog':  return '[' + (m.mode === 'video' ? '视频通话' : '语音通话') + ']';
+      case 'calllog':  return '[' + (m.mode === 'video' ? '视频通话' : '语音通话') + (m.text ? ' · ' + String(m.text).replace(/^通话时长 /, '') : '') + ']';
       case 'location': return '[定位:' + m.text + ']';
       default:         return String(m.text || '');
     }
