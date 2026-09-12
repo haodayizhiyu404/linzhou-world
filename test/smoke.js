@@ -112,6 +112,7 @@ console.log('[提示词]');
 global.__msgs = [
   { role: 'user', message: '周言把卷子递了过来。<span class="x">注</span>' },
   { role: 'assistant', message: '<status><环境>2034年8月26日 星期五|22:49|教室|阴</环境></status>他笑了笑。' },
+  { role: 'assistant', message: '<cot>Step.1：输入解析与意图拆解</cot>真正的回复。' },
 ];
 const req = LW.Prompt.private({ name: '周言', profile: '档案：班长。' }, msgs, { time: '22:49', dateText: '2034年8月26日 星期五', userPlace: '教室', npc: { place: '图书馆', posture: '坐着' } });
 const sysPrompt = req.ordered_prompts[0].content;
@@ -123,6 +124,8 @@ eq('HTML被剥离', sysPrompt.indexOf('class="x"') !== -1, false);
 eq('status标签剥离', sysPrompt.indexOf('<环境>') !== -1, false);
 eq('状态栏内容不进主线近况', sysPrompt.indexOf('阴') !== -1, false);
 eq('正文保留', sysPrompt.indexOf('他笑了笑') !== -1, true);
+eq('cot思维链剥离', sysPrompt.indexOf('Step.1') !== -1, false);
+eq('cot剥离后正文保留', sysPrompt.indexOf('真正的回复') !== -1, true);
 eq('静默生成', req.should_silence, true);
 eq('不占用主历史', req.max_chat_history, 0);
 eq('无user宏残留·系统块', sysPrompt.indexOf('{{user}}'), -1);
@@ -230,6 +233,7 @@ ctx.getWorldbook = async () => [
   eq('基础人设+演化层叠加', zy.indexOf('短标题兜底') !== -1 && zy.indexOf('法学院') !== -1, true);
   eq('演化层衔接句', zy.indexOf('最新人设演化如下') !== -1 && zy.indexOf('【大学时代】') !== -1, true);
   eq('用户段·persona描述', LW.Engine.userBlock().indexOf('天禧城3幢901') !== -1, true);
+  eq('用户段·衔接句', LW.Engine.userBlock().indexOf('叠加于上方机主资料') !== -1, true);
   eq('用户段·线user演化', LW.Engine.userBlock().indexOf('新闻与传播学院') !== -1, true);
   eq('用户段·user宏替换', LW.Engine.userBlock().indexOf('{{user}}') === -1, true);
   LW.Engine.applyLine(null, '收尾');

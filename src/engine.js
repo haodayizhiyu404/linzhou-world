@@ -103,8 +103,8 @@
       return String(t || '').replace(/\{\{\s*user\s*\}\}/gi, n);
     },
 
-    // 酒馆 persona 描述，按可靠性排：
-    // ① 酒馆助手沙盒自带 getPersona('current')（新版才有，旧版 undefined）
+    // 酒馆 persona 描述，两条路：
+    // ① 酒馆助手沙盒自带 getPersona('current')（新版才有，旧版 undefined——升级后自动生效）
     // ② 父页 ctx.powerUserSettings.persona_description——ST 核心字段，即当前绑定 persona 的正文
     //    （power_user 是 ES 模块内部变量，window.parent 拿不到，必须走 getContext 的暴露字段）
     // 每次生成现读——换 persona 立刻跟上，不用刷新。
@@ -123,15 +123,7 @@
           var ctx = st && st.getContext && st.getContext();
           if (ctx && ctx.powerUserSettings && ctx.powerUserSettings.persona_description) {
             desc = String(ctx.powerUserSettings.persona_description); src = 'powerUserSettings';
-          } else if (ctx && ctx.personaDescription) {
-            desc = String(ctx.personaDescription); src = 'ctx.personaDescription';
           }
-        }
-      } catch (e) {}
-      try {
-        if (!desc) {
-          var pu = window.parent.power_user;
-          if (pu && pu.persona_description) { desc = String(pu.persona_description); src = 'power_user'; }
         }
       } catch (e) {}
       if (!this._personaLogged) {
@@ -159,13 +151,18 @@
       return this.deref(base);
     },
 
-    // 机主资料段：persona 描述 + 当前线的 [MAIN·{{user}}·演化后]，每次生成接进提示词末尾区
+    // 机主资料段：persona 描述 + 当前线的 [MAIN·{{user}}·演化后]，每次生成接进提示词末尾区。
+    // 两段都在时中间加衔接句，标明演化层叠加于基础资料之上。
     userBlock: function () {
-      var parts = [];
       var persona = this.userPersona();
-      if (persona) parts.push(persona);
-      if (state.line && state.userEvol[state.line]) parts.push(state.userEvol[state.line]);
-      return this.deref(parts.join('\n'));
+      var evo = (state.line && state.userEvol[state.line]) ? state.userEvol[state.line] : '';
+      var out;
+      if (persona && evo) {
+        out = persona + '\n\n当前时间线【' + state.line + '】的最新演化如下（叠加于上方机主资料，不替换）：\n' + evo;
+      } else {
+        out = persona || evo;
+      }
+      return this.deref(out);
     },
 
     userName: function () {

@@ -46,8 +46,11 @@
           .replace(/<status>[\s\S]*?<\/status>/gi, '')
           // 旧版写进主楼层的手机记录块一并剔除（手机历史在「聊天记录」节单独给出）
           .replace(/\[📱[\s\S]*?\/\📱\]\s*/g, '')
-          .replace(/```[\s\S]*?```/g, '')
+          // 思维链：think 与 cot 两种标签都剥（后者见于部分前端/预设的推理输出）
           .replace(/<think>[\s\S]*?<\/think>/gi, '')
+          .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
+          .replace(/<cot>[\s\S]*?<\/cot>/gi, '')
+          .replace(/```[\s\S]*?```/g, '')
           .replace(/<[^>]+>/g, '')
           .replace(/\n{2,}/g, '\n')
           .trim();
