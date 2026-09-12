@@ -134,7 +134,7 @@
     '.lzw-voice.me{flex-direction:row-reverse}',
     '.lzw-voice.me .lzw-voice-play svg{transform:scaleX(-1)}',
     '.lzw-voice-play{display:inline-flex;line-height:0}',
-    '.lzw-voice-sec{font-size:12px;color:#8a8f98}',
+    '.lzw-voice-sec{font-size:12px;color:#333}',
     '.lzw-voicetxt{display:none;flex-basis:100%;margin-top:6px;padding-top:6px;border-top:1px solid rgba(0,0,0,.08);font-size:13px;color:#333;line-height:1.5}',
     '.lzw-voice.open .lzw-voicetxt{display:block}',
     '.lzw-imgbox{width:150px;padding:0;border-radius:9px;overflow:hidden}',

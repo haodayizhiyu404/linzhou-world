@@ -181,6 +181,8 @@ ctx.getWorldbook = async () => [
   { comment: 'NPC（大学线）', enabled: true, content: '[NPC·陆飞]\n性别: 男。\n身份: 运动康复专业（大学版），与{{user}}同住一栋公寓。' },
   { comment: '主角人设（大学线）', enabled: true, content: '[MAIN·周言·演化后]\n- 法学院学生，戴金丝边眼镜。\n\n[MAIN·{{user}}·演化后]\n- 新闻与传播学院学生，住校内宿舍。\n\n## III. 时代锚点事件\n- 第一次送别。\n\n# IV. 叙事指导\n- 这段不该进手机提示词。' },
   { comment: '世界设定杂项', enabled: true, content: '[NPC·外校生]\n性别: 女。\n身份: 来打友谊赛的。' },
+  { comment: 'NPC（成人-破镜重圆）', enabled: true, content: '# I. 核心配角独立档案\n林溪、陆飞从高中时代起，与周言、沈锡元、{{user}}成为好友，关系密切，共同构筑了一个五人的核心小团体。\n\n[NPC·林溪]\n性别: 女。\n身份: 设计师（破镜重圆线）。\n\n[NPC·陆飞]\n性别: 男。\n身份: 运动康复师（破镜重圆线）。\n\n# II. 其他NPC档案\n\n[NPC·许嘉文]\n性别: 男。\n身份: 双面人（破镜重圆线）。' },
+  { comment: '主角人设（成人-同路而行）', enabled: true, content: '# II. 角色演化档案\n\n[MAIN·周言·演化后]\n- 已婚设定（同路线）。\n\n[MAIN·{{user}}·演化后]\n- 与周言同居（同路线）。' },
   { comment: '霖州手机::人设::林溪', enabled: true, content: '林溪的手机专用档案' }
 ];
 (async () => {
@@ -222,8 +224,17 @@ ctx.getWorldbook = async () => [
   eq('作用域→线名·高中', LW.Engine.lineOfScope('高中线-核心人员'), '高中时代');
   eq('作用域→线名·大学', LW.Engine.lineOfScope('大学线'), '大学时代');
   eq('作用域→线名·成人带尾', LW.Engine.lineOfScope('成人线-破镜重圆'), '成人时代-破镜重圆');
+  eq('作用域→线名·成人省略线字', LW.Engine.lineOfScope('成人-破镜重圆'), '成人时代-破镜重圆');
+  eq('作用域→线名·成人同路', LW.Engine.lineOfScope('成人-同路而行'), '成人时代-同路而行');
   eq('作用域→线名·古代', LW.Engine.lineOfScope('古代线'), '古代架空-华胥之梦');
   eq('作用域→线名·认不出', LW.Engine.lineOfScope('未来线'), null);
+  LW.Engine.applyLine('成人时代-破镜重圆', '测试');
+  eq('破镜重圆线林溪读线档案', LW.Engine.profileFor('林溪').indexOf('设计师（破镜重圆线）') !== -1, true);
+  eq('破镜重圆线林溪不读基础档', LW.Engine.profileFor('林溪').indexOf('手机专用档案') === -1, true);
+  eq('破镜重圆线陆飞不吞章节头', LW.Engine.profileFor('陆飞').indexOf('其他NPC档案') === -1, true);
+  LW.Engine.applyLine('成人时代-同路而行', '测试');
+  eq('同路而行线user演化', LW.Engine.userBlock().indexOf('与周言同居（同路线）') !== -1, true);
+  eq('同路而行线主角演化叠加', LW.Engine.profileFor('周言').indexOf('已婚设定（同路线）') !== -1, true);
   LW.Engine.applyLine('高中时代', '测试');
   eq('高中线陆飞读高中版', LW.Engine.profileFor('陆飞').indexOf('高中版') !== -1, true);
   LW.Engine.applyLine('大学时代', '测试');
