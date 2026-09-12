@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T17:51:57.130Z
+//  构建时间：2026-09-12T18:14:29.978Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 17:51';
+var __LZW_BUILD__ = '2026-09-12 18:14';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1018,14 +1018,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // ── 朋友圈 · 首次填充：为抽中的几位各写一条近期动态 ──
   // people = [{name, profile}]（引擎侧已随机抽好 3~4 位，按时间从早到晚排）
   // 契约语法：[动态:名字:文字] 一人一条，[配图:名字:描述] 可选（至多一半人配）
-  //           [点赞:名字:点赞者1、点赞者2] / [评论:评论者@作者:内容] 可选（熟人互动，跟着对应动态）
+  //           [点赞:点赞者1、点赞者2] / [评论:评论者@被回复的人:内容] 可选（都紧跟在对应动态之后）
   momentsFill: function (people, snapshot, userInfo) {
     var myName = me();
     var p = [
       '# 数字世界 · 朋友圈动态生成',
       '',
       '你是一款数字生活应用的模拟引擎。本次任务：为应用「微信·朋友圈」生成几位联系人的近期动态。',
-      '机主「' + myName + '」刚打开朋友圈，看到朋友们这几天陆续发过这些动态。',
+      '机主「' + myName + '」刚打开朋友圈，刷到朋友们这几天陆续发的动态。',
       '',
       '## 当前情境\n' + (situationBlock(snapshot) || '（暂无）'),
       '',
@@ -1039,11 +1039,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '## 输出要求（严格遵守）',
       '- 每位各输出一条动态，按时间从早到晚排列（最早的最先输出）',
       '- 格式严格为：[动态:名字:动态文字]（单行，标记外不要任何其他内容）',
-      '- 动态文字 ≤70 字，像真人发朋友圈：生活碎片、吐槽、小确幸、碎碎念都可，口吻必须符合各人人设；不要刻意凑 emoji（不是每条动态都需要）',
-      '- 至多一半的人配图片；配图单独一行：[配图:名字:画面描述]（描述 ≤40 字，写看得见的内容），跟在对应动态之后',
-      '- 朋友圈是活的：可在动态后给一两条配上熟人互动，像真实社交场——',
-      '  · 点赞一行：[点赞:作者名:点赞者1、点赞者2]（至多 5 人，从共同熟人里挑，不是每人都需要）',
-      '  · 评论一行：[评论:评论者@作者名:评论内容]（每条动态至多 2 条，≤25 字，口吻符合评论者与作者的关系；普通评论省略@部分写成 [评论:评论者:评论内容]）',
+      '- 动态文字 ≤70 字，可以只有几个字——篇幅和文风看这个人：有的人一张图就是全部（配文极短），有的人一两句碎碎念，有的人写小作文甚至写诗，有的人发疯抽象。不要"为了发动态而发动态"的流水账，不要凑字数的抒情小作文',
+      '- 内容优先是这个人自己的生活：学业/工作/爱好/朋友/家人/吐槽/偶然撞见的小事，与主线轻微相关即可，不必围着机主转',
+      '- 口吻必须符合各人人设；不要刻意凑 emoji（不是每条动态都需要）',
+      '- 至多一半的人配图片；配图单独一行：[配图:名字:画面描述]（描述 ≤40 字，写看得见的内容，认真党写细节、随手拍一句话带过），跟在对应动态之后',
+      '- 朋友圈是活的：可在动态后配熟人互动（都是紧跟在该动态后面的行，不每条都配满）——',
+      '  · 点赞一行：[点赞:点赞者1、点赞者2]（至多 5 人，从共同熟人里挑）',
+      '  · 评论一行：[评论:评论者@被回复的人:评论内容]（每条动态至多 2 条，≤25 字；@后面是被回复的人，可以是作者也可以是前面的评论者；普通评论省略@写成 [评论:评论者:评论内容]）',
+      '- 互动口吻要符合关系：损友互怼、熟人捧场、长辈式关心，不要客套水军味',
       '- 不要点名单「' + myName + '」，不要写需要机主回复的问句（机主只是刷到，还没互动）',
       '- 各人的动态主题互不重复；除 [动态]/[配图]/[点赞]/[评论] 行外不要输出任何其他内容'
     ].filter(function (s) { return s !== ''; }).join('\n');
@@ -1526,10 +1529,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-appbar-r{width:24px}',
     '.lzw-reroll{display:inline-flex;color:#666;cursor:pointer;padding:5px;border-radius:8px;align-items:center;justify-content:center}',
     '.lzw-reroll:hover{background:rgba(0,0,0,.06)}',
-    // 朋友圈顶栏：透明浮在封面上（无标题，保留返回/相机）；-51px = 顶栏占位高度(40+2+8+1)，把封面吸上来盖住
-    '.lzw-appbar-ovl{position:relative;z-index:6;background:transparent;border-bottom:none;margin-bottom:-51px}',
+    // 朋友圈顶栏：透明浮在封面上（无标题，保留返回/相机）；-89px = 状态栏38+顶栏51，封面吸到屏幕最顶
+    '.lzw-appbar-ovl{position:relative;z-index:6;background:transparent;border-bottom:none;margin-bottom:-89px}',
     '.lzw-appbar-ovl .lzw-back,.lzw-appbar-ovl .lzw-reroll{color:#111;text-shadow:0 0 6px rgba(255,255,255,.95),0 0 14px rgba(255,255,255,.6)}',
     '.lzw-appbar-ovl .lzw-back:hover,.lzw-appbar-ovl .lzw-reroll:hover{background:rgba(255,255,255,.35)}',
+    // 朋友圈屏：状态栏也透明，时钟/信号加白色光晕保证暗封面上可读
+    '.lzw-scr-moments .lzw-sbar{background:transparent}',
+    '.lzw-scr-moments .lzw-clock{text-shadow:0 0 6px rgba(255,255,255,.95),0 0 12px rgba(255,255,255,.6)}',
+    '.lzw-scr-moments .lzw-sig i{box-shadow:0 0 3px rgba(255,255,255,.95),0 0 8px rgba(255,255,255,.55)}',
     // 主体
     '.lzw-body{flex:1;min-height:0;overflow-y:auto;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
@@ -1757,7 +1764,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-disc-chev{flex:none;display:flex}',
     '.lzw-disc-gap{height:9px;background:#f2f3f5;border-top:1px solid rgba(0,0,0,.05)}',
     '.lzw-mfeed{flex:1;min-height:0;overflow-y:auto;background:#fff;padding-bottom:14px}',
-    '.lzw-mcover{height:156px;position:relative;background:linear-gradient(160deg,#6f8cba,#a9bedd 55%,#d2dfee);overflow:hidden}',
+    '.lzw-mcover{height:248px;position:relative;background:linear-gradient(160deg,#6f8cba,#a9bedd 55%,#d2dfee);overflow:hidden}',
     '.lzw-mcover img{width:100%;height:100%;object-fit:cover;display:block}',
     '.lzw-mcover-shade{position:absolute;left:0;right:0;bottom:0;height:64px;background:linear-gradient(transparent,rgba(0,0,0,.42))}',
     '.lzw-mme{position:absolute;right:12px;bottom:9px;display:flex;align-items:center;gap:9px}',
@@ -1815,6 +1822,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   var ICON_MOMENTS = '<svg viewBox="0 0 1024 1024"><path fill="#fff" d="M512 954.24A442.24 442.24 0 1 0 69.76 512 442.08 442.08 0 0 0 512 954.24z m0-30.88a401.12 401.12 0 0 1-137.12-21.92V621.6l274.24 276.64A356 356 0 0 1 512 923.36z m285.28-119.68a400 400 0 0 1-112 81.28L487.2 687.04l389.44 1.92a359.52 359.52 0 0 1-79.2 114.72z m118.24-289.28a400 400 0 0 1-21.92 136.96H613.76l276.8-273.92a355.04 355.04 0 0 1 25.12 136.96z m-232.8-368a355.68 355.68 0 0 1 114.56 79.04 402.88 402.88 0 0 1 81.44 112L680.96 535.52zM512 653.6A141.6 141.6 0 1 1 653.6 512 141.6 141.6 0 0 1 512 653.6z m0-548.32A400 400 0 0 1 649.12 128v280L375.04 130.4A356.32 356.32 0 0 1 512 105.28z m-285.28 119.84a405.44 405.44 0 0 1 112-81.44l198.4 198.08-389.44-2.08a355.68 355.68 0 0 1 79.04-114.56zM108.64 514.4a400 400 0 0 1 21.92-136.96h279.84L133.6 651.36a357.92 357.92 0 0 1-24.96-136.96z m234.72-21.12l-1.92 389.44a357.12 357.12 0 0 1-114.72-79.04 401.76 401.76 0 0 1-81.28-112z"/><path fill="#FC6B4F" d="M649.12 128A400 400 0 0 0 512 105.28a356.32 356.32 0 0 0-137.12 25.12l274.08 276.8z"/><path fill="#7838F2" d="M797.44 225.12a355.68 355.68 0 0 0-114.56-79.04l-1.92 389.44 197.92-198.08a402.88 402.88 0 0 0-81.44-112.32z"/><path fill="#5698F3" d="M893.76 651.36a400 400 0 0 0 21.92-136.96 355.04 355.04 0 0 0-25.12-136.96l-276.8 273.92z"/><path fill="#20E9F4" d="M685.12 884.96a400 400 0 0 0 112-81.28 359.52 359.52 0 0 0 79.2-114.72l-389.44-1.92z"/><path fill="#00FD60" d="M375.04 901.44A401.12 401.12 0 0 0 512 923.36a356 356 0 0 0 136.96-25.12L375.04 621.6z"/><path fill="#ABFB5B" d="M341.44 882.72l1.92-389.44L145.44 691.2a401.76 401.76 0 0 0 81.28 112 357.12 357.12 0 0 0 114.72 79.52z"/><path fill="#F0E254" d="M130.56 377.44a400 400 0 0 0-21.92 136.96 357.92 357.92 0 0 0 24.96 136.96l276.8-273.92z"/><path fill="#F6B351" d="M339.04 144a405.44 405.44 0 0 0-112 81.44 355.68 355.68 0 0 0-79.04 114.56l389.44 2.08z"/></svg>';
   var ICON_CHEV = '<svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c3c7cd" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5L6.5 7l-5 5.5"/></svg>';
   var ICON_CAM = '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#454545" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h2.2l1.6-2.4A1.5 1.5 0 0 1 9 5h6a1.5 1.5 0 0 1 1.2.6L17.8 8H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></svg>';
+  // ⋯菜单里的爱心/对话线条图标（仿微信，深底上用白色描边）
+  var ICON_HEART = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21.2l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.8z"/></svg>';
+  var ICON_BUBBLE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.34-4.1-1L3 20l1.1-4.9A8.5 8.5 0 1 1 21 11.5z"/></svg>';
 
   var ICON_WECHAT = '<svg width="30" height="30" viewBox="0 0 1024 1024"><path fill="#fff" d="M669.3 369.4c9.8 0 19.6 0 29.4 1.6C671 245.2 536.9 152 383.2 152 211.6 152 71 269.7 71 416.8c0 85 45.8 156.9 124.2 210.9l-31.1 93.2L273.6 667c39.2 8.2 70.3 16.3 109.5 16.3 9.8 0 19.6 0 31.1-1.6-6.5-21.3-9.8-42.5-9.8-65.4 0.1-135.7 116.2-246.9 264.9-246.9z m-168.4-85c24.5 0 39.2 16.3 39.2 39.2 0 22.9-16.3 39.2-39.2 39.2-24.5 0-47.4-16.4-47.4-39.2 0-24.5 24.6-39.2 47.4-39.2z m-216.3 73.1c-24.7 0-47.8-16.2-47.8-38.8 0-24.3 24.7-38.8 47.8-38.8s39.5 16.2 39.5 38.8c0.1 22.7-16.4 38.8-39.5 38.8z"/><path fill="#fff" d="M953.8 613c0-125.9-124.2-227.2-264.8-227.2-148.8 0-266.5 103-266.5 227.2 0 125.9 117.7 227.2 266.5 227.2 31.1 0 62.1-8.2 93.2-16.3l85 47.4-22.9-78.5c62.1-47.4 109.5-109.5 109.5-179.8z m-351.5-39.2c-14.7 0-31.1-14.7-31.1-31.1 0-14.7 16.3-31.1 31.1-31.1 22.9 0 39.2 16.3 39.2 31.1 0 16.4-14.7 31.1-39.2 31.1z m178-7.6c-14.8 0-31.3-14.6-31.3-30.7 0-14.6 16.5-30.7 31.3-30.7 23.1 0 39.5 16.2 39.5 30.7 0 16.2-16.4 30.7-39.5 30.7z"/></svg>';
   // [+] 菜单图标（自绘线性图标，微信那种简洁风）
@@ -2291,11 +2301,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var prevSubs = -1;
       var oldSubs = ph.querySelector('.lzw-callsubs');
       if (oldSubs) prevSubs = oldSubs.scrollTop;
+      // 朋友圈 feed 滚动位置保留（点 ⋯/赞/评论只局部改状态，整屏重绘后跳顶很难看）
+      var prevFeed = -1;
+      var oldFeed = ph.querySelector('.lzw-mfeed');
+      if (oldFeed) prevFeed = oldFeed.scrollTop;
 
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + (this.call ? ' lzw-scr-call' : '') + (this.call && this.call.mode === 'video' ? ' lzw-scr-video' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + (this.screen === 'moments' ? ' lzw-scr-moments' : '') + (this.call ? ' lzw-scr-call' : '') + (this.call && this.call.mode === 'video' ? ' lzw-scr-video' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
         (this.confirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条消息？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="cancel">取消</button><button class="lzw-cbtn yes" data-cact="del">删除</button></div></div></div>' : '') +
         '</div></div>';
 
@@ -2311,6 +2325,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           if (e.key === 'Enter') { e.preventDefault(); UI.sendText(); }
           // 空输入框按 Backspace 不弹删待发消息——删错别字按多了会误删；要删待发请点其右上角 ×
         });
+      }
+      // 朋友圈 feed 滚动位置还原
+      if (prevFeed > 0) {
+        var mfEl = ph.querySelector('.lzw-mfeed');
+        if (mfEl) mfEl.scrollTop = prevFeed;
       }
       // 朋友圈评论输入：回车即发
       var cmtIn = ph.querySelector('#lzw-cmtin');
@@ -2383,6 +2402,18 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           UI.mMenu = UI.mMenu === i ? -1 : i;
           UI.mCmt = -1;
           UI.render();
+          // 点菜单外任意处收起（当前这次点击不生效，所以延迟挂监听）
+          if (UI.mMenu !== -1) {
+            setTimeout(function () {
+              document.addEventListener('click', function onDocTap(ev2) {
+                if (ev2.target.closest && (ev2.target.closest('.lzw-pmenu') || ev2.target.closest('[data-mmenu]'))) return;
+                document.removeEventListener('click', onDocTap);
+                UI.mMenu = -1;
+                UI.mCmt = -1;
+                if (UI.screen === 'moments' || UI.screen === 'mprofile') UI.render();
+              });
+            }, 0);
+          }
         };
       });
       ph.querySelectorAll('[data-mlike]').forEach(function (el) {
@@ -2966,7 +2997,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ? '<img class="lzw-post-ava" src="' + esc(W.Worldbook.imgUrl(c.avatar)) + '"' + mpfAttr + ' alt="">'
       : '<div class="lzw-post-ava"' + mpfAttr + '>' + esc(e.who.slice(0, 1)) + '</div>';
     var menu = UI.mMenu === idx
-      ? '<div class="lzw-pmenu"><button data-mlike="' + idx + '">👍 赞</button><button data-mcmt="' + idx + '">💬 评论</button></div>'
+      ? '<div class="lzw-pmenu"><button data-mlike="' + idx + '">' + ICON_HEART + ' 赞</button><button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button></div>'
       : '';    var cmtbar = UI.mCmt === idx
       ? '<div class="lzw-cmtbar"><input id="lzw-cmtin" maxlength="60" placeholder="说点什么…"><button data-msend="' + idx + '">发送</button></div>'
       : '';
@@ -3821,7 +3852,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     momentsFeed: function () { return window.LZWorld.Store.history(this.momentsKey); },
 
     // 契约输出解析：[动态:名:文字] / [配图:名:描述]（跟在对应动态后）
-    //           [点赞:名:名单] / [评论:名@回复对象:内容]（熟人互动，跟在对应动态后）
+    //           [点赞:名单] / [评论:评论者@被回复的人:内容]（都挂在紧跟的那条动态下；@可省略）
     parseMoments: function (text) {
       var posts = [];
       String(text || '').split('\n').forEach(function (line) {
@@ -3836,27 +3867,22 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           }
           return;
         }
-        var lk = line.match(/^\[点赞:([^:：\]]{1,12})[:：]([\s\S]+)\]$/);
+        var lk = line.match(/^\[点赞:([\s\S]+)\]$/);
         if (lk) {
-          for (var j = posts.length - 1; j >= 0; j--) {
-            if (posts[j].who === lk[1].trim()) {
-              var names = lk[2].split(/[、,，]/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 5);
-              names.forEach(function (n) { if (posts[j].likes.indexOf(n) === -1) posts[j].likes.push(n); });
-              posts[j].likes = posts[j].likes.slice(0, 5);
-              break;
-            }
+          var lastPost = posts[posts.length - 1];
+          if (lastPost) {
+            var names = lk[1].split(/[、,，]/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 5);
+            names.forEach(function (n) { if (lastPost.likes.indexOf(n) === -1) lastPost.likes.push(n); });
+            lastPost.likes = lastPost.likes.slice(0, 5);
           }
           return;
         }
         var cm = line.match(/^\[评论:([^:：@\]]{1,12})(?:@([^:：\]]{1,12}))?[:：]([\s\S]+)\]$/);
         if (cm) {
-          // 评论行归到最近一条该作者动态（无@回复对象时归到最近一条动态）；有@时校验作者匹配，防张冠李戴
-          var wantAuthor = cm[2] ? cm[2].trim() : null;
-          for (var k2 = posts.length - 1; k2 >= 0; k2--) {
-            if (wantAuthor ? posts[k2].who === wantAuthor : true) {
-              if (posts[k2].comments.length < 3) posts[k2].comments.push({ who: cm[1].trim(), replyTo: cm[2] ? cm[2].trim() : '', text: cm[3].trim() });
-              break;
-            }
+          // 评论挂在紧跟的那条动态下；@后面是"被回复的人"（作者或前面的评论者），不是动态作者校验
+          var target = posts[posts.length - 1];
+          if (target && target.comments.length < 3) {
+            target.comments.push({ who: cm[1].trim(), replyTo: cm[2] ? cm[2].trim() : '', text: cm[3].trim() });
           }
         }
       });
