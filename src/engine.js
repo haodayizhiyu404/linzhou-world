@@ -427,6 +427,9 @@
       // 快捷回复入口：QR 按钮命令 /event-emit event="lzw-phone-toggle"
       try {
         on('lzw-phone-toggle', function () {
+          // 开场白选线等卡内代码可能刚切过世界线开关（页面加载后发生），
+          // 重开手机时重新归位，否则引擎仍停在加载时的旧定位
+          Engine.locateLine();
           var ui = W.Apps.wechat;
           if (!Engine.section()) {
             try { toastr.info('当前世界线没有手机（古代线或未定位）', '📱 霖州引擎'); } catch (e) {}
