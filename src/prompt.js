@@ -177,7 +177,7 @@
         '',
         '你是一款数字生活应用的模拟引擎。本次任务：生成应用「微信」里，来自「' + contact.name + '」的新消息。',
         '',
-        contact.profile ? '## 人物档案\n' + contact.profile : '## 人物档案\n（暂无档案，依据对话上下文自然演绎）',
+        contact.profile ? '## 人物档案 · ' + contact.name + '\n' + contact.profile : '## 人物档案 · ' + contact.name + '\n（暂无档案，依据对话上下文自然演绎）',
         '',
         userInfo ? '## 机主资料 · ' + myName + '\n（微信这头的人，与「' + contact.name + '」对话的主角）\n' + userInfo : '',
         '',
