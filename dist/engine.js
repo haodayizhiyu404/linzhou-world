@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T10:31:36.639Z
+//  构建时间：2026-09-12T11:28:28.243Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 10:31';
+var __LZW_BUILD__ = '2026-09-12 11:28';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -99,6 +99,19 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var popped = h.splice(Math.max(0, h.length - n), n);
       writeRoot(r);
       return popped;
+    },
+
+    // 主动消息捕捉查重表：已处理过 <!--phone--> 块的正文消息 id。
+    // 只查即时事件、不做历史补扫（避免扫全楼层），id 表封顶 200。
+    procIds: function () {
+      var r = readRoot();
+      return Array.isArray(r.procIds) ? r.procIds : [];
+    },
+    markProcId: function (id) {
+      var r = readRoot();
+      var list = (Array.isArray(r.procIds) ? r.procIds : []).concat([String(id)]);
+      r.procIds = list.slice(-200);
+      writeRoot(r);
     },
 
     // 会话元信息：headline（一句话近况）、atMainCount（最近活跃时的主线楼数）、
@@ -2682,6 +2695,60 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       } catch (e) { console.warn('[霖州引擎] 手机动态注入失败', e); }
     },
 
+    // ── 主动消息捕捉：正文末位 <!--phone ... --> 注释块 ──
+    // 卡契约：主 AI 按世界书规则条目在正文末尾输出。ST 渲染时清洗 HTML 注释 → 正文
+    // 天然不可见，原始文本完好。此处抠出后经 Floor.parseNpcLines（群模式，每行
+    // 「名字：内容」，契约语法 [语音:…]/[图片:…] 照常可用）写入各联系人聊天记录。
+    // 已处理消息 id 落聊天变量防重——重进聊天文件不会二次触发。
+    // 只挂即时生成事件、不做历史补扫（避免扫全楼层）。
+    capturePhoneBlock: function (msg) {
+      var W = window.LZWorld;
+      var text = String((msg && msg.message) || '');
+      var re = /<!--\s*phone\s*([\s\S]*?)-->/gi;
+      var m, body = '';
+      while ((m = re.exec(text))) body += (body ? '\n' : '') + m[1];
+      if (!body.trim()) return [];
+      var parsed;
+      try { parsed = W.Floor.parseNpcLines(body, null); } catch (e) { return []; }
+      if (!parsed.length) return [];
+      var byWho = {};
+      parsed.forEach(function (p) { (byWho[p.who] = byWho[p.who] || []).push(p); });
+      var names = Object.keys(byWho);
+      names.forEach(function (n) {
+        W.Store.push(n, byWho[n], 100);
+        var arr = byWho[n];
+        var last = arr[arr.length - 1];
+        var headText = last.kind === 'text' ? last.text
+          : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[last.kind] || '消息') + ']';
+        W.Store.setMeta(n, { headline: String(headText).slice(0, 40), atMainCount: Engine.mainCount() });
+      });
+      return names;
+    },
+    // 扫最近的 assistant 消息（默认 5 条，仅即时事件后调用），抓未处理 id 里的注释块
+    sweepPhoneBlocks: function (backlog) {
+      var msgs;
+      try { msgs = getChatMessages(); } catch (e) { return; }
+      if (!msgs || !msgs.length) return;
+      var W = window.LZWorld;
+      var seen = W.Store.procIds();
+      var from = Math.max(0, msgs.length - (backlog || 5));
+      for (var i = from; i < msgs.length; i++) {
+        var mm = msgs[i];
+        if (!mm || mm.role !== 'assistant') continue;
+        var id = String(mm.id != null ? mm.id : ('idx' + i));
+        if (seen.indexOf(id) !== -1) continue;
+        var names = [];
+        try { names = this.capturePhoneBlock(mm); } catch (e) {}
+        W.Store.markProcId(id);
+        seen.push(id);
+        if (names.length) {
+          try { toastr.info('📱 ' + names.join('、') + ' 发来了新消息', '霖州手机', { timeOut: 4000 }); } catch (e) {}
+          try { W.Floor.renderAll(); } catch (e) {}
+          try { var UI = W.Apps.wechat; if (UI && UI.screen) UI.render(); } catch (e) {}
+        }
+      }
+    },
+
     // ── 独立生成 ──
     generateFor: async function (chatKey, isGroup) {
       var W = window.LZWorld;
@@ -2823,6 +2890,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         on(tavern_events.GENERATION_AFTER_COMMANDS, function () {
           Engine.injectDigest();
         });
+      } catch (e) {}
+
+      // 正文生成完成 → 捕捉末位 <!--phone--> 主动消息注释块（只扫最后几楼，id 查重防重）
+      try {
+        var genDone = (typeof tavern_events !== 'undefined' && tavern_events.GENERATION_ENDED) || 'generation_ended';
+        on(genDone, function () { Engine.sweepPhoneBlocks(5); });
       } catch (e) {}
 
       // 切聊天 → 重载（聊天变量随卡切换，需重新渲染）

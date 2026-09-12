@@ -275,6 +275,22 @@ ctx.getWorldbook = async () => [
   eq('群提示词·scoped情报', gtxtX.indexOf('※ 仅 陆飞 本人知晓') !== -1, true);
   eq('群提示词·私聊内容进入', gtxtX.indexOf('晚安，睡了') !== -1, true);
   eq('群提示词·防泄漏规则', gtxtX.indexOf('引用一字即出戏') !== -1, true);
+
+  // ── 8.7 主动消息捕捉：<!--phone--> 注释块 ──
+  console.log('[主动消息捕捉]');
+  global.__msgs = [
+    { id: 101, role: 'assistant', message: '正文内容<!--phone\n沈锡元：[语音:早点睡]\n沈锡元：在？\n-->可见尾巴' },
+    { id: 102, role: 'user', message: '普通 user 消息' },
+  ];
+  LW.Engine.sweepPhoneBlocks(5);
+  const capHist = LW.Store.history('沈锡元');
+  eq('捕捉·写入联系人记录', capHist.length, 2);
+  eq('捕捉·语音契约解析', capHist[0].kind, 'voice');
+  eq('捕捉·文字行解析', capHist[1].text, '在？');
+  eq('捕捉·id登记', LW.Store.procIds().indexOf('101') !== -1, true);
+  global.__msgs[0].message += '<!--phone\n沈锡元：又来一条\n-->';
+  LW.Engine.sweepPhoneBlocks(5);
+  eq('捕捉·防重不二次写入', LW.Store.history('沈锡元').length, 2);
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
   process.exit(fail ? 1 : 0);

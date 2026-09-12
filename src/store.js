@@ -92,6 +92,19 @@
       return popped;
     },
 
+    // 主动消息捕捉查重表：已处理过 <!--phone--> 块的正文消息 id。
+    // 只查即时事件、不做历史补扫（避免扫全楼层），id 表封顶 200。
+    procIds: function () {
+      var r = readRoot();
+      return Array.isArray(r.procIds) ? r.procIds : [];
+    },
+    markProcId: function (id) {
+      var r = readRoot();
+      var list = (Array.isArray(r.procIds) ? r.procIds : []).concat([String(id)]);
+      r.procIds = list.slice(-200);
+      writeRoot(r);
+    },
+
     // 会话元信息：headline（一句话近况）、atMainCount（最近活跃时的主线楼数）、
     // digested（已折进提要的条数）、digest（前文提要）
     meta: function (chatKey) {
