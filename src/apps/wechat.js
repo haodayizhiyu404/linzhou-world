@@ -105,7 +105,8 @@
     // 聊天
     '.lzw-chatbg{background:#f2f2f5;min-height:100%;padding:4px 0 10px}',
     '.lzw-chatrow{display:flex;gap:7px;margin:11px 12px;align-items:flex-start}',
-    '.lzw-col{display:flex;flex-direction:column;min-width:0}',
+    '.lzw-col{display:flex;flex-direction:column;min-width:0;max-width:62%}',
+    '.lzw-col .lzw-bub{max-width:100%}',
     '.lzw-sender{font-size:11px;color:#9aa0a8;margin:0 0 3px}',
     '.lzw-chatrow.me{flex-direction:row-reverse}',
     '.lzw-bub{max-width:62%;padding:8px 11px;border-radius:9px;background:#fff;color:#111;line-height:1.45;font-size:13.5px;',
