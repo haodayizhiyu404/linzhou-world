@@ -203,6 +203,24 @@
           if (!result.profiles[cn]) result.profiles[cn] = titleMap[cn] || npcBlocks[cn] || '';
         }
       }
+
+      // 头像/表情预热：世界书一装载就拉进浏览器缓存，
+      // 避免再次打开手机时 <img> 重新请求出现空白闪帧（壁纸同款思路，见 wechat.js 模块头）
+      try {
+        var preSeen = {};
+        var preList = [];
+        var preAdd = function (file) {
+          var u = Worldbook.imgUrl(file);
+          if (u && !preSeen[u]) { preSeen[u] = 1; preList.push(u); }
+        };
+        for (var rn in result.rosters) {
+          var rsec = result.rosters[rn];
+          (rsec.contacts || []).forEach(function (c) { if (c.avatar) preAdd(c.avatar); });
+          (rsec.groups || []).forEach(function (g) { if (g.avatar) preAdd(g.avatar); });
+        }
+        for (var sk in result.stickers) preAdd(result.stickers[sk]);
+        for (var pi = 0; pi < preList.length; pi++) { var pim = new Image(); pim.src = preList[pi]; }
+      } catch (e) {}
       return result;
     },
 
