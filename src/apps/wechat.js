@@ -133,7 +133,8 @@
     // 通话记录泡：白/绿跟普通气泡走，只多一个听筒朝下的图标（图标比字略小）
     '.lzw-bub.lzw-calllog{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:7px 12px}',
     '.lzw-calllog-ico{display:inline-flex;transform:rotate(135deg);flex:none}', // 听筒朝下 = 已结束/未接通
-    '.lzw-calllog-ico svg{width:13px;height:13px}',
+    '.lzw-calllog-ico svg{width:15px;height:15px}',
+    '.lzw-calllog-ico.vc{transform:none}', // 摄像机图标不旋转
     '.lzw-bub.lzw-sys{background:transparent;box-shadow:none;color:#8a8f99;font-size:12px;padding:2px 4px}',
     '.lzw-sticker{max-width:120px;border-radius:8px}',
     '.lzw-voice{display:flex;flex-wrap:wrap;align-items:center;gap:8px;cursor:pointer;min-width:80px}',
@@ -342,8 +343,9 @@
       bub = richBub(m, isUser, who, targetName, true);
       return '<div class="lzw-pokerow" data-del="' + idx + '">' + bub + '</div>';
     } else if (m.kind === 'calllog') {
-      // 通话记录灰泡：谁发起的归谁一侧，听筒朝下图标 + 时长/拒绝/取消文案
-      bub = '<div class="lzw-bub lzw-calllog"><span class="lzw-calllog-ico">' + ICON_CALL + '</span>' + esc(m.text || '') + '</div>';
+      // 通话记录泡：语音=听筒朝下，视频=摄像机（不旋转），图标比字略小
+      var vcLog = m.mode === 'video';
+      bub = '<div class="lzw-bub lzw-calllog"><span class="lzw-calllog-ico' + (vcLog ? ' vc' : '') + '">' + (vcLog ? ICON_VCALL : ICON_CALL) + '</span>' + esc(m.text || '') + '</div>';
     } else if (m.kind === 'voice' || m.kind === 'image' || m.kind === 'location') {
       bub = richBub(m, isUser, who, targetName, false);
     } else {
