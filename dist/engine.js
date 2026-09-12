@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T01:28:36.840Z
+//  构建时间：2026-09-12T01:50:38.817Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 01:28';
+var __LZW_BUILD__ = '2026-09-12 01:50';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -677,6 +677,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var myName = me();
       var tailLines2 = (tail && tail.length) ? histText(tail, 8, true) : '';
       var nameList = members.map(function (m) { return m.name; });
+      var crowdTxt = Array.isArray(group.crowd) ? group.crowd.join('\n') : (group.crowd || '');
       var voices = members.map(function (m) {
         var brief = m.profile ? String(m.profile).replace(/\s+/g, ' ').slice(0, 500) : '（无档案）';
         return '- ' + m.name + '：' + brief;
@@ -688,7 +689,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '你是一款数字生活应用的模拟引擎。本次任务：生成应用「微信」的群「' + group.name + '」里新来的消息。',
         '',
         '## 群成员',
-        nameList.join('、') + '、' + myName + (group.open ? '，以及若干未具名的路人（可让其冒泡，用真实昵称）' : ''),
+        (nameList.length ? nameList.join('、') + '、' + myName : myName) + (group.open ? '，以及若干未具名的其他成员（可让其冒泡，用真实昵称）' : ''),
+        crowdTxt ? '其余成员设定：\n' + crowdTxt : '',
         group.style ? '群氛围：' + group.style : '',
         '',
         '## 成员档案',
@@ -2151,7 +2153,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var tail2 = [];
         for (var hj = hist2.length - 1; hj >= 0 && hist2[hj].who === 'user'; hj--) tail2.unshift(hist2[hj]);
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
-        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style }, members, rest2, snap2, stickerNames, tail2, digest);
+        var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest);
         raw = await generateRaw(req2);
         title = g.name + ' 群聊';
         parseGroup = true;

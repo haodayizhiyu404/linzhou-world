@@ -214,6 +214,7 @@
       var myName = me();
       var tailLines2 = (tail && tail.length) ? histText(tail, 8, true) : '';
       var nameList = members.map(function (m) { return m.name; });
+      var crowdTxt = Array.isArray(group.crowd) ? group.crowd.join('\n') : (group.crowd || '');
       var voices = members.map(function (m) {
         var brief = m.profile ? String(m.profile).replace(/\s+/g, ' ').slice(0, 500) : '（无档案）';
         return '- ' + m.name + '：' + brief;
@@ -225,7 +226,8 @@
         '你是一款数字生活应用的模拟引擎。本次任务：生成应用「微信」的群「' + group.name + '」里新来的消息。',
         '',
         '## 群成员',
-        nameList.join('、') + '、' + myName + (group.open ? '，以及若干未具名的路人（可让其冒泡，用真实昵称）' : ''),
+        (nameList.length ? nameList.join('、') + '、' + myName : myName) + (group.open ? '，以及若干未具名的其他成员（可让其冒泡，用真实昵称）' : ''),
+        crowdTxt ? '其余成员设定：\n' + crowdTxt : '',
         group.style ? '群氛围：' + group.style : '',
         '',
         '## 成员档案',

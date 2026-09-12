@@ -127,7 +127,7 @@ eq('无user宏残留·系统块', sysPrompt.indexOf('{{user}}'), -1);
 eq('无user宏残留·user轮', req.ordered_prompts[1].content.indexOf('{{user}}'), -1);
 const greq = LW.Prompt.group({ name: '高三（2）班', open: true }, [{ name: '林溪', profile: '闺蜜' }], [], null);
 eq('群提示词含成员', greq.ordered_prompts[0].content.indexOf('林溪') !== -1, true);
-eq('开放群提示', greq.ordered_prompts[0].content.indexOf('路人') !== -1, true);
+eq('开放群提示', greq.ordered_prompts[0].content.indexOf('未具名的其他成员') !== -1, true);
 eq('群无user宏残留', greq.ordered_prompts[0].content.indexOf('{{user}}'), -1);
 
 const reqR = LW.Prompt.private({ name: '周言', profile: '' }, [{ who: '周言', kind: 'text', text: '在的', recalled: true }], null, null, null, null);
@@ -143,6 +143,10 @@ eq('跨天时间标·昨天', spN.indexOf('[昨天 22:00]') !== -1, true);
 eq('跨天时间标·今天', spN.indexOf('[今天 08:00]') !== -1, true);
 const greq2 = LW.Prompt.group({ name: '高三（2）班', open: false, style: '有班主任在，发言收敛' }, [{ name: '林溪', profile: '闺蜜' }], [], null);
 eq('群氛围字段', greq2.ordered_prompts[0].content.indexOf('有班主任在，发言收敛') !== -1, true);
+const greq3 = LW.Prompt.group({ name: '霖附吃瓜二手交易市场', open: true, crowd: '类型：校园公共群，超百人。\n风格：信息量大、节奏快。\n特殊规则：可同时存在多个话题，成员不一定会直接回应。' }, [], [], null);
+const gtxt3 = greq3.ordered_prompts[0].content;
+eq('群crowd逐字进提示词', gtxt3.indexOf('其余成员设定：\n类型：校园公共群，超百人。') !== -1, true);
+eq('群crowd多行保留', gtxt3.indexOf('特殊规则：可同时存在多个话题') !== -1, true);
 LW.Store.push('stampT', [{ who: 'user', kind: 'text', text: 'x', time: '22:00' }], 100);
 eq('落库自动补日期', LW.Store.history('stampT')[0].day, '2034年8月26日 星期五');
 
