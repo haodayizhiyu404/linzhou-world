@@ -50,6 +50,9 @@
           .replace(/<think>[\s\S]*?<\/think>/gi, '')
           .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
           .replace(/<cot>[\s\S]*?<\/cot>/gi, '')
+          // 预设的结构化输出块：summary 摘要 / choice(s) 分支选项，只剥标签会留碎片，整段剔除
+          .replace(/<summary>[\s\S]*?<\/summary>/gi, '')
+          .replace(/<choices?>[\s\S]*?<\/choices?>/gi, '')
           .replace(/```[\s\S]*?```/g, '')
           .replace(/<[^>]+>/g, '')
           .replace(/\n{2,}/g, '\n')
