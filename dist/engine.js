@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T15:38:41.288Z
+//  构建时间：2026-09-12T15:45:11.974Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 15:38';
+var __LZW_BUILD__ = '2026-09-12 15:45';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1455,10 +1455,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-bub{max-width:62%;padding:8px 11px;border-radius:9px;background:#fff;color:#111;line-height:1.45;font-size:13.5px;',
     'word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.05)}',
     '.lzw-chatrow.me .lzw-bub{background:#95ec69}',
-    // 通话记录灰泡：两边都灰（对齐真实微信），须压过 me 的绿底
-    '.lzw-bub.lzw-calllog{display:flex;align-items:center;gap:7px;background:#dcdfe4;color:#333;font-size:12.5px;padding:7px 12px}',
-    '.lzw-chatrow.me .lzw-bub.lzw-calllog{background:#dcdfe4;color:#333}',
+    // 通话记录泡：白/绿跟普通气泡走，只多一个听筒朝下的图标（图标比字略小）
+    '.lzw-bub.lzw-calllog{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:7px 12px}',
     '.lzw-calllog-ico{display:inline-flex;transform:rotate(135deg);flex:none}', // 听筒朝下 = 已结束/未接通
+    '.lzw-calllog-ico svg{width:13px;height:13px}',
     '.lzw-bub.lzw-sys{background:transparent;box-shadow:none;color:#8a8f99;font-size:12px;padding:2px 4px}',
     '.lzw-sticker{max-width:120px;border-radius:8px}',
     '.lzw-voice{display:flex;flex-wrap:wrap;align-items:center;gap:8px;cursor:pointer;min-width:80px}',
