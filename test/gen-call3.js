@@ -15,10 +15,11 @@ const subsA = Array.from({length:12},(_,i)=>i%2? `<div class="lzw-sub me">第${i
 const btnsA = `<div class="lzw-callmid"><button class="lzw-callbtn"><i>&#127908;</i><span>说话</span></button><button class="lzw-callbtn hang"><i>&#9742;</i><span>挂断</span></button></div>`;
 const callA = `<div class="lzw-callbody"><div class="lzw-calltop"><div class="lzw-callava"><img src="${AV}"></div><div class="lzw-callname">沈锡元</div><div class="lzw-callstatus">03:24</div></div><div class="lzw-callsubs">${subsA}</div>${btnsA}</div>`;
 
-// E: 视频通话中——画面清晰全屏当镜头，右上 PiP 自视窗，画面描述字幕叠在镜头上
-const subsE = Array.from({length:6},(_,i)=>i%2? `<div class="lzw-sub me">那明天老时间？</div>` : `<div class="lzw-sub">行，楼下等你。</div>`).join('');
-const sceneE = `<div class="lzw-callscene">画面里他刚冲完澡，头发还湿着，<br>顺手抄起手机按了接听。</div>`;
-const callE = `<div class="lzw-callbody"><span class="lzw-callroll">${ROLL}</span><div class="lzw-callpip">裴</div><div class="lzw-calltop"><div class="lzw-callava"><img src="${AV}"></div><div class="lzw-callname">沈锡元</div><div class="lzw-callstatus">01:12</div></div>${sceneE}<div class="lzw-callsubs">${subsE}</div>${btnsA}</div>`;
+// E: 视频通话中——画面清晰全屏当镜头，右上 PiP 自视窗，画面旁白穿插在气泡中间
+const scene1 = `<div class="lzw-callscene">画面里他刚冲完澡，头发还湿着，<br>顺手抄起手机按了接听。</div>`;
+const scene2 = `<div class="lzw-callscene">他说着往嘴里丢了片薯片，<br>咔嚓咔嚓地嚼，眼睛弯起来。</div>`;
+const subsE = `<div class="lzw-sub">喂？这么晚什么事。</div><div class="lzw-sub me">明天球赛你去不去，二缺一。</div>${scene2}<div class="lzw-sub">去啊，几点？我顺便带你那份装备。</div><div class="lzw-sub me">老时间，三点，别迟到。</div>${scene1}<div class="lzw-sub">行，楼下等你。</div><div class="lzw-sub me">那明天老时间？</div>`;
+const callE = `<div class="lzw-callbody"><span class="lzw-callroll">${ROLL}</span><div class="lzw-callpip"><img src="https://picsum.photos/seed/pei/120/160"></div><div class="lzw-calltop"><div class="lzw-callava"><img src="${AV}"></div><div class="lzw-callname">沈锡元</div><div class="lzw-callstatus">01:12</div></div><div class="lzw-callsubs">${subsE}</div>${btnsA}</div>`;
 
 // B: 说话弹窗（灰黑半透明，无标题行）
 const popB = `<div class="lzw-scrim"><div class="lzw-confirm lzw-callpop"><textarea class="lzw-callta" rows="4">我跟陆飞对一下明天要交的东西，可能会晚到十分钟，你先吃。</textarea><div class="lzw-cbtns"><button class="lzw-cbtn no">取消</button><button class="lzw-cbtn yes">发送</button></div></div></div>`;
