@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-12T14:27:47.021Z
+//  构建时间：2026-09-12T14:39:08.583Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-12 14:27';
+var __LZW_BUILD__ = '2026-09-12 14:39';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1551,9 +1551,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-callbtn.hang i{width:54px;height:54px}',
     '.lzw-callroll{position:absolute;top:10px;right:12px;z-index:5;color:#fff;opacity:.85;cursor:pointer;padding:4px;line-height:0}',
     // 说话弹窗 + 删除确认：灰黑半透明面板，贴合通话暗色场景；输入区聚焦保持暗色不刺眼
-    '.lzw-callta{width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#fff;caret-color:#fff;padding:9px 11px;font-size:13.5px;line-height:1.55;resize:none;outline:none;margin-bottom:2px;font-family:inherit}',
+    '.lzw-callta{width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#fff;caret-color:#fff;padding:9px 11px;font-size:13.5px;line-height:1.55;resize:none;outline:none !important;margin-bottom:2px;font-family:inherit}',
     '.lzw-callta::placeholder{color:rgba(255,255,255,.55) !important}', // 个别前端主题会给 placeholder 上奇色，强制柔和白
-    '.lzw-callta:focus{background:rgba(255,255,255,.08)}',
+    '.lzw-callta:focus,.lzw-callta:focus-visible{background:rgba(255,255,255,.08);outline:none !important;box-shadow:none !important}', // 主题拷进沙盒的 :focus-visible 高亮圈会压过普通 outline:none，必须 !important
     '.lzw-callpop{width:266px;background:rgba(28,32,38,.96);color:#e6edf3;padding:14px 14px 12px;text-align:left;font-size:13.5px;box-shadow:0 10px 34px rgba(0,0,0,.5)}',
     '.lzw-callpop .lzw-cbtns{margin-top:10px}',
     '.lzw-callpop .lzw-cbtn.no,.lzw-calldel .lzw-cbtn.no{background:rgba(255,255,255,.12);color:#e6edf3}',
@@ -3302,12 +3302,16 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var snap = W.Status.snapshot(name);
       var userInfo = this.userBlock();
       var hist = W.Store.history(this.callKey(name));
-      var lines = [];
+      var tail = [];
       for (var i = Math.max(0, hist.length - 30); i < hist.length; i++) {
         var m = hist[i];
         if (m.who === 'sys') continue;
-        lines.push(W.Floor.msgToLine(m, this.userName()));
+        tail.push(m);
       }
+      // 机主本轮说的话已由 user 角色消息单独携带——transcript 里去掉尾部连续的机主条目，
+      // 避免同一句在提示词里出现两次（userSays 为空 = 重说轮，机主的话是上下文，必须保留）
+      if (userSays) while (tail.length && tail[tail.length - 1].who === 'user') tail.pop();
+      var lines = tail.map(function (m2) { return W.Floor.msgToLine(m2, this.userName()); }, this);
       var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), W.Store.history(name).slice(-20), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText), userSays || '');
       var raw = await generateRaw(req);

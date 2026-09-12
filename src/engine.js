@@ -744,12 +744,16 @@
       var snap = W.Status.snapshot(name);
       var userInfo = this.userBlock();
       var hist = W.Store.history(this.callKey(name));
-      var lines = [];
+      var tail = [];
       for (var i = Math.max(0, hist.length - 30); i < hist.length; i++) {
         var m = hist[i];
         if (m.who === 'sys') continue;
-        lines.push(W.Floor.msgToLine(m, this.userName()));
+        tail.push(m);
       }
+      // 机主本轮说的话已由 user 角色消息单独携带——transcript 里去掉尾部连续的机主条目，
+      // 避免同一句在提示词里出现两次（userSays 为空 = 重说轮，机主的话是上下文，必须保留）
+      if (userSays) while (tail.length && tail[tail.length - 1].who === 'user') tail.pop();
+      var lines = tail.map(function (m2) { return W.Floor.msgToLine(m2, this.userName()); }, this);
       var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), W.Store.history(name).slice(-20), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText), userSays || '');
       var raw = await generateRaw(req);
