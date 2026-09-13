@@ -197,8 +197,8 @@
     '.lzw-tright{display:flex;flex-direction:column;min-width:0}',
     '.lzw-tamt2{font-size:18px;font-weight:600;line-height:1.3;white-space:nowrap}',
     '.lzw-tto{margin-left:6px;font-size:11px;font-weight:400;color:rgba(255,255,255,.9);white-space:nowrap}',
-    '.lzw-tst2{font-size:11px;color:rgba(255,255,255,.82);padding-top:1px}',
-    '.lzw-tnote3{padding:0 13px 10px;min-height:15px;font-size:11px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.lzw-tst2{font-size:11px;color:#fff;padding-top:1px}',
+    '.lzw-tnote3{padding:0 13px 10px;min-height:15px;font-size:11px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
     '.lzw-tto-line{font-size:12.5px;color:#111;padding:2px 2px 0}',
     '.lzw-tto-line b{color:#57606a;font-weight:600}',
     '.lzw-ttohd{font-size:12px;color:#8a8f99;padding:4px 2px 6px}',
@@ -422,6 +422,8 @@
   var ICON_REROLL = '<svg width="18" height="18" viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 85.333333c102.869333 0 199.509333 36.693333 275.029333 100.437334l93.866667-94.037334a21.333333 21.333333 0 0 1 36.437333 15.061334V384a21.333333 21.333333 0 0 1-21.333333 21.333333h-276.693333a21.333333 21.333333 0 0 1-15.104-36.394666l122.325333-122.496a341.333333 341.333333 0 1 0 118.314667 341.632 42.666667 42.666667 0 1 1 83.2 18.901333A426.794667 426.794667 0 0 1 512 938.666667C276.352 938.666667 85.333333 747.648 85.333333 512S276.352 85.333333 512 85.333333z"/></svg>';
 
   var ICON_CALL = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l1.5 4-2.2 1.6a13 13 0 0 0 6.1 6.1L16 13.5l4 1.5v4a1.6 1.6 0 0 1-1.8 1.6C10.4 19.9 4.1 13.6 3.4 5.8A1.6 1.6 0 0 1 5 4z"/></svg>';
+  // 待收款徽标：双向单箭头（上半朝左、下半朝右，微信转账标）
+  var ICON_TWAIT = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7.5H6.5M10 4.2L6 7.8l4 3.6"/><path d="M5 16.5h12.5M14 13.2l4 3.6-4 3.6"/></svg>';
   var ICON_VCALL = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12.5" height="12" rx="2.5"/><path d="M15.5 10.5l5-3v9l-5-3"/></svg>';
   var ICON_MIC = '<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#1a1d21" stroke-width="1.9" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M8.5 21.5h7"/></svg>';
   var ICON_HANG = '<svg width="26" height="26" viewBox="0 0 24 24"><path fill="#fff" d="M6.6 3.2c.5-.2 1.1 0 1.4.5l1.8 2.7c.3.5.2 1.1-.2 1.5L8 9.3a12.8 12.8 0 0 0 6.7 6.7l1.4-1.6c.4-.4 1-.5 1.5-.2l2.7 1.8c.5.3.7.9.5 1.4l-.7 2.1c-.2.6-.8 1-1.4.9C9.6 18.9 5.1 14.4 4.6 5.8c0-.6.4-1.2 1-1.4l1-.2z" transform="rotate(135 12 12)"/></svg>';
@@ -479,7 +481,7 @@
       return tcardHtml(m.amount, m.note, state === 'accepted' ? '✓' : '✕', state === 'accepted' ? '已被接受' : '已被拒绝', state === 'declined', '', false);
     }
     var toTag = (isUser && groupMode && m.to) ? '<span class="lzw-tto">给 ' + esc(m.to) + '</span>' : '';
-    return tcardHtml(m.amount, m.note, '¥', '待收款', false, toTag, !isUser);
+    return tcardHtml(m.amount, m.note, ICON_TWAIT, '待收款', false, toTag, !isUser);
   }
 
   // 转账处置回执卡：接收方视角的处置结果（taccept 已收款 / tdecline 已退还），与转账卡同卡同款。
