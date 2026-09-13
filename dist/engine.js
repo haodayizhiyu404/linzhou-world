@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T03:54:22.252Z
+//  构建时间：2026-09-13T04:24:58.782Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 03:54';
+var __LZW_BUILD__ = '2026-09-13 04:24';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -832,7 +832,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // userInfo = 机主资料（persona 描述 + 当前线演化层），所有会话统一带上
     // crossGroups = 对方在的群当天记录尾巴（群→私聊跨会话上下文；对方在场，与防开天眼自洽）
     // callLog = 当日通话尾巴 {kind, dur, lines}：两人今天还在通话里说过的话，双方都记得
-    // momentsNote = 今日朋友圈互动摘要（机主给对方动态点过赞/留过言，对方记得）
+    // momentsNote = 近期朋友圈摘要（对方 3 天内发过的动态 + 机主互动痕迹，对方都记得）
     private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo, crossGroups, callLog, momentsNote) {
       var myName = me();
       var tailLines = (tail && tail.length) ? histText(tail, 8, false) : '';
@@ -860,7 +860,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             callLog.lines.join('\n')
           : '',
         momentsNote
-          ? '## 今日朋友圈互动\n（机主今天在这位的朋友圈留下过痕迹，对方一直记得；对方可以自然提起、调侃或耿耿于怀）\n' + momentsNote
+          ? '## 近期朋友圈（3天内）\n（对方这几天发过的动态；机主点过赞/留过言的对方一直记得，可自然提起、调侃或耿耿于怀；没互动的也能成为话题）\n' + momentsNote
           : '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场，可自由承接其中的话题、情绪与玩笑）\n' + crossGroups.map(function (g) {
@@ -1046,7 +1046,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '- 至多一半的人配图片；配图单独一行：[配图:名字:画面描述]（描述 ≤40 字，写看得见的内容，认真党写细节、随手拍一句话带过），跟在对应动态之后',
       '- 朋友圈是活的：可在动态后配熟人互动（都是紧跟在该动态后面的行，不每条都配满）——',
       '  · 点赞一行：[点赞:点赞者1、点赞者2]（至多 5 人，从共同熟人里挑）',
-      '  · 评论一行：[评论:评论者@被回复的人:评论内容]（每条动态至多 2 条，≤25 字；@后面是被回复的人，可以是作者也可以是前面的评论者；普通评论省略@写成 [评论:评论者:评论内容]）',
+      '  · 评论一行：[评论:评论者@被回复的人:评论内容]（每条动态至多 3 条，≤25 字；@后面是被回复的人，可以是作者也可以是前面的评论者；普通评论省略@写成 [评论:评论者:评论内容]）',
       '- 互动口吻要符合关系：损友互怼、熟人捧场、长辈式关心，不要客套水军味',
       '- 不要点名单「' + myName + '」，不要写需要机主回复的问句（机主只是刷到，还没互动）',
       '- 各人的动态主题互不重复；除 [动态]/[时间]/[配图]/[点赞]/[评论] 行外不要输出任何其他内容'
@@ -1095,7 +1095,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '- 生成 0~3 条接话评论，每条一行，格式严格为：[评论:名字:评论内容]',
       '- 回复机主时格式为：[评论:名字@' + myName + ':评论内容]；回复其他评论者同理 @ 对方名字',
       '- 朋友圈口吻：短（≤25 字）、轻松、可玩梗可阴阳，但须符合各人与机主的关系阶段',
-      '- 没有谁接话就不输出那一条；至多 3 条；除 [评论] 行外不要输出任何其他内容'
+      '- 没有谁接话就不输出那一条；至多 5 条，看热闹程度定——冷清的动态 0 条也行；除 [评论] 行外不要输出任何其他内容'
     ].filter(function (s) { return s !== ''; }).join('\n');
     return {
       ordered_prompts: [
@@ -1290,7 +1290,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           var file = stickers[arg];
           bub = file
             ? '<img class="lzw-sticker" src="' + esc(W.Worldbook.imgUrl(file)) + '" alt="' + esc(arg) + '" title="' + esc(arg) + '">'
-            : '<div class="lzw-bub">[表情:' + esc(arg) + ']</div>';
+            : '<div class="lzw-bub">' + esc(arg) + '</div>';
         } else if (kind === '戳一戳') {
           bub = '<div class="lzw-bub lzw-sys">' + (isUser ? '你戳了戳对方' : esc(who) + '戳了戳你') + '</div>';
         } else if (kind === '语音') {
@@ -1433,7 +1433,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
               if (real) {
                 out.push({ who: who, kind: kind, text: real, time: '' });
               } else {
-                out.push({ who: who, kind: 'text', text: '[表情:' + arg + ']', time: '' });
+                // 表情名没匹配到素材：剥掉 [表情:…] 壳子当普通文字发，不留括号
+                out.push({ who: who, kind: 'text', text: arg, time: '' });
               }
             } else {
               out.push({ who: who, kind: kind, text: arg, time: '' });
@@ -1441,6 +1442,40 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           }
           body = (typed[3] || '').trim();
           if (!body) return;
+        }
+        // 行内嵌的类型消息（如「真的只是搬家太忙？[表情:有什么八卦让我听听]」）：
+        // 依原序拆成多条发送——[表情:x] 匹配到素材走表情、没匹配剥壳当纯文字；
+        // [戳一戳] 不带参数也能嵌在行里；其余文字段照常过寒暄/旁白/截断过滤
+        var segRe = /\[(表情|语音|图片|定位)(?::|\||｜)([^\]]*)\]|\[(戳一戳)\]/g;
+        var segs = [], lastIdx = 0, sm;
+        while ((sm = segRe.exec(body)) !== null) {
+          if (sm.index > lastIdx) segs.push({ k: 'text', v: body.slice(lastIdx, sm.index) });
+          segs.push(sm[3] ? { k: '戳一戳', v: '' } : { k: sm[1], v: (sm[2] || '').trim() });
+          lastIdx = sm.index + sm[0].length;
+        }
+        if (segs.length) {
+          if (lastIdx < body.length) segs.push({ k: 'text', v: body.slice(lastIdx) });
+          var segKind = { '表情': 'sticker', '语音': 'voice', '图片': 'image', '定位': 'location' };
+          segs.forEach(function (sg) {
+            if (sg.k === 'text') {
+              var t = sg.v.trim();
+              if (!t) return;
+              if (/^(好的[，。！]?|收到|明白了|当然)/.test(t) && t.length < 8) return;
+              if (/^[（(][^）)]{1,28}[）)]$/.test(t)) return;
+              if (t.length > 120) t = t.slice(0, 120);
+              out.push({ who: who, kind: 'text', text: t, time: '' });
+            } else if (sg.k === '戳一戳') {
+              out.push({ who: who, kind: 'poke', text: '', time: '' });
+            } else if (sg.v) {
+              if (sg.k === '表情') {
+                var hit = window.LZWorld.Engine.resolveSticker(sg.v);
+                out.push({ who: who, kind: hit ? 'sticker' : 'text', text: hit || sg.v, time: '' });
+              } else {
+                out.push({ who: who, kind: segKind[sg.k], text: sg.v, time: '' });
+              }
+            }
+          });
+          return;
         }
         // 普通文字行；寒暄废话与纯括号旁白丢弃
         if (/^(好的[，。！]?|收到|明白了|当然)/.test(body) && body.length < 8) return;
@@ -2184,7 +2219,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       } else if (this.screen === 'home') {
         var totalUn = 0;
         try {
-          W.Store.historyKeys().forEach(function (k) { totalUn += W.Store.meta(k).unread || 0; });
+          // 只算会话未读；朋友圈的未读挂在发现 tab，别混进微信 tab
+          W.Store.historyKeys().forEach(function (k) { if (k !== eng.momentsKey) totalUn += W.Store.meta(k).unread || 0; });
         } catch (e0) {}
         body =
           '<div class="lzw-body"><div class="lzw-home-wall">' +
@@ -2236,7 +2272,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         // 底栏：微信 | 发现（发现挂朋友圈未读红点；微信挂会话总红点）
         var totalUn2 = 0;
         try {
-          W.Store.historyKeys().forEach(function (k) { totalUn2 += W.Store.meta(k).unread || 0; });
+          // 只算会话未读；朋友圈的未读挂发现 tab（mUn2），别混进微信 tab
+          W.Store.historyKeys().forEach(function (k) { if (k !== eng.momentsKey) totalUn2 += W.Store.meta(k).unread || 0; });
         } catch (e0) {}
         var mUn2 = 0;
         try { mUn2 = W.Store.meta(eng.momentsKey).unread || 0; } catch (e0) {}
@@ -3840,8 +3877,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             }
           }
         } catch (e) { callLog = null; }
-        // 近期朋友圈互动痕迹（不带 feed 全文，只带机主在对方动态下留过的赞/评；
-        // 按动态自身时间取 3 天内的，接话时能感知早晚——深夜的动态回「早点休息」才合理）
+        // 近期朋友圈摘要（3 天内对方发过的动态，至多 3 条；机主互动过的标注出来——
+        // 对方记得这些痕迹，聊天时可自然提起；没互动的也能成为话题）
         var momentsNote = '';
         try {
           var mToday = snap && snap.dateText;
@@ -3849,22 +3886,21 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             var myName0 = this.userName();
             var mfeed = W.Store.history(this.momentsKey);
             var ba = this.ptParts(mToday);
-            var touched = mfeed.filter(function (e2) {
+            var recent = mfeed.filter(function (e2) {
               if (e2.who !== c.name) return false;
               var ea = this.ptParts(e2.pt);
               if (!ea || !ba) return false;
               var dd = this.dayDiff(ea, ba);
-              if (dd < 0 || dd > 3) return false;   // 动态自身时间在快照前 0~3 天
-              if ((e2.likes || []).indexOf(myName0) !== -1) return true;
-              return (e2.comments || []).some(function (cm) { return cm.who === myName0; });
-            }, this);
-            if (touched.length) {
-              momentsNote = touched.slice(-2).map(function (e2) {
+              return dd >= 0 && dd <= 3;   // 动态自身时间在快照前 0~3 天
+            }, this).slice(-3);
+            if (recent.length) {
+              momentsNote = recent.map(function (e2) {
                 var bits = [];
                 if ((e2.likes || []).indexOf(myName0) !== -1) bits.push('点了赞');
                 (e2.comments || []).forEach(function (cm) { if (cm.who === myName0) bits.push('评论「' + cm.text + '」'); });
                 var when = this.ptShort(e2.pt);
-                return '机主在' + (when ? when + '的' : '') + '动态「' + String(e2.text).slice(0, 30) + '」下' + bits.join('、');
+                return (when ? when + ' ' : '') + '动态「' + String(e2.text).slice(0, 30) + '」' +
+                  (bits.length ? '，机主' + bits.join('、') : '（机主还没互动）');
               }, this).join('\n');
             }
           }
@@ -3963,7 +3999,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         if (cm) {
           // 评论挂在紧跟的那条动态下；@后面是"被回复的人"（作者或前面的评论者），不是动态作者校验
           var target = posts[posts.length - 1];
-          if (target && target.comments.length < 3) {
+          if (target && target.comments.length < 5) {
             target.comments.push({ who: cm[1].trim(), replyTo: cm[2] ? cm[2].trim() : '', text: cm[3].trim() });
           }
         }
@@ -4000,7 +4036,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var m = line.match(/^\[评论:([^:：@\]]{1,12})(?:@([^:：\]]{1,12}))?[:：]([\s\S]+)\]$/);
         if (m) out.push({ who: m[1].trim(), replyTo: m[2] ? m[2].trim() : '', text: m[3].trim() });
       });
-      return out.slice(0, 3);
+      return out.slice(0, 5);
     },
 
     // 首次填充：抽 3~4 位联系人/群成员，各写一条动态（日期散在"今天/昨天/前几天"）

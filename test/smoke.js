@@ -121,6 +121,13 @@ eq('黏行文字内容', glued[1].text, '哎哟，正主终于舍得在群里冒
 const gluedV = LW.Floor.parseNpcLines('[语音:早点睡] 晚安', '周言');
 eq('黏行语音条', gluedV[0].kind, 'voice');
 eq('黏行语音尾巴', gluedV[1] && gluedV[1].text, '晚安');
+// 行内嵌类型消息：标签黏在句尾（「文字[表情:xxx]」）→ 依原序拆成多条，未匹配素材的表情剥壳当纯文字
+const gluedSuf = LW.Floor.parseNpcLines('真的只是搬家太忙？[表情:有什么八卦让我听听]', '周言');
+eq('句尾标签剥成两条', gluedSuf.length, 2);
+eq('句尾标签前文字', gluedSuf[0], { who: '周言', kind: 'text', text: '真的只是搬家太忙？', time: '' });
+eq('句尾未知表情剥壳为文字', gluedSuf[1], { who: '周言', kind: 'text', text: '有什么八卦让我听听', time: '' });
+const gluedMid = LW.Floor.parseNpcLines('林溪：对了[戳一戳]你人呢', null);
+eq('群聊中段标签剥成三条', gluedMid.map(x => x.kind), ['text', 'poke', 'text']);
 
 // ── 4. 提示词装配 ──
 console.log('[提示词]');
@@ -420,7 +427,7 @@ ctx.getWorldbook = async () => [
   eq('朋友圈·回复指向契约', mrTxt.indexOf('@') !== -1, true);
   const reqMN = LW.Prompt.private({ name: '周言', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null, null,
     '机主在动态「月考成绩出了」下评论「请客吗」');
-  eq('朋友圈·互动痕迹段', reqMN.ordered_prompts[0].content.indexOf('## 今日朋友圈互动') !== -1, true);
+  eq('朋友圈·互动痕迹段', reqMN.ordered_prompts[0].content.indexOf('## 近期朋友圈（3天内）') !== -1, true);
   eq('朋友圈·互动痕迹内容', reqMN.ordered_prompts[0].content.indexOf('请客吗') !== -1, true);
   // 带日期：AI 写 [时间:] 的归一化、晚于快照时刻的被驳回走兜底、兜底不越过「现在」
   global.__msgs = [{ role: 'assistant', message: statusText }];

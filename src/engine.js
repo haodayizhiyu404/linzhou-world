@@ -687,8 +687,8 @@
             }
           }
         } catch (e) { callLog = null; }
-        // 近期朋友圈互动痕迹（不带 feed 全文，只带机主在对方动态下留过的赞/评；
-        // 按动态自身时间取 3 天内的，接话时能感知早晚——深夜的动态回「早点休息」才合理）
+        // 近期朋友圈摘要（3 天内对方发过的动态，至多 3 条；机主互动过的标注出来——
+        // 对方记得这些痕迹，聊天时可自然提起；没互动的也能成为话题）
         var momentsNote = '';
         try {
           var mToday = snap && snap.dateText;
@@ -696,22 +696,21 @@
             var myName0 = this.userName();
             var mfeed = W.Store.history(this.momentsKey);
             var ba = this.ptParts(mToday);
-            var touched = mfeed.filter(function (e2) {
+            var recent = mfeed.filter(function (e2) {
               if (e2.who !== c.name) return false;
               var ea = this.ptParts(e2.pt);
               if (!ea || !ba) return false;
               var dd = this.dayDiff(ea, ba);
-              if (dd < 0 || dd > 3) return false;   // 动态自身时间在快照前 0~3 天
-              if ((e2.likes || []).indexOf(myName0) !== -1) return true;
-              return (e2.comments || []).some(function (cm) { return cm.who === myName0; });
-            }, this);
-            if (touched.length) {
-              momentsNote = touched.slice(-2).map(function (e2) {
+              return dd >= 0 && dd <= 3;   // 动态自身时间在快照前 0~3 天
+            }, this).slice(-3);
+            if (recent.length) {
+              momentsNote = recent.map(function (e2) {
                 var bits = [];
                 if ((e2.likes || []).indexOf(myName0) !== -1) bits.push('点了赞');
                 (e2.comments || []).forEach(function (cm) { if (cm.who === myName0) bits.push('评论「' + cm.text + '」'); });
                 var when = this.ptShort(e2.pt);
-                return '机主在' + (when ? when + '的' : '') + '动态「' + String(e2.text).slice(0, 30) + '」下' + bits.join('、');
+                return (when ? when + ' ' : '') + '动态「' + String(e2.text).slice(0, 30) + '」' +
+                  (bits.length ? '，机主' + bits.join('、') : '（机主还没互动）');
               }, this).join('\n');
             }
           }
@@ -810,7 +809,7 @@
         if (cm) {
           // 评论挂在紧跟的那条动态下；@后面是"被回复的人"（作者或前面的评论者），不是动态作者校验
           var target = posts[posts.length - 1];
-          if (target && target.comments.length < 3) {
+          if (target && target.comments.length < 5) {
             target.comments.push({ who: cm[1].trim(), replyTo: cm[2] ? cm[2].trim() : '', text: cm[3].trim() });
           }
         }
@@ -847,7 +846,7 @@
         var m = line.match(/^\[评论:([^:：@\]]{1,12})(?:@([^:：\]]{1,12}))?[:：]([\s\S]+)\]$/);
         if (m) out.push({ who: m[1].trim(), replyTo: m[2] ? m[2].trim() : '', text: m[3].trim() });
       });
-      return out.slice(0, 3);
+      return out.slice(0, 5);
     },
 
     // 首次填充：抽 3~4 位联系人/群成员，各写一条动态（日期散在"今天/昨天/前几天"）

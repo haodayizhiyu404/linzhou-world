@@ -724,7 +724,8 @@
       } else if (this.screen === 'home') {
         var totalUn = 0;
         try {
-          W.Store.historyKeys().forEach(function (k) { totalUn += W.Store.meta(k).unread || 0; });
+          // 只算会话未读；朋友圈的未读挂在发现 tab，别混进微信 tab
+          W.Store.historyKeys().forEach(function (k) { if (k !== eng.momentsKey) totalUn += W.Store.meta(k).unread || 0; });
         } catch (e0) {}
         body =
           '<div class="lzw-body"><div class="lzw-home-wall">' +
@@ -776,7 +777,8 @@
         // 底栏：微信 | 发现（发现挂朋友圈未读红点；微信挂会话总红点）
         var totalUn2 = 0;
         try {
-          W.Store.historyKeys().forEach(function (k) { totalUn2 += W.Store.meta(k).unread || 0; });
+          // 只算会话未读；朋友圈的未读挂发现 tab（mUn2），别混进微信 tab
+          W.Store.historyKeys().forEach(function (k) { if (k !== eng.momentsKey) totalUn2 += W.Store.meta(k).unread || 0; });
         } catch (e0) {}
         var mUn2 = 0;
         try { mUn2 = W.Store.meta(eng.momentsKey).unread || 0; } catch (e0) {}

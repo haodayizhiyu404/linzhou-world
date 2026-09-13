@@ -94,7 +94,7 @@
           var file = stickers[arg];
           bub = file
             ? '<img class="lzw-sticker" src="' + esc(W.Worldbook.imgUrl(file)) + '" alt="' + esc(arg) + '" title="' + esc(arg) + '">'
-            : '<div class="lzw-bub">[表情:' + esc(arg) + ']</div>';
+            : '<div class="lzw-bub">' + esc(arg) + '</div>';
         } else if (kind === '戳一戳') {
           bub = '<div class="lzw-bub lzw-sys">' + (isUser ? '你戳了戳对方' : esc(who) + '戳了戳你') + '</div>';
         } else if (kind === '语音') {
@@ -237,7 +237,8 @@
               if (real) {
                 out.push({ who: who, kind: kind, text: real, time: '' });
               } else {
-                out.push({ who: who, kind: 'text', text: '[表情:' + arg + ']', time: '' });
+                // 表情名没匹配到素材：剥掉 [表情:…] 壳子当普通文字发，不留括号
+                out.push({ who: who, kind: 'text', text: arg, time: '' });
               }
             } else {
               out.push({ who: who, kind: kind, text: arg, time: '' });
@@ -245,6 +246,40 @@
           }
           body = (typed[3] || '').trim();
           if (!body) return;
+        }
+        // 行内嵌的类型消息（如「真的只是搬家太忙？[表情:有什么八卦让我听听]」）：
+        // 依原序拆成多条发送——[表情:x] 匹配到素材走表情、没匹配剥壳当纯文字；
+        // [戳一戳] 不带参数也能嵌在行里；其余文字段照常过寒暄/旁白/截断过滤
+        var segRe = /\[(表情|语音|图片|定位)(?::|\||｜)([^\]]*)\]|\[(戳一戳)\]/g;
+        var segs = [], lastIdx = 0, sm;
+        while ((sm = segRe.exec(body)) !== null) {
+          if (sm.index > lastIdx) segs.push({ k: 'text', v: body.slice(lastIdx, sm.index) });
+          segs.push(sm[3] ? { k: '戳一戳', v: '' } : { k: sm[1], v: (sm[2] || '').trim() });
+          lastIdx = sm.index + sm[0].length;
+        }
+        if (segs.length) {
+          if (lastIdx < body.length) segs.push({ k: 'text', v: body.slice(lastIdx) });
+          var segKind = { '表情': 'sticker', '语音': 'voice', '图片': 'image', '定位': 'location' };
+          segs.forEach(function (sg) {
+            if (sg.k === 'text') {
+              var t = sg.v.trim();
+              if (!t) return;
+              if (/^(好的[，。！]?|收到|明白了|当然)/.test(t) && t.length < 8) return;
+              if (/^[（(][^）)]{1,28}[）)]$/.test(t)) return;
+              if (t.length > 120) t = t.slice(0, 120);
+              out.push({ who: who, kind: 'text', text: t, time: '' });
+            } else if (sg.k === '戳一戳') {
+              out.push({ who: who, kind: 'poke', text: '', time: '' });
+            } else if (sg.v) {
+              if (sg.k === '表情') {
+                var hit = window.LZWorld.Engine.resolveSticker(sg.v);
+                out.push({ who: who, kind: hit ? 'sticker' : 'text', text: hit || sg.v, time: '' });
+              } else {
+                out.push({ who: who, kind: segKind[sg.k], text: sg.v, time: '' });
+              }
+            }
+          });
+          return;
         }
         // 普通文字行；寒暄废话与纯括号旁白丢弃
         if (/^(好的[，。！]?|收到|明白了|当然)/.test(body) && body.length < 8) return;
