@@ -687,34 +687,10 @@
             }
           }
         } catch (e) { callLog = null; }
-        // 近期朋友圈摘要（3 天内对方发过的动态，至多 3 条；机主互动过的标注出来——
-        // 对方记得这些痕迹，聊天时可自然提起；没互动的也能成为话题）
+        // 近期朋友圈摘要（近 3 天对方发过的动态 + 机主互动过的旧动态；互动痕迹对方都记得，
+        // 聊天时可自然提起；没互动的也能成为话题）
         var momentsNote = '';
-        try {
-          var mToday = snap && snap.dateText;
-          if (mToday) {
-            var myName0 = this.userName();
-            var mfeed = W.Store.history(this.momentsKey);
-            var ba = this.ptParts(mToday);
-            var recent = mfeed.filter(function (e2) {
-              if (e2.who !== c.name) return false;
-              var ea = this.ptParts(e2.pt);
-              if (!ea || !ba) return false;
-              var dd = this.dayDiff(ea, ba);
-              return dd >= 0 && dd <= 3;   // 动态自身时间在快照前 0~3 天
-            }, this).slice(-3);
-            if (recent.length) {
-              momentsNote = recent.map(function (e2) {
-                var bits = [];
-                if ((e2.likes || []).indexOf(myName0) !== -1) bits.push('点了赞');
-                (e2.comments || []).forEach(function (cm) { if (cm.who === myName0) bits.push('评论「' + cm.text + '」'); });
-                var when = this.ptShort(e2.pt);
-                return (when ? when + ' ' : '') + '动态「' + String(e2.text).slice(0, 30) + '」' +
-                  (bits.length ? '，机主' + bits.join('、') : '（机主还没互动）');
-              }, this).join('\n');
-            }
-          }
-        } catch (e) { momentsNote = ''; }
+        try { momentsNote = this.momentsNoteFor(c.name, snap); } catch (e) { momentsNote = ''; }
         var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo,
           this.crossGroups(c.name, snap && snap.dateText), callLog, momentsNote);
         raw = await generateRaw(req);
@@ -820,6 +796,42 @@
     ptParts: function (pt) { var m = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec(pt || ''); return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null; },
     dayDiff: function (a, b) { return (b.y * 372 + b.mo * 31 + b.d) - (a.y * 372 + a.mo * 31 + a.d); },
     ptShort: function (pt) { var m = /^\d{4}年(\d{1,2})月(\d{1,2})日\s*(\d{1,2}:\d{2})/.exec(pt || ''); return m ? m[1] + '月' + m[2] + '日 ' + m[3] : ''; },
+    // 近期朋友圈摘要：近 3 天对方发过的动态（至多 3 条）+ 机主互动过的旧动态（再至多 2 条）。
+    // 旧动态上的点赞/评论可能是刚发生的，对方一直记得——不能因动态天数超窗就把互动痕迹丢掉；
+    // 没 pt 的旧数据只要机主互动过也走这条通道进摘要
+    momentsNoteFor: function (name, snap) {
+      var W = window.LZWorld;
+      var mToday = snap && snap.dateText;
+      if (!mToday) return '';
+      var myName0 = this.userName();
+      var mfeed = W.Store.history(this.momentsKey);
+      var ba = this.ptParts(mToday);
+      var recent = [], touchedOld = [];
+      mfeed.forEach(function (e2) {
+        if (e2.who !== name) return;
+        var ea = this.ptParts(e2.pt);
+        var dd = (ea && ba) ? this.dayDiff(ea, ba) : null;
+        var touched = (e2.likes || []).indexOf(myName0) !== -1 ||
+          (e2.comments || []).some(function (cm) { return cm.who === myName0; });
+        if (dd !== null && dd >= 0 && dd <= 3) recent.push(e2);
+        else if (touched) touchedOld.push(e2);
+      }, this);
+      var picked = recent.slice(-3).map(function (e2) { return { e: e2, old: false }; });
+      touchedOld.slice(-2).forEach(function (e2) {
+        if (!picked.some(function (p) { return p.e === e2; })) picked.push({ e: e2, old: true });
+      });
+      return picked.map(function (p) {
+        var e2 = p.e;
+        var bits = [];
+        if ((e2.likes || []).indexOf(myName0) !== -1) bits.push('点了赞');
+        (e2.comments || []).forEach(function (cm) { if (cm.who === myName0) bits.push('评论「' + cm.text + '」'); });
+        var when = this.ptShort(e2.pt);
+        return (when ? when + ' ' : '') + '动态「' + String(e2.text).slice(0, 30) + '」' +
+          (bits.length
+            ? '，机主' + (p.old ? '刚' + bits.join('、') + '（互动是刚发生的，动态是几天前的）' : bits.join('、'))
+            : '（机主还没互动）');
+      }, this).join('\n');
+    },
 
     // 把 AI 写的 [时间:] 行归一化成 'YYYY年M月D日 HH:MM'；解析失败 / 晚于快照时刻 → null（走兜底）
     // 年份取快照年；月日比快照还靠后视为去年的事；只写了时刻没写月日当兜底失败（信息不足不瞎编日期）
@@ -856,6 +868,29 @@
       var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
       var today = (snap && snap.dateText) || '__nodate__';
       var key = this.momentsKey;
+      // 快照时刻（合成时间的上限）：状态栏 7 点就不会冒出「今天 12:xx」
+      var sb = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec((snap && snap.dateText) || '');
+      var st0 = /(\d{1,2}):(\d{2})/.exec((snap && snap.time) || '');
+      var cur = sb ? new Date(+sb[1], +sb[2] - 1, +sb[3], st0 ? +st0[1] : 23, st0 ? +st0[2] : 59) : null;
+      // 存量回补：时间体系上线前的旧动态没有 pt，按「数组顺序=时间顺序」从尾部往前补——
+      // 每条比后一条再早 30~120 分钟，已有 pt 的条目把游标带到它那刻；全部不超过快照时刻。
+      // 放在 filledDay 早退之前，否则旧数据永远没有补上 pt 的机会
+      if (cur) {
+        var exist = W.Store.history(key);
+        var cursor = cur.getTime();
+        for (var bi = exist.length - 1; bi >= 0; bi--) {
+          var be = exist[bi];
+          if (be.pt) {
+            var bm = /(\d{4})年(\d{1,2})月(\d{1,2})日\s*(\d{1,2}):(\d{2})/.exec(be.pt);
+            if (bm) cursor = Math.min(cursor, new Date(+bm[1], +bm[2] - 1, +bm[3], +bm[4], +bm[5]).getTime());
+            continue;
+          }
+          cursor -= (30 + (parseInt(hashStr(String(be.who) + String(be.text)), 36) % 90)) * 60000;
+          var bdt = new Date(cursor);
+          W.Store.patchAt(key, bi, { pt: bdt.getFullYear() + '年' + (bdt.getMonth() + 1) + '月' + bdt.getDate() + '日 ' +
+            ('0' + bdt.getHours()).slice(-2) + ':' + ('0' + bdt.getMinutes()).slice(-2) });
+        }
+      }
       if (W.Store.meta(key).filledDay === today) return false;
       var sec = this.section(); if (!sec) return false;
       var pool = [], seen = {};
@@ -880,9 +915,6 @@
       // 动态自身时间 pt：优先 AI 的 [时间:] 行（归一化、不得晚于快照时刻）；
       // 缺省按快照时刻往前 hash 散布（最新 0~90 分钟前，更早的逐条再退 2~8 小时）——
       // 伪造钟点绝不越过「现在」：状态栏 7 点就不会冒出「今天 12:xx」的动态
-      var sb = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec((snap && snap.dateText) || '');
-      var st0 = /(\d{1,2}):(\d{2})/.exec((snap && snap.time) || '');
-      var cur = sb ? new Date(+sb[1], +sb[2] - 1, +sb[3], st0 ? +st0[1] : 23, st0 ? +st0[2] : 59) : null;
       for (var pi = posts.length - 1; pi >= 0; pi--) {
         var pt = posts[pi].ptRaw ? this.normMomentTime(posts[pi].ptRaw, snap) : null;
         if (!pt && cur) {

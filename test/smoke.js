@@ -427,7 +427,7 @@ ctx.getWorldbook = async () => [
   eq('朋友圈·回复指向契约', mrTxt.indexOf('@') !== -1, true);
   const reqMN = LW.Prompt.private({ name: '周言', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null, null,
     '机主在动态「月考成绩出了」下评论「请客吗」');
-  eq('朋友圈·互动痕迹段', reqMN.ordered_prompts[0].content.indexOf('## 近期朋友圈（3天内）') !== -1, true);
+  eq('朋友圈·互动痕迹段', reqMN.ordered_prompts[0].content.indexOf('## 近期朋友圈（近3天') !== -1, true);
   eq('朋友圈·互动痕迹内容', reqMN.ordered_prompts[0].content.indexOf('请客吗') !== -1, true);
   // 带日期：AI 写 [时间:] 的归一化、晚于快照时刻的被驳回走兜底、兜底不越过「现在」
   global.__msgs = [{ role: 'assistant', message: statusText }];
@@ -438,6 +438,19 @@ ctx.getWorldbook = async () => [
   eq('朋友圈·未来时间被驳回', mfd.every(function (e) { return e.pt !== '2034年8月26日 23:59'; }), true);
   eq('朋友圈·缺省时间兜底', mfd.every(function (e) { return /^\d{4}年\d{1,2}月\d{1,2}日 \d{2}:\d{2}$/.test(e.pt); }), true);
   eq('朋友圈·时间不越过快照', mfd.filter(function (e) { return e.pt.indexOf('8月26日') !== -1; }).every(function (e) { return e.pt.slice(-5) <= '22:49'; }), true);
+  // 存量回补：时间体系前的旧动态没有 pt，打开朋友圈时按序补一个不超过快照时刻的时间
+  //（放在 filledDay 早退之前，旧数据只此一次 healing 机会）
+  LW.Store.push(LW.Engine.momentsKey, [{ who: '周言', text: '旧数据动态', img: '', pt: '', label: '昨天 10:28', likes: [], comments: [] }], 100);
+  eq('朋友圈·当日已生成不重复', await LW.Engine.momentsEnsure(), false);
+  const legacyE = LW.Engine.momentsFeed().filter(function (e) { return e.text === '旧数据动态'; })[0];
+  eq('朋友圈·旧数据回补时间', legacyE && /^\d{4}年\d{1,2}月\d{1,2}日 \d{2}:\d{2}$/.test(legacyE.pt), true);
+  eq('朋友圈·回补不越过快照', legacyE.pt.indexOf('8月26日') !== -1 && legacyE.pt.slice(-5) <= '22:49', true);
+  // 互动旧动态进摘要：评论一条 5 天前的动态，摘要不能因为超窗丢掉（互动是刚发生的，对方记得）
+  LW.Store.push(LW.Engine.momentsKey, [{ who: '林溪', text: '五天前的旧动态', img: '', pt: '2034年8月21日 20:00', label: '', likes: [], comments: [{ who: '陈默', replyTo: '', text: '火锅走起' }] }], 100);
+  const noteOld = LW.Engine.momentsNoteFor('林溪', { dateText: '2034年8月26日 星期五' });
+  eq('朋友圈·互动旧动态进摘要', noteOld.indexOf('火锅走起') !== -1, true);
+  eq('朋友圈·互动旧动态标注刚发生', noteOld.indexOf('刚评论') !== -1 && noteOld.indexOf('互动是刚发生的') !== -1, true);
+  eq('朋友圈·近3天动态仍进摘要', noteOld.indexOf('没写时间的动态') !== -1, true);
   // 无日期兜底：状态栏解析不到日期也能生成一次（修复曾静默 return false、前端永远空态的 bug）
   while (LW.Engine.momentsFeed().length) LW.Store.popLast(LW.Engine.momentsKey, 1);   // 清空上一段带日期的 3 条
   global.__msgs = [{ role: 'assistant', message: '没有任何状态栏块的普通楼层' }];

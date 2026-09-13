@@ -1618,7 +1618,7 @@
     var cmtRows = (e.comments || []).map(function (cm) {
       return '<div><span class="n">' + esc(cm.who) + '</span>' +
         (cm.replyTo ? ' 回复 <span class="n">' + esc(cm.replyTo) + '</span>' : '') +
-        '：<span class="c">' + esc(cm.text) + '</span></div>';
+        ':<span class="c">' + esc(cm.text) + '</span></div>';
     }).join('');
     var cmtBlock = cmtRows ? '<div class="lzw-pcmts">' + cmtRows + '</div>' : '';
     return '<div class="lzw-post">' + head +
