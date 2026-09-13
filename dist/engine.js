@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T15:11:05.133Z
+//  构建时间：2026-09-13T15:23:53.704Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 15:11';
+var __LZW_BUILD__ = '2026-09-13 15:23';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -3703,7 +3703,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     } else if (mode === 'custom') {
       var key = '';
       try { key = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
-      var srcOpts = [['openai', 'OpenAI 格式（第三方中转）'], ['google', 'Google AI Studio（配反代地址）']];
+      var srcOpts = [['openai', 'OpenAI 格式（第三方中转）'], ['makersuite', 'Google AI Studio（配反代地址）']];
       var srcSel = srcOpts.map(function (o) {
         return '<option value="' + o[0] + '"' + ((api.source || 'openai') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
       }).join('');

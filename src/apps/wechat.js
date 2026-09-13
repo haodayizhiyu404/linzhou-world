@@ -2020,7 +2020,7 @@
     } else if (mode === 'custom') {
       var key = '';
       try { key = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
-      var srcOpts = [['openai', 'OpenAI 格式（第三方中转）'], ['google', 'Google AI Studio（配反代地址）']];
+      var srcOpts = [['openai', 'OpenAI 格式（第三方中转）'], ['makersuite', 'Google AI Studio（配反代地址）']];
       var srcSel = srcOpts.map(function (o) {
         return '<option value="' + o[0] + '"' + ((api.source || 'openai') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
       }).join('');
