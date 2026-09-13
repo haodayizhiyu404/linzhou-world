@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T09:35:05.928Z
+//  构建时间：2026-09-13T09:56:43.634Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 09:35';
+var __LZW_BUILD__ = '2026-09-13 09:56';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -3515,7 +3515,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     }
     if (panel === 'transfer') {
       var toWhom = UI.isGroup ? UI.tTarget : UI.chatKey;
-      var swapBtn = UI.isGroup ? '<button class="lzw-modecancel" data-act="tswap">更换</button>' : '';
+      var swapBtn = UI.isGroup ? '<button class="lzw-modecancel" data-cact="tswap">更换</button>' : '';
       return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-modeform">' +
         '<div class="lzw-tto-line">转账给 <b>' + esc(toWhom || '…') + '</b></div>' +
         '<input class="lzw-modeinput" id="lzw-tamt" maxlength="8" inputmode="decimal" placeholder="金额，1 ~ 99999">' +
