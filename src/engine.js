@@ -1302,42 +1302,87 @@
       return { entries: entries };
     },
 
-    // ── 快捷回复按钮自装 ──
-    // 父页面全局暴露 quickReplyApi（酒馆自带QR扩展）。装一个「📱 手机」按钮到
-    // 自建的「霖州手机」按钮集并全局显示；已存在则跳过，可重复执行。
-    installQr: function () {
+    // ── QR 栏按钮：运行时注入，不落酒馆设置 ──
+    // 直接往父页 #qr--bar 注两个原生样式按钮（div.qr--button.menu_button），
+    // 酒馆的 QR 列表里看不到它们，也不随设置持久化；脚本关闭/沙盒销毁（pagehide）
+    // 即随之消失，别的角色卡上不会再有死按钮。QR 栏重绘会清掉外来节点，用轮询兜底。
+    _qrBox: null,
+    _qrTimer: null,
+    injectQr: function () {
+      var self = this;
+      var W = window.LZWorld;
+      try {
+        var doc = window.parent.document;
+        var mkBtn = function (label, title, fn) {
+          var b = doc.createElement('div');
+          b.className = 'qr--button menu_button';
+          b.title = title;
+          var t = doc.createElement('div');
+          t.className = 'qr--button-label';
+          t.textContent = label;
+          b.appendChild(t);
+          b.addEventListener('click', fn);
+          return b;
+        };
+        var ensure = function () {
+          try {
+            var bar = doc.getElementById('qr--bar');
+            if (!bar) return;
+            if (self._qrBox && self._qrBox.parentNode === bar) return;
+            var box = doc.createElement('span');
+            box.id = 'lzw-qrbox';
+            box.style.display = 'contents';
+            box.appendChild(mkBtn('\uD83D\uDCF1 手机', '霖州·数字世界（再点一次关闭）', function () { W.Engine.qrToggle(); }));
+            box.appendChild(mkBtn('\uD83E\uDDED 世界线', '切换 IF 世界线（五条线选一，代劳开关世界书并记入本聊天）', function () { W.Engine.qrLines(); }));
+            bar.appendChild(box);
+            self._qrBox = box;
+          } catch (e0) {}
+        };
+        ensure();
+        if (self._qrTimer) clearInterval(self._qrTimer);
+        self._qrTimer = setInterval(ensure, 1500);
+        window.addEventListener('pagehide', function () {
+          try { clearInterval(self._qrTimer); } catch (e1) {}
+          try { if (self._qrBox) self._qrBox.remove(); } catch (e2) {}
+        });
+      } catch (e) {
+        console.warn('[霖州引擎] QR 栏注入失败（不影响手机本体，可手动建QR按钮，命令：/event-emit event="lzw-phone-toggle"）', e);
+      }
+    },
+
+    // 旧版持久化按钮集「霖州手机」一次性自清：里面只有我们装过的两个按钮才动它
+    // （用户往里加过自定义按钮则保留），取消全局并删除，改由运行时注入接班。
+    uninstallLegacyQr: function () {
       var SET = '霖州手机';
       try {
         var api = window.parent.quickReplyApi;
-        if (!api || typeof api.createSet !== 'function') {
-          console.log('[霖州引擎] 父页未暴露快捷回复API，跳过按钮自装（可手动建QR按钮，命令：/event-emit event="lzw-phone-toggle"）');
-          return;
-        }
-        if (api.listSets().indexOf(SET) === -1) {
-          api.createSet(SET, {});
-          console.log('[霖州引擎] 快捷回复：已创建按钮集「' + SET + '」');
-        }
-        if (api.listQuickReplies(SET).indexOf('📱 手机') === -1) {
-          api.createQuickReply(SET, '📱 手机', {
-            message: '/event-emit event="lzw-phone-toggle"',
-            title: '霖州·数字世界（再点一次关闭）'
-          });
-          console.log('[霖州引擎] 快捷回复：已安装「📱 手机」按钮');
-        }
-        if (api.listQuickReplies(SET).indexOf('🧭 世界线') === -1) {
-          api.createQuickReply(SET, '🧭 世界线', {
-            message: '/event-emit event="lzw-line-switch"',
-            title: '切换 IF 世界线（五条线选一，代劳开关世界书并记入本聊天）'
-          });
-          console.log('[霖州引擎] 快捷回复：已安装「🧭 世界线」按钮');
-        }
-        if (api.listGlobalSets().indexOf(SET) === -1) {
-          api.addGlobalSet(SET, true);
-          console.log('[霖州引擎] 快捷回复：按钮集「' + SET + '」已设为全局显示');
-        }
-      } catch (e) {
-        console.warn('[霖州引擎] 快捷回复自装失败（不影响手机本体，可手动建按钮，命令：/event-emit event="lzw-phone-toggle"）', e);
+        if (!api || typeof api.listSets !== 'function') return;
+        if (api.listSets().indexOf(SET) === -1) return;
+        var labels = api.listQuickReplies(SET) || [];
+        var ours = { '\uD83D\uDCF1 手机': 1, '\uD83E\uDDED 世界线': 1 };
+        var onlyOurs = labels.length > 0 && labels.every(function (l) { return ours[l]; });
+        if (!onlyOurs) return;
+        try { api.removeGlobalSet(SET); } catch (e0) {}
+        try { var r = api.deleteSet(SET); if (r && typeof r.catch === 'function') r.catch(function () {}); } catch (e1) {}
+        console.log('[霖州引擎] 已清理旧版持久化 QR 按钮集「霖州手机」（改为运行时注入）');
+      } catch (e) {}
+    },
+
+    // QR 按钮行为（注入按钮与 /event-emit 事件监听共用）
+    qrToggle: async function () {
+      await this.refreshStates();
+      this.locateLine(true);
+      var ui = window.LZWorld.Apps.wechat;
+      if (!this.section()) {
+        try { toastr.info('当前世界线没有手机（古代线或未定位）', '\uD83D\uDCF1 霖州引擎'); } catch (e) {}
+        return;
       }
+      ui.inject();
+      ui.toggle();
+    },
+    qrLines: async function () {
+      await this.refreshStates();
+      window.LZWorld.Apps.wechat.showLines();
     },
 
     // ── 启动 ──
@@ -1348,33 +1393,14 @@
       await this.load();
 
       this.locateLine();
-      this.installQr();
+      this.uninstallLegacyQr();
+      this.injectQr();
       try { W.Floor.renderAll(); } catch (e) {}
 
       // 快捷回复入口：QR 按钮命令 /event-emit event="lzw-phone-toggle"
-      try {
-        on('lzw-phone-toggle', async function () {
-          // 开场白选线等卡内代码可能刚切过世界线开关（页面加载后发生），
-          // 重开手机时重新归位；开关状态是加载时的快照，须先重读
-          await Engine.refreshStates();
-          Engine.locateLine(true); // 开手机也是记录时机：无记录则按当前开关写入
-          var ui = W.Apps.wechat;
-          if (!Engine.section()) {
-            try { toastr.info('当前世界线没有手机（古代线或未定位）', '📱 霖州引擎'); } catch (e) {}
-            return;
-          }
-          ui.inject();
-          ui.toggle();
-        });
-      } catch (e) {}
-
-      // 选线入口：QR 按钮命令 /event-emit event="lzw-line-switch" → 手机选线界面
-      try {
-        on('lzw-line-switch', async function () {
-          await Engine.refreshStates(); // 列表要显示真实开关状态（手动翻过也能一眼看出）
-          W.Apps.wechat.showLines();
-        });
-      } catch (e) {}
+      // （QR 栏注入按钮与手动 QR 按钮同走 qrToggle/qrLines 两个方法）
+      try { on('lzw-phone-toggle', function () { Engine.qrToggle(); }); } catch (e) {}
+      try { on('lzw-line-switch', function () { Engine.qrLines(); }); } catch (e) {}
 
       // 世界书激活广播 → 世界线定位（每次主对话生成后触发）
       try {
