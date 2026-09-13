@@ -384,10 +384,14 @@
     '.lzw-cmtbar{display:flex;gap:6px;margin-top:6px;align-items:center}',
     '.lzw-cmtbar input{flex:1;min-width:0;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:6px 11px;font-size:13px;outline:none;background:#fff;color:#111;font-family:inherit}',
     '.lzw-cmtbar button{border:none;background:#22c05e;color:#fff;border-radius:6px;padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-family:inherit}',
-    '.lzw-mpta{width:100%;box-sizing:border-box;background:#fff;border:none;color:#111;padding:12px 14px;font-size:15px;line-height:1.6;min-height:150px;resize:none;outline:none;font-family:inherit}',
+    '.lzw-mpta{width:100%;box-sizing:border-box;background:transparent;border:none;color:#111;padding:12px 14px;font-size:15px;line-height:1.6;min-height:150px;resize:none;outline:none;font-family:inherit}',
     '.lzw-mpta::placeholder{color:#b3b8bf}',
-    '.lzw-mpimg{width:100%;box-sizing:border-box;background:#fff;border:none;border-top:1px solid rgba(0,0,0,.06);color:#57606a;padding:11px 14px;font-size:12.5px;line-height:1.6;min-height:76px;resize:none;outline:none;font-family:inherit}',
+    // 聚焦高亮圈是 ST 主题拷进沙盒的 :focus-visible 样式，必须 !important 压掉——
+    // 不然点一下 / alt+tab 切回来都会闪一下主题色边框；发布页不需要聚焦提示
+    '.lzw-mpta:focus,.lzw-mpta:focus-visible{outline:none !important;box-shadow:none !important;border:none !important;background:transparent}',
+    '.lzw-mpimg{width:100%;box-sizing:border-box;background:transparent;border:none;border-top:1px solid rgba(0,0,0,.08);color:#57606a;padding:11px 14px;font-size:12.5px;line-height:1.6;min-height:76px;resize:none;outline:none;font-family:inherit}',
     '.lzw-mpimg::placeholder{color:#b3b8bf}',
+    '.lzw-mpimg:focus,.lzw-mpimg:focus-visible{outline:none !important;box-shadow:none !important;background:transparent}',
     '.lzw-postsend{background:#22c05e;color:#fff;border-radius:5px;font-size:14px;padding:5px 14px;cursor:pointer;font-family:inherit;border:none;white-space:nowrap}',
     '.lzw-appbar-rw{width:auto;flex:none}',
     '.lzw-mptip{padding:12px 14px;font-size:12px;color:#9aa0a8}'
