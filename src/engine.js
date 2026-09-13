@@ -1306,7 +1306,8 @@
     // 直接往父页 #qr--bar 注两个原生样式按钮（div.qr--button.menu_button），
     // 酒馆的 QR 列表里看不到它们，也不随设置持久化；脚本关闭/沙盒销毁（pagehide）
     // 即随之消失，别的角色卡上不会再有死按钮。QR 栏重绘会清掉外来节点，用轮询兜底。
-    _qrBox: null,
+    // 按钮直挂 #qr--bar（不经包裹层，避免被 flex-wrap 顶成独立一行）；古代线只留世界线。
+    _qrBtns: null,
     _qrTimer: null,
     injectQr: function () {
       var self = this;
@@ -1317,6 +1318,7 @@
           var b = doc.createElement('div');
           b.className = 'qr--button menu_button';
           b.title = title;
+          b.style.flex = '0 0 auto';
           var t = doc.createElement('div');
           t.className = 'qr--button-label';
           t.textContent = label;
@@ -1328,14 +1330,15 @@
           try {
             var bar = doc.getElementById('qr--bar');
             if (!bar) return;
-            if (self._qrBox && self._qrBox.parentNode === bar) return;
-            var box = doc.createElement('span');
-            box.id = 'lzw-qrbox';
-            box.style.display = 'contents';
-            box.appendChild(mkBtn('\uD83D\uDCF1 手机', '霖州·数字世界（再点一次关闭）', function () { W.Engine.qrToggle(); }));
-            box.appendChild(mkBtn('\uD83E\uDDED 世界线', '切换 IF 世界线（五条线选一，代劳开关世界书并记入本聊天）', function () { W.Engine.qrLines(); }));
-            bar.appendChild(box);
-            self._qrBox = box;
+            // 古代线（无手机世界线）不显示手机按钮，只留世界线入口（靠它切回现代线）
+            var wantPhone = !!W.Engine.section();
+            var alive = !!(self._qrBtns && self._qrBtns.length && self._qrBtns.every(function (b) { return b.parentNode === bar; }));
+            if (alive && (self._qrBtns.length === 2) === wantPhone) return;
+            if (self._qrBtns) self._qrBtns.forEach(function (b) { if (b.parentNode) b.remove(); });
+            var btns = [mkBtn('\uD83E\uDDED 世界线', '切换 IF 世界线（五条线选一，代劳开关世界书并记入本聊天）', function () { W.Engine.qrLines(); })];
+            if (wantPhone) btns.unshift(mkBtn('\uD83D\uDCF1 手机', '霖州·数字世界（再点一次关闭）', function () { W.Engine.qrToggle(); }));
+            btns.forEach(function (b) { bar.appendChild(b); });
+            self._qrBtns = btns;
           } catch (e0) {}
         };
         ensure();
@@ -1343,7 +1346,7 @@
         self._qrTimer = setInterval(ensure, 1500);
         window.addEventListener('pagehide', function () {
           try { clearInterval(self._qrTimer); } catch (e1) {}
-          try { if (self._qrBox) self._qrBox.remove(); } catch (e2) {}
+          try { if (self._qrBtns) self._qrBtns.forEach(function (b) { if (b.parentNode) b.remove(); }); } catch (e2) {}
         });
       } catch (e) {
         console.warn('[霖州引擎] QR 栏注入失败（不影响手机本体，可手动建QR按钮，命令：/event-emit event="lzw-phone-toggle"）', e);
