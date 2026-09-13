@@ -455,9 +455,10 @@
 
   // ── 朋友圈 · 机主动态的回应：机主刚发了条动态，生成朋友们的点赞与评论 ──
   // post = {who, text, img?, when?}（who 恒为机主）；people = 全部候选朋友 [{name, profile}]
-  // recent = 机主当天在各处的聊天动静（引擎侧拼好），反应可接这些梗
+  // recentPriv / recentGrp = 机主当天私聊（≤20 行）/ 群聊（≤30 行）动静，引擎侧拼好，反应可接这些梗
+  // 动态正文不放 system（会埋在档案中间），由最后的 user 消息指代给出
   // 契约语法：[赞:名字] ×1~4、[评论:名字:评论内容] ×0~2
-  momentsReact: function (post, people, snapshot, userInfo, recent) {
+  momentsReact: function (post, people, snapshot, userInfo, recentPriv, recentGrp) {
     var myName = me();
     var p = [
       '# 数字世界 · 朋友圈回应',
@@ -470,24 +471,27 @@
       '',
       userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
       '',
-      '## 机主刚发的动态' + (post.when ? '（' + post.when + (post.img ? '，配图：' + post.img : '') + '）' : (post.img ? '（配图：' + post.img + '）' : '')),
-      post.text,
-      '',
-      '## 机主最近的聊天（当天微信各处的动静，朋友们都生活在这个圈子里，反应可接这些梗）',
-      recent || '（暂无）',
+      recentPriv
+        ? '## 机主今天的私聊（朋友们都在这些对话现场或能刷到，反应可接其中的梗）\n' + recentPriv
+        : '',
+      recentGrp
+        ? '## 机主今天的群聊（反应可接其中的梗）\n' + recentGrp
+        : '',
       '## 可能刷到这条动态的人（只能从中挑人，一人至多反应一次）',
       people.map(function (pp) { return '- ' + pp.name + '：\n' + (pp.profile ? String(pp.profile).trim() : '（无档案）'); }).join('\n'),
       '',
       '## 输出要求（严格遵守）',
+      '- 针对机主刚发的那条动态（最后一条用户消息里给出）生成反应',
       '- 生成 1~4 个 [赞:名字] 行，再生成 0~2 条 [评论:名字:评论内容] 行；每人只许出现一次（要么赞要么评论）',
       '- 谁会有反应由动态内容与人设决定：关系近的、爱玩梗的更容易冒泡；有人完全无感、没人评论也正常',
       '- 评论口径：短（≤25 字）、像真人在朋友圈留的言，可玩梗可阴阳，须符合此人与机主的关系阶段',
       '- 不要替机主回复，不要输出除 [赞]/[评论] 行以外的任何内容'
     ].filter(function (s) { return s !== ''; }).join('\n');
+    var postInfo = (post.when ? '（' + post.when + (post.img ? '，配图：' + post.img : '') + '）' : (post.img ? '（配图：' + post.img + '）' : ''));
     return {
       ordered_prompts: [
         { role: 'system', content: p },
-        { role: 'user', content: '（机主刚发了这条动态。请按输出要求生成朋友们的反应。）' }
+        { role: 'user', content: '（机主刚发了这条动态' + postInfo + '：\n「' + post.text + '」\n\n请按上方输出要求生成朋友们的反应。）' }
       ],
       should_silence: true,
       max_chat_history: 0

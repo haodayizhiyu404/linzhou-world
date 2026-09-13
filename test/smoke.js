@@ -490,12 +490,17 @@ ctx.getWorldbook = async () => [
   // 机主朋友圈的回应 prompt：契约行与人数约束
   const mreact = LW.Prompt.momentsReact({ who: '陈默', text: '月考终于结束了', img: '一张拍糊的试卷', when: '8月26日 22:49' },
     [{ name: '周言', profile: '班长' }, { name: '林溪', profile: '闺蜜' }],
-    { dateText: '2034年8月26日 星期五' }, '机主资料');
+    { dateText: '2034年8月26日 星期五' }, '机主资料', '周言：明天球馆别迟到', '群「霖附吃瓜二手交易市场」· 陆飞：哈哈哈');
   const mreactTxt = mreact.ordered_prompts[0].content;
-  eq('发圈·回应带动态', mreactTxt.indexOf('月考终于结束了') !== -1, true);
-  eq('发圈·回应带配图', mreactTxt.indexOf('配图：一张拍糊的试卷') !== -1, true);
-  eq('发圈·回应带最近聊天', mreactTxt.indexOf('机主最近的聊天') !== -1, true);
-  eq('发圈·回应可接梗说明', mreactTxt.indexOf('反应可接这些梗') !== -1, true);
+  const mreactUser = mreact.ordered_prompts[1].content;
+  eq('发圈·动态在user消息里', mreactUser.indexOf('月考终于结束了') !== -1, true);
+  eq('发圈·user消息带配图', mreactUser.indexOf('配图：一张拍糊的试卷') !== -1, true);
+  eq('发圈·system不埋动态', mreactTxt.indexOf('月考终于结束了') === -1, true);
+  eq('发圈·回应带私聊段', mreactTxt.indexOf('机主今天的私聊') !== -1 && mreactTxt.indexOf('明天球馆别迟到') !== -1, true);
+  eq('发圈·回应带群聊段', mreactTxt.indexOf('机主今天的群聊') !== -1 && mreactTxt.indexOf('哈哈哈') !== -1, true);
+  eq('发圈·赞契约', mreactTxt.indexOf('[赞:名字]') !== -1, true);
+  eq('发圈·评论契约', mreactTxt.indexOf('[评论:名字:评论内容]') !== -1, true);
+  eq('发圈·一人至多一次', mreactTxt.indexOf('一人至多反应一次') !== -1, true);
   eq('发圈·赞契约', mreactTxt.indexOf('[赞:名字]') !== -1, true);
   eq('发圈·评论契约', mreactTxt.indexOf('[评论:名字:评论内容]') !== -1, true);
   eq('发圈·一人至多一次', mreactTxt.indexOf('一人至多反应一次') !== -1, true);

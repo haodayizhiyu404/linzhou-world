@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T08:07:29.371Z
+//  构建时间：2026-09-13T08:16:58.315Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 08:07';
+var __LZW_BUILD__ = '2026-09-13 08:16';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1113,9 +1113,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // ── 朋友圈 · 机主动态的回应：机主刚发了条动态，生成朋友们的点赞与评论 ──
   // post = {who, text, img?, when?}（who 恒为机主）；people = 全部候选朋友 [{name, profile}]
-  // recent = 机主当天在各处的聊天动静（引擎侧拼好），反应可接这些梗
+  // recentPriv / recentGrp = 机主当天私聊（≤20 行）/ 群聊（≤30 行）动静，引擎侧拼好，反应可接这些梗
+  // 动态正文不放 system（会埋在档案中间），由最后的 user 消息指代给出
   // 契约语法：[赞:名字] ×1~4、[评论:名字:评论内容] ×0~2
-  momentsReact: function (post, people, snapshot, userInfo, recent) {
+  momentsReact: function (post, people, snapshot, userInfo, recentPriv, recentGrp) {
     var myName = me();
     var p = [
       '# 数字世界 · 朋友圈回应',
@@ -1128,24 +1129,27 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '',
       userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
       '',
-      '## 机主刚发的动态' + (post.when ? '（' + post.when + (post.img ? '，配图：' + post.img : '') + '）' : (post.img ? '（配图：' + post.img + '）' : '')),
-      post.text,
-      '',
-      '## 机主最近的聊天（当天微信各处的动静，朋友们都生活在这个圈子里，反应可接这些梗）',
-      recent || '（暂无）',
+      recentPriv
+        ? '## 机主今天的私聊（朋友们都在这些对话现场或能刷到，反应可接其中的梗）\n' + recentPriv
+        : '',
+      recentGrp
+        ? '## 机主今天的群聊（反应可接其中的梗）\n' + recentGrp
+        : '',
       '## 可能刷到这条动态的人（只能从中挑人，一人至多反应一次）',
       people.map(function (pp) { return '- ' + pp.name + '：\n' + (pp.profile ? String(pp.profile).trim() : '（无档案）'); }).join('\n'),
       '',
       '## 输出要求（严格遵守）',
+      '- 针对机主刚发的那条动态（最后一条用户消息里给出）生成反应',
       '- 生成 1~4 个 [赞:名字] 行，再生成 0~2 条 [评论:名字:评论内容] 行；每人只许出现一次（要么赞要么评论）',
       '- 谁会有反应由动态内容与人设决定：关系近的、爱玩梗的更容易冒泡；有人完全无感、没人评论也正常',
       '- 评论口径：短（≤25 字）、像真人在朋友圈留的言，可玩梗可阴阳，须符合此人与机主的关系阶段',
       '- 不要替机主回复，不要输出除 [赞]/[评论] 行以外的任何内容'
     ].filter(function (s) { return s !== ''; }).join('\n');
+    var postInfo = (post.when ? '（' + post.when + (post.img ? '，配图：' + post.img : '') + '）' : (post.img ? '（配图：' + post.img + '）' : ''));
     return {
       ordered_prompts: [
         { role: 'system', content: p },
-        { role: 'user', content: '（机主刚发了这条动态。请按输出要求生成朋友们的反应。）' }
+        { role: 'user', content: '（机主刚发了这条动态' + postInfo + '：\n「' + post.text + '」\n\n请按上方输出要求生成朋友们的反应。）' }
       ],
       should_silence: true,
       max_chat_history: 0
@@ -4441,31 +4445,34 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       });
       if (!pool.length) return;
       var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
-      // 反应要接得住正在发生的梗：当天私聊尾巴 + 群尾巴，和 momentsFill 同级的主线近况在 prompt 侧
-      var recent = [];
+      // 反应要接得住正在发生的梗：当天私聊（合计至多 20 行）+ 群聊（合计至多 30 行），
+      // 主线近况在 prompt 侧；发动态是一次性小生成，多带上下文不心疼 token
+      var privLines = [], grpLines = [];
       try {
         var day0 = snap && snap.dateText;
         if (day0) {
-          var priv = this.crossPrivates(pool, day0);
-          Object.keys(priv).forEach(function (n) {
-            priv[n].slice(-2).forEach(function (m) {
-              recent.push(n + '：' + String(m.text || '').slice(0, 40));
+          pool.forEach(function (n) {
+            var h = W.Store.history(n);
+            if (!h.length || h[h.length - 1].day !== day0) return;
+            h.slice(-6).forEach(function (m) {
+              privLines.push(n + '：' + String(m.text || '').slice(0, 40));
             });
           });
           (sec.groups || []).forEach(function (g) {
             var gh = W.Store.history('group:' + g.name);
             if (!gh.length || gh[gh.length - 1].day !== day0) return;
-            gh.slice(-4).forEach(function (m) {
-              recent.push('群「' + g.name + '」· ' + (m.who === 'user' ? myName : m.who) + '：' + String(m.text || '').slice(0, 40));
+            gh.slice(-10).forEach(function (m) {
+              grpLines.push('群「' + g.name + '」· ' + (m.who === 'user' ? myName : m.who) + '：' + String(m.text || '').slice(0, 40));
             });
           });
         }
       } catch (e) {}
-      recent = recent.slice(-14);
+      var recentPriv = privLines.slice(-20).join('\n');
+      var recentGrp = grpLines.slice(-30).join('\n');
       var likes = [], comments = [];
       try {
         var people = pool.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
-        var req = W.Prompt.momentsReact({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, people, snap, this.userBlock(), recent.join('\n'));
+        var req = W.Prompt.momentsReact({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, people, snap, this.userBlock(), recentPriv, recentGrp);
         var raw = await generateRaw(req);
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         var parsed = this.parseMomentReacts(text, myName);
