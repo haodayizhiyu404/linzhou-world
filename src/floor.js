@@ -22,6 +22,15 @@
   }
 
   // ── 消息 → 楼层行 ──
+  // 转账契约参数解析：金额必填（可带 ¥/￥/元，最多两位小数），备注可选；非法返回 null
+  function parseTransferArg(arg) {
+    var parts = String(arg || '').split(/[:：|｜]/);
+    var amt = String(parts[0] || '').trim().replace(/[¥￥\s元]/g, '');
+    var amount = Number(amt);
+    if (!amt || isNaN(amount) || amount <= 0 || amount > 99999) return null;
+    return { amount: Math.round(amount * 100) / 100, note: String(parts[1] || '').trim().slice(0, 30) };
+  }
+
   function msgToLine(m, userName) {
     if (m.who === 'sys') return String(m.text || ''); // 系统条目（通话时长等）不带人名前缀
     var who = m.who === 'user' ? userName : m.who;
@@ -34,6 +43,11 @@
       // 通话记录灰泡在楼层存档里就是一行类型标（与列表页预览一致，带上时长/结果）
       case 'calllog': body = '[' + (m.mode === 'video' ? '视频通话' : '语音通话') + (m.text ? ' · ' + String(m.text).replace(/^通话时长 /, '') : '') + ']'; break;
       case 'location':body = '[定位:' + m.text + ']'; break;
+      // 转账：无人记账，卡片即记录——一行写清谁转给谁、金额、备注，上下文携带即全知情
+      case 'transfer':body = m.who === 'user'
+        ? '[转账给' + (m.to || '对方') + ' ¥' + m.amount + (m.note ? '（' + m.note + '）' : '') + ']'
+        : '[' + who + '转账 ¥' + m.amount + (m.note ? '（' + m.note + '）' : '') + ']';
+        break;
       // 视频通话的画面条目（跨行压成一行，带标记便于模型区分可见状态与台词）
       case 'scene':   body = '（画面：' + String(m.text || '').replace(/\n+/g, '　') + '）'; break;
       default:        body = String(m.text || '');
@@ -87,8 +101,12 @@
         rows.push('<div class="lzw-pokerow">' + esc(content) + '</div>');
         return;
       }
+      var tfm = content.match(/^\[(?:转账给\S+|\S+转账) ¥([\d.]+)(?:（([^()]*)）)?\]$/);
       var typed = content.match(/^\[(表情|语音|图片|戳一戳|定位)(?::|\||｜)([\s\S]*)\]$/);
-      if (typed) {
+      if (tfm) {
+        // 转账在楼层回渲染里就是一行轻量灰泡（手机卡片才是完整形态）
+        bub = '<div class="lzw-bub lzw-sys">💰 转账 ¥' + esc(tfm[1]) + (tfm[2] ? ' · ' + esc(tfm[2]) : '') + '</div>';
+      } else if (typed) {
         var kind = typed[1], arg = (typed[2] || '').trim();
         if (kind === '表情') {
           var file = stickers[arg];
@@ -222,14 +240,19 @@
         }
         if (/^\[撤回\]$/.test(body)) { out.push({ who: who, kind: 'recall', text: '', time: '' }); return; }
         if (/^\[戳一戳\]$/.test(body)) { out.push({ who: who, kind: 'poke', text: '', time: '' }); return; }
+        if (/^\[转账[:：|｜]/.test(body)) { // 整行就是一条转账契约（金额必填，备注可选）
+          var tm = body.match(/^\[转账[:：|｜]([^\]]*)\]$/);
+          var tt = tm && parseTransferArg(tm[1]);
+          if (tt) out.push({ who: who, kind: 'transfer', amount: tt.amount, note: tt.note, to: '', state: 'waiting', time: '' });
+          return;
+        }
         // 前缀匹配：AI 忘换行把类型消息和文字黏在一行（如「[表情:看戏吃瓜] 哎哟……」）
         // → 类型消息单独成一条，尾巴文字走下面的普通文字行流程
         var typed = body.match(/^\[(表情|语音|图片|戳一戳|定位)(?::|\||｜)([^\]]*)\]\s*([\s\S]*)$/);
         if (typed) {
           var kindMap = { '表情': 'sticker', '语音': 'voice', '图片': 'image', '戳一戳': 'poke', '定位': 'location' };
           var kind = kindMap[typed[1]];
-          var arg = (typed[2] || '').trim();
-          if (kind === 'poke') {
+          var arg = (typed[2] || '').trim();          if (kind === 'poke') {
             out.push({ who: who, kind: kind, text: '', time: '' });
           } else if (arg) {
             if (kind === 'sticker') {
@@ -250,7 +273,7 @@
         // 行内嵌的类型消息（如「真的只是搬家太忙？[表情:有什么八卦让我听听]」）：
         // 依原序拆成多条发送——[表情:x] 匹配到素材走表情、没匹配剥壳当纯文字；
         // [戳一戳] 不带参数也能嵌在行里；其余文字段照常过寒暄/旁白/截断过滤
-        var segRe = /\[(表情|语音|图片|定位)(?::|\||｜)([^\]]*)\]|\[(戳一戳)\]/g;
+        var segRe = /\[(表情|语音|图片|定位|转账)(?::|\||｜)([^\]]*)\]|\[(戳一戳)\]/g;
         var segs = [], lastIdx = 0, sm;
         while ((sm = segRe.exec(body)) !== null) {
           if (sm.index > lastIdx) segs.push({ k: 'text', v: body.slice(lastIdx, sm.index) });
@@ -270,6 +293,9 @@
               out.push({ who: who, kind: 'text', text: t, time: '' });
             } else if (sg.k === '戳一戳') {
               out.push({ who: who, kind: 'poke', text: '', time: '' });
+            } else if (sg.k === '转账') {
+              var tv = parseTransferArg(sg.v);
+              if (tv) out.push({ who: who, kind: 'transfer', amount: tv.amount, note: tv.note, to: '', state: 'waiting', time: '' });
             } else if (sg.v) {
               if (sg.k === '表情') {
                 var hit = window.LZWorld.Engine.resolveSticker(sg.v);

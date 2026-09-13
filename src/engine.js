@@ -600,7 +600,7 @@
         var last = arr[arr.length - 1];
         var headText = last.kind === 'text' ? last.text
           : last.kind === 'calllog' ? '[' + (last.mode === 'video' ? '视频通话' : '语音通话') + ']'
-          : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[last.kind] || '消息') + ']';
+          : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位', transfer: '转账' }[last.kind] || '消息') + ']';
         W.Store.setMeta(n, { headline: String(headText).slice(0, 40), atMainCount: Engine.mainCount() });
       });
       return names;
@@ -736,7 +736,7 @@
       var lastMsg = msgs[msgs.length - 1];
       var headText = lastMsg.kind === 'text' ? lastMsg.text
         : lastMsg.kind === 'calllog' ? '[' + (lastMsg.mode === 'video' ? '视频通话' : '语音通话') + ']'
-        : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' }[lastMsg.kind] || '消息') + ']';
+        : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位', transfer: '转账' }[lastMsg.kind] || '消息') + ']';
       W.Store.setMeta(chatKey, { headline: String(headText).slice(0, 40), atMainCount: this.mainCount() });
       return { key: chatKey, title: title, msgs: msgs };
     },
@@ -1039,6 +1039,29 @@
     sameMoment: function (key, index, entry) {
       var cur = window.LZWorld.Store.history(key)[index];
       return !!cur && cur.who === entry.who && cur.text === entry.text;
+    },
+
+    // 机主发出的转账在对方回复生成成功后批量翻「已收款」（双方视角同源，同帧生效）。
+    // 生成失败不翻——对方还没收，下次成功自然补上
+    markTransfersAccepted: function (key) {
+      var W = window.LZWorld, h = W.Store.history(key), n = 0;
+      for (var i = 0; i < h.length; i++) {
+        var m = h[i];
+        if (m && m.who === 'user' && m.kind === 'transfer' && m.state === 'waiting') {
+          W.Store.patchAt(key, i, { state: 'accepted' });
+          n++;
+        }
+      }
+      return n;
+    },
+
+    // 机主点收 NPC 发来的转账：只许收对方发的、待收款的
+    acceptTransfer: function (key, idx) {
+      var W = window.LZWorld;
+      var m = W.Store.history(key)[idx];
+      if (!m || m.who === 'user' || m.kind !== 'transfer' || m.state !== 'waiting') return false;
+      W.Store.patchAt(key, idx, { state: 'accepted' });
+      return true;
     },
 
     // 朋友们对机主动态的反应：点赞 + 评论各生成一轮（异步，失败只 warn 不打扰机主）。

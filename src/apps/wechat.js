@@ -188,6 +188,19 @@
     '.lzw-locmap{height:84px;position:relative;background:linear-gradient(150deg,#dde9d9,#eef4ea)}',
     '.lzw-locmap:before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.95) 42% 50%,transparent 50%),linear-gradient(8deg,transparent 62%,rgba(255,255,255,.85) 62% 68%,transparent 68%),linear-gradient(0deg,transparent 80%,rgba(255,255,255,.75) 80% 86%,transparent 86%)}',
     '.lzw-locmap:after{content:"📍";position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-size:26px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}',
+    '.lzw-tcard{width:190px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.07);flex:none}',
+    '.lzw-tcard.got.waiting{cursor:pointer}',
+    '.lzw-tcard-top{display:flex;align-items:center;gap:6px;padding:9px 12px 0;font-size:12.5px;color:#111}',
+    '.lzw-tcoin{width:17px;height:17px;border-radius:50%;background:#f0a63c;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10.5px;font-weight:600}',
+    '.lzw-tto{margin-left:auto;font-size:11px;color:#8a8f99;white-space:nowrap}',
+    '.lzw-tamt{padding:5px 12px 0;font-size:20px;font-weight:600;color:#111;line-height:1.25}',
+    '.lzw-tnote{padding:2px 12px 9px;font-size:11.5px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:14px}',
+    '.lzw-tbot{display:flex;justify-content:flex-end;align-items:center;padding:5px 12px;border-top:1px solid rgba(0,0,0,.05);font-size:11px;color:#9aa0a8}',
+    '.lzw-tbot.waiting{color:#e0883a}',
+    '.lzw-tto-line{font-size:12.5px;color:#111;padding:2px 2px 0}',
+    '.lzw-tto-line b{color:#57606a;font-weight:600}',
+    '.lzw-ttohd{font-size:12px;color:#8a8f99;padding:4px 2px 6px}',
+    '.lzw-ttolist{display:flex;flex-direction:column;gap:2px;max-height:230px;overflow-y:auto}',
     '.lzw-locbox .cap{font-size:12.5px;font-weight:600;padding:7px 9px}',
     '.lzw-sysrow{text-align:center;font-size:11.5px;color:#9aa0a8;margin:10px 0}',
     '.lzw-recallrow{text-align:center;font-size:12px;color:#9aa0a8;margin:13px 0;line-height:1.7;cursor:pointer}',
@@ -433,8 +446,27 @@
     image: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><circle cx="9" cy="9.8" r="1.6"/><path d="M4.5 17.5l4.6-4.6 3 3 3.6-3.6 4.3 4.2"/></svg>',
     voice: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="10.5" rx="3"/><path d="M5.8 11.2a6.2 6.2 0 0 0 12.4 0M12 17.6V21M9.2 21h5.6"/></svg>',
     poke: '<svg width="26" height="26" viewBox="0 0 1024 1024" fill="#555"><path d="M654.890667 132.394667l5.290666 2.56 8.021334 4.266666 12.928 7.189334 14.293333 8.170666 26.794667 15.786667 24.170666 14.570667 33.578667 20.672 45.312 28.373333 50.773333 32.32 76.181334 49.194667 31.082666 20.266666 2.922667 2.069334a42.666667 42.666667 0 0 1 16.277333 30.058666l0.149334 3.584v416.682667l-0.106667 4.373333a85.333333 85.333333 0 0 1-72.789333 80.042667l-4.330667 0.533333-312.896 29.802667-4.8 0.384-4.8 0.192a128 128 0 0 1-128.96-108.010667l-0.682667-4.906666-20.16-169.962667-150.933333 0.021333-4.864-0.085333c-69.418667-2.624-124.16-61.226667-126.592-132.864L170.666667 482.666667l0.085333-5.013334 0.256-4.970666c4.757333-69.333333 58.538667-125.312 126.336-127.872l4.864-0.085334H544.426667l-3.2-2.432-3.626667-2.858666c-58.666667-47.786667-59.946667-116.672-29.930667-164.352l2.453334-3.712 3.968-5.525334c29.973333-39.253333 82.773333-59.968 140.8-33.450666z m-60.458667 143.146666l2.837333 2.026667 71.914667 49.578667 24.533333 17.322666 7.936 5.76 5.12 3.925334 2.496 2.154666c27.050667 25.130667 10.858667 71.04-25.962666 73.621334l-3.306667 0.128h-377.813333l-3.072 0.106666c-23.466667 1.813333-43.114667 24.042667-43.114667 52.501334 0 28.48 19.626667 50.709333 43.114667 52.501333l3.093333 0.128h188.864l3.370667 0.128A42.666667 42.666667 0 0 1 532.906667 569.6l0.533333 3.349333 24.597333 207.573334 0.512 3.242666a42.666667 42.666667 0 0 0 42.453334 34.389334l3.456-0.192L917.333333 788.16V394.581333l-60.842666-39.424-62.293334-39.829333-47.146666-29.696-34.88-21.589333-25.024-15.210667-22.442667-13.376-19.882667-11.52-8.96-5.098667-12.266666-6.741333-2.474667-1.258667c-38.634667-18.090667-68.565333 32.96-26.688 64.682667zM230.592 201.749333l27.669333 80.725334-7.296 2.666666a213.482667 213.482667 0 0 0-71.466666 45.568 212.544 212.544 0 0 0-65.322667 153.621334 212.565333 212.565333 0 0 0 66.026667 154.325333 213.269333 213.269333 0 0 0 78.272 47.616l-27.605334 80.746667-8.725333-3.136a298.752 298.752 0 0 1-100.864-63.509334 297.877333 297.877333 0 0 1-92.437333-216.042666c0-82.197333 33.429333-159.146667 91.434666-215.082667a298.624 298.624 0 0 1 110.314667-67.498667z"/></svg>',
-    location: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linejoin="round"><path d="M12 21s6.8-6 6.8-10.6A6.8 6.8 0 0 0 5.2 10.4C5.2 15 12 21 12 21z"/><circle cx="12" cy="10.3" r="2.4"/></svg>'
+    location: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linejoin="round"><path d="M12 21s6.8-6 6.8-10.6A6.8 6.8 0 0 0 5.2 10.4C5.2 15 12 21 12 21z"/><circle cx="12" cy="10.3" r="2.4"/></svg>',
+    transfer: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="6" width="18.4" height="13" rx="2.6"/><path d="M2.8 9.8h18.4M14.8 14.2h4.4"/></svg>'
   };
+
+  // 转账卡：白底圆角 + 橙色「转账」标 + 大字金额 + 备注 + 底部状态行。
+  // 双方视角同源（同一条记录），收款完成两边同帧翻「已收款」；群聊卡右上角标「给 X」
+  function fmtTAmount(a) {
+    var n = Number(a);
+    if (isNaN(n) || n <= 0) return '0';
+    return n % 1 === 0 ? String(n) : n.toFixed(2);
+  }
+  function transferCardHtml(m, isUser, groupMode) {
+    var accepted = m.state === 'accepted';
+    var incomingWaiting = !isUser && !accepted;
+    var toTag = (isUser && groupMode && m.to) ? '<span class="lzw-tto">给 ' + esc(m.to) + '</span>' : '';
+    return '<div class="lzw-tcard' + (incomingWaiting ? ' got waiting' : '') + '"' + (incomingWaiting ? ' data-taccept="1"' : '') + '>' +
+      '<div class="lzw-tcard-top"><span class="lzw-tcoin">¥</span><span>转账</span>' + toTag + '</div>' +
+      '<div class="lzw-tamt">¥' + fmtTAmount(m.amount) + '</div>' +
+      '<div class="lzw-tnote">' + esc(m.note || '') + '</div>' +
+      '<div class="lzw-tbot' + (accepted ? '' : ' waiting') + '">' + (accepted ? '已收款' : '待收款') + '</div></div>';
+  }
 
   // ── 手机内气泡行 ──
   // targetName：会话对象显示名（私聊=联系人，群聊=群名），用户戳一戳时显示「你戳了戳 TA」
@@ -472,6 +504,9 @@
       // 通话记录泡：语音=听筒朝下，视频=摄像机（不旋转），图标比字略小
       var vcLog = m.mode === 'video';
       bub = '<div class="lzw-bub lzw-calllog">' + esc(m.text || '') + '<span class="lzw-calllog-ico' + (vcLog ? ' vc' : '') + '">' + (vcLog ? ICON_VCALL : ICON_CALL) + '</span></div>';
+    } else if (m.kind === 'transfer') {
+      // 转账卡不是气泡：双方都是白底卡（showName 即群聊态），待收款的对方卡可点收款
+      bub = transferCardHtml(m, isUser, !!showName);
     } else if (m.kind === 'voice' || m.kind === 'image' || m.kind === 'location') {
       bub = richBub(m, isUser, who, targetName, false);
     } else {
@@ -520,6 +555,9 @@
       if (m.kind === 'poke') {
         return '<div class="lzw-stgrow lzw-stgcenter">' + richBub(m, true, userName, '', false) + stgx + '</div>';
       }
+      if (m.kind === 'transfer') {
+        return '<div class="lzw-chatrow me lzw-stgrow">' + av + '<div class="lzw-stgitem">' + transferCardHtml(m, true, false) + stgx + '</div></div>';
+      }
       if (m.kind === 'sticker') {
         var file = W.Engine.stickers()[m.text];
         var inner = file
@@ -544,7 +582,7 @@
     feedScr: null,       // 当前 DOM 里 .lzw-mfeed 属于哪个屏（跨屏不还原滚动）
     mMenu: -1,           // 展开「赞/评论」小菜单的动态下标
     mCmt: -1,            // 展开评论输入框的动态下标
-    panel: null,         // null | 'actions' | 'sticker' | 'image' | 'voice' | 'location'
+    panel: null,         // null | 'actions' | 'sticker' | 'image' | 'voice' | 'location' | 'transferto' | 'transfer'
     chatKey: null,
     isGroup: false,
     busy: false,
@@ -554,6 +592,8 @@
     peek: {},             // 撤回偷看集合：chatKey:index → true
     confirmDel: -1,       // 待确认删除的消息下标（-1=无）
     mConfirmDel: -1,      // 待确认删除的自己的动态下标（-1=无）
+    tConfirm: -1,         // 待确认收款的转账消息下标（-1=无）
+    tTarget: '',          // 群聊转账选中的接收方（确定发出后清空）
     _placed: false,
 
     injectStyle: function () {
@@ -1005,6 +1045,12 @@
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
         '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + ((this.screen === 'moments' || this.screen === 'mprofile') ? ' lzw-scr-moments' : '') + (this.call ? ' lzw-scr-call' : '') + (this.call && this.call.mode === 'video' ? ' lzw-scr-video' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
         (this.confirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条消息？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="cancel">取消</button><button class="lzw-cbtn yes" data-cact="del">删除</button></div></div></div>' : '') +
+        (this.tConfirm >= 0 ? (function () {
+          var tcm = null;
+          try { tcm = window.LZWorld.Store.history(UI.chatKey)[UI.tConfirm]; } catch (e) {}
+          var amt = tcm ? fmtTAmount(tcm.amount) : '';
+          return '<div class="lzw-scrim"><div class="lzw-confirm">确认收款 ¥' + amt + '？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="taccno">取消</button><button class="lzw-cbtn yes" data-cact="taccok">确认收款</button></div></div></div>';
+        })() : '') +
         '</div></div>';
 
       this.bind(ph);
@@ -1293,7 +1339,39 @@
         el.onclick = function () {
           var mode = el.dataset.mode;
           if (mode === 'poke') { UI.stageTyped('poke', ''); return; } // 戳一戳也先攒着，随小飞机一起发
+          if (mode === 'transfer') { // 群聊先选接收方；私聊直接表单（收款人=对方）
+            UI.panel = (UI.isGroup && !UI.tTarget) ? 'transferto' : 'transfer';
+            UI.render();
+            return;
+          }
           UI.panel = mode; // sticker | image | voice | location
+          UI.render();
+        };
+      });
+      ph.querySelectorAll('[data-ttarget]').forEach(function (el) {
+        el.onclick = function () { UI.tTarget = el.dataset.ttarget; UI.panel = 'transfer'; UI.render(); };
+      });
+      ph.querySelectorAll('[data-tsend]').forEach(function (el) {
+        el.onclick = function () {
+          var amtIn = ph.querySelector('#lzw-tamt');
+          var raw = amtIn ? amtIn.value.trim().replace(/[¥￥\s元]/g, '') : '';
+          var amount = Number(raw);
+          if (!raw || isNaN(amount) || amount <= 0 || amount > 99999) {
+            try { toastr.error('金额要是 1~99999 的数字', '霖州手机'); } catch (e) {}
+            return;
+          }
+          var noteIn = ph.querySelector('#lzw-tnote');
+          var note = noteIn ? noteIn.value.trim().slice(0, 30) : '';
+          var to = UI.isGroup ? UI.tTarget : UI.chatKey;
+          if (!to) { UI.panel = 'transferto'; UI.render(); return; }
+          UI.stageTransfer(Math.round(amount * 100) / 100, note, to);
+        };
+      });
+      ph.querySelectorAll('[data-taccept]').forEach(function (el) {
+        el.onclick = function () {
+          var row = el.closest('.lzw-chatrow');
+          if (!row) return;
+          UI.tConfirm = parseInt(row.dataset.del, 10);
           UI.render();
         };
       });
@@ -1324,6 +1402,9 @@
           else if (a === 'del') { UI.removeAt(UI.confirmDel); UI.confirmDel = -1; UI.render(); }
           else if (a === 'mdelno') { UI.mConfirmDel = -1; UI.render(); }
           else if (a === 'mdelok') { var mdi = UI.mConfirmDel; UI.mConfirmDel = -1; UI.momentsDeleteAt(mdi); }
+          else if (a === 'tswap') { UI.panel = 'transferto'; UI.render(); }
+          else if (a === 'taccno') { UI.tConfirm = -1; UI.render(); }
+          else if (a === 'taccok') { var ti = UI.tConfirm; UI.tConfirm = -1; try { window.LZWorld.Engine.acceptTransfer(UI.chatKey, ti); } catch (e) {} UI.render(); }
           else if (a === 'hangup') UI.hangup(false);
           else if (a === 'cancelcall') UI.hangup(true);
           else if (a === 'callreroll') UI.callReroll();
@@ -1375,6 +1456,15 @@
       var inp = pdoc().getElementById('lzw-input');
       if (inp) inp.focus();
     },
+    // 转账字段多（金额/备注/接收方），不走 stageTyped，但同样先进待发区随小飞机一起发
+    stageTransfer: function (amount, note, to) {
+      this.staged.push({ kind: 'transfer', amount: amount, note: note, to: to });
+      this.panel = null;
+      this.tTarget = ''; // 发完就忘，下次群聊转账重新选人，防手滑转错人
+      this.render();
+      var inp = pdoc().getElementById('lzw-input');
+      if (inp) inp.focus();
+    },
 
     // 小飞机：输入框有字先攒上，然后把待发区一次性全发（AI 只生成一次、只写一楼）
     trySend: function () {
@@ -1399,6 +1489,9 @@
       if (!this.staged.length || this.busy) return;
       var W = window.LZWorld;
       var msgs = this.staged.map(function (m) {
+        if (m.kind === 'transfer') {
+          return { who: 'user', kind: 'transfer', amount: m.amount, note: m.note, to: m.to, state: 'waiting', time: W.Status.nowText() };
+        }
         return { who: 'user', kind: m.kind, text: m.text, time: W.Status.nowText() };
       });
       this.staged = [];
@@ -1481,6 +1574,8 @@
         this.failed = false;
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(key, result.msgs, 100);
+          // 对方回了话 = 收了钱：机主发出的待收款转账批量翻「已收款」，同帧渲染
+          try { eng.markTransfersAccepted(key); } catch (e) {}
           // 生成是异步的：发出后生成了回复、人已经切去别的会话/主页 → 记未读红点
           if (this.screen !== 'chat' || this.chatKey !== key) W.Store.bumpUnread(key, result.msgs.length);
           // 正在看别的会话时不刷它的屏；列表/主页则刷新让预览跟上
@@ -1830,6 +1925,33 @@
         : '<div class="lzw-sysrow">世界书中未找到「霖州手机::表情包」条目</div>';
       return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-stickgrid">' + grid + '</div></div>';
     }
+    if (panel === 'transferto') {
+      // 群聊转账先选接收方（机主自己除外）
+      var Wt = window.LZWorld, engT = Wt.Engine, secT = engT.section() || {};
+      var myNameT = engT.userName();
+      var gT = null;
+      (secT.groups || []).forEach(function (g) { if ('group:' + g.name === UI.chatKey) gT = g; });
+      var cells = ((gT && gT.members) || []).filter(function (n) { return n && n !== myNameT; }).map(function (n) {
+        var c = engT.findContact(n) || {};
+        var avT = c.avatar
+          ? '<img class="lzw-ava" src="' + esc(Wt.Worldbook.imgUrl(c.avatar)) + '">'
+          : '<div class="lzw-ava">' + esc(n.slice(0, 1)) + '</div>';
+        return '<div class="lzw-conv" data-ttarget="' + esc(n) + '">' + avT + '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(n) + '</div></div></div>';
+      }).join('');
+      return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-ttohd">转账给群里的谁？</div><div class="lzw-ttolist">' +
+        (cells || '<div class="lzw-sysrow">群成员名单空空如也</div>') + '</div>' +
+        '<div class="lzw-modebtns"><button class="lzw-modecancel" data-act="modecancel">取消</button></div></div>';
+    }
+    if (panel === 'transfer') {
+      var toWhom = UI.isGroup ? UI.tTarget : UI.chatKey;
+      var swapBtn = UI.isGroup ? '<button class="lzw-modecancel" data-act="tswap">更换</button>' : '';
+      return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-modeform">' +
+        '<div class="lzw-tto-line">转账给 <b>' + esc(toWhom || '…') + '</b></div>' +
+        '<input class="lzw-modeinput" id="lzw-tamt" maxlength="8" inputmode="decimal" placeholder="金额，1 ~ 99999">' +
+        '<input class="lzw-modeinput" id="lzw-tnote" maxlength="30" placeholder="备注（可选），如：奶茶钱">' +
+        '<div class="lzw-modebtns"><button class="lzw-modeok" data-tsend="1">确定</button>' + swapBtn +
+        '<button class="lzw-modecancel" data-act="modecancel">取消</button></div></div></div>';
+    }
     if (panel === 'image' || panel === 'voice' || panel === 'location') {
       var hint = panel === 'image' ? '描述这张图片的画面，如：一张拍糊的试卷' : panel === 'voice' ? '这句语音说了什么，如：到了吱一声' : '地点名称，如：霖州一中北门';
       return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-modeform">' +
@@ -1844,6 +1966,7 @@
       '<div class="lzw-act" data-mode="voice"><div class="lzw-act-ico">' + ICO.voice + '</div><span>语音</span></div>' +
       (UI.isGroup ? '' : '<div class="lzw-act" data-mode="poke"><div class="lzw-act-ico">' + ICO.poke + '</div><span>戳一戳</span></div>') +
       '<div class="lzw-act" data-mode="location"><div class="lzw-act-ico">' + ICO.location + '</div><span>定位</span></div>' +
+      '<div class="lzw-act" data-mode="transfer"><div class="lzw-act-ico">' + ICO.transfer + '</div><span>转账</span></div>' +
       (UI.isGroup ? '' :
         '<div class="lzw-act" data-act="dial" data-dial="audio"><div class="lzw-act-ico">' + ICON_CALL + '</div><span>语音通话</span></div>' +
         '<div class="lzw-act" data-act="dial" data-dial="video"><div class="lzw-act-ico">' + ICON_VCALL + '</div><span>视频通话</span></div>') +

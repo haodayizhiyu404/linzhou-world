@@ -495,6 +495,31 @@ ctx.getWorldbook = async () => [
   eq('发圈·摘要不再提已删', LW.Engine.myMomentsNote({ dateText: '2034年8月26日 星期五' }).indexOf('月考终于结束了') === -1, true);
   eq('发圈·同条校验认人认文', LW.Engine.sameMoment(LW.Engine.momentsKey, mpIdx0, LW.Engine.momentsFeed()[mpIdx0]), true);
   eq('发圈·同条校验拒越界', LW.Engine.sameMoment(LW.Engine.momentsKey, 999, {}), false);
+  // 转账：聊天记录里的一种消息 kind（无独立账本），双向契约 + 状态翻转
+  eq('转账·上下文行机主发出', LW.Floor.msgToLine({ who: 'user', kind: 'transfer', amount: 50, note: '奶茶钱', to: '周言' }, '陈默'), '陈默：[转账给周言 ¥50（奶茶钱）]');
+  eq('转账·上下文行NPC发来', LW.Floor.msgToLine({ who: '周言', kind: 'transfer', amount: 20, note: '', to: '' }, '陈默'), '周言：[周言转账 ¥20]');
+  const tnpc = LW.Floor.parseNpcLines('[转账:50:奶茶钱]', '周言');
+  eq('转账·NPC契约解析', tnpc.length === 1 && tnpc[0].kind === 'transfer' && tnpc[0].amount === 50 && tnpc[0].note === '奶茶钱' && tnpc[0].state === 'waiting', true);
+  eq('转账·非法金额忽略', LW.Floor.parseNpcLines('[转账:abc]', '周言').length, 0);
+  eq('转账·超限金额忽略', LW.Floor.parseNpcLines('[转账:99999999]', '周言').length, 0);
+  const tseg = LW.Floor.parseNpcLines('拿着 [转账:20] 不用找了', '周言');
+  eq('转账·行内契约拆条', tseg.some(function (m) { return m.kind === 'transfer' && m.amount === 20; }), true);
+  const tk = '转账测试';
+  LW.Store.push(tk, [
+    { who: 'user', kind: 'transfer', amount: 50, note: '', to: '周言', state: 'waiting', time: '' },
+    { who: 'user', kind: 'text', text: '给你转了点钱', time: '' },
+    { who: '周言', kind: 'transfer', amount: 20, note: '找零', to: '', state: 'waiting', time: '' },
+  ], 100);
+  eq('转账·翻卡只动机主发的', LW.Engine.markTransfersAccepted(tk), 1);
+  eq('转账·机主发的已翻', LW.Store.history(tk)[0].state, 'accepted');
+  eq('转账·NPC发的未动', LW.Store.history(tk)[2].state, 'waiting');
+  eq('转账·再翻零条', LW.Engine.markTransfersAccepted(tk), 0);
+  eq('转账·不能收自己发的', LW.Engine.acceptTransfer(tk, 0), false);
+  eq('转账·点收NPC发的', LW.Engine.acceptTransfer(tk, 2), true);
+  eq('转账·重复收款拒绝', LW.Engine.acceptTransfer(tk, 2), false);
+  eq('转账·越界拒绝', LW.Engine.acceptTransfer(tk, 9), false);
+  const reqT = LW.Prompt.private({ name: '周言', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null, null, '', '');
+  eq('转账·私聊契约说明', reqT.ordered_prompts[0].content.indexOf('[转账:金额:备注]') !== -1, true);
   // 机主朋友圈的回应 prompt：契约行与人数约束
   const mreact = LW.Prompt.momentsReact({ who: '陈默', text: '月考终于结束了', img: '一张拍糊的试卷', when: '8月26日 22:49' },
     [{ name: '周言', profile: '班长' }, { name: '林溪', profile: '闺蜜' }],
