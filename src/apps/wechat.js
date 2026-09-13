@@ -760,8 +760,9 @@
       } else if (this.screen === 'home') {
         var totalUn = 0;
         try {
-          // 只算会话未读；朋友圈的未读挂在发现 tab，别混进微信 tab
-          W.Store.historyKeys().forEach(function (k) { if (k !== eng.momentsKey) totalUn += W.Store.meta(k).unread || 0; });
+          // 桌面图标是 app 级角标：会话未读 + 朋友圈动态未读（朋友对机主动态的赞/评论）都上角标，
+          // 与发现 tab 红点是同一份计数（Store.meta(momentsKey).unread）
+          W.Store.historyKeys().forEach(function (k) { totalUn += W.Store.meta(k).unread || 0; });
         } catch (e0) {}
         body =
           '<div class="lzw-body"><div class="lzw-home-wall">' +

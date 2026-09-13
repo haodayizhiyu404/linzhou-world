@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T08:16:58.315Z
+//  构建时间：2026-09-13T08:25:29.944Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 08:16';
+var __LZW_BUILD__ = '2026-09-13 08:25';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2304,8 +2304,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       } else if (this.screen === 'home') {
         var totalUn = 0;
         try {
-          // 只算会话未读；朋友圈的未读挂在发现 tab，别混进微信 tab
-          W.Store.historyKeys().forEach(function (k) { if (k !== eng.momentsKey) totalUn += W.Store.meta(k).unread || 0; });
+          // 桌面图标是 app 级角标：会话未读 + 朋友圈动态未读（朋友对机主动态的赞/评论）都上角标，
+          // 与发现 tab 红点是同一份计数（Store.meta(momentsKey).unread）
+          W.Store.historyKeys().forEach(function (k) { totalUn += W.Store.meta(k).unread || 0; });
         } catch (e0) {}
         body =
           '<div class="lzw-body"><div class="lzw-home-wall">' +
