@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T11:16:28.894Z
+//  构建时间：2026-09-13T11:39:00.356Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 11:16';
+var __LZW_BUILD__ = '2026-09-13 11:39';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1793,22 +1793,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-locmap{height:84px;position:relative;background:linear-gradient(150deg,#dde9d9,#eef4ea)}',
     '.lzw-locmap:before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 42%,rgba(255,255,255,.95) 42% 50%,transparent 50%),linear-gradient(8deg,transparent 62%,rgba(255,255,255,.85) 62% 68%,transparent 68%),linear-gradient(0deg,transparent 80%,rgba(255,255,255,.75) 80% 86%,transparent 86%)}',
     '.lzw-locmap:after{content:"📍";position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);font-size:26px;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}',
-    '.lzw-tcard{width:190px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.07);flex:none}',
-    '.lzw-tcard.got.waiting{cursor:pointer}',
-    '.lzw-tcard-top{display:flex;align-items:center;gap:6px;padding:9px 12px 0;font-size:12.5px;color:#111}',
-    '.lzw-tcoin{width:17px;height:17px;border-radius:50%;background:#f0a63c;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:10.5px;font-weight:600}',
-    '.lzw-tto{margin-left:auto;font-size:11px;color:#8a8f99;white-space:nowrap}',
-    '.lzw-tamt{padding:5px 12px 0;font-size:20px;font-weight:600;color:#111;line-height:1.25}',
-    '.lzw-tnote{padding:2px 12px 9px;font-size:11.5px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:14px}',
-    '.lzw-tbot{display:flex;justify-content:flex-end;align-items:center;padding:5px 12px;border-top:1px solid rgba(0,0,0,.05);font-size:11px;color:#9aa0a8}',
-    '.lzw-tbot.waiting{color:#e0883a}',
-    // 处置完成的卡：微信同款黄卡——白圈白勾 + 金额 + 状态提示词（退还是灰卡白叉）
-    '.lzw-tcard.done{background:linear-gradient(135deg,#f9b84d,#f1972d);color:#fff}',
-    '.lzw-tcard.done.back{background:linear-gradient(135deg,#cbced4,#b7bbc2)}',
-    '.lzw-tdone{display:flex;align-items:center;gap:8px;padding:13px 13px 9px;font-size:20px;font-weight:600;line-height:1.2}',
-    '.lzw-tchk{width:22px;height:22px;border-radius:50%;background:#fff;color:#f1972d;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}',
-    '.lzw-tcard.done.back .lzw-tchk{color:#b0b4bb}',
-    '.lzw-tdone-st{padding:0 13px 11px;font-size:11.5px;color:rgba(255,255,255,.95)}',
+    '.lzw-tcard{width:190px;background:linear-gradient(135deg,#f9b84d,#f1972d);color:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.07);flex:none}',
+    '.lzw-tcard.back{background:linear-gradient(135deg,#cbced4,#b7bbc2)}',
+    '.lzw-tcard.waiting{cursor:pointer}',
+    '.lzw-trow1{display:flex;align-items:center;gap:8px;padding:12px 13px 8px;font-size:20px;font-weight:600;line-height:1.2}',
+    '.lzw-tbadge{width:22px;height:22px;border-radius:50%;background:#fff;color:#f1972d;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}',
+    '.lzw-tcard.back .lzw-tbadge{color:#b0b4bb}',
+    '.lzw-tto{margin-left:auto;font-size:11px;font-weight:400;color:rgba(255,255,255,.9);white-space:nowrap}',
+    '.lzw-tnote2{padding:0 13px;min-height:16px;font-size:11.5px;color:rgba(255,255,255,.92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.lzw-tst{padding:0 13px 11px;font-size:11.5px;color:rgba(255,255,255,.95)}',
     '.lzw-tto-line{font-size:12.5px;color:#111;padding:2px 2px 0}',
     '.lzw-tto-line b{color:#57606a;font-weight:600}',
     '.lzw-ttohd{font-size:12px;color:#8a8f99;padding:4px 2px 6px}',
@@ -2067,38 +2060,32 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     transfer: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="6" width="18.4" height="13" rx="2.6"/><path d="M2.8 9.8h18.4M14.8 14.2h4.4"/></svg>'
   };
 
-  // 转账卡：waiting 为白底卡（橙标+金额+备注+待收款）；处置完成翻成微信同款黄卡。
-  // 双方视角同源（同一条记录），处置完成两边同帧翻转；群聊卡右上角标「给 X」。
+  // 转账卡：全状态统一黄卡三行结构（徽标+金额 / 备注 / 状态），发送与接收双方同卡同款，
+  // 只是状态字不同；群聊发送方卡右上角标「给 X」，待收款的对方卡可点收款；退还是灰卡白叉。
   function fmtTAmount(a) {
     var n = Number(a);
     if (isNaN(n) || n <= 0) return '0';
     return n % 1 === 0 ? String(n) : n.toFixed(2);
   }
-  // 处置完成卡（黄卡/灰卡）：白圈勾（或叉）+ 金额 + 状态提示词，无备注行
-  function doneCardHtml(amount, label, back) {
-    return '<div class="lzw-tcard done' + (back ? ' back' : '') + '">' +
-      '<div class="lzw-tdone"><span class="lzw-tchk">' + (back ? '✕' : '✓') + '</span>¥' + fmtTAmount(amount) + '</div>' +
-      '<div class="lzw-tdone-st">' + label + '</div></div>';
+  function tcardHtml(amount, note, badge, status, back, toTag, clickable) {
+    return '<div class="lzw-tcard' + (back ? ' back' : '') + (clickable ? ' waiting' : '') + '"' + (clickable ? ' data-taccept="1"' : '') + '>' +
+      '<div class="lzw-trow1"><span class="lzw-tbadge">' + badge + '</span>¥' + fmtTAmount(amount) + (toTag || '') + '</div>' +
+      '<div class="lzw-tnote2">' + esc(note || '') + '</div>' +
+      '<div class="lzw-tst">' + status + '</div></div>';
   }
   function transferCardHtml(m, isUser, groupMode) {
     var state = m.state === 'accepted' ? 'accepted' : m.state === 'declined' ? 'declined' : 'waiting';
     if (state !== 'waiting') {
       // 发起方视角的处置结果：accepted 已被接受 / declined 已被拒绝
-      return doneCardHtml(m.amount, state === 'accepted' ? '已被接受' : '已被拒绝', state === 'declined');
+      return tcardHtml(m.amount, m.note, state === 'accepted' ? '✓' : '✕', state === 'accepted' ? '已被接受' : '已被拒绝', state === 'declined', '', false);
     }
-    var incomingWaiting = !isUser;
     var toTag = (isUser && groupMode && m.to) ? '<span class="lzw-tto">给 ' + esc(m.to) + '</span>' : '';
-    return '<div class="lzw-tcard' + (incomingWaiting ? ' got waiting' : '') + '"' + (incomingWaiting ? ' data-taccept="1"' : '') + '>' +
-      '<div class="lzw-tcard-top"><span class="lzw-tcoin">¥</span><span>转账</span>' + toTag + '</div>' +
-      '<div class="lzw-tamt">¥' + fmtTAmount(m.amount) + '</div>' +
-      '<div class="lzw-tnote">' + esc(m.note || '') + '</div>' +
-      '<div class="lzw-tbot waiting">待收款</div></div>';
+    return tcardHtml(m.amount, m.note, '¥', '待收款', false, toTag, !isUser);
   }
 
-  // 转账处置回执卡：接收方视角的处置结果（taccept 已收款 / tdecline 已退还）。
-  // 与转账卡同尺寸，作为接收方的正常聊天行渲染（带头像、随方向左右）。
+  // 转账处置回执卡：接收方视角的处置结果（taccept 已收款 / tdecline 已退还），与转账卡同卡同款。
   function verdictCardHtml(m) {
-    return doneCardHtml(m.amount, m.kind === 'taccept' ? '已收款' : '已退还', m.kind === 'tdecline');
+    return tcardHtml(m.amount, m.note, m.kind === 'taccept' ? '✓' : '✕', m.kind === 'taccept' ? '已收款' : '已退还', m.kind === 'tdecline', '', false);
   }
 
   // ── 手机内气泡行 ──
