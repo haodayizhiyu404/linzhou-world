@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T04:47:06.346Z
+//  构建时间：2026-09-13T04:57:37.601Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 04:47';
+var __LZW_BUILD__ = '2026-09-13 04:57';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1851,6 +1851,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-pcmts{margin-top:3px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;line-height:1.65;word-break:break-word;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-pcmts .c{color:#111}',
     '.lzw-pcmts .n{color:#576b95;font-weight:400}',
+    // 冒号独立成 class：半角冒号在雅黑里两侧过挤，用 margin 调出全角的呼吸感（手感微调只动这里）
+    '.lzw-pcmts .cs{margin:0 2px}',
     // 主页时间轴左侧戳：今天/昨天大号；更早 = 大号加粗日 + 小号月（真实朋友圈相册样式）
     '.lzw-post-stamp{width:38px;flex:none;padding-top:3px}',
     '.lzw-post-stamp b{display:block;font-size:16px;font-weight:700;color:#111;line-height:1.15;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
@@ -3113,7 +3115,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var cmtRows = (e.comments || []).map(function (cm) {
       return '<div><span class="n">' + esc(cm.who) + '</span>' +
         (cm.replyTo ? ' 回复 <span class="n">' + esc(cm.replyTo) + '</span>' : '') +
-        ':<span class="c">' + esc(cm.text) + '</span></div>';
+        '<span class="cs">:</span><span class="c">' + esc(cm.text) + '</span></div>';
     }).join('');
     var cmtBlock = cmtRows ? '<div class="lzw-pcmts">' + cmtRows + '</div>' : '';
     return '<div class="lzw-post">' + head +
