@@ -1039,11 +1039,32 @@
         (g.members || []).forEach(function (n) { if (n && n !== myName && !seen[n]) { seen[n] = 1; pool.push(n); } });
       });
       if (!pool.length) return;
+      var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
+      // 反应要接得住正在发生的梗：当天私聊尾巴 + 群尾巴，和 momentsFill 同级的主线近况在 prompt 侧
+      var recent = [];
+      try {
+        var day0 = snap && snap.dateText;
+        if (day0) {
+          var priv = this.crossPrivates(pool, day0);
+          Object.keys(priv).forEach(function (n) {
+            priv[n].slice(-2).forEach(function (m) {
+              recent.push(n + '：' + String(m.text || '').slice(0, 40));
+            });
+          });
+          (sec.groups || []).forEach(function (g) {
+            var gh = W.Store.history('group:' + g.name);
+            if (!gh.length || gh[gh.length - 1].day !== day0) return;
+            gh.slice(-4).forEach(function (m) {
+              recent.push('群「' + g.name + '」· ' + (m.who === 'user' ? myName : m.who) + '：' + String(m.text || '').slice(0, 40));
+            });
+          });
+        }
+      } catch (e) {}
+      recent = recent.slice(-14);
       var likes = [], comments = [];
       try {
-        var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
         var people = pool.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
-        var req = W.Prompt.momentsReact({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, people, snap, this.userBlock());
+        var req = W.Prompt.momentsReact({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, people, snap, this.userBlock(), recent.join('\n'));
         var raw = await generateRaw(req);
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         var parsed = this.parseMomentReacts(text, myName);

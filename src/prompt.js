@@ -455,8 +455,9 @@
 
   // ── 朋友圈 · 机主动态的回应：机主刚发了条动态，生成朋友们的点赞与评论 ──
   // post = {who, text, img?, when?}（who 恒为机主）；people = 全部候选朋友 [{name, profile}]
+  // recent = 机主当天在各处的聊天动静（引擎侧拼好），反应可接这些梗
   // 契约语法：[赞:名字] ×1~4、[评论:名字:评论内容] ×0~2
-  momentsReact: function (post, people, snapshot, userInfo) {
+  momentsReact: function (post, people, snapshot, userInfo, recent) {
     var myName = me();
     var p = [
       '# 数字世界 · 朋友圈回应',
@@ -465,11 +466,15 @@
       '',
       situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
       '',
+      mainContext() ? '## 主线近况（只作背景，反应可与当天的事轻微相关）\n' + mainContext() : '',
+      '',
       userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
       '',
       '## 机主刚发的动态' + (post.when ? '（' + post.when + (post.img ? '，配图：' + post.img : '') + '）' : (post.img ? '（配图：' + post.img + '）' : '')),
       post.text,
       '',
+      '## 机主最近的聊天（当天微信各处的动静，朋友们都生活在这个圈子里，反应可接这些梗）',
+      recent || '（暂无）',
       '## 可能刷到这条动态的人（只能从中挑人，一人至多反应一次）',
       people.map(function (pp) { return '- ' + pp.name + '：\n' + (pp.profile ? String(pp.profile).trim() : '（无档案）'); }).join('\n'),
       '',

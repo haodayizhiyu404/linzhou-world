@@ -494,6 +494,8 @@ ctx.getWorldbook = async () => [
   const mreactTxt = mreact.ordered_prompts[0].content;
   eq('发圈·回应带动态', mreactTxt.indexOf('月考终于结束了') !== -1, true);
   eq('发圈·回应带配图', mreactTxt.indexOf('配图：一张拍糊的试卷') !== -1, true);
+  eq('发圈·回应带最近聊天', mreactTxt.indexOf('机主最近的聊天') !== -1, true);
+  eq('发圈·回应可接梗说明', mreactTxt.indexOf('反应可接这些梗') !== -1, true);
   eq('发圈·赞契约', mreactTxt.indexOf('[赞:名字]') !== -1, true);
   eq('发圈·评论契约', mreactTxt.indexOf('[评论:名字:评论内容]') !== -1, true);
   eq('发圈·一人至多一次', mreactTxt.indexOf('一人至多反应一次') !== -1, true);

@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T07:52:14.951Z
+//  构建时间：2026-09-13T08:07:29.371Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 07:52';
+var __LZW_BUILD__ = '2026-09-13 08:07';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1113,8 +1113,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // ── 朋友圈 · 机主动态的回应：机主刚发了条动态，生成朋友们的点赞与评论 ──
   // post = {who, text, img?, when?}（who 恒为机主）；people = 全部候选朋友 [{name, profile}]
+  // recent = 机主当天在各处的聊天动静（引擎侧拼好），反应可接这些梗
   // 契约语法：[赞:名字] ×1~4、[评论:名字:评论内容] ×0~2
-  momentsReact: function (post, people, snapshot, userInfo) {
+  momentsReact: function (post, people, snapshot, userInfo, recent) {
     var myName = me();
     var p = [
       '# 数字世界 · 朋友圈回应',
@@ -1123,11 +1124,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '',
       situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
       '',
+      mainContext() ? '## 主线近况（只作背景，反应可与当天的事轻微相关）\n' + mainContext() : '',
+      '',
       userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
       '',
       '## 机主刚发的动态' + (post.when ? '（' + post.when + (post.img ? '，配图：' + post.img : '') + '）' : (post.img ? '（配图：' + post.img + '）' : '')),
       post.text,
       '',
+      '## 机主最近的聊天（当天微信各处的动静，朋友们都生活在这个圈子里，反应可接这些梗）',
+      recent || '（暂无）',
       '## 可能刷到这条动态的人（只能从中挑人，一人至多反应一次）',
       people.map(function (pp) { return '- ' + pp.name + '：\n' + (pp.profile ? String(pp.profile).trim() : '（无档案）'); }).join('\n'),
       '',
@@ -1919,14 +1924,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-cmtbar{display:flex;gap:6px;margin-top:6px;align-items:center}',
     '.lzw-cmtbar input{flex:1;min-width:0;border:1px solid rgba(0,0,0,.12);border-radius:6px;padding:6px 11px;font-size:13px;outline:none;background:#fff;color:#111;font-family:inherit}',
     '.lzw-cmtbar button{border:none;background:#22c05e;color:#fff;border-radius:6px;padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-family:inherit}',
-    '.lzw-mpta{width:100%;box-sizing:border-box;background:transparent;border:none;color:#111;padding:12px 14px;font-size:15px;line-height:1.6;min-height:150px;resize:none;outline:none;font-family:inherit}',
+    '.lzw-mpta{width:100%;box-sizing:border-box;background:transparent;border:none;border-radius:0;box-shadow:none;color:#111;padding:12px 14px;font-size:15px;line-height:1.6;min-height:150px;resize:none;outline:none;font-family:inherit}',
     '.lzw-mpta::placeholder{color:#b3b8bf}',
-    // 聚焦高亮圈是 ST 主题拷进沙盒的 :focus-visible 样式，必须 !important 压掉——
-    // 不然点一下 / alt+tab 切回来都会闪一下主题色边框；发布页不需要聚焦提示
-    '.lzw-mpta:focus,.lzw-mpta:focus-visible{outline:none !important;box-shadow:none !important;border:none !important;background:transparent}',
-    '.lzw-mpimg{width:100%;box-sizing:border-box;background:transparent;border:none;border-top:1px solid rgba(0,0,0,.08);color:#57606a;padding:11px 14px;font-size:12.5px;line-height:1.6;min-height:76px;resize:none;outline:none;font-family:inherit}',
+    // 聚焦高亮圈/圆角/阴影是 ST 主题 textarea 全局样式渗漏，必须 !important 压掉——
+    // 不然点一下、alt+tab 切回来都会闪一下主题色边框；发布页不需要聚焦提示
+    '.lzw-mpta:focus,.lzw-mpta:focus-visible{outline:none !important;box-shadow:none !important;border:none !important;border-radius:0 !important;background:transparent}',
+    '.lzw-mpimg{width:100%;box-sizing:border-box;background:transparent;border:none;border-top:1px solid rgba(0,0,0,.08);border-radius:0;box-shadow:none;color:#57606a;padding:11px 14px;font-size:12.5px;line-height:1.6;min-height:76px;resize:none;outline:none;font-family:inherit}',
     '.lzw-mpimg::placeholder{color:#b3b8bf}',
-    '.lzw-mpimg:focus,.lzw-mpimg:focus-visible{outline:none !important;box-shadow:none !important;background:transparent}',
+    '.lzw-mpimg:focus,.lzw-mpimg:focus-visible{outline:none !important;box-shadow:none !important;border:none !important;border-top:1px solid rgba(0,0,0,.08) !important;border-radius:0 !important;background:transparent}',
     '.lzw-postsend{background:#22c05e;color:#fff;border-radius:5px;font-size:14px;padding:5px 14px;cursor:pointer;font-family:inherit;border:none;white-space:nowrap}',
     '.lzw-appbar-rw{width:auto;flex:none}',
     '.lzw-mptip{padding:12px 14px;font-size:12px;color:#9aa0a8}'
@@ -4435,11 +4440,32 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         (g.members || []).forEach(function (n) { if (n && n !== myName && !seen[n]) { seen[n] = 1; pool.push(n); } });
       });
       if (!pool.length) return;
+      var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
+      // 反应要接得住正在发生的梗：当天私聊尾巴 + 群尾巴，和 momentsFill 同级的主线近况在 prompt 侧
+      var recent = [];
+      try {
+        var day0 = snap && snap.dateText;
+        if (day0) {
+          var priv = this.crossPrivates(pool, day0);
+          Object.keys(priv).forEach(function (n) {
+            priv[n].slice(-2).forEach(function (m) {
+              recent.push(n + '：' + String(m.text || '').slice(0, 40));
+            });
+          });
+          (sec.groups || []).forEach(function (g) {
+            var gh = W.Store.history('group:' + g.name);
+            if (!gh.length || gh[gh.length - 1].day !== day0) return;
+            gh.slice(-4).forEach(function (m) {
+              recent.push('群「' + g.name + '」· ' + (m.who === 'user' ? myName : m.who) + '：' + String(m.text || '').slice(0, 40));
+            });
+          });
+        }
+      } catch (e) {}
+      recent = recent.slice(-14);
       var likes = [], comments = [];
       try {
-        var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
         var people = pool.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
-        var req = W.Prompt.momentsReact({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, people, snap, this.userBlock());
+        var req = W.Prompt.momentsReact({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, people, snap, this.userBlock(), recent.join('\n'));
         var raw = await generateRaw(req);
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         var parsed = this.parseMomentReacts(text, myName);
