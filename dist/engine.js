@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T13:49:56.483Z
+//  构建时间：2026-09-13T14:25:08.173Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 13:49';
+var __LZW_BUILD__ = '2026-09-13 14:25';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -3705,7 +3705,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '<div class="lzw-setcol"><span class="lzw-setlbl">密钥（仅本机浏览器保存）</span><div class="lzw-setrow2">' +
         '<input class="lzw-settxt" data-akey="1" value="' + esc(key) + '" placeholder="sk-…"></div></div>' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">模型（先填地址与密钥）</span><div class="lzw-setrow2">' +
-        '<input class="lzw-settxt" data-atext="model" value="' + esc(api.model || '') + '" placeholder="模型名">' +
+        '<input class="lzw-settxt" data-atext="cmodel" value="' + esc(api.cmodel || '') + '" placeholder="模型名">' +
         '<button class="lzw-setbtn" data-afetch="models">拉取模型</button></div></div>';
     }
     var pick = '';
@@ -3714,20 +3714,21 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         return '<span data-pick="' + esc(it) + '">' + esc(it) + '</span>';
       }).join('') + '</div>';
     }
-    var nums = [
-      ['plotFloors', '主线携带楼数'], ['plotCap', '每楼字数上限'],
-      ['histPriv', '私聊历史条数'], ['histGroup', '群聊历史条数'],
-      ['crossMax', '跨会话最多带几个'], ['crossLines', '每个跨会话带几条']
-    ].map(function (n) {
-      var r = SET_NRANGES[n[0]];
-      return '<div class="lzw-setrow"><div class="lzw-setmain"><div class="lzw-setname">' + n[1] + '</div>' +
+    function numrow(key, name) {
+      var r = SET_NRANGES[key];
+      return '<div class="lzw-setrow"><div class="lzw-setmain"><div class="lzw-setname">' + name + '</div>' +
         '<div class="lzw-setdesc">' + r[0] + ' ~ ' + r[1] + '</div></div>' +
-        '<input class="lzw-setnum" data-num="' + n[0] + '" data-min="' + r[0] + '" data-max="' + r[1] + '" value="' + cfg[n[0]] + '" inputmode="numeric"></div>';
-    }).join('');
+        '<input class="lzw-setnum" data-num="' + key + '" data-min="' + r[0] + '" data-max="' + r[1] + '" value="' + cfg[key] + '" inputmode="numeric"></div>';
+    }
+    var numsMain = numrow('plotFloors', '带几楼正文') + numrow('plotCap', '每楼最多带多少字');
+    var numsHist = numrow('histPriv', '私聊记录带几条') + numrow('histGroup', '群聊记录带几条');
+    var numsCross = numrow('crossMax', '顺带带几个相关会话') + numrow('crossLines', '每个相关会话带几条');
     return '<div class="lzw-body"><div class="lzw-setwrap">' +
       '<div class="lzw-setsec">生成 API</div><div class="lzw-setcard">' + rows + detail + '</div>' + pick +
-      '<div class="lzw-setsec">提示词携带（即时生效）</div><div class="lzw-setcard">' + nums + '</div>' +
-      '<div class="lzw-setnote">数值改动立即生效；API 改动作用于之后的每次手机生成。代理预设与携带量随聊天变量保存（明文、随卡走），自定义密钥只保存在本机浏览器。</div>' +
+      '<div class="lzw-setsec">手机生成 · 主线正文</div><div class="lzw-setcard">' + numsMain + '</div>' +
+      '<div class="lzw-setsec">手机生成 · 聊天记录</div><div class="lzw-setcard">' + numsHist + '</div>' +
+      '<div class="lzw-setsec">手机生成 · 跨会话</div><div class="lzw-setcard">' + numsCross + '</div>' +
+      '<div class="lzw-setnote">跨会话：生成私聊时，顺带带对方今天在的群的记录；生成群时，顺带带成员今天与机主的私聊，让对方接得上别处的梗。数值改动立即生效；API 改动作用于之后的每次手机生成。代理预设与携带量随聊天变量保存（明文、随卡走），自定义密钥只保存在本机浏览器。</div>' +
       '</div></div>';
   }
 
@@ -4364,7 +4365,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         if (!a.apiurl) return undefined;
         var key = '';
         try { key = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
-        return { apiurl: a.apiurl, key: key, model: a.model || '', source: a.source || 'openai' };
+        return { apiurl: a.apiurl, key: key, model: a.cmodel || '', source: a.source || 'openai' };
       }
       return undefined;
     },

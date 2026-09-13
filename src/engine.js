@@ -472,7 +472,7 @@
         if (!a.apiurl) return undefined;
         var key = '';
         try { key = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
-        return { apiurl: a.apiurl, key: key, model: a.model || '', source: a.source || 'openai' };
+        return { apiurl: a.apiurl, key: key, model: a.cmodel || '', source: a.source || 'openai' };
       }
       return undefined;
     },

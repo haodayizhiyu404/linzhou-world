@@ -618,7 +618,7 @@ ctx.getWorldbook = async () => [
   LW.Store.setSettings({ api: { mode: 'preset', preset: 'MyProxy' } });
   eq('api·代理预设', LW.Engine.apiConfig(), { proxy_preset: 'MyProxy' });
   ctx.localStorage.setItem('lzworld_phone_apikey', 'sk-test');
-  LW.Store.setSettings({ api: { mode: 'custom', apiurl: 'https://x.dev', model: 'm1' } });
+  LW.Store.setSettings({ api: { mode: 'custom', apiurl: 'https://x.dev', cmodel: 'm1' } });
   eq('api·自定义带本机密钥', LW.Engine.apiConfig(), { apiurl: 'https://x.dev', key: 'sk-test', model: 'm1', source: 'openai' });
   LW.Store.setSettings({ api: { mode: 'custom', apiurl: '' } });
   eq('api·自定义缺地址回退跟随', LW.Engine.apiConfig(), undefined);
