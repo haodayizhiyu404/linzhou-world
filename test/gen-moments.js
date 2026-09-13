@@ -121,4 +121,7 @@ fs.writeFileSync(__dirname + '/sbv-moments-zoom.html', zoom);
 // feed 放大版：评论冒号（.cs）呼吸间距检查用
 const zoomFeed = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif}</style><style>${css}</style><style>.lzw-bezel{width:400px;height:800px;box-sizing:content-box;zoom:1.6;margin:20px auto}</style></head><body>${phone(feed, 'lzw-scr-moments')}</body></html>`;
 fs.writeFileSync(__dirname + '/sbv-feed-zoom.html', zoomFeed);
+// 详细资料页放大版：按钮组样式检查用
+const zoomCdet = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif}</style><style>${css}</style><style>.lzw-bezel{width:400px;height:800px;box-sizing:content-box;zoom:1.6;margin:20px auto}</style></head><body>${phone(cdetail)}</body></html>`;
+fs.writeFileSync(__dirname + '/sbv-cdet-zoom.html', zoomCdet);
 console.log('written sbv-moments.html + sbv-moments-zoom.html');

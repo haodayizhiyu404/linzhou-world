@@ -339,8 +339,10 @@
     '.lzw-cdetpv{flex:1;text-align:right;font-size:12.5px;color:#9aa0a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
     '.lzw-cdetcv{flex:none;display:flex}',
     '.lzw-cdetmsg{margin:14px 14px 0;background:#22c05e;color:#fff;text-align:center;font-size:15.5px;padding:10px 0;border-radius:6px;cursor:pointer}',
-    '.lzw-cdetcalls{display:flex;gap:12px;margin:12px 14px 0}',
-    '.lzw-cdetcall{flex:1;background:#fff;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 0;font-size:14px;color:#111;cursor:pointer}',
+    // 两个通话键合成一张分组卡片（iOS 组合列表样式），与上面的主按钮拉开层级
+    '.lzw-cdetcalls{display:flex;margin:12px 14px 0;background:#fff;border-radius:6px;overflow:hidden}',
+    '.lzw-cdetcall{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 0;font-size:14px;color:#111;cursor:pointer}',
+    '.lzw-cdetcall+.lzw-cdetcall{border-left:1px solid rgba(0,0,0,.07)}',
     '.lzw-cdetcall svg{width:20px;height:20px}',
     '.lzw-mfeed{flex:1;min-height:0;overflow-y:auto;background:#fff;padding-bottom:14px;scrollbar-width:none}',
     '.lzw-mfeed::-webkit-scrollbar{display:none}',
@@ -524,6 +526,7 @@
     mProfile: null,      // mprofile 页看的对象名
     mFrom: 'moments',    // mprofile 的返回来源：moments | cdetail
     cdetName: null,      // cdetail 页看的对象名
+    feedScr: null,       // 当前 DOM 里 .lzw-mfeed 属于哪个屏（跨屏不还原滚动）
     mMenu: -1,           // 展开「赞/评论」小菜单的动态下标
     mCmt: -1,            // 展开评论输入框的动态下标
     panel: null,         // null | 'actions' | 'sticker' | 'image' | 'voice' | 'location'
@@ -960,10 +963,12 @@
       var prevSubs = -1;
       var oldSubs = ph.querySelector('.lzw-callsubs');
       if (oldSubs) prevSubs = oldSubs.scrollTop;
-      // 朋友圈 feed 滚动位置保留（点 ⋯/赞/评论只局部改状态，整屏重绘后跳顶很难看）
+      // 朋友圈 feed 滚动位置保留（点 ⋯/赞/评论只局部改状态，整屏重绘后跳顶很难看）——
+      // 只在同屏重绘时生效：跨屏切换（信息流↔个人主页）必须归零，否则主页封面会被
+      // 顶上一条信息流带下来的滚动位置「吃掉一截」，看起来比信息流封面矮
       var prevFeed = -1;
       var oldFeed = ph.querySelector('.lzw-mfeed');
-      if (oldFeed) prevFeed = oldFeed.scrollTop;
+      if (oldFeed && this.feedScr === this.screen) prevFeed = oldFeed.scrollTop;
 
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
@@ -990,6 +995,8 @@
         var mfEl = ph.querySelector('.lzw-mfeed');
         if (mfEl) mfEl.scrollTop = prevFeed;
       }
+      // 记住本次 DOM 的 feed 属于哪个屏：下次重绘只在本屏内还原滚动
+      this.feedScr = (this.screen === 'moments' || this.screen === 'mprofile') ? this.screen : null;
       // 朋友圈/主页：顶栏随滚动渐白（含滚动位置还原后的初始状态）
       if (this.screen === 'moments' || this.screen === 'mprofile') syncMomentBar(ph);
       // 朋友圈评论输入：回车即发
