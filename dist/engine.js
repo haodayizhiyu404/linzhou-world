@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T15:23:53.704Z
+//  构建时间：2026-09-13T15:30:11.330Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 15:23';
+var __LZW_BUILD__ = '2026-09-13 15:30';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2899,7 +2899,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
                 var key1 = '';
                 try { key1 = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
                 var list = await getModelList({ apiurl: api1.apiurl || '', key: key1 });
-                UI._setpick = { field: 'model', items: list || [] };
+                UI._setpick = { field: api1.mode === 'custom' ? 'cmodel' : 'model', items: list || [] };
               }
             } catch (e) {
               UI._setpick = { field: null, items: ['（拉取失败：' + String(e && e.message || e) + '）'] };
@@ -3684,8 +3684,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var modes = [
       ['follow', '跟随正文', '手机与正文用同一条 API 线'],
       ['model', '只换模型', '正文同源，手机单独指定模型'],
-      ['preset', '代理预设', '用酒馆里配好的代理预设，密钥由酒馆保管'],
-      ['custom', '自定义 API', '自填地址与密钥，密钥只存本机浏览器']
+      ['preset', '代理预设', '钉死某条反代（来源仍跟随酒馆）；正文已开反代时与跟随正文等价'],
+      ['custom', '自定义 API', '完全独立：选格式、填地址、填密钥；谷歌反代=反代地址+反代密码']
     ];
     var rows = modes.map(function (m) {
       return '<div class="lzw-setrow' + (mode === m[0] ? ' on' : '') + '" data-amode="' + m[0] + '">' +
@@ -3710,9 +3710,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       detail =
         '<div class="lzw-setcol"><span class="lzw-setlbl">API 源（决定请求格式）</span><div class="lzw-setrow2">' +
         '<select class="lzw-settxt" data-atext="source">' + srcSel + '</select></div></div>' +
-        '<div class="lzw-setcol"><span class="lzw-setlbl">API 地址</span><div class="lzw-setrow2">' +
+        '<div class="lzw-setcol"><span class="lzw-setlbl">API 地址（OpenAI 中转 或 谷歌反代）</span><div class="lzw-setrow2">' +
         '<input class="lzw-settxt" data-atext="apiurl" value="' + esc(api.apiurl || '') + '" placeholder="https://…"></div></div>' +
-        '<div class="lzw-setcol"><span class="lzw-setlbl">密钥（仅本机浏览器保存）</span><div class="lzw-setrow2">' +
+        '<div class="lzw-setcol"><span class="lzw-setlbl">密钥 / 反代密码（仅本机保存）</span><div class="lzw-setrow2">' +
         '<input class="lzw-settxt" data-akey="1" value="' + esc(key) + '" placeholder="sk-…"></div></div>' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">模型（先填地址与密钥）</span><div class="lzw-setrow2">' +
         '<input class="lzw-settxt" data-atext="cmodel" value="' + esc(api.cmodel || '') + '" placeholder="模型名">' +
