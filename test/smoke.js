@@ -518,8 +518,32 @@ ctx.getWorldbook = async () => [
   eq('转账·点收NPC发的', LW.Engine.acceptTransfer(tk, 2), true);
   eq('转账·重复收款拒绝', LW.Engine.acceptTransfer(tk, 2), false);
   eq('转账·越界拒绝', LW.Engine.acceptTransfer(tk, 9), false);
+  // 转账处置回执：收下/退还（机主）与拒收（对方）——记录行进上下文，AI 靠行全知情
+  eq('转账·收下上下文行', LW.Floor.msgToLine({ who: 'user', kind: 'taccept', amount: 66, note: '', from: '周言' }, '陈默'), '陈默：[收下了周言的转账 ¥66]');
+  eq('转账·退还上下文行', LW.Floor.msgToLine({ who: 'user', kind: 'tdecline', amount: 66, note: '', from: '周言' }, '陈默'), '陈默：[退还了周言的转账 ¥66]');
+  eq('转账·NPC拒收上下文行', LW.Floor.msgToLine({ who: '周言', kind: 'tdecline', amount: 50, note: '', from: '' }, '陈默'), '周言：[周言拒收了转账 ¥50]');
+  const tdec = LW.Floor.parseNpcLines('[拒收转账:50:这钱不能收]', '周言');
+  eq('转账·NPC拒收契约解析', tdec.length === 1 && tdec[0].kind === 'tdecline' && tdec[0].amount === 50 && tdec[0].note === '这钱不能收', true);
+  eq('转账·拒收非法金额忽略', LW.Floor.parseNpcLines('[拒收转账:abc]', '周言').length, 0);
+  const tk2 = '转账处置测试';
+  LW.Store.push(tk2, [
+    { who: '周言', kind: 'transfer', amount: 66, note: '红包', to: '', state: 'waiting', time: '' },
+    { who: 'user', kind: 'text', text: '这多不好意思', time: '' },
+    { who: 'user', kind: 'transfer', amount: 50, note: '', to: '周言', state: 'waiting', time: '' },
+  ], 100);
+  eq('转账·机主收下发出即翻', LW.Engine.verdictTransfer(tk2, 'accepted', '周言', 66, '红包'), true);
+  eq('转账·收下后卡已收款', LW.Store.history(tk2)[0].state, 'accepted');
+  eq('转账·已处置不能再翻', LW.Engine.verdictTransfer(tk2, 'declined', '周言', 66, '红包'), false);
+  eq('转账·备注不匹配不翻', LW.Engine.verdictTransfer(tk2, 'accepted', '周言', 66, '错备注'), false);
+  eq('转账·发送方不匹配不翻', LW.Engine.verdictTransfer(tk2, 'declined', '林溪', 50, ''), false);
+  LW.Store.push(tk2, [{ who: '林溪', kind: 'tdecline', amount: 50, note: '', from: '', time: '' }], 100);
+  eq('转账·NPC拒收落地翻退还', LW.Engine.applyNpcDeclines(tk2), 1);
+  eq('转账·机主发的卡已退还', LW.Store.history(tk2)[2].state, 'declined');
+  eq('转账·拒收后回复不再收款', LW.Engine.markTransfersAccepted(tk2), 0);
+  eq('转账·无契约时拒收落地零条', LW.Engine.applyNpcDeclines(tk), 0);
   const reqT = LW.Prompt.private({ name: '周言', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null, null, '', '');
   eq('转账·私聊契约说明', reqT.ordered_prompts[0].content.indexOf('[转账:金额:备注]') !== -1, true);
+  eq('转账·私聊拒收契约说明', reqT.ordered_prompts[0].content.indexOf('[拒收转账:金额:备注]') !== -1, true);
   // 机主朋友圈的回应 prompt：契约行与人数约束
   const mreact = LW.Prompt.momentsReact({ who: '陈默', text: '月考终于结束了', img: '一张拍糊的试卷', when: '8月26日 22:49' },
     [{ name: '周言', profile: '班长' }, { name: '林溪', profile: '闺蜜' }],

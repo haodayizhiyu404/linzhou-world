@@ -48,6 +48,15 @@
         ? '[转账给' + (m.to || '对方') + ' ¥' + m.amount + (m.note ? '（' + m.note + '）' : '') + ']'
         : '[' + who + '转账 ¥' + m.amount + (m.note ? '（' + m.note + '）' : '') + ']';
         break;
+      // 转账处置回执：机主收下/退还对方的转账、对方拒收机主的转账——AI 靠这两行走上下文就全知情
+      case 'taccept': body = m.who === 'user'
+        ? '[收下了' + (m.from || '对方') + '的转账 ¥' + m.amount + ']'
+        : '[' + who + '收下了转账 ¥' + m.amount + ']';
+        break;
+      case 'tdecline': body = m.who === 'user'
+        ? '[退还了' + (m.from || '对方') + '的转账 ¥' + m.amount + ']'
+        : '[' + who + '拒收了转账 ¥' + m.amount + ']';
+        break;
       // 视频通话的画面条目（跨行压成一行，带标记便于模型区分可见状态与台词）
       case 'scene':   body = '（画面：' + String(m.text || '').replace(/\n+/g, '　') + '）'; break;
       default:        body = String(m.text || '');
@@ -244,6 +253,12 @@
           var tm = body.match(/^\[转账[:：|｜]([^\]]*)\]$/);
           var tt = tm && parseTransferArg(tm[1]);
           if (tt) out.push({ who: who, kind: 'transfer', amount: tt.amount, note: tt.note, to: '', state: 'waiting', time: '' });
+          return;
+        }
+        if (/^\[拒收转账[:：|｜]/.test(body)) { // 整行：拒收机主发来的转账（显式拒绝，优先于「回复即收款」的默认推断）
+          var dm = body.match(/^\[拒收转账[:：|｜]([^\]]*)\]$/);
+          var dt = dm && parseTransferArg(dm[1]);
+          if (dt) out.push({ who: who, kind: 'tdecline', amount: dt.amount, note: dt.note, from: '', time: '' });
           return;
         }
         // 前缀匹配：AI 忘换行把类型消息和文字黏在一行（如「[表情:看戏吃瓜] 哎哟……」）

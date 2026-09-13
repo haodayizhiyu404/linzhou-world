@@ -600,7 +600,7 @@
         var last = arr[arr.length - 1];
         var headText = last.kind === 'text' ? last.text
           : last.kind === 'calllog' ? '[' + (last.mode === 'video' ? '视频通话' : '语音通话') + ']'
-          : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位', transfer: '转账' }[last.kind] || '消息') + ']';
+          : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位', transfer: '转账', taccept: '转账', tdecline: '转账' }[last.kind] || '消息') + ']';
         W.Store.setMeta(n, { headline: String(headText).slice(0, 40), atMainCount: Engine.mainCount() });
       });
       return names;
@@ -736,7 +736,7 @@
       var lastMsg = msgs[msgs.length - 1];
       var headText = lastMsg.kind === 'text' ? lastMsg.text
         : lastMsg.kind === 'calllog' ? '[' + (lastMsg.mode === 'video' ? '视频通话' : '语音通话') + ']'
-        : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位', transfer: '转账' }[lastMsg.kind] || '消息') + ']';
+        : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位', transfer: '转账', taccept: '转账', tdecline: '转账' }[lastMsg.kind] || '消息') + ']';
       W.Store.setMeta(chatKey, { headline: String(headText).slice(0, 40), atMainCount: this.mainCount() });
       return { key: chatKey, title: title, msgs: msgs };
     },
@@ -1055,7 +1055,35 @@
       return n;
     },
 
-    // 机主点收 NPC 发来的转账：只许收对方发的、待收款的
+    // 机主对待收款转账的处置（收下/退还）随小飞机发出即生效：按 发送方+金额+备注 定位待收款卡就地翻转。
+    // 找不到对应卡（已删/已翻过）也照常——记录行本身已进上下文，AI 下一轮照样知情
+    verdictTransfer: function (key, verdict, sender, amount, note) {
+      var W = window.LZWorld, h = W.Store.history(key);
+      for (var i = 0; i < h.length; i++) {
+        var m = h[i];
+        if (m && m.who === sender && m.kind === 'transfer' && m.state === 'waiting'
+          && m.amount === amount && (m.note || '') === (note || '')) {
+          W.Store.patchAt(key, i, { state: verdict });
+          return true;
+        }
+      }
+      return false;
+    },
+
+    // NPC 输出 [拒收转账] 契约并生成成功：把机主对应待收款卡翻「已退还」。
+    // 调用须先于 markTransfersAccepted——显式拒收优先于「回复即收款」的默认推断
+    applyNpcDeclines: function (key) {
+      var W = window.LZWorld, h = W.Store.history(key), n = 0;
+      for (var i = 0; i < h.length; i++) {
+        var m = h[i];
+        if (m && m.who !== 'user' && m.kind === 'tdecline') {
+          if (this.verdictTransfer(key, 'declined', 'user', m.amount, m.note)) n++;
+        }
+      }
+      return n;
+    },
+
+    // 机主点收 NPC 发来的转账：只许收对方发的、待收款的（收款弹窗走待发区后此接口仅留作校验用）
     acceptTransfer: function (key, idx) {
       var W = window.LZWorld;
       var m = W.Store.history(key)[idx];

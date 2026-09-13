@@ -214,6 +214,7 @@
     // 删除确认弹窗（右键/长按消息触发）
     '.lzw-scrim{position:absolute;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;z-index:50}',
     '.lzw-confirm{background:#fff;border-radius:14px;padding:20px 20px 14px;width:216px;text-align:center;font-size:14px;color:#111;box-shadow:0 8px 30px rgba(0,0,0,.25)}',
+    '.lzw-tdlnote{font-size:11px;color:#8a8f99;margin-top:5px}',
     '.lzw-cbtns{display:flex;gap:10px;margin-top:15px}',
     '.lzw-cbtn{flex:1;border:none;border-radius:9px;padding:9px 0;font-size:14px;cursor:pointer}',
     '.lzw-cbtn.no{background:#f2f3f5;color:#333}',
@@ -451,21 +452,23 @@
   };
 
   // 转账卡：白底圆角 + 橙色「转账」标 + 大字金额 + 备注 + 底部状态行。
-  // 双方视角同源（同一条记录），收款完成两边同帧翻「已收款」；群聊卡右上角标「给 X」
+  // 双方视角同源（同一条记录），处置完成两边同帧翻转；群聊卡右上角标「给 X」。
+  // 状态三态：waiting 待收款（对方发来的可点收款）/ accepted 已收款 / declined 已退还
   function fmtTAmount(a) {
     var n = Number(a);
     if (isNaN(n) || n <= 0) return '0';
     return n % 1 === 0 ? String(n) : n.toFixed(2);
   }
   function transferCardHtml(m, isUser, groupMode) {
-    var accepted = m.state === 'accepted';
-    var incomingWaiting = !isUser && !accepted;
+    var state = m.state === 'accepted' ? 'accepted' : m.state === 'declined' ? 'declined' : 'waiting';
+    var incomingWaiting = !isUser && state === 'waiting';
     var toTag = (isUser && groupMode && m.to) ? '<span class="lzw-tto">给 ' + esc(m.to) + '</span>' : '';
+    var botLabel = state === 'accepted' ? '已收款' : state === 'declined' ? '已退还' : '待收款';
     return '<div class="lzw-tcard' + (incomingWaiting ? ' got waiting' : '') + '"' + (incomingWaiting ? ' data-taccept="1"' : '') + '>' +
       '<div class="lzw-tcard-top"><span class="lzw-tcoin">¥</span><span>转账</span>' + toTag + '</div>' +
       '<div class="lzw-tamt">¥' + fmtTAmount(m.amount) + '</div>' +
       '<div class="lzw-tnote">' + esc(m.note || '') + '</div>' +
-      '<div class="lzw-tbot' + (accepted ? '' : ' waiting') + '">' + (accepted ? '已收款' : '待收款') + '</div></div>';
+      '<div class="lzw-tbot' + (state === 'waiting' ? ' waiting' : '') + '">' + botLabel + '</div></div>';
   }
 
   // ── 手机内气泡行 ──
@@ -507,6 +510,12 @@
     } else if (m.kind === 'transfer') {
       // 转账卡不是气泡：双方都是白底卡（showName 即群聊态），待收款的对方卡可点收款
       bub = transferCardHtml(m, isUser, !!showName);
+    } else if (m.kind === 'taccept' || m.kind === 'tdecline') {
+      // 转账处置回执：机主收下/退还、对方拒收——居中灰字一行，同戳一戳
+      var vt = m.kind === 'taccept'
+        ? (isUser ? '你收下了转账' : esc(who) + ' 收下了转账')
+        : (isUser ? '你退还了转账' : esc(who) + ' 拒收了转账');
+      return '<div class="lzw-pokerow" data-del="' + idx + '">' + vt + ' ¥' + fmtTAmount(m.amount) + '</div>';
     } else if (m.kind === 'voice' || m.kind === 'image' || m.kind === 'location') {
       bub = richBub(m, isUser, who, targetName, false);
     } else {
@@ -557,6 +566,10 @@
       }
       if (m.kind === 'transfer') {
         return '<div class="lzw-chatrow me lzw-stgrow">' + av + '<div class="lzw-stgitem">' + transferCardHtml(m, true, false) + stgx + '</div></div>';
+      }
+      if (m.kind === 'taccept' || m.kind === 'tdecline') {
+        var vtg = m.kind === 'taccept' ? '✓ 收下转账' : '↩ 退还转账';
+        return '<div class="lzw-stgrow lzw-stgcenter"><div class="lzw-poke">' + vtg + ' ¥' + fmtTAmount(m.amount) + '</div>' + stgx + '</div>';
       }
       if (m.kind === 'sticker') {
         var file = W.Engine.stickers()[m.text];
@@ -1048,8 +1061,13 @@
         (this.tConfirm >= 0 ? (function () {
           var tcm = null;
           try { tcm = window.LZWorld.Store.history(UI.chatKey)[UI.tConfirm]; } catch (e) {}
-          var amt = tcm ? fmtTAmount(tcm.amount) : '';
-          return '<div class="lzw-scrim"><div class="lzw-confirm">确认收款 ¥' + amt + '？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="taccno">取消</button><button class="lzw-cbtn yes" data-cact="taccok">确认收款</button></div></div></div>';
+          // 卡被删/已处置就不再弹（点卡时已校验 waiting，这里兜底防删帖错位）
+          if (!tcm || tcm.who === 'user' || tcm.kind !== 'transfer' || tcm.state !== 'waiting') return '';
+          return '<div class="lzw-scrim"><div class="lzw-confirm">来自 ' + esc(tcm.who) + ' 的转账 ¥' + fmtTAmount(tcm.amount) +
+            (tcm.note ? '<div class="lzw-tdlnote">' + esc(tcm.note) + '</div>' : '') +
+            '<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="taccno">取消</button>' +
+            '<button class="lzw-cbtn no" data-cact="tdecl">拒绝</button>' +
+            '<button class="lzw-cbtn yes" data-cact="taccok">收下转账</button></div></div></div>';
         })() : '') +
         '</div></div>';
 
@@ -1404,7 +1422,8 @@
           else if (a === 'mdelok') { var mdi = UI.mConfirmDel; UI.mConfirmDel = -1; UI.momentsDeleteAt(mdi); }
           else if (a === 'tswap') { UI.panel = 'transferto'; UI.render(); }
           else if (a === 'taccno') { UI.tConfirm = -1; UI.render(); }
-          else if (a === 'taccok') { var ti = UI.tConfirm; UI.tConfirm = -1; try { window.LZWorld.Engine.acceptTransfer(UI.chatKey, ti); } catch (e) {} UI.render(); }
+          else if (a === 'taccok') { var ti = UI.tConfirm; UI.tConfirm = -1; UI.stageTVerdict('taccept', ti); }
+          else if (a === 'tdecl') { var td = UI.tConfirm; UI.tConfirm = -1; UI.stageTVerdict('tdecline', td); }
           else if (a === 'hangup') UI.hangup(false);
           else if (a === 'cancelcall') UI.hangup(true);
           else if (a === 'callreroll') UI.callReroll();
@@ -1465,6 +1484,16 @@
       var inp = pdoc().getElementById('lzw-input');
       if (inp) inp.focus();
     },
+    // 对对方待收款转账的处置（收下/退还）：攒进发灾区，小飞机发出即翻卡（发出即生效，不等 AI 回复）
+    stageTVerdict: function (kind, idx) {
+      var W = window.LZWorld, m = null;
+      try { m = W.Store.history(this.chatKey)[idx]; } catch (e) {}
+      if (!m || m.who === 'user' || m.kind !== 'transfer' || m.state !== 'waiting') { this.render(); return; }
+      this.staged.push({ kind: kind, amount: m.amount, note: m.note, from: m.who });
+      this.render();
+      var inp = pdoc().getElementById('lzw-input');
+      if (inp) inp.focus();
+    },
 
     // 小飞机：输入框有字先攒上，然后把待发区一次性全发（AI 只生成一次、只写一楼）
     trySend: function () {
@@ -1492,11 +1521,21 @@
         if (m.kind === 'transfer') {
           return { who: 'user', kind: 'transfer', amount: m.amount, note: m.note, to: m.to, state: 'waiting', time: W.Status.nowText() };
         }
+        if (m.kind === 'taccept' || m.kind === 'tdecline') {
+          return { who: 'user', kind: m.kind, amount: m.amount, note: m.note, from: m.from, time: W.Status.nowText() };
+        }
         return { who: 'user', kind: m.kind, text: m.text, time: W.Status.nowText() };
       });
       this.staged = [];
       this.failed = false;
       W.Store.push(this.chatKey, msgs, 100);
+      // 机主的转账处置（收下/退还）发出即生效：同帧翻掉对应待收款卡（双方的卡同源同一条记录）
+      var keyNow = this.chatKey;
+      msgs.forEach(function (mm) {
+        if (mm.kind === 'taccept' || mm.kind === 'tdecline') {
+          try { W.Engine.verdictTransfer(keyNow, mm.kind === 'taccept' ? 'accepted' : 'declined', mm.from, mm.amount, mm.note); } catch (e) {}
+        }
+      });
       this.render();
       this.generate(W.Engine.userName());
     },
@@ -1574,7 +1613,9 @@
         this.failed = false;
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(key, result.msgs, 100);
-          // 对方回了话 = 收了钱：机主发出的待收款转账批量翻「已收款」，同帧渲染
+          // 转账处置两连（顺序敏感）：先落 NPC 的 [拒收转账] 契约（显式拒绝优先），
+          // 再按「对方回了话 = 收了钱」把机主发出的待收款批量翻「已收款」，同帧渲染
+          try { eng.applyNpcDeclines(key); } catch (e) {}
           try { eng.markTransfersAccepted(key); } catch (e) {}
           // 生成是异步的：发出后生成了回复、人已经切去别的会话/主页 → 记未读红点
           if (this.screen !== 'chat' || this.chatKey !== key) W.Store.bumpUnread(key, result.msgs.length);
