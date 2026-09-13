@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T05:57:10.697Z
+//  构建时间：2026-09-13T06:30:22.665Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 05:57';
+var __LZW_BUILD__ = '2026-09-13 06:30';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1590,12 +1590,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-appbar-r{width:24px}',
     '.lzw-reroll{display:inline-flex;color:#666;cursor:pointer;padding:5px;border-radius:8px;align-items:center;justify-content:center}',
     '.lzw-reroll:hover{background:rgba(0,0,0,.06)}',
-    // 朋友圈顶栏：透明浮在封面上（无标题，保留返回/相机）；-89px = 状态栏38+顶栏51，封面吸到屏幕最顶
-    '.lzw-appbar-ovl{position:relative;z-index:6;background:transparent;border-bottom:none;margin-bottom:-89px}',
+    // 朋友圈顶栏：透明浮在封面上（无标题，保留返回/相机）。状态栏与本栏都脱离文档流、
+    // feed 独占整屏——封面顶点恒等于屏幕顶点，不再吃「38+51 算术」的像素误差
+    //（padding-top:44 = 状态栏总高 42 + 原上内边距 2，只影响图标落点，不影响封面定位；
+    // 状态栏 z-index 压回顶栏之上，保证顶栏不抢状态栏的拖动）
+    '.lzw-appbar-ovl{position:absolute;top:0;left:0;right:0;z-index:6;background:transparent;border-bottom:none;padding-top:44px}',
     '.lzw-appbar-ovl .lzw-back,.lzw-appbar-ovl .lzw-reroll{color:#111;text-shadow:0 0 6px rgba(255,255,255,.95),0 0 14px rgba(255,255,255,.6)}',
     '.lzw-appbar-ovl .lzw-back:hover,.lzw-appbar-ovl .lzw-reroll:hover{background:rgba(255,255,255,.35)}',
-    // 朋友圈屏：状态栏也透明，时钟/信号加白色光晕保证暗封面上可读
-    '.lzw-scr-moments .lzw-sbar{background:transparent}',
+    // 朋友圈屏：状态栏脱离文档流 + 透明，时钟/信号加白色光晕保证暗封面上可读
+    '.lzw-scr-moments .lzw-sbar{position:absolute;top:0;left:0;right:0;z-index:7;background:transparent}',
     '.lzw-scr-moments .lzw-clock{text-shadow:0 0 6px rgba(255,255,255,.95),0 0 12px rgba(255,255,255,.6)}',
     '.lzw-scr-moments .lzw-sig i{box-shadow:0 0 3px rgba(255,255,255,.95),0 0 8px rgba(255,255,255,.55)}',
     // 主体
