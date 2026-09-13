@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T16:20:39.117Z
+//  构建时间：2026-09-13T16:25:42.924Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 16:20';
+var __LZW_BUILD__ = '2026-09-13 16:25';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -5292,7 +5292,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var doc = window.parent.document;
         var mkBtn = function (label, title, fn) {
           var b = doc.createElement('div');
-          b.className = 'qr--button menu_button';
+          b.className = 'qr--button menu_button lzw-qr';
           b.title = title;
           b.style.flex = '0 0 auto';
           var t = doc.createElement('div');
@@ -5306,9 +5306,20 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           try {
             var bar = doc.getElementById('qr--bar');
             if (!bar) return;
-            // combined 模式下原生按钮都在内层 .qr--buttons（width:100%）里，
-            // 必须挂进同一容器才不会被顶到下一行；非 combined 时该容器不存在，直挂栏上
-            var holder = bar.querySelector('.qr--buttons') || bar;
+            // 挂载点 = 最后一个原生 QR 按钮的父级：combined/非 combined、有无内层
+            // 容器、版本差异全都不用猜，原生按钮排得进一行，我们就跟得上
+            var natives = bar.querySelectorAll('.qr--button:not(.lzw-qr)');
+            var holder = (natives.length ? natives[natives.length - 1].parentNode : null) || bar.querySelector('.qr--buttons') || bar;
+            // 一次性结构日志（排查换行/挂载问题用，F12 控制台可见）
+            if (!self._qrLogged) {
+              self._qrLogged = true;
+              try {
+                var cs = window.parent.getComputedStyle(holder);
+                console.log('[霖州引擎] QR 挂载点 class=' + holder.className +
+                  ' disp=' + cs.display + ' wrap=' + cs.flexWrap + ' w=' + holder.offsetWidth +
+                  ' / bar w=' + bar.offsetWidth + ' / 原生按钮数=' + natives.length);
+              } catch (e9) {}
+            }
             // 古代线（无手机世界线）不显示手机按钮，只留世界线入口（靠它切回现代线）
             var wantPhone = !!W.Engine.section();
             var alive = !!(self._qrBtns && self._qrBtns.length && self._qrBtns.every(function (b) { return b.parentNode === holder; }));
