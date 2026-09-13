@@ -124,12 +124,11 @@ const cdetail = `<div class="lzw-appbar"><span class="lzw-back">${BACK}</span><s
   </div>
 </div>`;
 
-// 发动态发布器：返回 + 绿色发表 + 大输入框 + 配图文描输入 + 小字说明
+// 发动态发布器：返回 + 绿色发表 + 大输入框 + 配图文描（三行 textarea）
 const mpost = `<div class="lzw-appbar"><span class="lzw-back">${BACK}</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r lzw-appbar-rw"><button class="lzw-postsend">发表</button></span></div>
 <div class="lzw-body">
   <div class="lzw-mptext"><textarea class="lzw-mpta" maxlength="280" placeholder="这一刻的想法…">月考终于结束了，活着真好</textarea></div>
-  <input class="lzw-mpimg" maxlength="60" placeholder="配图画面临摹（可选）：描述这张图片的画面，如：一张拍糊的试卷" value="一张拍糊的试卷">
-  <div class="lzw-mptip">图片会以描述文字的形式呈现</div>
+  <textarea class="lzw-mpimg" maxlength="60" placeholder="图片（可选）：用文字描述这张图片的画面，如：一张拍糊的试卷">一张拍糊的试卷，红笔的分数被手指挡住一半</textarea>
 </div>`;
 
 const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;font-family:system-ui,"Microsoft YaHei",sans-serif;display:flex;gap:24px;padding:24px;justify-content:center;align-items:flex-start;flex-wrap:wrap}</style><style>${css}</style><style>.lzw-bezel{width:320px;height:640px;box-sizing:content-box;flex:none}</style></head><body>${phone(chats)}${phone(contacts)}${phone(cdetail)}${phone(discover)}${phone(feed, 'lzw-scr-moments')}${phone(prof, 'lzw-scr-moments')}${phone(mpost)}</body></html>`;

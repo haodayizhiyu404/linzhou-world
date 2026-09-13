@@ -386,7 +386,7 @@
     '.lzw-cmtbar button{border:none;background:#22c05e;color:#fff;border-radius:6px;padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-family:inherit}',
     '.lzw-mpta{width:100%;box-sizing:border-box;background:#fff;border:none;color:#111;padding:12px 14px;font-size:15px;line-height:1.6;min-height:150px;resize:none;outline:none;font-family:inherit}',
     '.lzw-mpta::placeholder{color:#b3b8bf}',
-    '.lzw-mpimg{width:100%;box-sizing:border-box;background:#fff;border:none;border-top:1px solid rgba(0,0,0,.06);color:#111;padding:11px 14px;font-size:13.5px;outline:none;font-family:inherit}',
+    '.lzw-mpimg{width:100%;box-sizing:border-box;background:#fff;border:none;border-top:1px solid rgba(0,0,0,.06);color:#57606a;padding:11px 14px;font-size:12.5px;line-height:1.6;min-height:76px;resize:none;outline:none;font-family:inherit}',
     '.lzw-mpimg::placeholder{color:#b3b8bf}',
     '.lzw-postsend{background:#22c05e;color:#fff;border-radius:5px;font-size:14px;padding:5px 14px;cursor:pointer;font-family:inherit;border:none;white-space:nowrap}',
     '.lzw-appbar-rw{width:auto;flex:none}',
@@ -905,8 +905,7 @@
       } else if (this.screen === 'mpost') {
         // body 必须包 .lzw-body（flex:1）——否则底部横条不贴底，跟着内容跑
         body = '<div class="lzw-body"><div class="lzw-mptext"><textarea class="lzw-mpta" id="lzw-mptext" maxlength="280" placeholder="这一刻的想法…"></textarea></div>' +
-          '<input class="lzw-mpimg" id="lzw-mpimg" maxlength="60" placeholder="配图画面临摹（可选）：描述这张图片的画面，如：一张拍糊的试卷">' +
-          '<div class="lzw-mptip">图片会以描述文字的形式呈现</div></div>';
+          '<textarea class="lzw-mpimg" id="lzw-mpimg" maxlength="60" placeholder="图片（可选）：用文字描述这张图片的画面，如：一张拍糊的试卷"></textarea></div>';
 
       } else if (this.screen === 'cdetail') {
         // 联系人详细资料：头像姓名 + 朋友圈入口（带最新动态预览）+ 发消息/通话
