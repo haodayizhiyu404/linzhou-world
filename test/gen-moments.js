@@ -63,9 +63,9 @@ const prof = `<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back">${BA
 <div class="lzw-mfeed">
   <div class="lzw-mcover"><img src="https://picsum.photos/seed/zycover/400/260"><div class="lzw-mcover-shade"></div><div class="lzw-mme"><span class="nm">周言</span><div class="av">周</div></div></div>
   <div class="lzw-mpad"></div>
-  ${profPost('今天', '月考成绩出了，还活着。年级第七，比某人高了整整两名🙂', '', true, '林溪、陆飞', '<div><span class="n">林溪</span>：<span class="c">年级第七你要不要这么平静</span></div>', false)}
-  ${profPost('昨天', '球馆的灯修好了，周末可以打全场', '空荡的室内球场，灯光明亮，木地板反着光', false, '', '', false)}
-  ${profPost('9月11', '求一个数学大题的解法，在线等，挺急的', '', false, '', '', false)}
+  ${profPost('<b class="t">今天</b>', '月考成绩出了，还活着。年级第七，比某人高了整整两名🙂', '', true, '林溪、陆飞', '<div><span class="n">林溪</span>：<span class="c">年级第七你要不要这么平静</span></div>', false)}
+  ${profPost('<b class="t">昨天</b>', '球馆的灯修好了，周末可以打全场', '空荡的室内球场，灯光明亮，木地板反着光', false, '', '', false)}
+  ${profPost('<b>11</b><span>9月</span>', '求一个数学大题的解法，在线等，挺急的', '', false, '', '', false)}
 </div>`;
 
 const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;font-family:system-ui,"Microsoft YaHei",sans-serif;display:flex;gap:24px;padding:24px;justify-content:center;align-items:flex-start;flex-wrap:wrap}</style><style>${css}</style><style>.lzw-bezel{width:320px;height:640px;box-sizing:content-box;flex:none}</style></head><body>${phone(discover)}${phone(feed, 'lzw-scr-moments')}${phone(prof, 'lzw-scr-moments')}</body></html>`;

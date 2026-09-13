@@ -41,16 +41,17 @@
     if (diff >= 2 && diff < 7) return diff + '天前 ' + t;
     return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d + '日 ' + t;
   }
-  // 主页时间轴左侧戳：今天/昨天/M月D（跨年加年份）；无 pt 退回 legacy label
-  function momentStamp(pt, legacy, curDay) {
+  // 主页时间轴左侧戳（返回 HTML）：今天/昨天大号；更早 = 大号加粗日 + 小号月；无 pt 退回 legacy label
+  function stampParts(pt, legacy, curDay) {
     var m = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec(pt || '');
-    if (!m) return legacy || '';
+    if (!m) return '<b class="t">' + esc(legacy || '') + '</b>';
     var a = { y: +m[1], mo: +m[2], d: +m[3] }, b = parseDay(curDay);
-    if (!b) return a.mo + '月' + a.d;
-    var diff = (b.y * 372 + b.mo * 31 + b.d) - (a.y * 372 + a.mo * 31 + a.d);
-    if (diff === 0) return '今天';
-    if (diff === 1) return '昨天';
-    return (a.y !== b.y ? a.y + '年' : '') + a.mo + '月' + a.d;
+    if (b) {
+      var diff = (b.y * 372 + b.mo * 31 + b.d) - (a.y * 372 + a.mo * 31 + a.d);
+      if (diff === 0) return '<b class="t">今天</b>';
+      if (diff === 1) return '<b class="t">昨天</b>';
+    }
+    return '<b>' + a.d + '</b><span>' + (b && a.y !== b.y ? a.y + '年' : '') + a.mo + '月</span>';
   }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -328,14 +329,16 @@
     '.lzw-disc-name{font-size:14.5px;color:#111}',
     '.lzw-disc-chev{flex:none;display:flex}',
     '.lzw-disc-gap{height:9px;background:#f2f3f5;border-top:1px solid rgba(0,0,0,.05)}',
-    '.lzw-mfeed{flex:1;min-height:0;overflow-y:auto;background:#fff;padding-bottom:14px}',
-    '.lzw-mcover{height:248px;position:relative;background:linear-gradient(160deg,#6f8cba,#a9bedd 55%,#d2dfee);overflow:hidden}',
+    '.lzw-mfeed{flex:1;min-height:0;overflow-y:auto;background:#fff;padding-bottom:14px;scrollbar-width:none}',
+    '.lzw-mfeed::-webkit-scrollbar{display:none}',
+    '.lzw-mcover{height:248px;position:relative;background:linear-gradient(160deg,#6f8cba,#a9bedd 55%,#d2dfee);overflow:visible}',
     '.lzw-mcover img{width:100%;height:100%;object-fit:cover;display:block}',
     '.lzw-mcover-shade{position:absolute;left:0;right:0;bottom:0;height:64px;background:linear-gradient(transparent,rgba(0,0,0,.42))}',
-    '.lzw-mme{position:absolute;right:12px;bottom:9px;display:flex;align-items:center;gap:9px}',
-    '.lzw-mme .nm{color:#fff;font-size:14px;text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 8px rgba(0,0,0,.55)}',
-    '.lzw-mme .av{width:48px;height:48px;border-radius:9px;border:2px solid #fff;object-fit:cover;background:#c9cfd6;display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;font-weight:600;box-sizing:border-box}',
-    '.lzw-mpad{height:30px}',
+    // 名字+头像块：头像放大、下压 1/3 露出封面底边，名字在头像左侧、压在背景图上
+    '.lzw-mme{position:absolute;right:12px;bottom:-19px;display:flex;align-items:center;gap:9px;z-index:2}',
+    '.lzw-mme .nm{color:#fff;font-size:15px;text-shadow:0 1px 3px rgba(0,0,0,.85),0 0 8px rgba(0,0,0,.55)}',
+    '.lzw-mme .av{width:58px;height:58px;border-radius:10px;border:2px solid #fff;object-fit:cover;background:#c9cfd6;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:600;box-sizing:border-box}',
+    '.lzw-mpad{height:36px}',
     '.lzw-post{display:flex;gap:9px;padding:13px 12px 11px;border-bottom:1px solid rgba(0,0,0,.05)}',
     '.lzw-post-ava{width:37px;height:37px;border-radius:8px;flex:none;object-fit:cover;background:#c9cfd6;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:600;cursor:pointer}',
     '.lzw-post-main{flex:1;min-width:0}',
@@ -353,7 +356,11 @@
     '.lzw-pcmts{margin-top:3px;background:#f7f7f7;border-radius:5px;padding:5px 9px;font-size:12.5px;line-height:1.65;word-break:break-word;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-pcmts .c{color:#111}',
     '.lzw-pcmts .n{color:#576b95;font-weight:400}',
-    '.lzw-post-stamp{width:37px;flex:none;font-size:12px;color:#8a8f99;line-height:1.45;padding-top:4px}',
+    // 主页时间轴左侧戳：今天/昨天大号；更早 = 大号加粗日 + 小号月（真实朋友圈相册样式）
+    '.lzw-post-stamp{width:38px;flex:none;padding-top:3px}',
+    '.lzw-post-stamp b{display:block;font-size:16px;font-weight:700;color:#111;line-height:1.15;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
+    '.lzw-post-stamp b.t{font-size:15px;font-weight:500}',
+    '.lzw-post-stamp span{display:block;font-size:10px;color:#8a8f99;margin-top:2px}',
     '.lzw-cmtbar{display:flex;gap:6px;margin-top:6px;align-items:center}',
     '.lzw-cmtbar input{flex:1;min-width:0;border:1px solid rgba(0,0,0,.12);border-radius:14px;padding:6px 11px;font-size:13px;outline:none;background:#fff;color:#111;font-family:inherit}',
     '.lzw-cmtbar button{border:none;background:#22c05e;color:#fff;border-radius:14px;padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-family:inherit}'
@@ -898,6 +905,8 @@
         var mfEl = ph.querySelector('.lzw-mfeed');
         if (mfEl) mfEl.scrollTop = prevFeed;
       }
+      // 朋友圈/主页：顶栏随滚动渐白（含滚动位置还原后的初始状态）
+      if (this.screen === 'moments' || this.screen === 'mprofile') syncMomentBar(ph);
       // 朋友圈评论输入：回车即发
       var cmtIn = ph.querySelector('#lzw-cmtin');
       if (cmtIn) cmtIn.addEventListener('keydown', function (e) {
@@ -1546,6 +1555,27 @@
     }).join('');
   }
 
+  // 朋友圈顶栏渐白：封面底边滚过顶栏区域的过程中，状态栏+应用栏从透明渐变到白底，
+  // 到位时补一条发丝分割线——真实微信同款。滚动到下面时 < / 相机 不再悬空
+  function syncMomentBar(ph) {
+    var feed = ph.querySelector('.lzw-mfeed');
+    var scr = ph.querySelector('.lzw-screen');
+    if (!feed || !scr) return;
+    var sbar = scr.querySelector('.lzw-sbar');
+    var bar = scr.querySelector('.lzw-appbar-ovl');
+    var cover = feed.querySelector('.lzw-mcover');
+    if (!bar || !cover) return;
+    var onScroll = function () {
+      var p = Math.max(0, Math.min(1, feed.scrollTop / Math.max(1, cover.offsetHeight - 89)));
+      var bg = 'rgba(255,255,255,' + (p * 0.97).toFixed(3) + ')';
+      if (sbar) sbar.style.background = bg;
+      bar.style.background = bg;
+      bar.style.borderBottom = p > 0.95 ? '1px solid rgba(0,0,0,.09)' : 'none';
+    };
+    feed.addEventListener('scroll', onScroll);
+    onScroll();
+  }
+
   function appbarHtml(screen, disp, act) {
     if (UI.call) return ''; // 通话界面：无顶栏（名字在通话屏里）
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
@@ -1573,7 +1603,7 @@
         '<div class="lzw-post-main"><div class="lzw-post-name"' + mpfAttr + '>' + esc(e.who) + '</div>';
     } else {
       // 主页时间戳：与 feed 同源自 pt（动态自身时间），两边永远不会再打架
-      head = '<div class="lzw-post-stamp">' + esc(momentStamp(e.pt, e.label, curDay)) + '</div><div class="lzw-post-main">';
+      head = '<div class="lzw-post-stamp">' + stampParts(e.pt, e.label, curDay) + '</div><div class="lzw-post-main">';
     }
     var menu = UI.mMenu === idx
       ? '<div class="lzw-pmenu"><button data-mlike="' + idx + '">' + ICON_HEART + ' 赞</button><button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button></div>'
