@@ -467,7 +467,7 @@
       '',
       userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
       '',
-      '## 机主刚发的动态' + (post.when ? '（' + post.when + '）' : ''),
+      '## 机主刚发的动态' + (post.when ? '（' + post.when + (post.img ? '，配图：' + post.img : '') + '）' : (post.img ? '（配图：' + post.img + '）' : '')),
       post.text,
       '',
       '## 可能刷到这条动态的人（只能从中挑人，一人至多反应一次）',

@@ -1007,11 +1007,13 @@
       return replies;
     },
 
-    // 机主自己发朋友圈：纯本地落库，pt 取状态栏当下时刻（绝不越过「现在」）
-    momentsPost: function (text) {
+    // 机主自己发朋友圈：纯本地落库，pt 取状态栏当下时刻（绝不越过「现在」）。
+    // img = 配图画面临摹（文字描述，渲染成假装图片的灰框，与 NPC 动态的配图同理）
+    momentsPost: function (text, img) {
       var W = window.LZWorld;
       text = String(text || '').trim();
       if (!text) return -1;
+      img = String(img || '').trim().slice(0, 60);
       var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
       var d = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec((snap && snap.dateText) || '');
       var t = /(\d{1,2}):(\d{2})/.exec((snap && snap.time) || '');
@@ -1019,7 +1021,7 @@
         ? d[1] + '年' + (+d[2]) + '月' + (+d[3]) + '日 ' + (t ? t[0] : '')
         : '';
       var idx = W.Store.history(this.momentsKey).length;
-      W.Store.push(this.momentsKey, [{ who: this.userName(), text: text, img: '', pt: pt, label: '', likes: [], comments: [] }], 100);
+      W.Store.push(this.momentsKey, [{ who: this.userName(), text: text, img: img, pt: pt, label: '', likes: [], comments: [] }], 100);
       return idx;
     },
 

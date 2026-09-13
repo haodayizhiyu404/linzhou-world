@@ -463,6 +463,8 @@ ctx.getWorldbook = async () => [
   // 机主自己发朋友圈：落库即 feed 尾部（最新）、pt 取状态栏当下、空文本拒绝
   global.__msgs = [{ role: 'assistant', message: statusText }];
   eq('发圈·空文本拒绝', LW.Engine.momentsPost('   '), -1);
+  const mpIdx0 = LW.Engine.momentsPost('配图测试', '一张拍糊的试卷');
+  eq('发圈·配图文描落库', LW.Engine.momentsFeed()[mpIdx0].img, '一张拍糊的试卷');
   const mpIdx = LW.Engine.momentsPost('月考终于结束了');
   eq('发圈·下标即尾部', mpIdx, LW.Engine.momentsFeed().length - 1);
   const mpE = LW.Engine.momentsFeed()[mpIdx];
@@ -486,11 +488,12 @@ ctx.getWorldbook = async () => [
   eq('发圈·私聊带机主朋友圈段', reqMy.ordered_prompts[0].content.indexOf('## 机主发过的朋友圈（近3天）') !== -1, true);
   eq('发圈·私聊段含内容', reqMy.ordered_prompts[0].content.indexOf('月考终于结束了') !== -1, true);
   // 机主朋友圈的回应 prompt：契约行与人数约束
-  const mreact = LW.Prompt.momentsReact({ who: '陈默', text: '月考终于结束了', img: '', when: '8月26日 22:49' },
+  const mreact = LW.Prompt.momentsReact({ who: '陈默', text: '月考终于结束了', img: '一张拍糊的试卷', when: '8月26日 22:49' },
     [{ name: '周言', profile: '班长' }, { name: '林溪', profile: '闺蜜' }],
     { dateText: '2034年8月26日 星期五' }, '机主资料');
   const mreactTxt = mreact.ordered_prompts[0].content;
   eq('发圈·回应带动态', mreactTxt.indexOf('月考终于结束了') !== -1, true);
+  eq('发圈·回应带配图', mreactTxt.indexOf('配图：一张拍糊的试卷') !== -1, true);
   eq('发圈·赞契约', mreactTxt.indexOf('[赞:名字]') !== -1, true);
   eq('发圈·评论契约', mreactTxt.indexOf('[评论:名字:评论内容]') !== -1, true);
   eq('发圈·一人至多一次', mreactTxt.indexOf('一人至多反应一次') !== -1, true);
