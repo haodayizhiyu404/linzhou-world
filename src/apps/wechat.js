@@ -142,12 +142,14 @@
     '.lzw-ltag.rec{background:#ec8fb8;color:#fff}',
     '.lzw-ltag.cur{background:#9b8ce8;color:#fff}',
     '.lzw-ltag.bad{background:#f9e9ee;color:#c07890}',
+    '.lzw-ltag.on{background:#bfe8cf;color:#2f7d4f}',
+    '.lzw-ltag.off{background:#efeef2;color:#9a94a0}',
     '.lzw-lineava{display:flex;align-items:center;justify-content:center;font-size:16px;border-radius:50%;background:linear-gradient(135deg,#ffd6e8,#dcd2ff);box-shadow:inset 0 0 0 1px rgba(255,255,255,.65)}',
     '.lzw-linerow{cursor:pointer}',
     '.lzw-linerow:active{filter:brightness(.97)}',
     '.lzw-linedis{opacity:.55}',
     // 选线弹窗（独立于手机壳的居中菜单）
-    '#lzw-linespop{position:fixed;inset:0;z-index:99992;background:rgba(48,30,66,.38);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;font-family:system-ui,"Microsoft YaHei",sans-serif}',
+    '#lzw-linespop{position:fixed;inset:0;z-index:99992;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font-family:system-ui,"Microsoft YaHei",sans-serif}',
     '.lzw-lpop-card{width:300px;max-height:78vh;background:linear-gradient(165deg,#ffe9f3 0%,#f4e9ff 48%,#e9edff 100%);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(60,30,80,.35);display:flex;flex-direction:column}',
     '.lzw-lpop-head{position:relative;padding:16px 14px 12px;text-align:center}',
     '.lzw-lpop-t{font-family:"KaiTi","STKaiti","Microsoft YaHei",serif;font-weight:600;font-size:19px;color:#5a4a6a;letter-spacing:2px}',
@@ -2018,10 +2020,10 @@
       var ros = eng.roster(ln);
       var hasPhone = !!(ros && ((ros.contacts || []).length || (ros.groups || []).length));
       var tags = '';
-      if (saved === ln) tags += '<span class="lzw-ltag rec">此聊天</span>';
+      if (saved === ln) tags += '<span class="lzw-ltag rec">绑定:本聊天</span>';
       else if (cur === ln) tags += '<span class="lzw-ltag cur">当前</span>';
       if (st === null) tags += '<span class="lzw-ltag bad">条目未找到</span>';
-      else tags += '<span class="lzw-ltag">' + (st ? '开关·开' : '开关·关') + '</span>';
+      else tags += '<span class="lzw-ltag ' + (st ? 'on' : 'off') + '">世界书:' + (st ? '开' : '关') + '</span>';
       if (!hasPhone) tags += '<span class="lzw-ltag bad">无手机</span>';
       return '<div class="lzw-conv lzw-linerow' + (st === null ? ' lzw-linedis' : '') + '" data-line="' + esc(ln) + '">' +
         '<div class="lzw-ava lzw-lineava">' + (hasPhone ? '📱' : '🏮') + '</div>' +
