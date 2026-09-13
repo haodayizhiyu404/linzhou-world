@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T11:03:39.196Z
+//  构建时间：2026-09-13T11:16:28.894Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 11:03';
+var __LZW_BUILD__ = '2026-09-13 11:16';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1802,8 +1802,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-tnote{padding:2px 12px 9px;font-size:11.5px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:14px}',
     '.lzw-tbot{display:flex;justify-content:flex-end;align-items:center;padding:5px 12px;border-top:1px solid rgba(0,0,0,.05);font-size:11px;color:#9aa0a8}',
     '.lzw-tbot.waiting{color:#e0883a}',
-    '.lzw-tvrow{display:flex;justify-content:center;margin:3px 0}',
-    '.lzw-tvcard{width:160px}',
+    // 处置完成的卡：微信同款黄卡——白圈白勾 + 金额 + 状态提示词（退还是灰卡白叉）
+    '.lzw-tcard.done{background:linear-gradient(135deg,#f9b84d,#f1972d);color:#fff}',
+    '.lzw-tcard.done.back{background:linear-gradient(135deg,#cbced4,#b7bbc2)}',
+    '.lzw-tdone{display:flex;align-items:center;gap:8px;padding:13px 13px 9px;font-size:20px;font-weight:600;line-height:1.2}',
+    '.lzw-tchk{width:22px;height:22px;border-radius:50%;background:#fff;color:#f1972d;flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}',
+    '.lzw-tcard.done.back .lzw-tchk{color:#b0b4bb}',
+    '.lzw-tdone-st{padding:0 13px 11px;font-size:11.5px;color:rgba(255,255,255,.95)}',
     '.lzw-tto-line{font-size:12.5px;color:#111;padding:2px 2px 0}',
     '.lzw-tto-line b{color:#57606a;font-weight:600}',
     '.lzw-ttohd{font-size:12px;color:#8a8f99;padding:4px 2px 6px}',
@@ -2062,37 +2067,38 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     transfer: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="6" width="18.4" height="13" rx="2.6"/><path d="M2.8 9.8h18.4M14.8 14.2h4.4"/></svg>'
   };
 
-  // 转账卡：白底圆角 + 橙色「转账」标 + 大字金额 + 备注 + 底部状态行。
+  // 转账卡：waiting 为白底卡（橙标+金额+备注+待收款）；处置完成翻成微信同款黄卡。
   // 双方视角同源（同一条记录），处置完成两边同帧翻转；群聊卡右上角标「给 X」。
-  // 状态三态：waiting 待收款（对方发来的可点收款）/ accepted 已收款 / declined 已退还
   function fmtTAmount(a) {
     var n = Number(a);
     if (isNaN(n) || n <= 0) return '0';
     return n % 1 === 0 ? String(n) : n.toFixed(2);
   }
+  // 处置完成卡（黄卡/灰卡）：白圈勾（或叉）+ 金额 + 状态提示词，无备注行
+  function doneCardHtml(amount, label, back) {
+    return '<div class="lzw-tcard done' + (back ? ' back' : '') + '">' +
+      '<div class="lzw-tdone"><span class="lzw-tchk">' + (back ? '✕' : '✓') + '</span>¥' + fmtTAmount(amount) + '</div>' +
+      '<div class="lzw-tdone-st">' + label + '</div></div>';
+  }
   function transferCardHtml(m, isUser, groupMode) {
     var state = m.state === 'accepted' ? 'accepted' : m.state === 'declined' ? 'declined' : 'waiting';
-    var incomingWaiting = !isUser && state === 'waiting';
+    if (state !== 'waiting') {
+      // 发起方视角的处置结果：accepted 已被接受 / declined 已被拒绝
+      return doneCardHtml(m.amount, state === 'accepted' ? '已被接受' : '已被拒绝', state === 'declined');
+    }
+    var incomingWaiting = !isUser;
     var toTag = (isUser && groupMode && m.to) ? '<span class="lzw-tto">给 ' + esc(m.to) + '</span>' : '';
-    var botLabel = state === 'accepted' ? (isUser ? '已被接受' : '已收款') : state === 'declined' ? '已退还' : '待收款';
     return '<div class="lzw-tcard' + (incomingWaiting ? ' got waiting' : '') + '"' + (incomingWaiting ? ' data-taccept="1"' : '') + '>' +
       '<div class="lzw-tcard-top"><span class="lzw-tcoin">¥</span><span>转账</span>' + toTag + '</div>' +
       '<div class="lzw-tamt">¥' + fmtTAmount(m.amount) + '</div>' +
       '<div class="lzw-tnote">' + esc(m.note || '') + '</div>' +
-      '<div class="lzw-tbot' + (state === 'waiting' ? ' waiting' : '') + '">' + botLabel + '</div></div>';
+      '<div class="lzw-tbot waiting">待收款</div></div>';
   }
 
-  // 转账处置回执卡：与转账卡同款的瘦身白卡（居中、无头像）。
-  // 状态随方向定——机主是收款方：已收款/已退还；机主是转账方（对方拒收）：已被接受/已被拒绝
+  // 转账处置回执卡：接收方视角的处置结果（taccept 已收款 / tdecline 已退还）。
+  // 与转账卡同尺寸，作为接收方的正常聊天行渲染（带头像、随方向左右）。
   function verdictCardHtml(m) {
-    var isUser = m.who === 'user';
-    var label = m.kind === 'taccept' ? (isUser ? '已收款' : '已被接受')
-      : (isUser ? '已退还' : '已被拒绝');
-    return '<div class="lzw-tcard lzw-tvcard">' +
-      '<div class="lzw-tcard-top"><span class="lzw-tcoin">¥</span><span>转账</span></div>' +
-      '<div class="lzw-tamt">¥' + fmtTAmount(m.amount) + '</div>' +
-      '<div class="lzw-tnote">' + esc(m.note || '') + '</div>' +
-      '<div class="lzw-tbot">' + label + '</div></div>';
+    return doneCardHtml(m.amount, m.kind === 'taccept' ? '已收款' : '已退还', m.kind === 'tdecline');
   }
 
   // ── 手机内气泡行 ──
@@ -2135,8 +2141,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       // 转账卡不是气泡：双方都是白底卡（showName 即群聊态），待收款的对方卡可点收款
       bub = transferCardHtml(m, isUser, !!showName);
     } else if (m.kind === 'taccept' || m.kind === 'tdecline') {
-      // 转账处置回执：瘦身白卡居中（同转账卡样式），不再是灰字大字报
-      return '<div class="lzw-tvrow" data-del="' + idx + '">' + verdictCardHtml(m) + '</div>';
+      // 转账处置回执：接收方侧的黄卡/灰卡，与转账卡同尺寸，走正常聊天行（带头像）
+      bub = verdictCardHtml(m);
     } else if (m.kind === 'voice' || m.kind === 'image' || m.kind === 'location') {
       bub = richBub(m, isUser, who, targetName, false);
     } else {
@@ -2189,7 +2195,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         return '<div class="lzw-chatrow me lzw-stgrow">' + av + '<div class="lzw-stgitem">' + transferCardHtml(m, true, false) + stgx + '</div></div>';
       }
       if (m.kind === 'taccept' || m.kind === 'tdecline') {
-        return '<div class="lzw-stgrow lzw-tvrow"><div class="lzw-stgitem">' + verdictCardHtml({ who: 'user', kind: m.kind, amount: m.amount, note: m.note }) + stgx + '</div></div>';
+        // 回执预览与转账预览同构：机主行 + 头像 + 卡（不再用居中窄卡，避免错位）
+        return '<div class="lzw-chatrow me lzw-stgrow">' + av + '<div class="lzw-stgitem">' + verdictCardHtml({ who: 'user', kind: m.kind, amount: m.amount, note: m.note }) + stgx + '</div></div>';
       }
       if (m.kind === 'sticker') {
         var file = W.Engine.stickers()[m.text];
