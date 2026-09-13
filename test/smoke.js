@@ -460,6 +460,40 @@ ctx.getWorldbook = async () => [
   eq('朋友圈·兜底条数', LW.Engine.momentsFeed().length, 2);
   eq('朋友圈·兜底无伪造时间', LW.Engine.momentsFeed().every(function (e) { return e.pt === '' && e.label === ''; }), true);
   eq('朋友圈·兜底不重复生成', await LW.Engine.momentsEnsure(), false);
+  // 机主自己发朋友圈：落库即 feed 尾部（最新）、pt 取状态栏当下、空文本拒绝
+  global.__msgs = [{ role: 'assistant', message: statusText }];
+  eq('发圈·空文本拒绝', LW.Engine.momentsPost('   '), -1);
+  const mpIdx = LW.Engine.momentsPost('月考终于结束了');
+  eq('发圈·下标即尾部', mpIdx, LW.Engine.momentsFeed().length - 1);
+  const mpE = LW.Engine.momentsFeed()[mpIdx];
+  eq('发圈·作者机主', mpE.who, '陈默');
+  eq('发圈·pt取快照当下', mpE.pt, '2034年8月26日 22:49');
+  // 朋友们反应的解析：赞/评论两种行、去重、剔机主自己、赞封顶 5
+  const reacts = LW.Engine.parseMomentReacts('[赞:林溪]\n[赞:周言]\n[赞:陈默]\n[赞:林溪]\n[评论:陆飞:恭喜脱离苦海]\n[评论:张裕民@陈默:卷子撕了吗]', '陈默');
+  eq('发圈·解析赞去重剔自己', reacts.likes.join('、'), '林溪、周言');
+  eq('发圈·解析评论条数', reacts.comments.length, 2);
+  eq('发圈·一人只许反应一次', reacts.comments.every(function (cm) { return reacts.likes.indexOf(cm.who) === -1; }), true);
+  eq('发圈·评论带回复指向', reacts.comments[1].replyTo, '陈默');
+  const reactsCap = LW.Engine.parseMomentReacts('[赞:林溪]\n[赞:周言]\n[赞:陆飞]\n[赞:张裕民]\n[赞:裴知意]\n[赞:许嘉文]', '陈默');
+  eq('发圈·赞封顶5', reactsCap.likes.length, 5);
+  // 机主动态摘要：近 3 天机主发的 + 谁互动了，进私聊上下文当话题
+  LW.Store.patchAt(LW.Engine.momentsKey, mpIdx, { likes: ['林溪', '周言'], comments: [{ who: '周言', replyTo: '', text: '恭喜脱离苦海' }] });
+  const myNote = LW.Engine.myMomentsNote({ dateText: '2034年8月26日 星期五' });
+  eq('发圈·机主摘要含动态', myNote.indexOf('月考终于结束了') !== -1, true);
+  eq('发圈·机主摘要含互动', myNote.indexOf('恭喜脱离苦海') !== -1 && myNote.indexOf('林溪 赞了') !== -1, true);
+  const reqMy = LW.Prompt.private({ name: '周言', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null, null, '',
+    '8月26日 21:47 机主发了「月考终于结束了」，林溪 赞了');
+  eq('发圈·私聊带机主朋友圈段', reqMy.ordered_prompts[0].content.indexOf('## 机主发过的朋友圈（近3天）') !== -1, true);
+  eq('发圈·私聊段含内容', reqMy.ordered_prompts[0].content.indexOf('月考终于结束了') !== -1, true);
+  // 机主朋友圈的回应 prompt：契约行与人数约束
+  const mreact = LW.Prompt.momentsReact({ who: '陈默', text: '月考终于结束了', img: '', when: '8月26日 22:49' },
+    [{ name: '周言', profile: '班长' }, { name: '林溪', profile: '闺蜜' }],
+    { dateText: '2034年8月26日 星期五' }, '机主资料');
+  const mreactTxt = mreact.ordered_prompts[0].content;
+  eq('发圈·回应带动态', mreactTxt.indexOf('月考终于结束了') !== -1, true);
+  eq('发圈·赞契约', mreactTxt.indexOf('[赞:名字]') !== -1, true);
+  eq('发圈·评论契约', mreactTxt.indexOf('[评论:名字:评论内容]') !== -1, true);
+  eq('发圈·一人至多一次', mreactTxt.indexOf('一人至多反应一次') !== -1, true);
   // 群夹带私聊：群回复里的 <!--phone--> 块路由进私聊且从群记录剥掉
   global.__msgs = null;
   const sideNames = LW.Engine.capturePhoneText('陆飞：哈哈<!--phone\n许嘉文：我有，直接送你\n-->还有');

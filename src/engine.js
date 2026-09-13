@@ -691,8 +691,10 @@
         // 聊天时可自然提起；没互动的也能成为话题）
         var momentsNote = '';
         try { momentsNote = this.momentsNoteFor(c.name, snap); } catch (e) { momentsNote = ''; }
+        var myNote = '';
+        try { myNote = this.myMomentsNote(snap); } catch (e) { myNote = ''; }
         var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo,
-          this.crossGroups(c.name, snap && snap.dateText), callLog, momentsNote);
+          this.crossGroups(c.name, snap && snap.dateText), callLog, momentsNote, myNote);
         raw = await generateRaw(req);
         title = '与' + c.name + '的私聊';
       } else {
@@ -830,6 +832,30 @@
           (bits.length
             ? '，机主' + (p.old ? '刚' + bits.join('、') + '（互动是刚发生的，动态是几天前的）' : bits.join('、'))
             : '（机主还没互动）');
+      }, this).join('\n');
+    },
+    // 机主自己近 3 天的动态 + 各条谁赞了/评论了——私聊里"对方刷到过机主朋友圈"的上下文，
+    // 让 NPC 能主动提起、接梗、吐槽机主发的东西
+    myMomentsNote: function (snap) {
+      var W = window.LZWorld;
+      var mToday = snap && snap.dateText;
+      if (!mToday) return '';
+      var myName0 = this.userName();
+      var ba = this.ptParts(mToday);
+      var mine = W.Store.history(this.momentsKey).filter(function (e2) {
+        if (e2.who !== myName0) return false;
+        var ea = this.ptParts(e2.pt);
+        var dd = (ea && ba) ? this.dayDiff(ea, ba) : null;
+        return dd !== null && dd >= 0 && dd <= 3;
+      }, this).slice(-3);
+      if (!mine.length) return '';
+      return mine.map(function (e2) {
+        var bits = [];
+        (e2.likes || []).forEach(function (n) { bits.push(n + ' 赞了'); });
+        (e2.comments || []).forEach(function (cm) { bits.push(cm.who + ' 评论「' + cm.text + '」'); });
+        var when = this.ptShort(e2.pt);
+        return (when ? when + ' ' : '') + '机主发了「' + String(e2.text).slice(0, 30) + '」' +
+          (bits.length ? '，' + bits.join('、') : '（还没人互动）');
       }, this).join('\n');
     },
 
@@ -979,6 +1005,87 @@
         } catch (e) {}
       }
       return replies;
+    },
+
+    // 机主自己发朋友圈：纯本地落库，pt 取状态栏当下时刻（绝不越过「现在」）
+    momentsPost: function (text) {
+      var W = window.LZWorld;
+      text = String(text || '').trim();
+      if (!text) return -1;
+      var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
+      var d = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec((snap && snap.dateText) || '');
+      var t = /(\d{1,2}):(\d{2})/.exec((snap && snap.time) || '');
+      var pt = d
+        ? d[1] + '年' + (+d[2]) + '月' + (+d[3]) + '日 ' + (t ? t[0] : '')
+        : '';
+      var idx = W.Store.history(this.momentsKey).length;
+      W.Store.push(this.momentsKey, [{ who: this.userName(), text: text, img: '', pt: pt, label: '', likes: [], comments: [] }], 100);
+      return idx;
+    },
+
+    // 朋友们对机主动态的反应：点赞 + 评论各生成一轮（异步，失败只 warn 不打扰机主）。
+    // 机主在 moments 屏且没正在输入评论时直接重渲染；否则累计未读挂发现 tab
+    momentsReact: async function (index) {
+      var W = window.LZWorld, key = this.momentsKey;
+      var entry = W.Store.history(key)[index];
+      if (!entry) return;
+      var myName = this.userName();
+      var sec = this.section(); if (!sec) return;
+      var pool = [], seen = {};
+      (sec.contacts || []).forEach(function (c) { if (c.name && c.name !== myName && !seen[c.name]) { seen[c.name] = 1; pool.push(c.name); } });
+      (sec.groups || []).forEach(function (g) {
+        (g.members || []).forEach(function (n) { if (n && n !== myName && !seen[n]) { seen[n] = 1; pool.push(n); } });
+      });
+      if (!pool.length) return;
+      var likes = [], comments = [];
+      try {
+        var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
+        var people = pool.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
+        var req = W.Prompt.momentsReact({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, people, snap, this.userBlock());
+        var raw = await generateRaw(req);
+        var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+        var parsed = this.parseMomentReacts(text, myName);
+        likes = parsed.likes; comments = parsed.comments;
+      } catch (e) { console.warn('[霖州引擎] 朋友圈回应生成失败', e); }
+      if (!likes.length && !comments.length) return;
+      var entry2 = W.Store.history(key)[index];
+      if (!entry2) return;
+      var newLikes = (entry2.likes || []).slice();
+      likes.forEach(function (n) { if (newLikes.indexOf(n) === -1) newLikes.push(n); });
+      newLikes = newLikes.slice(0, 8);
+      var newComments = (entry2.comments || []).concat(comments).slice(0, 5);
+      W.Store.patchAt(key, index, { likes: newLikes, comments: newComments });
+      try {
+        var UI = W.Apps && W.Apps.wechat;
+        if (UI && UI.screen === 'moments' && UI.mCmt == null) UI.render();
+        else W.Store.bumpUnread(key, likes.length + comments.length);
+      } catch (e) {}
+    },
+
+    // 解析朋友们对机主动态的反应：[赞:名字] / [评论:名字:内容]；
+    // 剔除机主自己与重复人名，各封顶 5（评论满 5 条后接话的传统从 momentsFill 沿用）
+    parseMomentReacts: function (text, myName) {
+      var likes = [], comments = [], used = {};
+      if (myName) used[myName] = 1;
+      String(text || '').split('\n').forEach(function (line) {
+        line = line.trim();
+        if (!line) return;
+        var lk = line.match(/^\[赞[:：]([^:：\]]{1,12})\]$/);
+        if (lk) {
+          var ln = lk[1].trim();
+          if (ln && !used[ln] && likes.length < 5) { used[ln] = 1; likes.push(ln); }
+          return;
+        }
+        var cm = line.match(/^\[评论[:：]([^:：@\]]{1,12})(?:@([^:：\]]{1,12}))?[:：]([\s\S]+)\]$/);
+        if (cm) {
+          var w = cm[1].trim();
+          if (w && !used[w] && comments.length < 5) {
+            used[w] = 1;
+            comments.push({ who: w, replyTo: cm[2] ? cm[2].trim() : '', text: cm[3].trim() });
+          }
+        }
+      });
+      return { likes: likes, comments: comments };
     },
 
 

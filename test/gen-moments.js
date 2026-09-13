@@ -40,6 +40,16 @@ function post(ava, name, text, img, label, menu, like, cmts, cmtbar) {
   </div></div>`;
 }
 const ava = n => `<img class="lzw-post-ava" src="${AV(n)}">`;
+// 机主自己的动态：⋯ 菜单只有评论（不能给自己点赞），名字/头像不挂进主页跳转
+function ownPost(name, text, label, like, cmts) {
+  return `<div class="lzw-post"><div class="lzw-post-ava">${name.slice(0, 1)}</div><div class="lzw-post-main">
+    <div class="lzw-post-name">${name}</div>
+    <div class="lzw-post-text">${text}</div>
+    <div class="lzw-post-meta"><span>${label}</span><span class="sp"></span><div class="lzw-pmenu"><button>${BUBBLE} 评论</button></div><button class="lzw-post-more">⋯</button></div>
+    ${like ? `<div class="lzw-plike">❤ ${like}</div>` : ''}
+    ${cmts ? `<div class="lzw-pcmts">${cmts}</div>` : ''}
+  </div></div>`;
+}
 const BACK = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>';
 
 // 朋友圈 feed：封面（盖住顶栏、无标题）+ 两条动态（第一条展开菜单+赞+评论+输入框，第二条带图带赞）
@@ -47,6 +57,7 @@ const feed = `<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back">${BA
 <div class="lzw-mfeed">
   <div class="lzw-mcover"><div class="lzw-mcover-shade"></div><div class="lzw-mme"><span class="nm">裴知意</span><div class="av">裴</div></div></div>
   <div class="lzw-mpad"></div>
+  ${ownPost('陈默', '月考终于结束了，活着真好', '刚刚', '林溪、周言', '<div><span class="n">林溪</span><span class="cs">:</span><span class="c">恭喜脱离苦海</span></div><div><span class="n">周言</span><span class="cs">:</span><span class="c">明天球馆别迟到</span></div>')}
   ${post(ava('zhou'), '周言', '月考成绩出了，还活着。年级第七，比某人高了整整两名', '', '2小时前', true, '林溪、陆飞', '<div><span class="n">林溪</span><span class="cs">:</span><span class="c">年级第七你要不要这么平静</span></div><div><span class="n">陆飞</span><span class="cs">:</span><span class="c">请客！</span></div><div><span class="n">周言</span> 回复 <span class="n">陆飞</span><span class="cs">:</span><span class="c">你就惦记这口</span></div>', true)}
   ${post(ava('lin'), '林溪', '晚自习后的糖水铺就是快乐老家', '一碗双皮奶加红豆，老板娘多给了一勺', '昨天 21:14', false, '陆飞', '', false)}
   ${post(ava('lu'), '陆飞', '求一个数学大题的解法，在线等，挺急的', '', '2天前 22:40', false, '', '', false)}
@@ -113,8 +124,18 @@ const cdetail = `<div class="lzw-appbar"><span class="lzw-back">${BACK}</span><s
   </div>
 </div>`;
 
-const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;font-family:system-ui,"Microsoft YaHei",sans-serif;display:flex;gap:24px;padding:24px;justify-content:center;align-items:flex-start;flex-wrap:wrap}</style><style>${css}</style><style>.lzw-bezel{width:320px;height:640px;box-sizing:content-box;flex:none}</style></head><body>${phone(chats)}${phone(contacts)}${phone(cdetail)}${phone(discover)}${phone(feed, 'lzw-scr-moments')}${phone(prof, 'lzw-scr-moments')}</body></html>`;
+// 发动态发布器：返回 + 绿色发表 + 大输入框 + 占位小字
+const mpost = `<div class="lzw-appbar"><span class="lzw-back">${BACK}</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r lzw-appbar-rw"><button class="lzw-postsend">发表</button></span></div>
+<div class="lzw-body">
+  <div class="lzw-mptext"><textarea class="lzw-mpta" maxlength="280" placeholder="这一刻的想法…">月考终于结束了，活着真好</textarea></div>
+  <div class="lzw-mptip">图片功能后续开放</div>
+</div>`;
+
+const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;font-family:system-ui,"Microsoft YaHei",sans-serif;display:flex;gap:24px;padding:24px;justify-content:center;align-items:flex-start;flex-wrap:wrap}</style><style>${css}</style><style>.lzw-bezel{width:320px;height:640px;box-sizing:content-box;flex:none}</style></head><body>${phone(chats)}${phone(contacts)}${phone(cdetail)}${phone(discover)}${phone(feed, 'lzw-scr-moments')}${phone(prof, 'lzw-scr-moments')}${phone(mpost)}</body></html>`;
 fs.writeFileSync(__dirname + '/sbv-moments.html', html);
+// 发布器放大版
+const zoomMpost = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif}</style><style>${css}</style><style>.lzw-bezel{width:400px;height:800px;box-sizing:content-box;zoom:1.6;margin:20px auto}</style></head><body>${phone(mpost)}</body></html>`;
+fs.writeFileSync(__dirname + '/sbv-mpost-zoom.html', zoomMpost);
 // 单屏放大版：个人主页头部特写检查用
 const zoom = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif}</style><style>${css}</style><style>.lzw-bezel{width:400px;height:800px;box-sizing:content-box;zoom:1.6;margin:20px auto}</style></head><body>${phone(prof, 'lzw-scr-moments')}</body></html>`;
 fs.writeFileSync(__dirname + '/sbv-moments-zoom.html', zoom);

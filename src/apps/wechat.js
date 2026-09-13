@@ -383,7 +383,12 @@
     '.lzw-post-stamp span{display:block;font-size:10px;color:#8a8f99;margin-top:2px}',
     '.lzw-cmtbar{display:flex;gap:6px;margin-top:6px;align-items:center}',
     '.lzw-cmtbar input{flex:1;min-width:0;border:1px solid rgba(0,0,0,.12);border-radius:14px;padding:6px 11px;font-size:13px;outline:none;background:#fff;color:#111;font-family:inherit}',
-    '.lzw-cmtbar button{border:none;background:#22c05e;color:#fff;border-radius:14px;padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-family:inherit}'
+    '.lzw-cmtbar button{border:none;background:#22c05e;color:#fff;border-radius:14px;padding:6px 13px;font-size:12.5px;cursor:pointer;white-space:nowrap;font-family:inherit}',
+    '.lzw-mpta{width:100%;box-sizing:border-box;background:#fff;border:none;color:#111;padding:12px 14px;font-size:15px;line-height:1.6;min-height:150px;resize:none;outline:none;font-family:inherit}',
+    '.lzw-mpta::placeholder{color:#b3b8bf}',
+    '.lzw-postsend{background:#22c05e;color:#fff;border-radius:5px;font-size:14px;padding:5px 14px;cursor:pointer;font-family:inherit;border:none;white-space:nowrap}',
+    '.lzw-appbar-rw{width:auto;flex:none}',
+    '.lzw-mptip{padding:12px 14px;font-size:12px;color:#9aa0a8}'
   ].join('\n');
 
   var ICON_VOICE = '<svg width="15" height="15" viewBox="0 0 1024 1024"><path fill="#222222" d="M501.269333 517.610667a277.333333 277.333333 0 0 1-81.664 197.546666l-5.12 4.906667-3.306666 2.858667a42.666667 42.666667 0 0 1-58.325334-61.696l3.029334-3.136 6.954666-6.954667a192.042667 192.042667 0 0 0-7.936-273.002667l-3.050666-3.136a42.666667 42.666667 0 0 1 61.248-59.264l5.12 4.906667a277.333333 277.333333 0 0 1 83.050666 196.970667z m187.648 10.197333A418.090667 418.090667 0 0 1 565.845333 814.933333l-7.68 7.466667-3.306666 2.837333a42.666667 42.666667 0 0 1-58.346667-61.674666l3.029333-3.157334 6.101334-5.952a332.928 332.928 0 0 0 97.962666-228.48l0.085334-8.533333a332.821333 332.821333 0 0 0-105.834667-242.24 42.666667 42.666667 0 0 1 58.197333-62.4 418.133333 418.133333 0 0 1 132.970667 304.32l-0.106667 10.709333zM625.877333 137.877333a42.666667 42.666667 0 0 1 58.176-62.421333l-58.176 62.421333z m250.730667 394.026667a606.208 606.208 0 0 1-48.853333 225.365333l-6.293334 14.165334a606.016 606.016 0 0 1-123.2 176.554666l-11.136 10.816-3.306666 2.837334a42.666667 42.666667 0 0 1-58.346667-61.696l3.029333-3.136 9.557334-9.28a520.661333 520.661333 0 0 0 105.856-151.722667l5.397333-12.16a520.853333 520.853333 0 0 0 41.984-193.6l0.128-13.333333a520.341333 520.341333 0 0 0-38.4-194.261334l-5.141333-12.288a520.533333 520.533333 0 0 0-122.026667-172.288l58.197333-62.421333a605.909333 605.909333 0 0 1 142.016 200.533333l6.016 14.293334a605.653333 605.653333 0 0 1 44.672 226.133333l-0.149333 15.509333zM170.666667 518.442667a64 64 0 1 1 128 0 64 64 0 0 1-128 0z"/></svg>';
@@ -894,6 +899,10 @@
           (hisHtml || '<div class="lzw-sysrow" style="margin-top:36px">TA 还没有动态</div>') +
           '</div>';
 
+      } else if (this.screen === 'mpost') {
+        body = '<div class="lzw-mptext"><textarea class="lzw-mpta" id="lzw-mptext" maxlength="280" placeholder="这一刻的想法…"></textarea></div>' +
+          '<div class="lzw-mptip">图片功能后续开放</div>';
+
       } else if (this.screen === 'cdetail') {
         // 联系人详细资料：头像姓名 + 朋友圈入口（带最新动态预览）+ 发消息/通话
         var dn = this.cdetName || '';
@@ -1054,9 +1063,23 @@
       ph.querySelectorAll('[data-mom]').forEach(function (el) {
         el.onclick = function () { UI.openMoments(); };
       });
-      // 朋友圈：相机占位、头像/名字进主页、⋯菜单、赞、评论、发送
+      // 朋友圈：相机打开发布器、头像/名字进主页、⋯菜单、赞、评论、发送
       ph.querySelectorAll('[data-mcam]').forEach(function (el) {
-        el.onclick = function () { try { toastr.info('发动态功能后续开放', '霖州手机'); } catch (e) {} };
+        el.onclick = function () { UI.screen = 'mpost'; UI.mFrom = 'moments'; UI.render(); };
+      });
+      ph.querySelectorAll('[data-mpost-send]').forEach(function (el) {
+        el.onclick = function () {
+          var ta = pdoc().getElementById('lzw-mptext');
+          var t = ta ? ta.value.trim() : '';
+          if (!t) { try { toastr.info('写点什么再发表吧', '霖州手机'); } catch (e) {} return; }
+          var W = window.LZWorld, eng = W.Engine;
+          var idx = eng.momentsPost(t);
+          if (idx < 0) return;
+          UI.screen = 'moments';
+          UI.render();
+          // 朋友们的反应后台生成：落地时人在朋友圈就直接重渲染，不在就挂发现页红点
+          eng.momentsReact(idx);
+        };
       });
       ph.querySelectorAll('[data-mpf]').forEach(function (el) {
         el.onclick = function (ev) {
@@ -1702,6 +1725,7 @@
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'mpost') return '<div class="lzw-appbar"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r lzw-appbar-rw"><button class="lzw-postsend" data-mpost-send="1">发表</button></span></div>';
     if (screen === 'cdetail') return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
       (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
@@ -1715,19 +1739,31 @@
   function momentsPostHtml(e, idx, userName, eng, W, feedMode, curDay) {
     var c = {};
     try { c = eng.findContact(e.who) || {}; } catch (e0) {}
-    var mpfAttr = ' data-mpf="' + esc(e.who) + '"';
+    var isMine = e.who === userName;
+    var mpfAttr = isMine ? '' : ' data-mpf="' + esc(e.who) + '"';
     var head;
     if (feedMode) {
-      head = (c.avatar
-        ? '<img class="lzw-post-ava" src="' + esc(W.Worldbook.imgUrl(c.avatar)) + '"' + mpfAttr + ' alt="">'
-        : '<div class="lzw-post-ava"' + mpfAttr + '>' + esc(e.who.slice(0, 1)) + '</div>') +
+      // 机主自己的条目：头像走机主头像，名字/头像都不挂进主页的跳转
+      var avaHtml;
+      if (isMine) {
+        var myAv = '';
+        try { myAv = eng.userAvatar(); } catch (e1) {}
+        avaHtml = myAv
+          ? '<img class="lzw-post-ava" src="' + esc(myAv) + '" alt="">'
+          : '<div class="lzw-post-ava">' + esc(e.who.slice(0, 1)) + '</div>';
+      } else {
+        avaHtml = c.avatar
+          ? '<img class="lzw-post-ava" src="' + esc(W.Worldbook.imgUrl(c.avatar)) + '"' + mpfAttr + ' alt="">'
+          : '<div class="lzw-post-ava"' + mpfAttr + '>' + esc(e.who.slice(0, 1)) + '</div>';
+      }
+      head = avaHtml +
         '<div class="lzw-post-main"><div class="lzw-post-name"' + mpfAttr + '>' + esc(e.who) + '</div>';
     } else {
       // 主页时间戳：与 feed 同源自 pt（动态自身时间），两边永远不会再打架
       head = '<div class="lzw-post-stamp">' + stampParts(e.pt, e.label, curDay) + '</div><div class="lzw-post-main">';
     }
     var menu = UI.mMenu === idx
-      ? '<div class="lzw-pmenu"><button data-mlike="' + idx + '">' + ICON_HEART + ' 赞</button><button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button></div>'
+      ? '<div class="lzw-pmenu">' + (isMine ? '' : '<button data-mlike="' + idx + '">' + ICON_HEART + ' 赞</button>') + '<button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button></div>'
       : '';    var cmtbar = UI.mCmt === idx
       ? '<div class="lzw-cmtbar"><input id="lzw-cmtin" maxlength="60" placeholder="说点什么…"><button data-msend="' + idx + '">发送</button></div>'
       : '';

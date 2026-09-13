@@ -175,7 +175,8 @@
     // crossGroups = 对方在的群当天记录尾巴（群→私聊跨会话上下文；对方在场，与防开天眼自洽）
     // callLog = 当日通话尾巴 {kind, dur, lines}：两人今天还在通话里说过的话，双方都记得
     // momentsNote = 近期朋友圈摘要（对方 3 天内发过的动态 + 机主互动痕迹，对方都记得）
-    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo, crossGroups, callLog, momentsNote) {
+    // myNote = 机主自己近 3 天的动态及互动（对方刷得到，可主动提起）
+    private: function (contact, hist, snapshot, stickerNames, tail, digest, userInfo, crossGroups, callLog, momentsNote, myNote) {
       var myName = me();
       var tailLines = (tail && tail.length) ? histText(tail, 8, false) : '';
       var p = [
@@ -203,6 +204,9 @@
           : '',
         momentsNote
           ? '## 近期朋友圈（近3天，另附机主互动过的旧动态）\n（对方近几天发过的动态；机主点过赞/留过言的——哪怕是几天前的旧动态——对方一直记得，互动是刚发生的，可自然提起、调侃或耿耿于怀；没互动的也能成为话题）\n' + momentsNote
+          : '',
+        myNote
+          ? '## 机主发过的朋友圈（近3天）\n（机主这几天发的动态，对方都刷得到、看得见谁点了赞；可在聊天里自然提起、接梗、调侃或已读不回）\n' + myNote
           : '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场，可自由承接其中的话题、情绪与玩笑）\n' + crossGroups.map(function (g) {
@@ -443,6 +447,42 @@
       ordered_prompts: [
         { role: 'system', content: p },
         { role: 'user', content: '（机主刚评论了这条动态。请按输出要求生成接话评论，可 0 条。）' }
+      ],
+      should_silence: true,
+      max_chat_history: 0
+    };
+  },
+
+  // ── 朋友圈 · 机主动态的回应：机主刚发了条动态，生成朋友们的点赞与评论 ──
+  // post = {who, text, img?, when?}（who 恒为机主）；people = 全部候选朋友 [{name, profile}]
+  // 契约语法：[赞:名字] ×1~4、[评论:名字:评论内容] ×0~2
+  momentsReact: function (post, people, snapshot, userInfo) {
+    var myName = me();
+    var p = [
+      '# 数字世界 · 朋友圈回应',
+      '',
+      '你是一款数字生活应用的模拟引擎。本次任务：机主「' + myName + '」刚发了一条朋友圈动态，生成朋友们刷到之后的反应。',
+      '',
+      situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+      '',
+      userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
+      '',
+      '## 机主刚发的动态' + (post.when ? '（' + post.when + '）' : ''),
+      post.text,
+      '',
+      '## 可能刷到这条动态的人（只能从中挑人，一人至多反应一次）',
+      people.map(function (pp) { return '- ' + pp.name + '：\n' + (pp.profile ? String(pp.profile).trim() : '（无档案）'); }).join('\n'),
+      '',
+      '## 输出要求（严格遵守）',
+      '- 生成 1~4 个 [赞:名字] 行，再生成 0~2 条 [评论:名字:评论内容] 行；每人只许出现一次（要么赞要么评论）',
+      '- 谁会有反应由动态内容与人设决定：关系近的、爱玩梗的更容易冒泡；有人完全无感、没人评论也正常',
+      '- 评论口径：短（≤25 字）、像真人在朋友圈留的言，可玩梗可阴阳，须符合此人与机主的关系阶段',
+      '- 不要替机主回复，不要输出除 [赞]/[评论] 行以外的任何内容'
+    ].filter(function (s) { return s !== ''; }).join('\n');
+    return {
+      ordered_prompts: [
+        { role: 'system', content: p },
+        { role: 'user', content: '（机主刚发了这条动态。请按输出要求生成朋友们的反应。）' }
       ],
       should_silence: true,
       max_chat_history: 0
