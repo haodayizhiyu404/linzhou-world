@@ -11,10 +11,11 @@
 (function () {
   'use strict';
 
-  var PLOT_FLOORS = 8;     // 主线带几楼
-  var PLOT_CAP = 900;      // 每楼正文上限（验尸结论：低于此 ≈ 失明）
-  var HIST_PRIVATE = 50;   // 私聊带回几条（短聊天内容很少，50 条也才角色卡资料的零头）
-  var HIST_GROUP = 50;     // 群聊带回几条
+  // 携带量配置：曾经写死的常量，现由设置 app 可调（Store.cfg()，默认值在 store.js）
+  function cfg() {
+    try { return window.LZWorld.Store.cfg(); } catch (e) {}
+    return { plotFloors: 8, plotCap: 900, histPriv: 50, histGroup: 50, crossMax: 3, crossLines: 18 };
+  }
 
   // ── persona 真名。generateRaw 不做宏替换，{{user}} 会原文进提示词，
   //    所以这里自己解析（与 engine.js userName() 同一套回退）。──
@@ -45,7 +46,7 @@
     try {
       var msgs = getChatMessages('0-{{lastMessageId}}');
       if (!msgs || !msgs.length) return '';
-      return msgs.slice(-PLOT_FLOORS).map(function (m) {
+      return msgs.slice(-cfg().plotFloors).map(function (m) {
         var t = String((m && m.message) || '')
           // 状态栏是机器可读的元数据（时间/着装/心声等），已由「当前情境」按需引用，
           // 这里整段剔除——只剥标签会留下无主的「着装：…」碎片，严重干扰模型
@@ -64,10 +65,10 @@
           .replace(/\n{2,}/g, '\n')
           .trim();
         // 截断尽量落在行边界，避免半句话/半个词糊在切口上
-        if (t.length > PLOT_CAP) {
-          var cut = t.lastIndexOf('\n', PLOT_CAP);
-          if (cut < PLOT_CAP * 0.5) cut = t.lastIndexOf('。', PLOT_CAP);
-          if (cut < PLOT_CAP * 0.5) cut = PLOT_CAP;
+        if (t.length > cfg().plotCap) {
+          var cut = t.lastIndexOf('\n', cfg().plotCap);
+          if (cut < cfg().plotCap * 0.5) cut = t.lastIndexOf('。', cfg().plotCap);
+          if (cut < cfg().plotCap * 0.5) cut = cfg().plotCap;
           t = t.substring(0, cut) + '……（此楼后续从略）';
         }
         return (m.role === 'user' ? me() : '旁白') + '：' + t;
@@ -222,7 +223,7 @@
         '## 聊天记录 · 与' + myName + '的微信对话',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_PRIVATE, true, snapshot && snapshot.dateText),
+        histText(hist, cfg().histPriv, true, snapshot && snapshot.dateText),
         '',
         callLog
           ? '## 今日通话（' + callLog.kind + ' · ' + callLog.dur + ' · 双方已说的话' + (callLog.video ? '与画面' : '') + '）\n' +
@@ -237,7 +238,7 @@
           : '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场，可自由承接其中的话题、情绪与玩笑）\n' + crossGroups.map(function (g) {
-              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, cfg().crossLines, true, snapshot && snapshot.dateText);
             }).join('\n\n')
           : '',
         '',
@@ -309,7 +310,7 @@
         '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场）\n' + crossGroups.map(function (g) {
-              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, cfg().crossLines, true, snapshot && snapshot.dateText);
             }).join('\n\n')
           : '',
         '',
@@ -370,7 +371,7 @@
         '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场，可自然提及）\n' + crossGroups.map(function (g) {
-              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, cfg().crossLines, true, snapshot && snapshot.dateText);
             }).join('\n\n')
           : '',
         '',
@@ -558,7 +559,7 @@
         var priv = crossPriv && crossPriv[m.name];
         if (priv && priv.length) {
           brief += '\n※ 仅 ' + m.name + ' 本人知晓：机主今日与 ' + m.name + ' 的私聊——\n'
-            + histText(priv, 15, true, snapshot && snapshot.dateText);
+            + histText(priv, cfg().crossLines, true, snapshot && snapshot.dateText);
         }
         return '- ' + m.name + '：\n' + brief;
       });
@@ -589,7 +590,7 @@
         '## 聊天记录 · 群「' + group.name + '」',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_GROUP, true, snapshot && snapshot.dateText),
+        histText(hist, cfg().histGroup, true, snapshot && snapshot.dateText),
         '',
         consistencyRules('每名成员各自')
           + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。'

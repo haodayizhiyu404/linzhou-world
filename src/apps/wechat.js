@@ -347,6 +347,25 @@
     '.lzw-tab svg{width:22px;height:22px}',
     '.lzw-tabdot{position:absolute;top:2px;left:calc(50% + 8px);min-width:15px;height:15px;border-radius:8px;background:#e5484d;color:#fff;font-size:9.5px;line-height:15px;text-align:center;padding:0 4px}',
     '.lzw-disc-row{position:relative;display:flex;align-items:center;gap:11px;padding:12px;background:#fff;cursor:pointer}',
+    '.lzw-setwrap{padding:12px 12px 24px}',
+    '.lzw-setsec{margin:16px 6px 8px;font-size:12px;color:#8a8f99}',
+    '.lzw-setcard{background:#fff;border-radius:10px;overflow:hidden}',
+    '.lzw-setrow{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer}',
+    '.lzw-setrow:last-child{border-bottom:none}',
+    '.lzw-setmain{flex:1;min-width:0}',
+    '.lzw-setname{font-size:14px;color:#1a1d21}',
+    '.lzw-setdesc{font-size:11px;color:#9aa0a8;margin-top:2px}',
+    '.lzw-setck{width:20px;height:20px;flex:none;color:#22c05e;visibility:hidden}',
+    '.lzw-setrow.on .lzw-setck{visibility:visible}',
+    '.lzw-setcol{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05)}',
+    '.lzw-setlbl{font-size:12px;color:#8a8f99}',
+    '.lzw-setrow2{display:flex;align-items:center;gap:8px}',
+    '.lzw-setnum{width:58px;padding:5px 6px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:13px;text-align:right;color:#1a1d21;background:#fafafa;outline:none}',
+    '.lzw-settxt{flex:1;min-width:0;padding:7px 8px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:12px;color:#1a1d21;background:#fafafa;outline:none}',
+    '.lzw-setbtn{flex:none;padding:6px 10px;border:none;border-radius:6px;background:#22c05e;color:#fff;font-size:12px;cursor:pointer}',
+    '.lzw-setpick{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px}',
+    '.lzw-setpick span{padding:4px 9px;background:#f0f1f3;border-radius:20px;font-size:12px;color:#1a1d21;cursor:pointer}',
+    '.lzw-setnote{margin:16px 8px 0;font-size:11px;color:#b0b5bc;line-height:1.7}',
     '.lzw-disc-ico{width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center}',
     '.lzw-disc-ico svg{width:30px;height:30px}',
     '.lzw-disc-main{flex:1;min-width:0}',
@@ -441,6 +460,7 @@
   // 主屏微信图标（绿色圆角块 + 白色对话泡）
   var ICON_POWEROFF = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.5a8 8 0 1 0 11.4 0"/></svg>';
   // 底栏两个 tab：对话 / 发现（指南针）
+  var ICON_GEAR = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2.1" fill="#fff" stroke="none"/><circle cx="9" cy="12" r="2.1" fill="#fff" stroke="none"/><circle cx="17" cy="17" r="2.1" fill="#fff" stroke="none"/></svg>';
   var ICON_TAB_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.34-4.1-1L3 20l1.1-4.9A8.5 8.5 0 1 1 21 11.5z"/></svg>';
   var ICON_TAB_DISC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/></svg>';
   var ICON_TAB_CONT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 4.2a3.3 3.3 0 1 1 0 6.6 3.3 3.3 0 0 1 0-6.6z"/><path d="M3.8 19.4c.5-2.9 2.8-4.6 5.8-4.6s5.3 1.7 5.8 4.6"/><path d="M15.6 5.2a3 3 0 0 1 0 5.6M17.4 14.9c1.9.5 3.3 1.9 3.7 3.9"/></svg>';
@@ -851,10 +871,12 @@
           '<div class="lzw-homegrid">' +
           '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none;position:relative">' + ICON_WECHAT +
           (totalUn ? '<span class="lzw-appdot">' + (totalUn > 99 ? '99+' : totalUn) + '</span>' : '') + '</div><span>微信</span></div>' +
-          '<div class="lzw-app" style="opacity:.55"><div class="lzw-app-ico">🧩</div><span>敬请期待</span></div>' +
+          '<div class="lzw-app" data-app="settings"><div class="lzw-app-ico" style="background:#8e97a8;border:none;color:#fff">' + ICON_GEAR + '</div><span>设置</span></div>' +
           '<div class="lzw-app" data-app="close" title="收起手机"><div class="lzw-app-ico" style="background:#e5484d;border:none;color:#fff">' + ICON_POWEROFF + '</div><span>关闭</span></div>' +
           '</div></div></div>';
 
+      } else if (this.screen === 'settings') {
+        body = settingsHtml();
       } else if (this.screen === 'list') {
         var sec = eng.section();
         var rowsHtml = '';
@@ -1145,9 +1167,73 @@
       });
       // 主屏「关闭」app：收起手机。保险——小屏上弹窗可能盖住酒馆页的 QR 开关，
       // 万一被挡死，手机上永远有第二条路可以关掉自己
-      ph.querySelectorAll('[data-app="close"]').forEach(function (el) {
-        el.onclick = function () { UI.toggle(); };
+/      ph\.querySelectorAll\('\[data-app="close"\]'\)\.forEach\(function \(el\) \{\r?\n        el\.onclick = function \(\) \{ UI\.toggle\(\); \};\r?\n      \}\);/
+
+      // 设置 app：模式单选 / 数值与文本即时保存 / 拉取模型与预设列表 / 点选回填
+      ph.querySelectorAll('[data-app="settings"]').forEach(function (el) {
+        el.onclick = function () { UI.screen = 'settings'; UI._setpick = null; UI.render(); };
       });
+      if (UI.screen === 'settings') {
+        var saveApi = function (patch) {
+          var api0 = {};
+          try { api0 = window.LZWorld.Store.settings().api || {}; } catch (e) {}
+          for (var k in patch) api0[k] = patch[k];
+          window.LZWorld.Store.setSettings({ api: api0 });
+        };
+        ph.querySelectorAll('[data-amode]').forEach(function (el) {
+          el.onclick = function () {
+            saveApi({ mode: el.dataset.amode });
+            UI._setpick = null;
+            UI.render();
+          };
+        });
+        ph.querySelectorAll('[data-num]').forEach(function (el) {
+          el.onchange = function () {
+            var lo = +el.dataset.min, hi = +el.dataset.max;
+            var v = Math.round(Number(el.value));
+            if (!isFinite(v)) v = window.LZWorld.Store.DEFAULTS[el.dataset.num];
+            el.value = Math.min(hi, Math.max(lo, v));
+            var patch = {}; patch[el.dataset.num] = +el.value;
+            window.LZWorld.Store.setSettings(patch);
+          };
+        });
+        ph.querySelectorAll('[data-atext]').forEach(function (el) {
+          el.onchange = function () { saveApi(el.dataset.atext === 'preset' ? { preset: el.value } : { [el.dataset.atext]: el.value }); };
+        });
+        ph.querySelectorAll('[data-akey]').forEach(function (el) {
+          el.onchange = function () {
+            try { localStorage.setItem('lzworld_phone_apikey', el.value); } catch (e) {}
+          };
+        });
+        ph.querySelectorAll('[data-afetch]').forEach(function (el) {
+          el.onclick = async function () {
+            try {
+              if (el.dataset.afetch === 'presets') {
+                UI._setpick = { field: 'preset', items: getProxyPresetNames() || [] };
+              } else {
+                var api1 = {};
+                try { api1 = window.LZWorld.Store.settings().api || {}; } catch (e) {}
+                var key1 = '';
+                try { key1 = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
+                var list = await getModelList({ apiurl: api1.apiurl || '', key: key1 });
+                UI._setpick = { field: 'model', items: list || [] };
+              }
+            } catch (e) {
+              UI._setpick = { field: null, items: ['（拉取失败：' + String(e && e.message || e) + '）'] };
+            }
+            UI.render();
+          };
+        });
+        ph.querySelectorAll('[data-pick]').forEach(function (el) {
+          el.onclick = function () {
+            var patch = {};
+            patch[(UI._setpick && UI._setpick.field) || 'model'] = el.dataset.pick;
+            saveApi(patch);
+            UI._setpick = null;
+            UI.render();
+          };
+        });
+      }
       ph.querySelectorAll('.lzw-back').forEach(function (el) {
         el.onclick = function () {
           // mprofile 的返回看来源：详细资料进来回详细资料，朋友圈进来回朋友圈
@@ -1904,9 +1990,72 @@
     onScroll();
   }
 
+  // 设置屏：生成 API（跟随正文/只换模型/代理预设/自定义）+ 提示词携带量。全部即时保存。
+  var SET_NRANGES = { plotFloors: [1, 20], plotCap: [100, 2000], histPriv: [10, 100], histGroup: [10, 100], crossMax: [1, 6], crossLines: [5, 50] };
+  function settingsHtml() {
+    var W = window.LZWorld;
+    var cfg = W.Store.cfg();
+    var api = {};
+    try { api = W.Store.settings().api || {}; } catch (e) {}
+    var mode = api.mode || 'follow';
+    var modes = [
+      ['follow', '跟随正文', '手机与正文用同一条 API 线'],
+      ['model', '只换模型', '正文同源，手机单独指定模型'],
+      ['preset', '代理预设', '用酒馆里配好的代理预设，密钥由酒馆保管'],
+      ['custom', '自定义 API', '自填地址与密钥，密钥只存本机浏览器']
+    ];
+    var rows = modes.map(function (m) {
+      return '<div class="lzw-setrow' + (mode === m[0] ? ' on' : '') + '" data-amode="' + m[0] + '">' +
+        '<div class="lzw-setmain"><div class="lzw-setname">' + m[1] + '</div><div class="lzw-setdesc">' + m[2] + '</div></div>' +
+        '<span class="lzw-setck">' + ICON_TOK + '</span></div>';
+    }).join('');
+    var detail = '';
+    if (mode === 'model') {
+      detail = '<div class="lzw-setcol"><span class="lzw-setlbl">模型名</span><div class="lzw-setrow2">' +
+        '<input class="lzw-settxt" data-atext="model" value="' + esc(api.model || '') + '" placeholder="如 gemini-3.1-flash"></div></div>';
+    } else if (mode === 'preset') {
+      detail = '<div class="lzw-setcol"><span class="lzw-setlbl">预设名（与酒馆代理预设完全一致）</span><div class="lzw-setrow2">' +
+        '<input class="lzw-settxt" data-atext="preset" value="' + esc(api.preset || '') + '" placeholder="如 MyProxy">' +
+        '<button class="lzw-setbtn" data-afetch="presets">拉取预设</button></div></div>';
+    } else if (mode === 'custom') {
+      var key = '';
+      try { key = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
+      detail =
+        '<div class="lzw-setcol"><span class="lzw-setlbl">API 地址</span><div class="lzw-setrow2">' +
+        '<input class="lzw-settxt" data-atext="apiurl" value="' + esc(api.apiurl || '') + '" placeholder="https://…"></div></div>' +
+        '<div class="lzw-setcol"><span class="lzw-setlbl">密钥（仅本机浏览器保存）</span><div class="lzw-setrow2">' +
+        '<input class="lzw-settxt" data-akey="1" value="' + esc(key) + '" placeholder="sk-…"></div></div>' +
+        '<div class="lzw-setcol"><span class="lzw-setlbl">模型（先填地址与密钥）</span><div class="lzw-setrow2">' +
+        '<input class="lzw-settxt" data-atext="model" value="' + esc(api.model || '') + '" placeholder="模型名">' +
+        '<button class="lzw-setbtn" data-afetch="models">拉取模型</button></div></div>';
+    }
+    var pick = '';
+    if (UI._setpick && UI._setpick.items.length) {
+      pick = '<div class="lzw-setpick">' + UI._setpick.items.map(function (it) {
+        return '<span data-pick="' + esc(it) + '">' + esc(it) + '</span>';
+      }).join('') + '</div>';
+    }
+    var nums = [
+      ['plotFloors', '主线携带楼数'], ['plotCap', '每楼字数上限'],
+      ['histPriv', '私聊历史条数'], ['histGroup', '群聊历史条数'],
+      ['crossMax', '跨会话最多带几个'], ['crossLines', '每个跨会话带几条']
+    ].map(function (n) {
+      var r = SET_NRANGES[n[0]];
+      return '<div class="lzw-setrow"><div class="lzw-setmain"><div class="lzw-setname">' + n[1] + '</div>' +
+        '<div class="lzw-setdesc">' + r[0] + ' ~ ' + r[1] + '</div></div>' +
+        '<input class="lzw-setnum" data-num="' + n[0] + '" data-min="' + r[0] + '" data-max="' + r[1] + '" value="' + cfg[n[0]] + '" inputmode="numeric"></div>';
+    }).join('');
+    return '<div class="lzw-body"><div class="lzw-setwrap">' +
+      '<div class="lzw-setsec">生成 API</div><div class="lzw-setcard">' + rows + detail + '</div>' + pick +
+      '<div class="lzw-setsec">提示词携带（即时生效）</div><div class="lzw-setcard">' + nums + '</div>' +
+      '<div class="lzw-setnote">数值改动立即生效；API 改动作用于之后的每次手机生成。代理预设与携带量随聊天变量保存（明文、随卡走），自定义密钥只保存在本机浏览器。</div>' +
+      '</div></div>';
+  }
+
   function appbarHtml(screen, disp, act) {
     if (UI.call) return ''; // 通话界面：无顶栏（名字在通话屏里）
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
+    if (screen === 'settings') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">设置</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';

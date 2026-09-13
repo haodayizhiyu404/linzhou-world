@@ -162,6 +162,45 @@
       return readRoot().line || null;
     },
 
+    // ── 引擎设置（提示词携带量 / 生成 API）。明文存于聊天变量，随卡走。──
+    //    API 自定义模式的密钥是唯一例外：存 localStorage（仅本机浏览器，不随卡外流）。
+    //    cfg() = 设置项 + 默认值兜底，prompt.js / engine.js 共用。
+    DEFAULTS: {
+      plotFloors: 8,   // 手机提示词带几楼正文
+      plotCap: 900,    // 每楼正文上限字数
+      histPriv: 50,    // 私聊带回几条
+      histGroup: 50,   // 群聊带回几条
+      crossMax: 3,     // 跨会话最多带几个（对方在的群 / 成员当天私聊）
+      crossLines: 18   // 每个跨会话带几条
+    },
+
+    settings: function () {
+      var r = readRoot();
+      return r.settings || {};
+    },
+
+    setSettings: function (patch) {
+      var r = readRoot();
+      var s = r.settings || {};
+      for (var k in patch) {
+        if (patch[k] === undefined) delete s[k];
+        else s[k] = patch[k];
+      }
+      r.settings = s;
+      writeRoot(r);
+    },
+
+    // 读取数值设置：非正数/非数值一律落回默认，防止手滑写崩提示词
+    cfg: function () {
+      var out = {};
+      var d = this.DEFAULTS, s = this.settings();
+      for (var k in d) {
+        var v = Number(s[k]);
+        out[k] = (isFinite(v) && v > 0) ? Math.round(v) : d[k];
+      }
+      return out;
+    },
+
     setLine: function (name) {
       if (!name || name === this.line()) return;
       var r = readRoot();

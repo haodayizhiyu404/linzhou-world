@@ -30,9 +30,13 @@
   // 五个主条目名（与卡组世界书一致；长的优先匹配；古代线放最后，多重误开时现代线优先）
   var LINES = ['成人时代-破镜重圆', '成人时代-同路而行', '高中时代', '大学时代', '古代架空-华胥之梦'];
 
-  // 跨会话上下文携带条数（群→私聊 / 私聊→群，均限当天）
-  var CROSS_GROUP_TAIL = 20;
-  var CROSS_PRIVATE_TAIL = 15;
+  // 跨会话上下文携带条数与个数：曾经写死，现由设置 app 可调（Store.cfg()）
+  function crossLines() {
+    try { return window.LZWorld.Store.cfg().crossLines; } catch (e) { return 18; }
+  }
+  function crossMax() {
+    try { return window.LZWorld.Store.cfg().crossMax; } catch (e) { return 3; }
+  }
 
   // djb2 字符串哈希（主动消息防重键的一部分）
   function hashStr(s) {
@@ -174,7 +178,8 @@
         if ((g.members || []).indexOf(name) === -1) return;
         var h = W.Store.history('group:' + g.name);
         if (!h.length || h[h.length - 1].day !== dateText) return;
-        out.push({ name: g.name, hist: h.slice(-CROSS_GROUP_TAIL) });
+        if (out.length >= crossMax()) return;
+        out.push({ name: g.name, hist: h.slice(-crossLines()) });
       });
       return out;
     },
@@ -185,7 +190,8 @@
       (members || []).forEach(function (n) {
         var h = W.Store.history(n);
         if (!h.length || h[h.length - 1].day !== dateText) return;
-        out[n] = h.slice(-CROSS_PRIVATE_TAIL);
+        if (Object.keys(out).length >= crossMax()) return;
+        out[n] = h.slice(-crossLines());
       });
       return out;
     },
@@ -453,6 +459,30 @@
       else UI.remove();
     },
 
+    // ── 生成 API 配置（设置 app 可调，存 Store.settings().api）──
+    // mode: follow=跟随正文（默认） / model=正文同源只换模型 / preset=酒馆代理预设 / custom=自定义API
+    // 密钥唯一例外存 localStorage（仅本机浏览器，不随聊天变量/卡外流）
+    apiConfig: function () {
+      var a;
+      try { a = window.LZWorld.Store.settings().api || {}; } catch (e) { return undefined; }
+      if (!a.mode || a.mode === 'follow') return undefined;
+      if (a.mode === 'model') return a.model ? { model: a.model } : undefined;
+      if (a.mode === 'preset') return a.preset ? { proxy_preset: a.preset } : undefined;
+      if (a.mode === 'custom') {
+        if (!a.apiurl) return undefined;
+        var key = '';
+        try { key = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
+        return { apiurl: a.apiurl, key: key, model: a.model || '', source: a.source || 'openai' };
+      }
+      return undefined;
+    },
+
+    // 统一生成入口：按设置注入 custom_api 后调 generateRaw
+    gen: function (req) {
+      var a = this.apiConfig();
+      if (a) req = Object.assign({}, req, { custom_api: a });
+      return generateRaw(req);
+    },
     // ── 聊天压缩：某会话未折叠的条数超阈值时，把窗口外的旧消息折成提要 ──
     // 提要留在 Store 里，手机提示词用它接续话题；正文注入用 headline 一行近况。
     COMPRESS_AT: 60,      // 未折叠超过 60 条触发（窗口 50 + 10 条缓冲）
@@ -469,7 +499,7 @@
       var lines = fold.map(function (m) {
         return W.Floor.msgToLine(m, this.userName());
       }, this);
-      var raw = await generateRaw({
+      var raw = await this.gen({
         ordered_prompts: [
           { role: 'system', content: '把以下微信聊天记录折叠成不超过150字的中文提要。保留：约定/计划、冲突与误会、关系进展、未了的情绪；丢弃：寒暄、重复内容。只输出提要本身。' },
           { role: 'user', content: lines.join('\n') }
@@ -695,7 +725,7 @@
         try { myNote = this.myMomentsNote(snap); } catch (e) { myNote = ''; }
         var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo,
           this.crossGroups(c.name, snap && snap.dateText), callLog, momentsNote, myNote);
-        raw = await generateRaw(req);
+        raw = await this.gen(req);
         title = '与' + c.name + '的私聊';
       } else {
         var gname = chatKey.replace(/^group:/, '');
@@ -712,7 +742,7 @@
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
         var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest, userInfo,
           this.crossPrivates(g.members, snap2 && snap2.dateText));
-        raw = await generateRaw(req2);
+        raw = await this.gen(req2);
         title = g.name + ' 群聊';
         parseGroup = true;
       }
@@ -934,7 +964,7 @@
       if (!picks.length) return false;
       var people = picks.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
       var req = W.Prompt.momentsFill(people, snap, this.userBlock());
-      var raw = await generateRaw(req);
+      var raw = await this.gen(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var posts = this.parseMoments(text);
       if (!posts.length) throw new Error('朋友圈生成结果为空');
@@ -992,7 +1022,7 @@
         var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
         var people = involved.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
         var req = W.Prompt.momentsReply({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, comments, userSays, people, snap, this.userBlock());
-        var raw = await generateRaw(req);
+        var raw = await this.gen(req);
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         replies = this.parseMomentsReplies(text);
       } catch (e) { console.warn('[霖州引擎] 朋友圈接话生成失败', e); }
@@ -1135,7 +1165,7 @@
       try {
         var people = pool.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
         var req = W.Prompt.momentsReact({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, people, snap, this.userBlock(), recentPriv, recentGrp);
-        var raw = await generateRaw(req);
+        var raw = await this.gen(req);
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         var parsed = this.parseMomentReacts(text, myName);
         likes = parsed.likes; comments = parsed.comments;
@@ -1201,7 +1231,7 @@
       var userInfo = this.userBlock();
       var req = W.Prompt.callInvite({ name: c.name, profile: profile }, W.Store.history(name).slice(-30), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText));
-      var raw = await generateRaw(req);
+      var raw = await this.gen(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       return text.trim();
     },
@@ -1252,7 +1282,7 @@
       var lines = tail.map(function (m2) { return W.Floor.msgToLine(m2, this.userName()); }, this);
       var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), W.Store.history(name).slice(-20), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText), userSays || '');
-      var raw = await generateRaw(req);
+      var raw = await this.gen(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       // 剥注释块防污染（极端情况：AI 在通话里输出主动块）
       text = text.replace(/<!--" + BS + "s*phone" + BS + "s*([" + BS + "s" + BS + "S]*?)-->/gi, '');

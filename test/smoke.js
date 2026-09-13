@@ -588,6 +588,43 @@ ctx.getWorldbook = async () => [
   // sys 条目：msgToLine 不带人名前缀（跨场景携带里就是干净的「语音通话 · 03:24」）
   eq('通话·sys行格式', LW.Floor.msgToLine({ who: 'sys', kind: 'sys', text: '语音通话 · 03:24' }, '裴知意'), '语音通话 · 03:24');
   eq('通话·callKey', LW.Engine.callKey('沈锡元'), 'call:沈锡元');
+
+  // ── 8. 设置项：cfg 默认值 / 覆写 / 非法回退 / apiConfig 四模式 ──
+  console.log('[设置项]');
+  LW.Store.setSettings({ plotFloors: 3, histPriv: 20, crossMax: 2, crossLines: 9 });
+  const c1 = LW.Store.cfg();
+  eq('cfg·覆写生效', [c1.plotFloors, c1.histPriv, c1.crossMax, c1.crossLines], [3, 20, 2, 9]);
+  eq('cfg·未动项取默认', c1.plotCap, 900);
+  LW.Store.setSettings({ plotFloors: -5, histPriv: 'abc' });
+  const c2 = LW.Store.cfg();
+  eq('cfg·非法值回退默认', [c2.plotFloors, c2.histPriv], [8, 50]);
+  LW.Store.setSettings({ plotFloors: 3 });
+  // 提示词跟随设置：主线楼数 3 → 只带 3 楼
+  global.__msgs = [
+    { role: 'user', message: '一楼正文' }, { role: 'assistant', message: '二楼正文' },
+    { role: 'user', message: '三楼正文' }, { role: 'assistant', message: '四楼正文' },
+  ];
+  const preq = LW.Prompt.private({ name: '周言', profile: '班长' }, [], null, [], [], '', '机主资料', [], null, '', '');
+  const ptxt = preq.ordered_prompts[0].content;
+  eq('设置·主线只带3楼', ptxt.indexOf('一楼正文') === -1 && ptxt.indexOf('二楼正文') !== -1 && ptxt.indexOf('四楼正文') !== -1, true);
+  LW.Store.setSettings({ plotFloors: undefined, histPriv: undefined, crossMax: undefined, crossLines: undefined });
+  eq('cfg·清空后回默认', LW.Store.cfg().plotFloors, 8);
+  // apiConfig 四模式
+  const lsStore = {};
+  ctx.localStorage = { getItem: (k) => lsStore[k] || null, setItem: (k, v) => { lsStore[k] = v; } };
+  eq('api·默认跟随', LW.Engine.apiConfig(), undefined);
+  LW.Store.setSettings({ api: { mode: 'model', model: 'gemini-3.1' } });
+  eq('api·只换模型', LW.Engine.apiConfig(), { model: 'gemini-3.1' });
+  LW.Store.setSettings({ api: { mode: 'preset', preset: 'MyProxy' } });
+  eq('api·代理预设', LW.Engine.apiConfig(), { proxy_preset: 'MyProxy' });
+  ctx.localStorage.setItem('lzworld_phone_apikey', 'sk-test');
+  LW.Store.setSettings({ api: { mode: 'custom', apiurl: 'https://x.dev', model: 'm1' } });
+  eq('api·自定义带本机密钥', LW.Engine.apiConfig(), { apiurl: 'https://x.dev', key: 'sk-test', model: 'm1', source: 'openai' });
+  LW.Store.setSettings({ api: { mode: 'custom', apiurl: '' } });
+  eq('api·自定义缺地址回退跟随', LW.Engine.apiConfig(), undefined);
+  LW.Store.setSettings({ api: undefined });
+  eq('api·清空回跟随', LW.Engine.apiConfig(), undefined);
+  global.__msgs = null;
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
   process.exit(fail ? 1 : 0);

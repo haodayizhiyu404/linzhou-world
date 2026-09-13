@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T13:16:25.472Z
+//  构建时间：2026-09-13T13:49:56.483Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 13:16';
+var __LZW_BUILD__ = '2026-09-13 13:49';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -169,6 +169,45 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
     line: function () {
       return readRoot().line || null;
+    },
+
+    // ── 引擎设置（提示词携带量 / 生成 API）。明文存于聊天变量，随卡走。──
+    //    API 自定义模式的密钥是唯一例外：存 localStorage（仅本机浏览器，不随卡外流）。
+    //    cfg() = 设置项 + 默认值兜底，prompt.js / engine.js 共用。
+    DEFAULTS: {
+      plotFloors: 8,   // 手机提示词带几楼正文
+      plotCap: 900,    // 每楼正文上限字数
+      histPriv: 50,    // 私聊带回几条
+      histGroup: 50,   // 群聊带回几条
+      crossMax: 3,     // 跨会话最多带几个（对方在的群 / 成员当天私聊）
+      crossLines: 18   // 每个跨会话带几条
+    },
+
+    settings: function () {
+      var r = readRoot();
+      return r.settings || {};
+    },
+
+    setSettings: function (patch) {
+      var r = readRoot();
+      var s = r.settings || {};
+      for (var k in patch) {
+        if (patch[k] === undefined) delete s[k];
+        else s[k] = patch[k];
+      }
+      r.settings = s;
+      writeRoot(r);
+    },
+
+    // 读取数值设置：非正数/非数值一律落回默认，防止手滑写崩提示词
+    cfg: function () {
+      var out = {};
+      var d = this.DEFAULTS, s = this.settings();
+      for (var k in d) {
+        var v = Number(s[k]);
+        out[k] = (isFinite(v) && v > 0) ? Math.round(v) : d[k];
+      }
+      return out;
     },
 
     setLine: function (name) {
@@ -669,10 +708,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 (function () {
   'use strict';
 
-  var PLOT_FLOORS = 8;     // 主线带几楼
-  var PLOT_CAP = 900;      // 每楼正文上限（验尸结论：低于此 ≈ 失明）
-  var HIST_PRIVATE = 50;   // 私聊带回几条（短聊天内容很少，50 条也才角色卡资料的零头）
-  var HIST_GROUP = 50;     // 群聊带回几条
+  // 携带量配置：曾经写死的常量，现由设置 app 可调（Store.cfg()，默认值在 store.js）
+  function cfg() {
+    try { return window.LZWorld.Store.cfg(); } catch (e) {}
+    return { plotFloors: 8, plotCap: 900, histPriv: 50, histGroup: 50, crossMax: 3, crossLines: 18 };
+  }
 
   // ── persona 真名。generateRaw 不做宏替换，{{user}} 会原文进提示词，
   //    所以这里自己解析（与 engine.js userName() 同一套回退）。──
@@ -703,7 +743,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     try {
       var msgs = getChatMessages('0-{{lastMessageId}}');
       if (!msgs || !msgs.length) return '';
-      return msgs.slice(-PLOT_FLOORS).map(function (m) {
+      return msgs.slice(-cfg().plotFloors).map(function (m) {
         var t = String((m && m.message) || '')
           // 状态栏是机器可读的元数据（时间/着装/心声等），已由「当前情境」按需引用，
           // 这里整段剔除——只剥标签会留下无主的「着装：…」碎片，严重干扰模型
@@ -722,10 +762,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           .replace(/\n{2,}/g, '\n')
           .trim();
         // 截断尽量落在行边界，避免半句话/半个词糊在切口上
-        if (t.length > PLOT_CAP) {
-          var cut = t.lastIndexOf('\n', PLOT_CAP);
-          if (cut < PLOT_CAP * 0.5) cut = t.lastIndexOf('。', PLOT_CAP);
-          if (cut < PLOT_CAP * 0.5) cut = PLOT_CAP;
+        if (t.length > cfg().plotCap) {
+          var cut = t.lastIndexOf('\n', cfg().plotCap);
+          if (cut < cfg().plotCap * 0.5) cut = t.lastIndexOf('。', cfg().plotCap);
+          if (cut < cfg().plotCap * 0.5) cut = cfg().plotCap;
           t = t.substring(0, cut) + '……（此楼后续从略）';
         }
         return (m.role === 'user' ? me() : '旁白') + '：' + t;
@@ -880,7 +920,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '## 聊天记录 · 与' + myName + '的微信对话',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_PRIVATE, true, snapshot && snapshot.dateText),
+        histText(hist, cfg().histPriv, true, snapshot && snapshot.dateText),
         '',
         callLog
           ? '## 今日通话（' + callLog.kind + ' · ' + callLog.dur + ' · 双方已说的话' + (callLog.video ? '与画面' : '') + '）\n' +
@@ -895,7 +935,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           : '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场，可自由承接其中的话题、情绪与玩笑）\n' + crossGroups.map(function (g) {
-              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, cfg().crossLines, true, snapshot && snapshot.dateText);
             }).join('\n\n')
           : '',
         '',
@@ -967,7 +1007,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场）\n' + crossGroups.map(function (g) {
-              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, cfg().crossLines, true, snapshot && snapshot.dateText);
             }).join('\n\n')
           : '',
         '',
@@ -1028,7 +1068,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '',
         (crossGroups && crossGroups.length)
           ? '## 相关群聊近况（下列记录中对方本人均在场，可自然提及）\n' + crossGroups.map(function (g) {
-              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, 20, true, snapshot && snapshot.dateText);
+              return '群「' + g.name + '」今日的记录：\n' + histText(g.hist, cfg().crossLines, true, snapshot && snapshot.dateText);
             }).join('\n\n')
           : '',
         '',
@@ -1216,7 +1256,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var priv = crossPriv && crossPriv[m.name];
         if (priv && priv.length) {
           brief += '\n※ 仅 ' + m.name + ' 本人知晓：机主今日与 ' + m.name + ' 的私聊——\n'
-            + histText(priv, 15, true, snapshot && snapshot.dateText);
+            + histText(priv, cfg().crossLines, true, snapshot && snapshot.dateText);
         }
         return '- ' + m.name + '：\n' + brief;
       });
@@ -1247,7 +1287,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '## 聊天记录 · 群「' + group.name + '」',
         '（优先承接这里的话题与语气；' + myName + '本轮发来的最新消息在末尾单独给出）',
         digest ? '（更早的记录已折叠为提要，供接续话题与承诺用：' + digest + '）' : '',
-        histText(hist, HIST_GROUP, true, snapshot && snapshot.dateText),
+        histText(hist, cfg().histGroup, true, snapshot && snapshot.dateText),
         '',
         consistencyRules('每名成员各自')
           + '\n- 输出多行时，每行开头必须是「成员名：」，由各自独立判断自己是否知情。'
@@ -1986,6 +2026,25 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-tab svg{width:22px;height:22px}',
     '.lzw-tabdot{position:absolute;top:2px;left:calc(50% + 8px);min-width:15px;height:15px;border-radius:8px;background:#e5484d;color:#fff;font-size:9.5px;line-height:15px;text-align:center;padding:0 4px}',
     '.lzw-disc-row{position:relative;display:flex;align-items:center;gap:11px;padding:12px;background:#fff;cursor:pointer}',
+    '.lzw-setwrap{padding:12px 12px 24px}',
+    '.lzw-setsec{margin:16px 6px 8px;font-size:12px;color:#8a8f99}',
+    '.lzw-setcard{background:#fff;border-radius:10px;overflow:hidden}',
+    '.lzw-setrow{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer}',
+    '.lzw-setrow:last-child{border-bottom:none}',
+    '.lzw-setmain{flex:1;min-width:0}',
+    '.lzw-setname{font-size:14px;color:#1a1d21}',
+    '.lzw-setdesc{font-size:11px;color:#9aa0a8;margin-top:2px}',
+    '.lzw-setck{width:20px;height:20px;flex:none;color:#22c05e;visibility:hidden}',
+    '.lzw-setrow.on .lzw-setck{visibility:visible}',
+    '.lzw-setcol{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-bottom:1px solid rgba(0,0,0,.05)}',
+    '.lzw-setlbl{font-size:12px;color:#8a8f99}',
+    '.lzw-setrow2{display:flex;align-items:center;gap:8px}',
+    '.lzw-setnum{width:58px;padding:5px 6px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:13px;text-align:right;color:#1a1d21;background:#fafafa;outline:none}',
+    '.lzw-settxt{flex:1;min-width:0;padding:7px 8px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:12px;color:#1a1d21;background:#fafafa;outline:none}',
+    '.lzw-setbtn{flex:none;padding:6px 10px;border:none;border-radius:6px;background:#22c05e;color:#fff;font-size:12px;cursor:pointer}',
+    '.lzw-setpick{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px}',
+    '.lzw-setpick span{padding:4px 9px;background:#f0f1f3;border-radius:20px;font-size:12px;color:#1a1d21;cursor:pointer}',
+    '.lzw-setnote{margin:16px 8px 0;font-size:11px;color:#b0b5bc;line-height:1.7}',
     '.lzw-disc-ico{width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center}',
     '.lzw-disc-ico svg{width:30px;height:30px}',
     '.lzw-disc-main{flex:1;min-width:0}',
@@ -2080,6 +2139,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // 主屏微信图标（绿色圆角块 + 白色对话泡）
   var ICON_POWEROFF = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.5a8 8 0 1 0 11.4 0"/></svg>';
   // 底栏两个 tab：对话 / 发现（指南针）
+  var ICON_GEAR = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2.1" fill="#fff" stroke="none"/><circle cx="9" cy="12" r="2.1" fill="#fff" stroke="none"/><circle cx="17" cy="17" r="2.1" fill="#fff" stroke="none"/></svg>';
   var ICON_TAB_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.34-4.1-1L3 20l1.1-4.9A8.5 8.5 0 1 1 21 11.5z"/></svg>';
   var ICON_TAB_DISC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/></svg>';
   var ICON_TAB_CONT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 4.2a3.3 3.3 0 1 1 0 6.6 3.3 3.3 0 0 1 0-6.6z"/><path d="M3.8 19.4c.5-2.9 2.8-4.6 5.8-4.6s5.3 1.7 5.8 4.6"/><path d="M15.6 5.2a3 3 0 0 1 0 5.6M17.4 14.9c1.9.5 3.3 1.9 3.7 3.9"/></svg>';
@@ -2490,10 +2550,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           '<div class="lzw-homegrid">' +
           '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none;position:relative">' + ICON_WECHAT +
           (totalUn ? '<span class="lzw-appdot">' + (totalUn > 99 ? '99+' : totalUn) + '</span>' : '') + '</div><span>微信</span></div>' +
-          '<div class="lzw-app" style="opacity:.55"><div class="lzw-app-ico">🧩</div><span>敬请期待</span></div>' +
+          '<div class="lzw-app" data-app="settings"><div class="lzw-app-ico" style="background:#8e97a8;border:none;color:#fff">' + ICON_GEAR + '</div><span>设置</span></div>' +
           '<div class="lzw-app" data-app="close" title="收起手机"><div class="lzw-app-ico" style="background:#e5484d;border:none;color:#fff">' + ICON_POWEROFF + '</div><span>关闭</span></div>' +
           '</div></div></div>';
 
+      } else if (this.screen === 'settings') {
+        body = settingsHtml();
       } else if (this.screen === 'list') {
         var sec = eng.section();
         var rowsHtml = '';
@@ -2784,9 +2846,73 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       });
       // 主屏「关闭」app：收起手机。保险——小屏上弹窗可能盖住酒馆页的 QR 开关，
       // 万一被挡死，手机上永远有第二条路可以关掉自己
-      ph.querySelectorAll('[data-app="close"]').forEach(function (el) {
-        el.onclick = function () { UI.toggle(); };
+/      ph\.querySelectorAll\('\[data-app="close"\]'\)\.forEach\(function \(el\) \{\r?\n        el\.onclick = function \(\) \{ UI\.toggle\(\); \};\r?\n      \}\);/
+
+      // 设置 app：模式单选 / 数值与文本即时保存 / 拉取模型与预设列表 / 点选回填
+      ph.querySelectorAll('[data-app="settings"]').forEach(function (el) {
+        el.onclick = function () { UI.screen = 'settings'; UI._setpick = null; UI.render(); };
       });
+      if (UI.screen === 'settings') {
+        var saveApi = function (patch) {
+          var api0 = {};
+          try { api0 = window.LZWorld.Store.settings().api || {}; } catch (e) {}
+          for (var k in patch) api0[k] = patch[k];
+          window.LZWorld.Store.setSettings({ api: api0 });
+        };
+        ph.querySelectorAll('[data-amode]').forEach(function (el) {
+          el.onclick = function () {
+            saveApi({ mode: el.dataset.amode });
+            UI._setpick = null;
+            UI.render();
+          };
+        });
+        ph.querySelectorAll('[data-num]').forEach(function (el) {
+          el.onchange = function () {
+            var lo = +el.dataset.min, hi = +el.dataset.max;
+            var v = Math.round(Number(el.value));
+            if (!isFinite(v)) v = window.LZWorld.Store.DEFAULTS[el.dataset.num];
+            el.value = Math.min(hi, Math.max(lo, v));
+            var patch = {}; patch[el.dataset.num] = +el.value;
+            window.LZWorld.Store.setSettings(patch);
+          };
+        });
+        ph.querySelectorAll('[data-atext]').forEach(function (el) {
+          el.onchange = function () { saveApi(el.dataset.atext === 'preset' ? { preset: el.value } : { [el.dataset.atext]: el.value }); };
+        });
+        ph.querySelectorAll('[data-akey]').forEach(function (el) {
+          el.onchange = function () {
+            try { localStorage.setItem('lzworld_phone_apikey', el.value); } catch (e) {}
+          };
+        });
+        ph.querySelectorAll('[data-afetch]').forEach(function (el) {
+          el.onclick = async function () {
+            try {
+              if (el.dataset.afetch === 'presets') {
+                UI._setpick = { field: 'preset', items: getProxyPresetNames() || [] };
+              } else {
+                var api1 = {};
+                try { api1 = window.LZWorld.Store.settings().api || {}; } catch (e) {}
+                var key1 = '';
+                try { key1 = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
+                var list = await getModelList({ apiurl: api1.apiurl || '', key: key1 });
+                UI._setpick = { field: 'model', items: list || [] };
+              }
+            } catch (e) {
+              UI._setpick = { field: null, items: ['（拉取失败：' + String(e && e.message || e) + '）'] };
+            }
+            UI.render();
+          };
+        });
+        ph.querySelectorAll('[data-pick]').forEach(function (el) {
+          el.onclick = function () {
+            var patch = {};
+            patch[(UI._setpick && UI._setpick.field) || 'model'] = el.dataset.pick;
+            saveApi(patch);
+            UI._setpick = null;
+            UI.render();
+          };
+        });
+      }
       ph.querySelectorAll('.lzw-back').forEach(function (el) {
         el.onclick = function () {
           // mprofile 的返回看来源：详细资料进来回详细资料，朋友圈进来回朋友圈
@@ -3543,9 +3669,72 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     onScroll();
   }
 
+  // 设置屏：生成 API（跟随正文/只换模型/代理预设/自定义）+ 提示词携带量。全部即时保存。
+  var SET_NRANGES = { plotFloors: [1, 20], plotCap: [100, 2000], histPriv: [10, 100], histGroup: [10, 100], crossMax: [1, 6], crossLines: [5, 50] };
+  function settingsHtml() {
+    var W = window.LZWorld;
+    var cfg = W.Store.cfg();
+    var api = {};
+    try { api = W.Store.settings().api || {}; } catch (e) {}
+    var mode = api.mode || 'follow';
+    var modes = [
+      ['follow', '跟随正文', '手机与正文用同一条 API 线'],
+      ['model', '只换模型', '正文同源，手机单独指定模型'],
+      ['preset', '代理预设', '用酒馆里配好的代理预设，密钥由酒馆保管'],
+      ['custom', '自定义 API', '自填地址与密钥，密钥只存本机浏览器']
+    ];
+    var rows = modes.map(function (m) {
+      return '<div class="lzw-setrow' + (mode === m[0] ? ' on' : '') + '" data-amode="' + m[0] + '">' +
+        '<div class="lzw-setmain"><div class="lzw-setname">' + m[1] + '</div><div class="lzw-setdesc">' + m[2] + '</div></div>' +
+        '<span class="lzw-setck">' + ICON_TOK + '</span></div>';
+    }).join('');
+    var detail = '';
+    if (mode === 'model') {
+      detail = '<div class="lzw-setcol"><span class="lzw-setlbl">模型名</span><div class="lzw-setrow2">' +
+        '<input class="lzw-settxt" data-atext="model" value="' + esc(api.model || '') + '" placeholder="如 gemini-3.1-flash"></div></div>';
+    } else if (mode === 'preset') {
+      detail = '<div class="lzw-setcol"><span class="lzw-setlbl">预设名（与酒馆代理预设完全一致）</span><div class="lzw-setrow2">' +
+        '<input class="lzw-settxt" data-atext="preset" value="' + esc(api.preset || '') + '" placeholder="如 MyProxy">' +
+        '<button class="lzw-setbtn" data-afetch="presets">拉取预设</button></div></div>';
+    } else if (mode === 'custom') {
+      var key = '';
+      try { key = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
+      detail =
+        '<div class="lzw-setcol"><span class="lzw-setlbl">API 地址</span><div class="lzw-setrow2">' +
+        '<input class="lzw-settxt" data-atext="apiurl" value="' + esc(api.apiurl || '') + '" placeholder="https://…"></div></div>' +
+        '<div class="lzw-setcol"><span class="lzw-setlbl">密钥（仅本机浏览器保存）</span><div class="lzw-setrow2">' +
+        '<input class="lzw-settxt" data-akey="1" value="' + esc(key) + '" placeholder="sk-…"></div></div>' +
+        '<div class="lzw-setcol"><span class="lzw-setlbl">模型（先填地址与密钥）</span><div class="lzw-setrow2">' +
+        '<input class="lzw-settxt" data-atext="model" value="' + esc(api.model || '') + '" placeholder="模型名">' +
+        '<button class="lzw-setbtn" data-afetch="models">拉取模型</button></div></div>';
+    }
+    var pick = '';
+    if (UI._setpick && UI._setpick.items.length) {
+      pick = '<div class="lzw-setpick">' + UI._setpick.items.map(function (it) {
+        return '<span data-pick="' + esc(it) + '">' + esc(it) + '</span>';
+      }).join('') + '</div>';
+    }
+    var nums = [
+      ['plotFloors', '主线携带楼数'], ['plotCap', '每楼字数上限'],
+      ['histPriv', '私聊历史条数'], ['histGroup', '群聊历史条数'],
+      ['crossMax', '跨会话最多带几个'], ['crossLines', '每个跨会话带几条']
+    ].map(function (n) {
+      var r = SET_NRANGES[n[0]];
+      return '<div class="lzw-setrow"><div class="lzw-setmain"><div class="lzw-setname">' + n[1] + '</div>' +
+        '<div class="lzw-setdesc">' + r[0] + ' ~ ' + r[1] + '</div></div>' +
+        '<input class="lzw-setnum" data-num="' + n[0] + '" data-min="' + r[0] + '" data-max="' + r[1] + '" value="' + cfg[n[0]] + '" inputmode="numeric"></div>';
+    }).join('');
+    return '<div class="lzw-body"><div class="lzw-setwrap">' +
+      '<div class="lzw-setsec">生成 API</div><div class="lzw-setcard">' + rows + detail + '</div>' + pick +
+      '<div class="lzw-setsec">提示词携带（即时生效）</div><div class="lzw-setcard">' + nums + '</div>' +
+      '<div class="lzw-setnote">数值改动立即生效；API 改动作用于之后的每次手机生成。代理预设与携带量随聊天变量保存（明文、随卡走），自定义密钥只保存在本机浏览器。</div>' +
+      '</div></div>';
+  }
+
   function appbarHtml(screen, disp, act) {
     if (UI.call) return ''; // 通话界面：无顶栏（名字在通话屏里）
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
+    if (screen === 'settings') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">设置</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
@@ -3733,9 +3922,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // 五个主条目名（与卡组世界书一致；长的优先匹配；古代线放最后，多重误开时现代线优先）
   var LINES = ['成人时代-破镜重圆', '成人时代-同路而行', '高中时代', '大学时代', '古代架空-华胥之梦'];
 
-  // 跨会话上下文携带条数（群→私聊 / 私聊→群，均限当天）
-  var CROSS_GROUP_TAIL = 20;
-  var CROSS_PRIVATE_TAIL = 15;
+  // 跨会话上下文携带条数与个数：曾经写死，现由设置 app 可调（Store.cfg()）
+  function crossLines() {
+    try { return window.LZWorld.Store.cfg().crossLines; } catch (e) { return 18; }
+  }
+  function crossMax() {
+    try { return window.LZWorld.Store.cfg().crossMax; } catch (e) { return 3; }
+  }
 
   // djb2 字符串哈希（主动消息防重键的一部分）
   function hashStr(s) {
@@ -3877,7 +4070,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         if ((g.members || []).indexOf(name) === -1) return;
         var h = W.Store.history('group:' + g.name);
         if (!h.length || h[h.length - 1].day !== dateText) return;
-        out.push({ name: g.name, hist: h.slice(-CROSS_GROUP_TAIL) });
+        if (out.length >= crossMax()) return;
+        out.push({ name: g.name, hist: h.slice(-crossLines()) });
       });
       return out;
     },
@@ -3888,7 +4082,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       (members || []).forEach(function (n) {
         var h = W.Store.history(n);
         if (!h.length || h[h.length - 1].day !== dateText) return;
-        out[n] = h.slice(-CROSS_PRIVATE_TAIL);
+        if (Object.keys(out).length >= crossMax()) return;
+        out[n] = h.slice(-crossLines());
       });
       return out;
     },
@@ -4156,6 +4351,30 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       else UI.remove();
     },
 
+    // ── 生成 API 配置（设置 app 可调，存 Store.settings().api）──
+    // mode: follow=跟随正文（默认） / model=正文同源只换模型 / preset=酒馆代理预设 / custom=自定义API
+    // 密钥唯一例外存 localStorage（仅本机浏览器，不随聊天变量/卡外流）
+    apiConfig: function () {
+      var a;
+      try { a = window.LZWorld.Store.settings().api || {}; } catch (e) { return undefined; }
+      if (!a.mode || a.mode === 'follow') return undefined;
+      if (a.mode === 'model') return a.model ? { model: a.model } : undefined;
+      if (a.mode === 'preset') return a.preset ? { proxy_preset: a.preset } : undefined;
+      if (a.mode === 'custom') {
+        if (!a.apiurl) return undefined;
+        var key = '';
+        try { key = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
+        return { apiurl: a.apiurl, key: key, model: a.model || '', source: a.source || 'openai' };
+      }
+      return undefined;
+    },
+
+    // 统一生成入口：按设置注入 custom_api 后调 generateRaw
+    gen: function (req) {
+      var a = this.apiConfig();
+      if (a) req = Object.assign({}, req, { custom_api: a });
+      return generateRaw(req);
+    },
     // ── 聊天压缩：某会话未折叠的条数超阈值时，把窗口外的旧消息折成提要 ──
     // 提要留在 Store 里，手机提示词用它接续话题；正文注入用 headline 一行近况。
     COMPRESS_AT: 60,      // 未折叠超过 60 条触发（窗口 50 + 10 条缓冲）
@@ -4172,7 +4391,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var lines = fold.map(function (m) {
         return W.Floor.msgToLine(m, this.userName());
       }, this);
-      var raw = await generateRaw({
+      var raw = await this.gen({
         ordered_prompts: [
           { role: 'system', content: '把以下微信聊天记录折叠成不超过150字的中文提要。保留：约定/计划、冲突与误会、关系进展、未了的情绪；丢弃：寒暄、重复内容。只输出提要本身。' },
           { role: 'user', content: lines.join('\n') }
@@ -4398,7 +4617,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         try { myNote = this.myMomentsNote(snap); } catch (e) { myNote = ''; }
         var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo,
           this.crossGroups(c.name, snap && snap.dateText), callLog, momentsNote, myNote);
-        raw = await generateRaw(req);
+        raw = await this.gen(req);
         title = '与' + c.name + '的私聊';
       } else {
         var gname = chatKey.replace(/^group:/, '');
@@ -4415,7 +4634,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
         var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest, userInfo,
           this.crossPrivates(g.members, snap2 && snap2.dateText));
-        raw = await generateRaw(req2);
+        raw = await this.gen(req2);
         title = g.name + ' 群聊';
         parseGroup = true;
       }
@@ -4637,7 +4856,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!picks.length) return false;
       var people = picks.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
       var req = W.Prompt.momentsFill(people, snap, this.userBlock());
-      var raw = await generateRaw(req);
+      var raw = await this.gen(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var posts = this.parseMoments(text);
       if (!posts.length) throw new Error('朋友圈生成结果为空');
@@ -4695,7 +4914,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
         var people = involved.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
         var req = W.Prompt.momentsReply({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, comments, userSays, people, snap, this.userBlock());
-        var raw = await generateRaw(req);
+        var raw = await this.gen(req);
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         replies = this.parseMomentsReplies(text);
       } catch (e) { console.warn('[霖州引擎] 朋友圈接话生成失败', e); }
@@ -4838,7 +5057,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       try {
         var people = pool.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
         var req = W.Prompt.momentsReact({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, people, snap, this.userBlock(), recentPriv, recentGrp);
-        var raw = await generateRaw(req);
+        var raw = await this.gen(req);
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         var parsed = this.parseMomentReacts(text, myName);
         likes = parsed.likes; comments = parsed.comments;
@@ -4904,7 +5123,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var userInfo = this.userBlock();
       var req = W.Prompt.callInvite({ name: c.name, profile: profile }, W.Store.history(name).slice(-30), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText));
-      var raw = await generateRaw(req);
+      var raw = await this.gen(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       return text.trim();
     },
@@ -4955,7 +5174,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var lines = tail.map(function (m2) { return W.Floor.msgToLine(m2, this.userName()); }, this);
       var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), W.Store.history(name).slice(-20), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText), userSays || '');
-      var raw = await generateRaw(req);
+      var raw = await this.gen(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       // 剥注释块防污染（极端情况：AI 在通话里输出主动块）
       text = text.replace(/<!--" + BS + "s*phone" + BS + "s*([" + BS + "s" + BS + "S]*?)-->/gi, '');
