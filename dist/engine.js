@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T11:39:00.356Z
+//  构建时间：2026-09-13T12:00:11.024Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 11:39';
+var __LZW_BUILD__ = '2026-09-13 12:00';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1800,8 +1800,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-tbadge{width:22px;height:22px;border-radius:50%;background:#fff;color:#f1972d;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}',
     '.lzw-tcard.back .lzw-tbadge{color:#b0b4bb}',
     '.lzw-tto{margin-left:auto;font-size:11px;font-weight:400;color:rgba(255,255,255,.9);white-space:nowrap}',
-    '.lzw-tnote2{padding:0 13px;min-height:16px;font-size:11.5px;color:rgba(255,255,255,.92);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.lzw-tst{padding:0 13px 11px;font-size:11.5px;color:rgba(255,255,255,.95)}',
+    '.lzw-tnote2{padding:1px 13px 0;min-height:18px;font-size:12.5px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.lzw-tst{padding:2px 13px 11px;font-size:10.5px;letter-spacing:1px;color:rgba(255,255,255,.72)}',
     '.lzw-tto-line{font-size:12.5px;color:#111;padding:2px 2px 0}',
     '.lzw-tto-line b{color:#57606a;font-weight:600}',
     '.lzw-ttohd{font-size:12px;color:#8a8f99;padding:4px 2px 6px}',
