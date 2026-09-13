@@ -218,8 +218,8 @@
     '.lzw-scrim{position:absolute;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;z-index:50}',
     '.lzw-confirm{background:#fff;border-radius:14px;padding:20px 20px 14px;width:216px;text-align:center;font-size:14px;color:#111;box-shadow:0 8px 30px rgba(0,0,0,.25)}',
     '.lzw-tdlnote{font-size:11px;color:#8a8f99;margin-top:5px}',
-    '.lzw-cbtns{display:flex;gap:10px;margin-top:15px}',
-    '.lzw-cbtn{flex:1;border:none;border-radius:9px;padding:9px 0;font-size:14px;cursor:pointer}',
+    '.lzw-cbtns{display:flex;gap:8px;margin-top:13px}',
+    '.lzw-cbtn{flex:1;border:none;border-radius:8px;padding:6px 0;font-size:14px;cursor:pointer}',
     '.lzw-cbtn.no{background:#f2f3f5;color:#333}',
     '.lzw-cbtn.yes{background:#e64b4b;color:#fff}',
     // 输入区（底部整体：面板叠加在输入条上方，不挤压聊天内容）
@@ -1071,7 +1071,7 @@
             (tcm.note ? '<div class="lzw-tdlnote">' + esc(tcm.note) + '</div>' : '') +
             '<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="taccno">取消</button>' +
             '<button class="lzw-cbtn no" data-cact="tdecl">拒绝</button>' +
-            '<button class="lzw-cbtn yes" data-cact="taccok">收下转账</button></div></div></div>';
+            '<button class="lzw-cbtn yes" data-cact="taccok">收下</button></div></div></div>';
         })() : '') +
         '</div></div>';
 

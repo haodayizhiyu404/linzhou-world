@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T10:32:49.597Z
+//  构建时间：2026-09-13T10:45:07.578Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 10:32';
+var __LZW_BUILD__ = '2026-09-13 10:45';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1534,7 +1534,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         }
         // 行内嵌的类型消息（如「真的只是搬家太忙？[表情:有什么八卦让我听听]」）：
         // 依原序拆成多条发送——[表情:x] 匹配到素材走表情、没匹配剥壳当纯文字；
-        // [戳一戳] 不带参数也能嵌在行里；其余文字段照常过寒暄/旁白/截断过滤
+        // [戳一戳] 不带参数也能嵌在行里；其余文字段照常过旁白/截断过滤
         var segRe = /\[(表情|语音|图片|定位|转账)(?::|\||｜)([^\]]*)\]|\[(戳一戳)\]/g;
         var segs = [], lastIdx = 0, sm;
         while ((sm = segRe.exec(body)) !== null) {
@@ -1549,7 +1549,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             if (sg.k === 'text') {
               var t = sg.v.trim();
               if (!t) return;
-              if (/^(好的[，。！]?|收到|明白了|当然)/.test(t) && t.length < 8) return;
               if (/^[（(][^）)]{1,28}[）)]$/.test(t)) return;
               if (t.length > 120) t = t.slice(0, 120);
               out.push({ who: who, kind: 'text', text: t, time: '' });
@@ -1569,8 +1568,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           });
           return;
         }
-        // 普通文字行；寒暄废话与纯括号旁白丢弃
-        if (/^(好的[，。！]?|收到|明白了|当然)/.test(body) && body.length < 8) return;
+        // 普通文字行；整行纯括号旁白丢弃（寒暄短句照常保留——完整呈现 AI 回复，出问题时便于诊断）
         if (/^[（(][^）)]{1,28}[）)]$/.test(body)) return;
         if (body.length > 120) body = body.slice(0, 120);
         out.push({ who: who, kind: 'text', text: body, time: '' });
@@ -1805,8 +1803,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-scrim{position:absolute;inset:0;background:rgba(0,0,0,.38);display:flex;align-items:center;justify-content:center;z-index:50}',
     '.lzw-confirm{background:#fff;border-radius:14px;padding:20px 20px 14px;width:216px;text-align:center;font-size:14px;color:#111;box-shadow:0 8px 30px rgba(0,0,0,.25)}',
     '.lzw-tdlnote{font-size:11px;color:#8a8f99;margin-top:5px}',
-    '.lzw-cbtns{display:flex;gap:10px;margin-top:15px}',
-    '.lzw-cbtn{flex:1;border:none;border-radius:9px;padding:9px 0;font-size:14px;cursor:pointer}',
+    '.lzw-cbtns{display:flex;gap:8px;margin-top:13px}',
+    '.lzw-cbtn{flex:1;border:none;border-radius:8px;padding:6px 0;font-size:14px;cursor:pointer}',
     '.lzw-cbtn.no{background:#f2f3f5;color:#333}',
     '.lzw-cbtn.yes{background:#e64b4b;color:#fff}',
     // 输入区（底部整体：面板叠加在输入条上方，不挤压聊天内容）
@@ -2658,7 +2656,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             (tcm.note ? '<div class="lzw-tdlnote">' + esc(tcm.note) + '</div>' : '') +
             '<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="taccno">取消</button>' +
             '<button class="lzw-cbtn no" data-cact="tdecl">拒绝</button>' +
-            '<button class="lzw-cbtn yes" data-cact="taccok">收下转账</button></div></div></div>';
+            '<button class="lzw-cbtn yes" data-cact="taccok">收下</button></div></div></div>';
         })() : '') +
         '</div></div>';
 

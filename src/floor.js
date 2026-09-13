@@ -287,7 +287,7 @@
         }
         // 行内嵌的类型消息（如「真的只是搬家太忙？[表情:有什么八卦让我听听]」）：
         // 依原序拆成多条发送——[表情:x] 匹配到素材走表情、没匹配剥壳当纯文字；
-        // [戳一戳] 不带参数也能嵌在行里；其余文字段照常过寒暄/旁白/截断过滤
+        // [戳一戳] 不带参数也能嵌在行里；其余文字段照常过旁白/截断过滤
         var segRe = /\[(表情|语音|图片|定位|转账)(?::|\||｜)([^\]]*)\]|\[(戳一戳)\]/g;
         var segs = [], lastIdx = 0, sm;
         while ((sm = segRe.exec(body)) !== null) {
@@ -302,7 +302,6 @@
             if (sg.k === 'text') {
               var t = sg.v.trim();
               if (!t) return;
-              if (/^(好的[，。！]?|收到|明白了|当然)/.test(t) && t.length < 8) return;
               if (/^[（(][^）)]{1,28}[）)]$/.test(t)) return;
               if (t.length > 120) t = t.slice(0, 120);
               out.push({ who: who, kind: 'text', text: t, time: '' });
@@ -322,8 +321,7 @@
           });
           return;
         }
-        // 普通文字行；寒暄废话与纯括号旁白丢弃
-        if (/^(好的[，。！]?|收到|明白了|当然)/.test(body) && body.length < 8) return;
+        // 普通文字行；整行纯括号旁白丢弃（寒暄短句照常保留——完整呈现 AI 回复，出问题时便于诊断）
         if (/^[（(][^）)]{1,28}[）)]$/.test(body)) return;
         if (body.length > 120) body = body.slice(0, 120);
         out.push({ who: who, kind: 'text', text: body, time: '' });

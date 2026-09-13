@@ -128,6 +128,10 @@ eq('句尾标签前文字', gluedSuf[0], { who: '周言', kind: 'text', text: '�
 eq('句尾未知表情剥壳为文字', gluedSuf[1], { who: '周言', kind: 'text', text: '有什么八卦让我听听', time: '' });
 const gluedMid = LW.Floor.parseNpcLines('林溪：对了[戳一戳]你人呢', null);
 eq('群聊中段标签剥成三条', gluedMid.map(x => x.kind), ['text', 'poke', 'text']);
+// 寒暄短句照常保留（不过滤——完整呈现 AI 回复，出问题时便于诊断）
+const ackKeep = LW.Floor.parseNpcLines('好的。\n收到\n明白了，我马上到', '周言');
+eq('寒暄短句保留条数', ackKeep.length, 3);
+eq('寒暄短句原样成泡', ackKeep.map(x => x.text), ['好的。', '收到', '明白了，我马上到']);
 
 // ── 4. 提示词装配 ──
 console.log('[提示词]');
