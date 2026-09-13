@@ -469,14 +469,13 @@
     },
 
     // ── 生成 API 配置（设置 app 可调，存 Store.settings().api）──
-    // mode: follow=跟随正文（默认） / model=正文同源只换模型 / preset=酒馆代理预设 / custom=自定义API
+    // mode: follow=跟随正文（默认） / model=正文同源只换模型 / custom=自定义API
     // 密钥唯一例外存 localStorage（仅本机浏览器，不随聊天变量/卡外流）
     apiConfig: function () {
       var a;
       try { a = window.LZWorld.Store.settings().api || {}; } catch (e) { return undefined; }
       if (!a.mode || a.mode === 'follow') return undefined;
       if (a.mode === 'model') return a.model ? { model: a.model } : undefined;
-      if (a.mode === 'preset') return a.preset ? { proxy_preset: a.preset } : undefined;
       if (a.mode === 'custom') {
         if (!a.apiurl) return undefined;
         var key = '';
