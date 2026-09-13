@@ -1349,8 +1349,8 @@
             var alive = !!(self._qrBtns && self._qrBtns.length && self._qrBtns.every(function (b) { return b.parentNode === holder; }));
             if (alive && (self._qrBtns.length === 2) === wantPhone) return;
             if (self._qrBtns) self._qrBtns.forEach(function (b) { if (b.parentNode) b.remove(); });
-            var btns = [mkBtn('\uD83E\uDDED 世界线', '切换 IF 世界线（五条线选一，代劳开关世界书并记入本聊天）', function () { W.Engine.qrLines(); })];
-            if (wantPhone) btns.unshift(mkBtn('\uD83D\uDCF1 手机', '霖州·数字世界（再点一次关闭）', function () { W.Engine.qrToggle(); }));
+            var btns = [mkBtn('\uD83E\uDDED世界线', '切换 IF 世界线（五条线选一，代劳开关世界书并记入本聊天）', function () { W.Engine.qrLines(); })];
+            if (wantPhone) btns.unshift(mkBtn('\uD83D\uDCF1手机', '霖州·数字世界（再点一次关闭）', function () { W.Engine.qrToggle(); }));
             btns.forEach(function (b) { holder.appendChild(b); });
             self._qrBtns = btns;
           } catch (e0) {}

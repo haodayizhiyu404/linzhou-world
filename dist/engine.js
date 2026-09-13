@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T16:25:42.924Z
+//  构建时间：2026-09-13T16:41:02.705Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 16:25';
+var __LZW_BUILD__ = '2026-09-13 16:41';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1821,24 +1821,26 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-conv-prev{font-size:12px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}',
     // 选线界面：徽标 + 行态
     '.lzw-ltags{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}',
-    '.lzw-ltag{font-size:10px;line-height:1;padding:3px 6px;border-radius:8px;background:#eef1f5;color:#7a828d;white-space:nowrap}',
-    '.lzw-ltag.rec{background:#22c05e;color:#fff}',
-    '.lzw-ltag.cur{background:#e8b04b;color:#fff}',
-    '.lzw-ltag.bad{background:#f6eaea;color:#c07878}',
-    '.lzw-lineava{display:flex;align-items:center;justify-content:center;font-size:18px;background:#eef1f5}',
+    '.lzw-ltag{font-size:10px;line-height:1;padding:3px 6px;border-radius:8px;background:#f0eafa;color:#8a7fc0;white-space:nowrap}',
+    '.lzw-ltag.rec{background:#ec8fb8;color:#fff}',
+    '.lzw-ltag.cur{background:#9b8ce8;color:#fff}',
+    '.lzw-ltag.bad{background:#f9e9ee;color:#c07890}',
+    '.lzw-lineava{display:flex;align-items:center;justify-content:center;font-size:16px;border-radius:50%;background:linear-gradient(135deg,#ffd6e8,#dcd2ff);box-shadow:inset 0 0 0 1px rgba(255,255,255,.65)}',
     '.lzw-linerow{cursor:pointer}',
-    '.lzw-linerow:active{background:#f2f4f7}',
+    '.lzw-linerow:active{filter:brightness(.97)}',
     '.lzw-linedis{opacity:.55}',
     // 选线弹窗（独立于手机壳的居中菜单）
-    '#lzw-linespop{position:fixed;inset:0;z-index:99992;background:rgba(10,12,16,.5);display:flex;align-items:center;justify-content:center;font-family:system-ui,"Microsoft YaHei",sans-serif}',
-    '.lzw-lpop-card{width:300px;max-height:78vh;background:#eef1f5;border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.45);display:flex;flex-direction:column}',
-    '.lzw-lpop-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;background:#fff;border-bottom:1px solid #f0f2f5}',
-    '.lzw-lpop-t{font-weight:600;font-size:15px;color:#1f2329}',
-    '.lzw-lpop-x{cursor:pointer;font-size:20px;color:#9aa0a8;line-height:1;padding:0 2px}',
-    '.lzw-lpop-x:hover{color:#5a6068}',
-    '.lzw-lpop-list{overflow-y:auto}',
-    '.lzw-lpop-list .lzw-conv{border-bottom:1px solid #eef1f5;background:#fff}',
-    '.lzw-lpop-foot{padding:9px 14px;font-size:11px;color:#9aa0a8;text-align:center;line-height:1.6}',
+    '#lzw-linespop{position:fixed;inset:0;z-index:99992;background:rgba(48,30,66,.38);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;font-family:system-ui,"Microsoft YaHei",sans-serif}',
+    '.lzw-lpop-card{width:300px;max-height:78vh;background:linear-gradient(165deg,#ffe9f3 0%,#f4e9ff 48%,#e9edff 100%);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(60,30,80,.35);display:flex;flex-direction:column}',
+    '.lzw-lpop-head{position:relative;padding:16px 14px 12px;text-align:center}',
+    '.lzw-lpop-t{font-family:"KaiTi","STKaiti","Microsoft YaHei",serif;font-weight:600;font-size:19px;color:#5a4a6a;letter-spacing:2px}',
+    '.lzw-lpop-sub{margin-top:5px;font-size:11px;color:#a08cb8}',
+    '.lzw-lpop-x{position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px;color:#b09cc0;line-height:1;padding:0 4px}',
+    '.lzw-lpop-x:hover{color:#7a6690}',
+    '.lzw-lpop-list{overflow-y:auto;padding:2px 10px 8px}',
+    '.lzw-lpop-list .lzw-conv{margin:6px 2px;border:none;border-radius:14px;background:rgba(255,255,255,.78);box-shadow:0 2px 10px rgba(180,140,210,.14)}',
+    '.lzw-lpop-list .lzw-conv:last-child{margin-bottom:2px}',
+    '.lzw-lpop-foot{padding:2px 14px 12px;font-size:10px;color:#b0a0c4;text-align:center;line-height:1.6}',
     // 聊天
     '.lzw-chatbg{background:#f2f2f5;min-height:100%;padding:4px 0 10px}',
     '.lzw-chatrow{display:flex;gap:7px;margin:11px 12px;align-items:flex-start}',
@@ -2479,9 +2481,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!pop) return;
       pop.innerHTML =
         '<div class="lzw-lpop-card">' +
-        '<div class="lzw-lpop-head"><span class="lzw-lpop-t">世界线</span><span class="lzw-lpop-x" data-lpx title="关闭">×</span></div>' +
+        '<div class="lzw-lpop-head"><div class="lzw-lpop-t">世界线</div><div class="lzw-lpop-sub">切换后世界书条目代劳开关 · 并记入本聊天</div><span class="lzw-lpop-x" data-lpx title="关闭">×</span></div>' +
         '<div class="lzw-lpop-list">' + linesRowsHtml() + '</div>' +
-        '<div class="lzw-lpop-foot">点一条线 = 代劳开关世界书条目<br>并记入本聊天记录（手动开关从此不认）</div>' +
+        '<div class="lzw-lpop-foot">手动开关世界书不再影响本聊天</div>' +
         '</div>';
       pop.querySelector('[data-lpx]').onclick = function () { UI.closeLines(); };
       pop.querySelectorAll('.lzw-linerow').forEach(function (el) {
@@ -5325,8 +5327,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             var alive = !!(self._qrBtns && self._qrBtns.length && self._qrBtns.every(function (b) { return b.parentNode === holder; }));
             if (alive && (self._qrBtns.length === 2) === wantPhone) return;
             if (self._qrBtns) self._qrBtns.forEach(function (b) { if (b.parentNode) b.remove(); });
-            var btns = [mkBtn('\uD83E\uDDED 世界线', '切换 IF 世界线（五条线选一，代劳开关世界书并记入本聊天）', function () { W.Engine.qrLines(); })];
-            if (wantPhone) btns.unshift(mkBtn('\uD83D\uDCF1 手机', '霖州·数字世界（再点一次关闭）', function () { W.Engine.qrToggle(); }));
+            var btns = [mkBtn('\uD83E\uDDED世界线', '切换 IF 世界线（五条线选一，代劳开关世界书并记入本聊天）', function () { W.Engine.qrLines(); })];
+            if (wantPhone) btns.unshift(mkBtn('\uD83D\uDCF1手机', '霖州·数字世界（再点一次关闭）', function () { W.Engine.qrToggle(); }));
             btns.forEach(function (b) { holder.appendChild(b); });
             self._qrBtns = btns;
           } catch (e0) {}
