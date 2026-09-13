@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T16:14:34.942Z
+//  构建时间：2026-09-13T16:20:39.117Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 16:14';
+var __LZW_BUILD__ = '2026-09-13 16:20';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -5306,14 +5306,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           try {
             var bar = doc.getElementById('qr--bar');
             if (!bar) return;
+            // combined 模式下原生按钮都在内层 .qr--buttons（width:100%）里，
+            // 必须挂进同一容器才不会被顶到下一行；非 combined 时该容器不存在，直挂栏上
+            var holder = bar.querySelector('.qr--buttons') || bar;
             // 古代线（无手机世界线）不显示手机按钮，只留世界线入口（靠它切回现代线）
             var wantPhone = !!W.Engine.section();
-            var alive = !!(self._qrBtns && self._qrBtns.length && self._qrBtns.every(function (b) { return b.parentNode === bar; }));
+            var alive = !!(self._qrBtns && self._qrBtns.length && self._qrBtns.every(function (b) { return b.parentNode === holder; }));
             if (alive && (self._qrBtns.length === 2) === wantPhone) return;
             if (self._qrBtns) self._qrBtns.forEach(function (b) { if (b.parentNode) b.remove(); });
             var btns = [mkBtn('\uD83E\uDDED 世界线', '切换 IF 世界线（五条线选一，代劳开关世界书并记入本聊天）', function () { W.Engine.qrLines(); })];
             if (wantPhone) btns.unshift(mkBtn('\uD83D\uDCF1 手机', '霖州·数字世界（再点一次关闭）', function () { W.Engine.qrToggle(); }));
-            btns.forEach(function (b) { bar.appendChild(b); });
+            btns.forEach(function (b) { holder.appendChild(b); });
             self._qrBtns = btns;
           } catch (e0) {}
         };
