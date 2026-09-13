@@ -648,6 +648,7 @@
     confirmDel: -1,       // 待确认删除的消息下标（-1=无）
     mConfirmDel: -1,      // 待确认删除的自己的动态下标（-1=无）
     tConfirm: -1,         // 待确认收款的转账消息下标（-1=无）
+    pConfirmDel: '',      // 待确认删除的自定义 API 预设名（''=无）
     tTarget: '',          // 群聊转账选中的接收方（确定发出后清空）
     _placed: false,
 
@@ -1096,6 +1097,12 @@
       var prevFeed = -1;
       var oldFeed = ph.querySelector('.lzw-mfeed');
       if (oldFeed && this.feedScr === this.screen) prevFeed = oldFeed.scrollTop;
+      // 设置屏滚动位置保留（点选/拉取/存预设都只局部改状态，整屏重绘后跳顶很难看）
+      var prevSetScr = -1;
+      if (this.screen === 'settings') {
+        var oldSetBody = ph.querySelector('.lzw-body');
+        if (oldSetBody) prevSetScr = oldSetBody.scrollTop;
+      }
 
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
@@ -1113,9 +1120,14 @@
             '<button class="lzw-cbtn no" data-cact="tdecl">拒绝</button>' +
             '<button class="lzw-cbtn yes" data-cact="taccok">收下</button></div></div></div>';
         })() : '') +
+        (this.pConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除预设「' + esc(this.pConfirmDel) + '」？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="pdelno">取消</button><button class="lzw-cbtn yes" data-cact="pdelok">删除</button></div></div></div>' : '') +
         '</div></div>';
 
       this.bind(ph);
+      if (prevSetScr >= 0) {
+        var sb2 = ph.querySelector('.lzw-body');
+        if (sb2) sb2.scrollTop = Math.min(prevSetScr, sb2.scrollHeight);
+      }
       if (this.screen === 'chat') {
         var cb = ph.querySelector('#lzw-chatbody');
         if (cb) {
@@ -1263,28 +1275,11 @@
           };
         });
         ph.querySelectorAll('[data-apdel]').forEach(function (el) {
-          var delTimer = null;
-          var doDel = function () {
-            delTimer = null;
-            var nm = el.dataset.apdel;
-            var presets0 = {};
-            try { presets0 = (window.LZWorld.Store.settings().api || {}).presets || {}; } catch (e) {}
-            delete presets0[nm];
-            saveApi({ presets: presets0 });
-            try { localStorage.removeItem('lzworld_phone_apikey::' + nm); } catch (e) {}
+          el.onclick = function (ev) {
+            if (ev && ev.stopPropagation) ev.stopPropagation();
+            UI.pConfirmDel = el.dataset.apdel;
             UI.render();
           };
-          el.onpointerdown = function (ev) {
-            if (ev && ev.stopPropagation) ev.stopPropagation();
-            delTimer = setTimeout(doDel, 500);
-          };
-          var cancelDel = function (ev) {
-            if (ev && ev.stopPropagation) ev.stopPropagation();
-            if (delTimer) { clearTimeout(delTimer); delTimer = null; }
-          };
-          el.onpointerup = cancelDel;
-          el.onpointerleave = cancelDel;
-          el.oncontextmenu = function (ev) { if (ev && ev.preventDefault) ev.preventDefault(); };
         });
       }
       ph.querySelectorAll('.lzw-back').forEach(function (el) {
@@ -1581,6 +1576,17 @@
           else if (a === 'mdelok') { var mdi = UI.mConfirmDel; UI.mConfirmDel = -1; UI.momentsDeleteAt(mdi); }
           else if (a === 'tswap') { UI.panel = 'transferto'; UI.render(); }
           else if (a === 'taccno') { UI.tConfirm = -1; UI.render(); }
+          else if (a === 'pdelno') { UI.pConfirmDel = ''; UI.render(); }
+          else if (a === 'pdelok') {
+            var pn2 = UI.pConfirmDel; UI.pConfirmDel = '';
+            var apiX = {};
+            try { apiX = window.LZWorld.Store.settings().api || {}; } catch (e) {}
+            apiX.presets = apiX.presets || {};
+            delete apiX.presets[pn2];
+            window.LZWorld.Store.setSettings({ api: apiX });
+            try { localStorage.removeItem('lzworld_phone_apikey::' + pn2); } catch (e) {}
+            UI.render();
+          }
           else if (a === 'taccok') { var ti = UI.tConfirm; UI.tConfirm = -1; UI.stageTVerdict('taccept', ti); }
           else if (a === 'tdecl') { var td = UI.tConfirm; UI.tConfirm = -1; UI.stageTVerdict('tdecline', td); }
           else if (a === 'hangup') UI.hangup(false);
@@ -2095,7 +2101,7 @@
           '<span class="lzw-setdel" data-apdel="' + esc(nm) + '">✕</span></div>';
       }).join('');
       if (savedRows) {
-        detail += '<div class="lzw-setcol"><span class="lzw-setlbl">已存预设（点按即套用；✕ 长按删除，密钥随预设各存一份在本机）</span></div>' + savedRows;
+        detail += '<div class="lzw-setcol"><span class="lzw-setlbl">已存预设（点按即套用；点 ✕ 需确认后删除，密钥随预设各存一份在本机）</span></div>' + savedRows;
       }
     }
     var pick = '';
