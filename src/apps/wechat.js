@@ -423,8 +423,12 @@
   var ICON_REROLL = '<svg width="18" height="18" viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 85.333333c102.869333 0 199.509333 36.693333 275.029333 100.437334l93.866667-94.037334a21.333333 21.333333 0 0 1 36.437333 15.061334V384a21.333333 21.333333 0 0 1-21.333333 21.333333h-276.693333a21.333333 21.333333 0 0 1-15.104-36.394666l122.325333-122.496a341.333333 341.333333 0 1 0 118.314667 341.632 42.666667 42.666667 0 1 1 83.2 18.901333A426.794667 426.794667 0 0 1 512 938.666667C276.352 938.666667 85.333333 747.648 85.333333 512S276.352 85.333333 512 85.333333z"/></svg>';
 
   var ICON_CALL = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l1.5 4-2.2 1.6a13 13 0 0 0 6.1 6.1L16 13.5l4 1.5v4a1.6 1.6 0 0 1-1.8 1.6C10.4 19.9 4.1 13.6 3.4 5.8A1.6 1.6 0 0 1 5 4z"/></svg>';
-  // 待收款徽标：白线圆环 + 双向单线半箭头（上半朝左、下半朝右，微信转账标）
-  var ICON_TWAIT = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 8H9.5M12.3 5.4 9.2 8l3.1 2.6"/><path d="M6.5 16h8M11.7 13.4l3.1 2.6-3.1 2.6"/></svg>';
+  // 待收款徽标（白线圆环内）：双向粗条半箭头，上半朝左、下半朝右
+  var ICON_TWAIT = '<svg width="20" height="20" viewBox="0 0 1024 1024" fill="none"><path d="M725.333333 377.2672V443.733333H298.666667v-68.266666h330.837333L554.666667 296.891733l47.104-49.493333 121.856 128h1.706666v1.800533zM298.666667 646.7328V580.266667h426.666666v68.266666H394.496L469.333333 727.108267l-47.104 49.493333-121.856-128H298.666667v-1.800533z" fill="currentColor"/></svg>';
+  // 已收款/已被接受：白圈内直线对勾
+  var ICON_TOK = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+  // 已退还/已被拒绝：白圈内直线叉
+  var ICON_TNO = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg>';
   var ICON_VCALL = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="12.5" height="12" rx="2.5"/><path d="M15.5 10.5l5-3v9l-5-3"/></svg>';
   var ICON_MIC = '<svg width="25" height="25" viewBox="0 0 24 24" fill="none" stroke="#1a1d21" stroke-width="1.9" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="11.5" rx="3"/><path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3.5M8.5 21.5h7"/></svg>';
   var ICON_HANG = '<svg width="26" height="26" viewBox="0 0 24 24"><path fill="#fff" d="M6.6 3.2c.5-.2 1.1 0 1.4.5l1.8 2.7c.3.5.2 1.1-.2 1.5L8 9.3a12.8 12.8 0 0 0 6.7 6.7l1.4-1.6c.4-.4 1-.5 1.5-.2l2.7 1.8c.5.3.7.9.5 1.4l-.7 2.1c-.2.6-.8 1-1.4.9C9.6 18.9 5.1 14.4 4.6 5.8c0-.6.4-1.2 1-1.4l1-.2z" transform="rotate(135 12 12)"/></svg>';
@@ -479,7 +483,7 @@
     var state = m.state === 'accepted' ? 'accepted' : m.state === 'declined' ? 'declined' : 'waiting';
     if (state !== 'waiting') {
       // 发起方视角的处置结果：accepted 已被接受 / declined 已被拒绝
-      return tcardHtml(m.amount, m.note, state === 'accepted' ? '✓' : '✕', state === 'accepted' ? '已被接受' : '已被拒绝', state === 'declined', '', false);
+      return tcardHtml(m.amount, m.note, state === 'accepted' ? ICON_TOK : ICON_TNO, state === 'accepted' ? '已被接受' : '已被拒绝', state === 'declined', '', false);
     }
     var toTag = (isUser && groupMode && m.to) ? '<span class="lzw-tto">给 ' + esc(m.to) + '</span>' : '';
     return tcardHtml(m.amount, m.note, ICON_TWAIT, '待收款', false, toTag, !isUser, true);
@@ -487,7 +491,7 @@
 
   // 转账处置回执卡：接收方视角的处置结果（taccept 已收款 / tdecline 已退还），与转账卡同卡同款。
   function verdictCardHtml(m) {
-    return tcardHtml(m.amount, m.note, m.kind === 'taccept' ? '✓' : '✕', m.kind === 'taccept' ? '已收款' : '已退还', m.kind === 'tdecline', '', false);
+    return tcardHtml(m.amount, m.note, m.kind === 'taccept' ? ICON_TOK : ICON_TNO, m.kind === 'taccept' ? '已收款' : '已退还', m.kind === 'tdecline', '', false);
   }
 
   // ── 手机内气泡行 ──
