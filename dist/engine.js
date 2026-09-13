@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T10:13:03.593Z
+//  构建时间：2026-09-13T10:32:49.597Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 10:13';
+var __LZW_BUILD__ = '2026-09-13 10:32';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1787,7 +1787,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-tto-line{font-size:12.5px;color:#111;padding:2px 2px 0}',
     '.lzw-tto-line b{color:#57606a;font-weight:600}',
     '.lzw-ttohd{font-size:12px;color:#8a8f99;padding:4px 2px 6px}',
-    '.lzw-ttolist{display:flex;flex-direction:column;gap:2px;max-height:230px;overflow-y:auto}',
+    '.lzw-panel.lzw-pto{display:flex;flex-direction:column}',
+    '.lzw-ttolist{display:flex;flex-direction:column;gap:2px;flex:1;min-height:0;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none}',
+    '.lzw-ttolist::-webkit-scrollbar{display:none}',
+    '.lzw-ttofoot{flex:none;display:flex;justify-content:center;margin-top:10px;padding-top:10px;border-top:1px solid rgba(0,0,0,.05)}',
     '.lzw-locbox .cap{font-size:12.5px;font-weight:600;padding:7px 9px}',
     '.lzw-sysrow{text-align:center;font-size:11.5px;color:#9aa0a8;margin:10px 0}',
     '.lzw-recallrow{text-align:center;font-size:12px;color:#9aa0a8;margin:13px 0;line-height:1.7;cursor:pointer}',
@@ -1831,7 +1834,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-stgstick{max-width:64px;border-radius:6px;display:block}',
     // [+] 面板（绝对定位：从输入条上方弹出，盖住聊天区，不引起内容重排）
     '.lzw-panel{position:absolute;left:0;right:0;bottom:100%;z-index:4;background:#f7f7f9;border-top:1px solid rgba(0,0,0,.06);',
-    'padding:14px 14px 8px;display:none;max-height:236px;overflow-y:auto;box-shadow:0 -8px 20px rgba(0,0,0,.05)}',
+    'padding:14px 14px 8px;display:none;max-height:236px;overflow-y:auto;scrollbar-width:none;-ms-overflow-style:none;box-shadow:0 -8px 20px rgba(0,0,0,.05)}',
+    '.lzw-panel::-webkit-scrollbar{display:none}',
     '.lzw-panel.lzw-open{display:block}',
     '.lzw-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:14px 6px}',
     '.lzw-act{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;color:#555;font-size:11.5px}',
@@ -2611,7 +2615,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           }
           return pre + chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i], this.isGroup);
         }, this).join('');
-        if (this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
+        if (this.failed && this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
         if (this.staged.length) rows += stagedHtml(userName);
         body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
           '<div class="lzw-bottom">' +
@@ -3089,10 +3093,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var t = inp ? inp.value.trim() : '';
       if (t) { inp.value = ''; this.staged.push({ kind: 'text', text: t }); }
       if (!this.staged.length) {
-        // 没有待发内容时，小飞机充当「重试」：上次生成失败且对方还没回，就再生成一次
+        // 没有待发内容时，小飞机充当「重试」：末尾是我方消息且对方没下文（上次失败/回复被删/解析零条），就再生成一次
         var W0 = window.LZWorld;
         var h0 = W0.Store.history(this.chatKey);
-        if (this.failed && !this.busy && h0.length && h0[h0.length - 1].who === 'user') {
+        if (!this.busy && h0.length && h0[h0.length - 1].who === 'user') {
           this.failed = false;
           this.generate(W0.Engine.userName());
         }
@@ -3156,9 +3160,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       this.render();
     },
 
-    // 重试条件：上次生成失败，且末尾是我方消息（发出后对方没回成）
+    // 重试条件：末尾是我方消息（发出后对方没下文——上次生成失败、回复被机主删了、或回复解析成 0 条都算）。
+    // 小飞机空发与 ↻ 刷新图标共用此门
     canRetry: function () {
-      if (!this.failed) return false;
       var h = window.LZWorld.Store.history(this.chatKey);
       return !!(h.length && h[h.length - 1].who === 'user');
     },
@@ -3566,9 +3570,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           : '<div class="lzw-ava">' + esc(n.slice(0, 1)) + '</div>';
         return '<div class="lzw-conv" data-ttarget="' + esc(n) + '">' + avT + '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(n) + '</div></div></div>';
       }).join('');
-      return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-ttohd">转账给群里的谁？</div><div class="lzw-ttolist">' +
+      return '<div class="lzw-panel lzw-open lzw-pto" id="lzw-panel"><div class="lzw-ttohd">转账给群里的谁？</div><div class="lzw-ttolist">' +
         (cells || '<div class="lzw-sysrow">群成员名单空空如也</div>') + '</div>' +
-        '<div class="lzw-modebtns"><button class="lzw-modecancel" data-act="modecancel">取消</button></div></div>';
+        '<div class="lzw-ttofoot"><button class="lzw-modecancel" data-act="modecancel">取消</button></div></div>';
     }
     if (panel === 'transfer') {
       var toWhom = UI.isGroup ? UI.tTarget : UI.chatKey;
