@@ -43,11 +43,16 @@
       // 通话记录灰泡在楼层存档里就是一行类型标（与列表页预览一致，带上时长/结果）
       case 'calllog': body = '[' + (m.mode === 'video' ? '视频通话' : '语音通话') + (m.text ? ' · ' + String(m.text).replace(/^通话时长 /, '') : '') + ']'; break;
       case 'location':body = '[定位:' + m.text + ']'; break;
-      // 转账：无人记账，卡片即记录——一行写清谁转给谁、金额、备注，上下文携带即全知情
-      case 'transfer':body = m.who === 'user'
-        ? '[转账给' + (m.to || '对方') + ' ¥' + m.amount + (m.note ? '（' + m.note + '）' : '') + ']'
-        : '[' + who + '转账 ¥' + m.amount + (m.note ? '（' + m.note + '）' : '') + ']';
+      // 转账：无人记账，卡片即记录——一行写清谁转给谁、金额、备注，必带状态尾巴（AI 得知道钱已收下/退还，防重复转账）
+      case 'transfer': {
+        var tst = m.state === 'accepted' ? (m.who === 'user' ? '（对方已收款）' : '（机主已收下）')
+          : m.state === 'declined' ? (m.who === 'user' ? '（对方已拒收）' : '（机主已退还）')
+          : '（待收款）';
+        body = m.who === 'user'
+          ? '[转账给' + (m.to || '对方') + ' ¥' + m.amount + (m.note ? '（' + m.note + '）' : '') + ']' + tst
+          : '[' + who + '转账 ¥' + m.amount + (m.note ? '（' + m.note + '）' : '') + ']' + tst;
         break;
+      }
       // 转账处置回执：机主收下/退还对方的转账、对方拒收机主的转账——AI 靠这两行走上下文就全知情
       case 'taccept': body = m.who === 'user'
         ? '[收下了' + (m.from || '对方') + '的转账 ¥' + m.amount + ']'

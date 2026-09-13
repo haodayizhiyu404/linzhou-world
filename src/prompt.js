@@ -69,6 +69,7 @@
     } catch (e) { return ''; }
   }
   // ── 单条消息 → 契约语法文本（与「消息类型」说明完全一致，AI 不用猜） ──
+  // 转账类必带状态尾巴：AI 得知道这笔钱的下落，否则会重复转账/重复收款
   function msgBody(m) {
     switch (m.kind) {
       case 'sticker':  return '[表情:' + m.text + ']';
@@ -77,6 +78,20 @@
       case 'poke':     return '[戳一戳]';
       case 'calllog':  return '[' + (m.mode === 'video' ? '视频通话' : '语音通话') + (m.text ? ' · ' + String(m.text).replace(/^通话时长 /, '') : '') + ']';
       case 'location': return '[定位:' + m.text + ']';
+      case 'transfer': {
+        var tstat = m.state === 'accepted' ? (m.who === 'user' ? '（对方已收款）' : '（机主已收下）')
+          : m.state === 'declined' ? (m.who === 'user' ? '（对方已拒收）' : '（机主已退还）')
+          : '（待收款）';
+        return m.who === 'user'
+          ? '[转账给' + (m.to || '对方') + ' ¥' + m.amount + (m.note ? '（' + m.note + '）' : '') + ']' + tstat
+          : '[' + m.who + '转账 ¥' + m.amount + (m.note ? '（' + m.note + '）' : '') + ']' + tstat;
+      }
+      case 'taccept': return m.who === 'user'
+        ? '[收下了' + (m.from || '对方') + '的转账 ¥' + m.amount + ']'
+        : '[' + m.who + '收下了转账 ¥' + m.amount + ']';
+      case 'tdecline': return m.who === 'user'
+        ? '[退还了' + (m.from || '对方') + '的转账 ¥' + m.amount + ']'
+        : '[' + m.who + '拒收了转账 ¥' + m.amount + ']';
       default:         return String(m.text || '');
     }
   }

@@ -500,8 +500,11 @@ ctx.getWorldbook = async () => [
   eq('发圈·同条校验认人认文', LW.Engine.sameMoment(LW.Engine.momentsKey, mpIdx0, LW.Engine.momentsFeed()[mpIdx0]), true);
   eq('发圈·同条校验拒越界', LW.Engine.sameMoment(LW.Engine.momentsKey, 999, {}), false);
   // 转账：聊天记录里的一种消息 kind（无独立账本），双向契约 + 状态翻转
-  eq('转账·上下文行机主发出', LW.Floor.msgToLine({ who: 'user', kind: 'transfer', amount: 50, note: '奶茶钱', to: '周言' }, '陈默'), '陈默：[转账给周言 ¥50（奶茶钱）]');
-  eq('转账·上下文行NPC发来', LW.Floor.msgToLine({ who: '周言', kind: 'transfer', amount: 20, note: '', to: '' }, '陈默'), '周言：[周言转账 ¥20]');
+  eq('转账·上下文行机主发出', LW.Floor.msgToLine({ who: 'user', kind: 'transfer', amount: 50, note: '奶茶钱', to: '周言' }, '陈默'), '陈默：[转账给周言 ¥50（奶茶钱）]（待收款）');
+  eq('转账·上下文行NPC发来', LW.Floor.msgToLine({ who: '周言', kind: 'transfer', amount: 20, note: '', to: '' }, '陈默'), '周言：[周言转账 ¥20]（待收款）');
+  eq('转账·已收款状态尾巴', LW.Floor.msgToLine({ who: 'user', kind: 'transfer', amount: 50, note: '', to: '周言', state: 'accepted' }, '陈默'), '陈默：[转账给周言 ¥50]（对方已收款）');
+  eq('转账·机主已收下状态尾巴', LW.Floor.msgToLine({ who: '周言', kind: 'transfer', amount: 20, note: '', to: '', state: 'accepted' }, '陈默'), '周言：[周言转账 ¥20]（机主已收下）');
+  eq('转账·机主已退还状态尾巴', LW.Floor.msgToLine({ who: '周言', kind: 'transfer', amount: 20, note: '', to: '', state: 'declined' }, '陈默'), '周言：[周言转账 ¥20]（机主已退还）');
   const tnpc = LW.Floor.parseNpcLines('[转账:50:奶茶钱]', '周言');
   eq('转账·NPC契约解析', tnpc.length === 1 && tnpc[0].kind === 'transfer' && tnpc[0].amount === 50 && tnpc[0].note === '奶茶钱' && tnpc[0].state === 'waiting', true);
   eq('转账·非法金额忽略', LW.Floor.parseNpcLines('[转账:abc]', '周言').length, 0);
@@ -548,6 +551,18 @@ ctx.getWorldbook = async () => [
   const reqT = LW.Prompt.private({ name: '周言', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null, null, '', '');
   eq('转账·私聊契约说明', reqT.ordered_prompts[0].content.indexOf('[转账:金额:备注]') !== -1, true);
   eq('转账·私聊拒收契约说明', reqT.ordered_prompts[0].content.indexOf('[拒收转账:金额:备注]') !== -1, true);
+  // 转账/处置记录行进提示词上下文：AI 全知情，不会重复转账（回归：msgBody 缺 case 时空行）
+  const reqTT = LW.Prompt.private({ name: '周言', profile: '' }, [
+    { who: 'user', kind: 'transfer', amount: 50, note: '奶茶钱', to: '周言', state: 'accepted', day: '2034年8月26日 星期五', time: '22:00' },
+    { who: 'user', kind: 'taccept', amount: 66, note: '', from: '周言', day: '2034年8月26日 星期五', time: '22:01' },
+    { who: '周言', kind: 'transfer', amount: 20, note: '', to: '', state: 'waiting', day: '2034年8月26日 星期五', time: '22:02' },
+    { who: '周言', kind: 'tdecline', amount: 30, note: '', from: '', day: '2034年8月26日 星期五', time: '22:03' },
+  ], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null, null, '');
+  const spTT = reqTT.ordered_prompts[0].content;
+  eq('提示词·机主转账已收款行', spTT.indexOf('陈默：[转账给周言 ¥50（奶茶钱）]（对方已收款）') !== -1, true);
+  eq('提示词·机主收下回执行', spTT.indexOf('陈默：[收下了周言的转账 ¥66]') !== -1, true);
+  eq('提示词·NPC转账待收款行', spTT.indexOf('周言：[周言转账 ¥20]（待收款）') !== -1, true);
+  eq('提示词·NPC拒收回执行', spTT.indexOf('周言：[周言拒收了转账 ¥30]') !== -1, true);
   // 机主朋友圈的回应 prompt：契约行与人数约束
   const mreact = LW.Prompt.momentsReact({ who: '陈默', text: '月考终于结束了', img: '一张拍糊的试卷', when: '8月26日 22:49' },
     [{ name: '周言', profile: '班长' }, { name: '林溪', profile: '闺蜜' }],

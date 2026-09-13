@@ -197,6 +197,8 @@
     '.lzw-tnote{padding:2px 12px 9px;font-size:11.5px;color:#8a8f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:14px}',
     '.lzw-tbot{display:flex;justify-content:flex-end;align-items:center;padding:5px 12px;border-top:1px solid rgba(0,0,0,.05);font-size:11px;color:#9aa0a8}',
     '.lzw-tbot.waiting{color:#e0883a}',
+    '.lzw-tvrow{display:flex;justify-content:center;margin:3px 0}',
+    '.lzw-tvcard{width:160px}',
     '.lzw-tto-line{font-size:12.5px;color:#111;padding:2px 2px 0}',
     '.lzw-tto-line b{color:#57606a;font-weight:600}',
     '.lzw-ttohd{font-size:12px;color:#8a8f99;padding:4px 2px 6px}',
@@ -467,12 +469,25 @@
     var state = m.state === 'accepted' ? 'accepted' : m.state === 'declined' ? 'declined' : 'waiting';
     var incomingWaiting = !isUser && state === 'waiting';
     var toTag = (isUser && groupMode && m.to) ? '<span class="lzw-tto">给 ' + esc(m.to) + '</span>' : '';
-    var botLabel = state === 'accepted' ? '已收款' : state === 'declined' ? '已退还' : '待收款';
+    var botLabel = state === 'accepted' ? (isUser ? '已被接受' : '已收款') : state === 'declined' ? '已退还' : '待收款';
     return '<div class="lzw-tcard' + (incomingWaiting ? ' got waiting' : '') + '"' + (incomingWaiting ? ' data-taccept="1"' : '') + '>' +
       '<div class="lzw-tcard-top"><span class="lzw-tcoin">¥</span><span>转账</span>' + toTag + '</div>' +
       '<div class="lzw-tamt">¥' + fmtTAmount(m.amount) + '</div>' +
       '<div class="lzw-tnote">' + esc(m.note || '') + '</div>' +
       '<div class="lzw-tbot' + (state === 'waiting' ? ' waiting' : '') + '">' + botLabel + '</div></div>';
+  }
+
+  // 转账处置回执卡：与转账卡同款的瘦身白卡（居中、无头像）。
+  // 状态随方向定——机主是收款方：已收款/已退还；机主是转账方（对方拒收）：已被接受/已被拒绝
+  function verdictCardHtml(m) {
+    var isUser = m.who === 'user';
+    var label = m.kind === 'taccept' ? (isUser ? '已收款' : '已被接受')
+      : (isUser ? '已退还' : '已被拒绝');
+    return '<div class="lzw-tcard lzw-tvcard">' +
+      '<div class="lzw-tcard-top"><span class="lzw-tcoin">¥</span><span>转账</span></div>' +
+      '<div class="lzw-tamt">¥' + fmtTAmount(m.amount) + '</div>' +
+      '<div class="lzw-tnote">' + esc(m.note || '') + '</div>' +
+      '<div class="lzw-tbot">' + label + '</div></div>';
   }
 
   // ── 手机内气泡行 ──
@@ -515,11 +530,8 @@
       // 转账卡不是气泡：双方都是白底卡（showName 即群聊态），待收款的对方卡可点收款
       bub = transferCardHtml(m, isUser, !!showName);
     } else if (m.kind === 'taccept' || m.kind === 'tdecline') {
-      // 转账处置回执：机主收下/退还、对方拒收——居中灰字一行，同戳一戳
-      var vt = m.kind === 'taccept'
-        ? (isUser ? '你收下了转账' : esc(who) + ' 收下了转账')
-        : (isUser ? '你退还了转账' : esc(who) + ' 拒收了转账');
-      return '<div class="lzw-pokerow" data-del="' + idx + '">' + vt + ' ¥' + fmtTAmount(m.amount) + '</div>';
+      // 转账处置回执：瘦身白卡居中（同转账卡样式），不再是灰字大字报
+      return '<div class="lzw-tvrow" data-del="' + idx + '">' + verdictCardHtml(m) + '</div>';
     } else if (m.kind === 'voice' || m.kind === 'image' || m.kind === 'location') {
       bub = richBub(m, isUser, who, targetName, false);
     } else {
@@ -572,8 +584,7 @@
         return '<div class="lzw-chatrow me lzw-stgrow">' + av + '<div class="lzw-stgitem">' + transferCardHtml(m, true, false) + stgx + '</div></div>';
       }
       if (m.kind === 'taccept' || m.kind === 'tdecline') {
-        var vtg = m.kind === 'taccept' ? '✓ 收下转账' : '↩ 退还转账';
-        return '<div class="lzw-stgrow lzw-stgcenter"><div class="lzw-poke">' + vtg + ' ¥' + fmtTAmount(m.amount) + '</div>' + stgx + '</div>';
+        return '<div class="lzw-stgrow lzw-tvrow"><div class="lzw-stgitem">' + verdictCardHtml({ who: 'user', kind: m.kind, amount: m.amount, note: m.note }) + stgx + '</div></div>';
       }
       if (m.kind === 'sticker') {
         var file = W.Engine.stickers()[m.text];
