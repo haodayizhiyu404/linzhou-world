@@ -553,6 +553,7 @@
     failed: false,        // 上次生成失败（消息已发出但对方没回成）→ 小飞机/↻ 变为重试
     peek: {},             // 撤回偷看集合：chatKey:index → true
     confirmDel: -1,       // 待确认删除的消息下标（-1=无）
+    mConfirmDel: -1,      // 待确认删除的自己的动态下标（-1=无）
     _placed: false,
 
     injectStyle: function () {
@@ -651,6 +652,13 @@
     momentsLike: function (idx) {
       try { window.LZWorld.Engine.momentsLike(idx); } catch (e) {}
       this.mMenu = -1;
+      this.render();
+    },
+    // 删自己的动态：下标移位会让 mMenu/mCmt 指向别的条目，一并复位再渲染
+    momentsDeleteAt: function (idx) {
+      try { window.LZWorld.Engine.momentsDelete(idx); } catch (e) {}
+      this.mMenu = -1;
+      this.mCmt = -1;
       this.render();
     },
     // 评论：先落库，接话生成完若还在朋友圈页就刷新（不在场时红点由引擎挂）
@@ -881,6 +889,7 @@
           '<div class="lzw-mpad"></div>' +
           (postsHtml || '<div class="lzw-sysrow" style="margin-top:44px">朋友们还没发动态<br>稍等片刻，或退出重进刷新</div>') +
           (this.mBusy ? '<div class="lzw-sysrow">朋友们正在更新…</div>' : '') +
+          (this.mConfirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条动态？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="mdelno">取消</button><button class="lzw-cbtn yes" data-cact="mdelok">删除</button></div></div></div>' : '') +
           '</div>';
 
       } else if (this.screen === 'mprofile') {
@@ -1161,6 +1170,13 @@
           if (ci) ci.focus();
         };
       });
+      ph.querySelectorAll('[data-mdel]').forEach(function (el) {
+        el.onclick = function () {
+          UI.mMenu = -1;
+          UI.mConfirmDel = parseInt(el.dataset.mdel, 10);
+          UI.render();
+        };
+      });
       ph.querySelectorAll('[data-msend]').forEach(function (el) {
         el.onclick = function () {
           var ci = ph.querySelector('#lzw-cmtin');
@@ -1306,6 +1322,8 @@
           var a = el.dataset.cact;
           if (a === 'cancel') { UI.confirmDel = -1; UI.render(); }
           else if (a === 'del') { UI.removeAt(UI.confirmDel); UI.confirmDel = -1; UI.render(); }
+          else if (a === 'mdelno') { UI.mConfirmDel = -1; UI.render(); }
+          else if (a === 'mdelok') { var mdi = UI.mConfirmDel; UI.mConfirmDel = -1; UI.momentsDeleteAt(mdi); }
           else if (a === 'hangup') UI.hangup(false);
           else if (a === 'cancelcall') UI.hangup(true);
           else if (a === 'callreroll') UI.callReroll();
@@ -1775,7 +1793,7 @@
     }
     var liked = (e.likes || []).indexOf(userName) !== -1;
     var menu = UI.mMenu === idx
-      ? '<div class="lzw-pmenu">' + (isMine ? '' : '<button data-mlike="' + idx + '">' + (liked ? ICON_HEART_F + ' 取消' : ICON_HEART + ' 赞') + '</button>') + '<button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button></div>'
+      ? '<div class="lzw-pmenu">' + (isMine ? '' : '<button data-mlike="' + idx + '">' + (liked ? ICON_HEART_F + ' 取消' : ICON_HEART + ' 赞') + '</button>') + '<button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button>' + (isMine ? '<button data-mdel="' + idx + '">删除</button>' : '') + '</div>'
       : '';    var cmtbar = UI.mCmt === idx
       ? '<div class="lzw-cmtbar"><input id="lzw-cmtin" maxlength="60" placeholder="说点什么…"><button data-msend="' + idx + '">发送</button></div>'
       : '';

@@ -996,7 +996,7 @@
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         replies = this.parseMomentsReplies(text);
       } catch (e) { console.warn('[霖州引擎] 朋友圈接话生成失败', e); }
-      if (replies.length) {
+      if (replies.length && this.sameMoment(key, index, entry)) {
         comments = comments.concat(replies);
         W.Store.patchAt(key, index, { comments: comments });
         try {
@@ -1023,6 +1023,22 @@
       var idx = W.Store.history(this.momentsKey).length;
       W.Store.push(this.momentsKey, [{ who: this.userName(), text: text, img: img, pt: pt, label: '', likes: [], comments: [] }], 100);
       return idx;
+    },
+
+    // 机主删除自己的动态：整条移除，个人主页时间轴同源一起消失。
+    // 只许删自己的；发现 tab 的未读累计与单条动态无关，不动
+    momentsDelete: function (index) {
+      var W = window.LZWorld, key = this.momentsKey;
+      var entry = W.Store.history(key)[index];
+      if (!entry || entry.who !== this.userName()) return false;
+      return W.Store.removeAt(key, index);
+    },
+
+    // 异步生成落地前的条目校验：机主可能已经把那条动态删了（或有别的写入让下标移位），
+    // 只认 who+text 不认下标，免得赞/评论贴到别人动态上
+    sameMoment: function (key, index, entry) {
+      var cur = window.LZWorld.Store.history(key)[index];
+      return !!cur && cur.who === entry.who && cur.text === entry.text;
     },
 
     // 朋友们对机主动态的反应：点赞 + 评论各生成一轮（异步，失败只 warn 不打扰机主）。
@@ -1074,6 +1090,7 @@
         likes = parsed.likes; comments = parsed.comments;
       } catch (e) { console.warn('[霖州引擎] 朋友圈回应生成失败', e); }
       if (!likes.length && !comments.length) return;
+      if (!this.sameMoment(key, index, entry)) return; // 生成期间被删/下标移位：认条目不认下标
       var entry2 = W.Store.history(key)[index];
       if (!entry2) return;
       var newLikes = (entry2.likes || []).slice();

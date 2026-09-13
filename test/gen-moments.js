@@ -40,12 +40,12 @@ function post(ava, name, text, img, label, menu, like, cmts, cmtbar) {
   </div></div>`;
 }
 const ava = n => `<img class="lzw-post-ava" src="${AV(n)}">`;
-// 机主自己的动态：⋯ 菜单只有评论（不能给自己点赞），名字/头像不挂进主页跳转
+// 机主自己的动态：⋯ 菜单只有评论+删除（不能给自己点赞），名字/头像不挂进主页跳转
 function ownPost(name, text, label, like, cmts) {
   return `<div class="lzw-post"><div class="lzw-post-ava">${name.slice(0, 1)}</div><div class="lzw-post-main">
     <div class="lzw-post-name">${name}</div>
     <div class="lzw-post-text">${text}</div>
-    <div class="lzw-post-meta"><span>${label}</span><span class="sp"></span><div class="lzw-pmenu"><button>${BUBBLE} 评论</button></div><button class="lzw-post-more">⋯</button></div>
+    <div class="lzw-post-meta"><span>${label}</span><span class="sp"></span><div class="lzw-pmenu"><button>${BUBBLE} 评论</button><button>删除</button></div><button class="lzw-post-more">⋯</button></div>
     ${like ? `<div class="lzw-plike">❤ ${like}</div>` : ''}
     ${cmts ? `<div class="lzw-pcmts">${cmts}</div>` : ''}
   </div></div>`;
@@ -82,6 +82,10 @@ const prof = `<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back">${BA
   ${profPost('<b class="t">昨天</b>', '球馆的灯修好了，周末可以打全场', '空荡的室内球场，灯光明亮，木地板反着光', false, '', '', false)}
   ${profPost('<b>11</b><span>9月</span>', '求一个数学大题的解法，在线等，挺急的', '', false, '', '', false)}
 </div>`;
+
+// 删除自己的动态：⋯ 菜单点删除后弹确认（与聊天删消息同一套 scrim/confirm）
+const delScr = '<div class="lzw-scrim"><div class="lzw-confirm">删除这条动态？<div class="lzw-cbtns"><button class="lzw-cbtn no">取消</button><button class="lzw-cbtn yes">删除</button></div></div></div>';
+const feedConfirm = feed + delScr;
 
 // 微信 tab（会话列表：只留有消息的、按最近消息倒序；空会话不再占位）
 const convAva = n => `<img class="lzw-ava" src="${AV(n)}">`;
@@ -131,7 +135,7 @@ const mpost = `<div class="lzw-appbar"><span class="lzw-back">${BACK}</span><spa
   <textarea class="lzw-mpimg" maxlength="60" placeholder="图片（可选）：用文字描述这张图片的画面，如：一张拍糊的试卷">一张拍糊的试卷，红笔的分数被手指挡住一半</textarea>
 </div>`;
 
-const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;font-family:system-ui,"Microsoft YaHei",sans-serif;display:flex;gap:24px;padding:24px;justify-content:center;align-items:flex-start;flex-wrap:wrap}</style><style>${css}</style><style>.lzw-bezel{width:320px;height:640px;box-sizing:content-box;flex:none}</style></head><body>${phone(chats)}${phone(contacts)}${phone(cdetail)}${phone(discover)}${phone(feed, 'lzw-scr-moments')}${phone(prof, 'lzw-scr-moments')}${phone(mpost)}</body></html>`;
+const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;font-family:system-ui,"Microsoft YaHei",sans-serif;display:flex;gap:24px;padding:24px;justify-content:center;align-items:flex-start;flex-wrap:wrap}</style><style>${css}</style><style>.lzw-bezel{width:320px;height:640px;box-sizing:content-box;flex:none}</style></head><body>${phone(chats)}${phone(contacts)}${phone(cdetail)}${phone(discover)}${phone(feed, 'lzw-scr-moments')}${phone(prof, 'lzw-scr-moments')}${phone(mpost)}${phone(feedConfirm, 'lzw-scr-moments')}</body></html>`;
 fs.writeFileSync(__dirname + '/sbv-moments.html', html);
 // 发布器放大版
 const zoomMpost = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif}</style><style>${css}</style><style>.lzw-bezel{width:400px;height:800px;box-sizing:content-box;zoom:1.6;margin:20px auto}</style></head><body>${phone(mpost)}</body></html>`;
@@ -142,6 +146,9 @@ fs.writeFileSync(__dirname + '/sbv-moments-zoom.html', zoom);
 // feed 放大版：评论冒号（.cs）呼吸间距检查用
 const zoomFeed = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif}</style><style>${css}</style><style>.lzw-bezel{width:400px;height:800px;box-sizing:content-box;zoom:1.6;margin:20px auto}</style></head><body>${phone(feed, 'lzw-scr-moments')}</body></html>`;
 fs.writeFileSync(__dirname + '/sbv-feed-zoom.html', zoomFeed);
+// 删除确认弹窗放大版：scrim 居中与按钮样式检查用
+const zoomConfirm = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif}</style><style>${css}</style><style>.lzw-bezel{width:400px;height:800px;box-sizing:content-box;zoom:1.6;margin:20px auto}</style></head><body>${phone(feedConfirm, 'lzw-scr-moments')}</body></html>`;
+fs.writeFileSync(__dirname + '/sbv-confirm-zoom.html', zoomConfirm);
 // 详细资料页放大版：按钮组样式检查用
 const zoomCdet = `<!doctype html><html><head><meta charset="utf-8"><style>body{background:#333;margin:0;font-family:system-ui,"Microsoft YaHei",sans-serif}</style><style>${css}</style><style>.lzw-bezel{width:400px;height:800px;box-sizing:content-box;zoom:1.6;margin:20px auto}</style></head><body>${phone(cdetail)}</body></html>`;
 fs.writeFileSync(__dirname + '/sbv-cdet-zoom.html', zoomCdet);

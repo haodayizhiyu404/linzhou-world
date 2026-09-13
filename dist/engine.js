@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T08:25:29.944Z
+//  构建时间：2026-09-13T08:34:22.335Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 08:25';
+var __LZW_BUILD__ = '2026-09-13 08:34';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2097,6 +2097,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     failed: false,        // 上次生成失败（消息已发出但对方没回成）→ 小飞机/↻ 变为重试
     peek: {},             // 撤回偷看集合：chatKey:index → true
     confirmDel: -1,       // 待确认删除的消息下标（-1=无）
+    mConfirmDel: -1,      // 待确认删除的自己的动态下标（-1=无）
     _placed: false,
 
     injectStyle: function () {
@@ -2195,6 +2196,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     momentsLike: function (idx) {
       try { window.LZWorld.Engine.momentsLike(idx); } catch (e) {}
       this.mMenu = -1;
+      this.render();
+    },
+    // 删自己的动态：下标移位会让 mMenu/mCmt 指向别的条目，一并复位再渲染
+    momentsDeleteAt: function (idx) {
+      try { window.LZWorld.Engine.momentsDelete(idx); } catch (e) {}
+      this.mMenu = -1;
+      this.mCmt = -1;
       this.render();
     },
     // 评论：先落库，接话生成完若还在朋友圈页就刷新（不在场时红点由引擎挂）
@@ -2425,6 +2433,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           '<div class="lzw-mpad"></div>' +
           (postsHtml || '<div class="lzw-sysrow" style="margin-top:44px">朋友们还没发动态<br>稍等片刻，或退出重进刷新</div>') +
           (this.mBusy ? '<div class="lzw-sysrow">朋友们正在更新…</div>' : '') +
+          (this.mConfirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条动态？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="mdelno">取消</button><button class="lzw-cbtn yes" data-cact="mdelok">删除</button></div></div></div>' : '') +
           '</div>';
 
       } else if (this.screen === 'mprofile') {
@@ -2705,6 +2714,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           if (ci) ci.focus();
         };
       });
+      ph.querySelectorAll('[data-mdel]').forEach(function (el) {
+        el.onclick = function () {
+          UI.mMenu = -1;
+          UI.mConfirmDel = parseInt(el.dataset.mdel, 10);
+          UI.render();
+        };
+      });
       ph.querySelectorAll('[data-msend]').forEach(function (el) {
         el.onclick = function () {
           var ci = ph.querySelector('#lzw-cmtin');
@@ -2850,6 +2866,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           var a = el.dataset.cact;
           if (a === 'cancel') { UI.confirmDel = -1; UI.render(); }
           else if (a === 'del') { UI.removeAt(UI.confirmDel); UI.confirmDel = -1; UI.render(); }
+          else if (a === 'mdelno') { UI.mConfirmDel = -1; UI.render(); }
+          else if (a === 'mdelok') { var mdi = UI.mConfirmDel; UI.mConfirmDel = -1; UI.momentsDeleteAt(mdi); }
           else if (a === 'hangup') UI.hangup(false);
           else if (a === 'cancelcall') UI.hangup(true);
           else if (a === 'callreroll') UI.callReroll();
@@ -3319,7 +3337,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     }
     var liked = (e.likes || []).indexOf(userName) !== -1;
     var menu = UI.mMenu === idx
-      ? '<div class="lzw-pmenu">' + (isMine ? '' : '<button data-mlike="' + idx + '">' + (liked ? ICON_HEART_F + ' 取消' : ICON_HEART + ' 赞') + '</button>') + '<button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button></div>'
+      ? '<div class="lzw-pmenu">' + (isMine ? '' : '<button data-mlike="' + idx + '">' + (liked ? ICON_HEART_F + ' 取消' : ICON_HEART + ' 赞') + '</button>') + '<button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button>' + (isMine ? '<button data-mdel="' + idx + '">删除</button>' : '') + '</div>'
       : '';    var cmtbar = UI.mCmt === idx
       ? '<div class="lzw-cmtbar"><input id="lzw-cmtin" maxlength="60" placeholder="说点什么…"><button data-msend="' + idx + '">发送</button></div>'
       : '';
@@ -4402,7 +4420,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         replies = this.parseMomentsReplies(text);
       } catch (e) { console.warn('[霖州引擎] 朋友圈接话生成失败', e); }
-      if (replies.length) {
+      if (replies.length && this.sameMoment(key, index, entry)) {
         comments = comments.concat(replies);
         W.Store.patchAt(key, index, { comments: comments });
         try {
@@ -4429,6 +4447,22 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var idx = W.Store.history(this.momentsKey).length;
       W.Store.push(this.momentsKey, [{ who: this.userName(), text: text, img: img, pt: pt, label: '', likes: [], comments: [] }], 100);
       return idx;
+    },
+
+    // 机主删除自己的动态：整条移除，个人主页时间轴同源一起消失。
+    // 只许删自己的；发现 tab 的未读累计与单条动态无关，不动
+    momentsDelete: function (index) {
+      var W = window.LZWorld, key = this.momentsKey;
+      var entry = W.Store.history(key)[index];
+      if (!entry || entry.who !== this.userName()) return false;
+      return W.Store.removeAt(key, index);
+    },
+
+    // 异步生成落地前的条目校验：机主可能已经把那条动态删了（或有别的写入让下标移位），
+    // 只认 who+text 不认下标，免得赞/评论贴到别人动态上
+    sameMoment: function (key, index, entry) {
+      var cur = window.LZWorld.Store.history(key)[index];
+      return !!cur && cur.who === entry.who && cur.text === entry.text;
     },
 
     // 朋友们对机主动态的反应：点赞 + 评论各生成一轮（异步，失败只 warn 不打扰机主）。
@@ -4480,6 +4514,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         likes = parsed.likes; comments = parsed.comments;
       } catch (e) { console.warn('[霖州引擎] 朋友圈回应生成失败', e); }
       if (!likes.length && !comments.length) return;
+      if (!this.sameMoment(key, index, entry)) return; // 生成期间被删/下标移位：认条目不认下标
       var entry2 = W.Store.history(key)[index];
       if (!entry2) return;
       var newLikes = (entry2.likes || []).slice();

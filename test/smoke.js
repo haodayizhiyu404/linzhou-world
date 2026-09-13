@@ -487,6 +487,14 @@ ctx.getWorldbook = async () => [
     '8月26日 21:47 机主发了「月考终于结束了」，林溪 赞了');
   eq('发圈·私聊带机主朋友圈段', reqMy.ordered_prompts[0].content.indexOf('## 机主发过的朋友圈（近3天）') !== -1, true);
   eq('发圈·私聊段含内容', reqMy.ordered_prompts[0].content.indexOf('月考终于结束了') !== -1, true);
+  // 机主删自己的动态：只许删自己的；删除后下标移位、摘要不再提它
+  eq('发圈·删别人的动态拒绝', LW.Engine.momentsDelete(0), false);
+  eq('发圈·删超界拒绝', LW.Engine.momentsDelete(999), false);
+  eq('发圈·删除生效', LW.Engine.momentsDelete(mpIdx), true);
+  eq('发圈·删除后尾部移位', LW.Engine.momentsFeed().length - 1, mpIdx0);
+  eq('发圈·摘要不再提已删', LW.Engine.myMomentsNote({ dateText: '2034年8月26日 星期五' }).indexOf('月考终于结束了') === -1, true);
+  eq('发圈·同条校验认人认文', LW.Engine.sameMoment(LW.Engine.momentsKey, mpIdx0, LW.Engine.momentsFeed()[mpIdx0]), true);
+  eq('发圈·同条校验拒越界', LW.Engine.sameMoment(LW.Engine.momentsKey, 999, {}), false);
   // 机主朋友圈的回应 prompt：契约行与人数约束
   const mreact = LW.Prompt.momentsReact({ who: '陈默', text: '月考终于结束了', img: '一张拍糊的试卷', when: '8月26日 22:49' },
     [{ name: '周言', profile: '班长' }, { name: '林溪', profile: '闺蜜' }],
