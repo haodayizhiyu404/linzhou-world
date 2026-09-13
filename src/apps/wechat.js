@@ -191,12 +191,14 @@
     '.lzw-tcard{width:190px;background:linear-gradient(135deg,#f9b84d,#f1972d);color:#fff;border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.07);flex:none}',
     '.lzw-tcard.back{background:linear-gradient(135deg,#cbced4,#b7bbc2)}',
     '.lzw-tcard.waiting{cursor:pointer}',
-    '.lzw-trow1{display:flex;align-items:center;gap:8px;padding:12px 13px 8px;font-size:20px;font-weight:600;line-height:1.2}',
-    '.lzw-tbadge{width:22px;height:22px;border-radius:50%;background:#fff;color:#f1972d;flex:none;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}',
+    '.lzw-tmain{display:flex;align-items:center;gap:10px;padding:12px 13px 8px}',
+    '.lzw-tbadge{width:36px;height:36px;border-radius:50%;background:#fff;color:#f1972d;flex:none;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700}',
     '.lzw-tcard.back .lzw-tbadge{color:#b0b4bb}',
-    '.lzw-tto{margin-left:auto;font-size:11px;font-weight:400;color:rgba(255,255,255,.9);white-space:nowrap}',
-    '.lzw-tnote2{padding:1px 13px 0;min-height:18px;font-size:12.5px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
-    '.lzw-tst{padding:2px 13px 11px;font-size:10.5px;letter-spacing:1px;color:rgba(255,255,255,.72)}',
+    '.lzw-tright{display:flex;flex-direction:column;min-width:0}',
+    '.lzw-tamt2{font-size:18px;font-weight:600;line-height:1.3;white-space:nowrap}',
+    '.lzw-tto{margin-left:6px;font-size:11px;font-weight:400;color:rgba(255,255,255,.9);white-space:nowrap}',
+    '.lzw-tst2{font-size:11px;color:rgba(255,255,255,.82);padding-top:1px}',
+    '.lzw-tnote3{padding:0 13px 10px;min-height:15px;font-size:11px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
     '.lzw-tto-line{font-size:12.5px;color:#111;padding:2px 2px 0}',
     '.lzw-tto-line b{color:#57606a;font-weight:600}',
     '.lzw-ttohd{font-size:12px;color:#8a8f99;padding:4px 2px 6px}',
@@ -455,8 +457,9 @@
     transfer: '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.8" y="6" width="18.4" height="13" rx="2.6"/><path d="M2.8 9.8h18.4M14.8 14.2h4.4"/></svg>'
   };
 
-  // 转账卡：全状态统一黄卡三行结构（徽标+金额 / 备注 / 状态），发送与接收双方同卡同款，
-  // 只是状态字不同；群聊发送方卡右上角标「给 X」，待收款的对方卡可点收款；退还是灰卡白叉。
+  // 转账卡：微信同款结构——左侧大徽标圈（高度≈金额+状态两行），右侧金额+状态上下排，
+  // 备注放在最底的小字行；全状态同卡（黄卡/退还是灰卡），发送与接收双方同卡同款，
+  // 群聊发送方卡在金额旁标「给 X」，待收款的对方卡可点收款。
   function fmtTAmount(a) {
     var n = Number(a);
     if (isNaN(n) || n <= 0) return '0';
@@ -464,9 +467,10 @@
   }
   function tcardHtml(amount, note, badge, status, back, toTag, clickable) {
     return '<div class="lzw-tcard' + (back ? ' back' : '') + (clickable ? ' waiting' : '') + '"' + (clickable ? ' data-taccept="1"' : '') + '>' +
-      '<div class="lzw-trow1"><span class="lzw-tbadge">' + badge + '</span>¥' + fmtTAmount(amount) + (toTag || '') + '</div>' +
-      '<div class="lzw-tnote2">' + esc(note || '') + '</div>' +
-      '<div class="lzw-tst">' + status + '</div></div>';
+      '<div class="lzw-tmain"><span class="lzw-tbadge">' + badge + '</span>' +
+      '<div class="lzw-tright"><div class="lzw-tamt2">¥' + fmtTAmount(amount) + (toTag || '') + '</div>' +
+      '<div class="lzw-tst2">' + status + '</div></div></div>' +
+      '<div class="lzw-tnote3">' + esc(note || '') + '</div></div>';
   }
   function transferCardHtml(m, isUser, groupMode) {
     var state = m.state === 'accepted' ? 'accepted' : m.state === 'declined' ? 'declined' : 'waiting';
