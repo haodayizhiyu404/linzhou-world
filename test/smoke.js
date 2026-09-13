@@ -624,6 +624,13 @@ ctx.getWorldbook = async () => [
   eq('api·自定义缺地址回退跟随', LW.Engine.apiConfig(), undefined);
   LW.Store.setSettings({ api: undefined });
   eq('api·清空回跟随', LW.Engine.apiConfig(), undefined);
+  LW.Store.setSettings({ api: { mode: 'custom', apiurl: 'https://g.dev', source: 'google', cmodel: 'gemini-3.1' } });
+  eq('api·自定义可换google源', LW.Engine.apiConfig().source, 'google');
+  LW.Store.setSettings({ api: undefined });
+  eq('cfg·注入四键默认', [LW.Store.cfg().injRecent, LW.Store.cfg().injMention, LW.Store.cfg().injMax, LW.Store.cfg().injRounds], [8, 4, 3, 20]);
+  LW.Store.setSettings({ injRounds: 60 });
+  eq('cfg·注入键可覆写', LW.Store.cfg().injRounds, 60);
+  LW.Store.setSettings({ injRounds: undefined });
   global.__msgs = null;
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');

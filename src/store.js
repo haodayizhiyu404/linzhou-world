@@ -171,7 +171,11 @@
       histPriv: 50,    // 私聊带回几条
       histGroup: 50,   // 群聊带回几条
       crossMax: 3,     // 跨会话最多带几个（对方在的群 / 成员当天私聊）
-      crossLines: 18   // 每个跨会话带几条
+      crossLines: 18,  // 每个跨会话带几条
+      injRecent: 8,    // 正文注入：会话在主线最近 N 楼内聊过 → 带
+      injMention: 4,   // 正文注入：名字出现在主线最近 N 楼 → 带（哪怕聊得早）
+      injMax: 3,       // 正文注入：一次最多带几个会话
+      injRounds: 20    // 正文注入：每会话带最近几条（约 10 轮）
     },
 
     settings: function () {

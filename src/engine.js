@@ -37,6 +37,15 @@
   function crossMax() {
     try { return window.LZWorld.Store.cfg().crossMax; } catch (e) { return 3; }
   }
+  // 正文注入配置（含默认值兜底）
+  function injCfg() {
+    var d = { injRecent: 8, injMention: 4, injMax: 3, injRounds: 20 };
+    try {
+      var c = window.LZWorld.Store.cfg();
+      for (var k in d) d[k] = c[k] || d[k];
+    } catch (e) {}
+    return d;
+  }
 
   // djb2 字符串哈希（主动消息防重键的一部分）
   function hashStr(s) {
@@ -522,10 +531,7 @@
     },
 
     // ── 正文生成前的手机动态注入：每个入选会话带最近 10 轮完整对话 ──
-    INJECT_RECENT_FLOORS: 8,    // 最近 N 楼内聊过 → 带
-    INJECT_MENTION_FLOORS: 4,   // 名字出现在最近 N 楼 → 带（哪怕聊得早）
-    INJECT_MAX_CHATS: 3,        // 最多带几个会话（按最近活跃优先）
-    INJECT_ROUNDS: 20,          // 每会话带最近几条（约 10 轮 user+对方）
+    // 正文注入四参数（默认 8/4/3/20）已迁至 Store.DEFAULTS，设置 app「正文生成 · 手机注入」可调
 
     injectDigest: function () {
       try {
@@ -538,7 +544,7 @@
         var recentText = '';
         try {
           recentText = getChatMessages('0-{{lastMessageId}}')
-            .slice(-this.INJECT_MENTION_FLOORS)
+            .slice(-injCfg().injMention)
             .map(function (m) { return String((m && m.message) || ''); }).join('\n');
         } catch (e) {}
         var blocks = [];
@@ -552,7 +558,7 @@
           var isGrp0 = key.indexOf('group:') === 0;
           var nm = isGrp0 ? key.slice(6) : key;
           var hit = false;
-          if (meta0.atMainCount != null && now - meta0.atMainCount <= this.INJECT_RECENT_FLOORS) hit = true;
+          if (meta0.atMainCount != null && now - meta0.atMainCount <= injCfg().injRecent) hit = true;
           if (!hit && recentText.indexOf(nm) !== -1) hit = true;
           if (hit) cands.push({ key: key, name: nm, isGrp: isGrp0, meta: meta0 });
         }
@@ -562,12 +568,12 @@
           return d !== 0 ? d : (a.key < b.key ? -1 : (a.key > b.key ? 1 : 0));
         });
         var curDay = ''; try { curDay = W.Status.nowDay(); } catch (e0) {}
-        for (var ci = 0; ci < cands.length && blocks.length < this.INJECT_MAX_CHATS; ci++) {
+        for (var ci = 0; ci < cands.length && blocks.length < injCfg().injMax; ci++) {
           var hist = root.history(cands[ci].key);
           var meta = cands[ci].meta;
           var name = cands[ci].name;
           var ago = meta.atMainCount != null ? Math.max(0, now - meta.atMainCount) : null;
-          var slice = hist.slice(-this.INJECT_ROUNDS);
+          var slice = hist.slice(-injCfg().injRounds);
           var firstDay = null;
           for (var fi = 0; fi < slice.length; fi++) { if (slice[fi].day) { firstDay = slice[fi].day; break; } }
           // 头部时间标：优先按消息自身的故事日期算时间差；旧记录没有 day 才退回楼层差

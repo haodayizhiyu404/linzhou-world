@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T14:25:08.173Z
+//  构建时间：2026-09-13T15:11:05.133Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 14:25';
+var __LZW_BUILD__ = '2026-09-13 15:11';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -180,7 +180,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       histPriv: 50,    // 私聊带回几条
       histGroup: 50,   // 群聊带回几条
       crossMax: 3,     // 跨会话最多带几个（对方在的群 / 成员当天私聊）
-      crossLines: 18   // 每个跨会话带几条
+      crossLines: 18,  // 每个跨会话带几条
+      injRecent: 8,    // 正文注入：会话在主线最近 N 楼内聊过 → 带
+      injMention: 4,   // 正文注入：名字出现在主线最近 N 楼 → 带（哪怕聊得早）
+      injMax: 3,       // 正文注入：一次最多带几个会话
+      injRounds: 20    // 正文注入：每会话带最近几条（约 10 轮）
     },
 
     settings: function () {
@@ -711,7 +715,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // 携带量配置：曾经写死的常量，现由设置 app 可调（Store.cfg()，默认值在 store.js）
   function cfg() {
     try { return window.LZWorld.Store.cfg(); } catch (e) {}
-    return { plotFloors: 8, plotCap: 900, histPriv: 50, histGroup: 50, crossMax: 3, crossLines: 18 };
+    return { plotFloors: 8, plotCap: 900, histPriv: 50, histGroup: 50, crossMax: 3, crossLines: 18, injRecent: 8, injMention: 4, injMax: 3, injRounds: 20 };
   }
 
   // ── persona 真名。generateRaw 不做宏替换，{{user}} 会原文进提示词，
@@ -3670,7 +3674,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   }
 
   // 设置屏：生成 API（跟随正文/只换模型/代理预设/自定义）+ 提示词携带量。全部即时保存。
-  var SET_NRANGES = { plotFloors: [1, 20], plotCap: [100, 2000], histPriv: [10, 100], histGroup: [10, 100], crossMax: [1, 6], crossLines: [5, 50] };
+  var SET_NRANGES = { plotFloors: [1, 20], plotCap: [100, 2000], histPriv: [10, 100], histGroup: [10, 100], crossMax: [1, 6], crossLines: [5, 50], injRecent: [1, 30], injMention: [1, 20], injMax: [1, 6], injRounds: [10, 100] };
   function settingsHtml() {
     var W = window.LZWorld;
     var cfg = W.Store.cfg();
@@ -3699,7 +3703,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     } else if (mode === 'custom') {
       var key = '';
       try { key = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
+      var srcOpts = [['openai', 'OpenAI 格式（第三方中转）'], ['google', 'Google AI Studio（配反代地址）']];
+      var srcSel = srcOpts.map(function (o) {
+        return '<option value="' + o[0] + '"' + ((api.source || 'openai') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+      }).join('');
       detail =
+        '<div class="lzw-setcol"><span class="lzw-setlbl">API 源（决定请求格式）</span><div class="lzw-setrow2">' +
+        '<select class="lzw-settxt" data-atext="source">' + srcSel + '</select></div></div>' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">API 地址</span><div class="lzw-setrow2">' +
         '<input class="lzw-settxt" data-atext="apiurl" value="' + esc(api.apiurl || '') + '" placeholder="https://…"></div></div>' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">密钥（仅本机浏览器保存）</span><div class="lzw-setrow2">' +
@@ -3723,12 +3733,16 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var numsMain = numrow('plotFloors', '带几楼正文') + numrow('plotCap', '每楼最多带多少字');
     var numsHist = numrow('histPriv', '私聊记录带几条') + numrow('histGroup', '群聊记录带几条');
     var numsCross = numrow('crossMax', '顺带带几个相关会话') + numrow('crossLines', '每个相关会话带几条');
+    var numsInj = numrow('injRecent', '聊过几楼内就注入') + numrow('injMention', '点名几楼内就注入') +
+      numrow('injMax', '一次最多注入几个会话') + numrow('injRounds', '每会话注入最近几条');
     return '<div class="lzw-body"><div class="lzw-setwrap">' +
       '<div class="lzw-setsec">生成 API</div><div class="lzw-setcard">' + rows + detail + '</div>' + pick +
       '<div class="lzw-setsec">手机生成 · 主线正文</div><div class="lzw-setcard">' + numsMain + '</div>' +
       '<div class="lzw-setsec">手机生成 · 聊天记录</div><div class="lzw-setcard">' + numsHist + '</div>' +
       '<div class="lzw-setsec">手机生成 · 跨会话</div><div class="lzw-setcard">' + numsCross + '</div>' +
-      '<div class="lzw-setnote">跨会话：生成私聊时，顺带带对方今天在的群的记录；生成群时，顺带带成员今天与机主的私聊，让对方接得上别处的梗。数值改动立即生效；API 改动作用于之后的每次手机生成。代理预设与携带量随聊天变量保存（明文、随卡走），自定义密钥只保存在本机浏览器。</div>' +
+      '<div class="lzw-setsec">正文生成 · 手机注入（正文 AI 对手机的知情度）</div><div class="lzw-setcard">' + numsInj + '</div>' +
+      '<div class="lzw-setnote">跨会话：生成私聊时，顺带带对方今天在的群的记录；生成群时，顺带带成员今天与机主的私聊，让对方接得上别处的梗。</div>' +
+      '<div class="lzw-setnote">数值改动立即生效；API 改动作用于之后的每次手机生成。代理预设与携带量随聊天变量保存（明文、随卡走），自定义密钥只保存在本机浏览器。</div>' +
       '</div></div>';
   }
 
@@ -3929,6 +3943,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   }
   function crossMax() {
     try { return window.LZWorld.Store.cfg().crossMax; } catch (e) { return 3; }
+  }
+  // 正文注入配置（含默认值兜底）
+  function injCfg() {
+    var d = { injRecent: 8, injMention: 4, injMax: 3, injRounds: 20 };
+    try {
+      var c = window.LZWorld.Store.cfg();
+      for (var k in d) d[k] = c[k] || d[k];
+    } catch (e) {}
+    return d;
   }
 
   // djb2 字符串哈希（主动消息防重键的一部分）
@@ -4415,10 +4438,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     },
 
     // ── 正文生成前的手机动态注入：每个入选会话带最近 10 轮完整对话 ──
-    INJECT_RECENT_FLOORS: 8,    // 最近 N 楼内聊过 → 带
-    INJECT_MENTION_FLOORS: 4,   // 名字出现在最近 N 楼 → 带（哪怕聊得早）
-    INJECT_MAX_CHATS: 3,        // 最多带几个会话（按最近活跃优先）
-    INJECT_ROUNDS: 20,          // 每会话带最近几条（约 10 轮 user+对方）
+    // 正文注入四参数（默认 8/4/3/20）已迁至 Store.DEFAULTS，设置 app「正文生成 · 手机注入」可调
 
     injectDigest: function () {
       try {
@@ -4431,7 +4451,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var recentText = '';
         try {
           recentText = getChatMessages('0-{{lastMessageId}}')
-            .slice(-this.INJECT_MENTION_FLOORS)
+            .slice(-injCfg().injMention)
             .map(function (m) { return String((m && m.message) || ''); }).join('\n');
         } catch (e) {}
         var blocks = [];
@@ -4445,7 +4465,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           var isGrp0 = key.indexOf('group:') === 0;
           var nm = isGrp0 ? key.slice(6) : key;
           var hit = false;
-          if (meta0.atMainCount != null && now - meta0.atMainCount <= this.INJECT_RECENT_FLOORS) hit = true;
+          if (meta0.atMainCount != null && now - meta0.atMainCount <= injCfg().injRecent) hit = true;
           if (!hit && recentText.indexOf(nm) !== -1) hit = true;
           if (hit) cands.push({ key: key, name: nm, isGrp: isGrp0, meta: meta0 });
         }
@@ -4455,12 +4475,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           return d !== 0 ? d : (a.key < b.key ? -1 : (a.key > b.key ? 1 : 0));
         });
         var curDay = ''; try { curDay = W.Status.nowDay(); } catch (e0) {}
-        for (var ci = 0; ci < cands.length && blocks.length < this.INJECT_MAX_CHATS; ci++) {
+        for (var ci = 0; ci < cands.length && blocks.length < injCfg().injMax; ci++) {
           var hist = root.history(cands[ci].key);
           var meta = cands[ci].meta;
           var name = cands[ci].name;
           var ago = meta.atMainCount != null ? Math.max(0, now - meta.atMainCount) : null;
-          var slice = hist.slice(-this.INJECT_ROUNDS);
+          var slice = hist.slice(-injCfg().injRounds);
           var firstDay = null;
           for (var fi = 0; fi < slice.length; fi++) { if (slice[fi].day) { firstDay = slice[fi].day; break; } }
           // 头部时间标：优先按消息自身的故事日期算时间差；旧记录没有 day 才退回楼层差

@@ -1991,7 +1991,7 @@
   }
 
   // 设置屏：生成 API（跟随正文/只换模型/代理预设/自定义）+ 提示词携带量。全部即时保存。
-  var SET_NRANGES = { plotFloors: [1, 20], plotCap: [100, 2000], histPriv: [10, 100], histGroup: [10, 100], crossMax: [1, 6], crossLines: [5, 50] };
+  var SET_NRANGES = { plotFloors: [1, 20], plotCap: [100, 2000], histPriv: [10, 100], histGroup: [10, 100], crossMax: [1, 6], crossLines: [5, 50], injRecent: [1, 30], injMention: [1, 20], injMax: [1, 6], injRounds: [10, 100] };
   function settingsHtml() {
     var W = window.LZWorld;
     var cfg = W.Store.cfg();
@@ -2020,7 +2020,13 @@
     } else if (mode === 'custom') {
       var key = '';
       try { key = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
+      var srcOpts = [['openai', 'OpenAI 格式（第三方中转）'], ['google', 'Google AI Studio（配反代地址）']];
+      var srcSel = srcOpts.map(function (o) {
+        return '<option value="' + o[0] + '"' + ((api.source || 'openai') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
+      }).join('');
       detail =
+        '<div class="lzw-setcol"><span class="lzw-setlbl">API 源（决定请求格式）</span><div class="lzw-setrow2">' +
+        '<select class="lzw-settxt" data-atext="source">' + srcSel + '</select></div></div>' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">API 地址</span><div class="lzw-setrow2">' +
         '<input class="lzw-settxt" data-atext="apiurl" value="' + esc(api.apiurl || '') + '" placeholder="https://…"></div></div>' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">密钥（仅本机浏览器保存）</span><div class="lzw-setrow2">' +
@@ -2044,12 +2050,16 @@
     var numsMain = numrow('plotFloors', '带几楼正文') + numrow('plotCap', '每楼最多带多少字');
     var numsHist = numrow('histPriv', '私聊记录带几条') + numrow('histGroup', '群聊记录带几条');
     var numsCross = numrow('crossMax', '顺带带几个相关会话') + numrow('crossLines', '每个相关会话带几条');
+    var numsInj = numrow('injRecent', '聊过几楼内就注入') + numrow('injMention', '点名几楼内就注入') +
+      numrow('injMax', '一次最多注入几个会话') + numrow('injRounds', '每会话注入最近几条');
     return '<div class="lzw-body"><div class="lzw-setwrap">' +
       '<div class="lzw-setsec">生成 API</div><div class="lzw-setcard">' + rows + detail + '</div>' + pick +
       '<div class="lzw-setsec">手机生成 · 主线正文</div><div class="lzw-setcard">' + numsMain + '</div>' +
       '<div class="lzw-setsec">手机生成 · 聊天记录</div><div class="lzw-setcard">' + numsHist + '</div>' +
       '<div class="lzw-setsec">手机生成 · 跨会话</div><div class="lzw-setcard">' + numsCross + '</div>' +
-      '<div class="lzw-setnote">跨会话：生成私聊时，顺带带对方今天在的群的记录；生成群时，顺带带成员今天与机主的私聊，让对方接得上别处的梗。数值改动立即生效；API 改动作用于之后的每次手机生成。代理预设与携带量随聊天变量保存（明文、随卡走），自定义密钥只保存在本机浏览器。</div>' +
+      '<div class="lzw-setsec">正文生成 · 手机注入（正文 AI 对手机的知情度）</div><div class="lzw-setcard">' + numsInj + '</div>' +
+      '<div class="lzw-setnote">跨会话：生成私聊时，顺带带对方今天在的群的记录；生成群时，顺带带成员今天与机主的私聊，让对方接得上别处的梗。</div>' +
+      '<div class="lzw-setnote">数值改动立即生效；API 改动作用于之后的每次手机生成。代理预设与携带量随聊天变量保存（明文、随卡走），自定义密钥只保存在本机浏览器。</div>' +
       '</div></div>';
   }
 
