@@ -365,7 +365,8 @@
     '.lzw-setbtn{flex:none;padding:6px 10px;border:none;border-radius:6px;background:#22c05e;color:#fff;font-size:12px;cursor:pointer}',
     '.lzw-setpick{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px}',
     '.lzw-setpick span{padding:4px 9px;background:#f0f1f3;border-radius:20px;font-size:12px;color:#1a1d21;cursor:pointer}',
-    '.lzw-setdel{flex:none;width:22px;height:22px;color:#c1c6cc;font-size:13px;line-height:22px;text-align:center;cursor:pointer}',
+    '.lzw-setdel{flex:none;width:22px;height:22px;color:#c1c6cc;font-size:13px;line-height:22px;text-align:center;cursor:pointer;-webkit-user-select:none;user-select:none}',
+    '.lzw-setdel:active{color:#e64340}',
     '.lzw-setnote{margin:16px 8px 0;font-size:11px;color:#b0b5bc;line-height:1.7}',
     '.lzw-disc-ico{width:38px;height:38px;flex:none;display:flex;align-items:center;justify-content:center}',
     '.lzw-disc-ico svg{width:30px;height:30px}',
@@ -1262,8 +1263,9 @@
           };
         });
         ph.querySelectorAll('[data-apdel]').forEach(function (el) {
-          el.onclick = function (ev) {
-            if (ev && ev.stopPropagation) ev.stopPropagation();
+          var delTimer = null;
+          var doDel = function () {
+            delTimer = null;
             var nm = el.dataset.apdel;
             var presets0 = {};
             try { presets0 = (window.LZWorld.Store.settings().api || {}).presets || {}; } catch (e) {}
@@ -1272,6 +1274,17 @@
             try { localStorage.removeItem('lzworld_phone_apikey::' + nm); } catch (e) {}
             UI.render();
           };
+          el.onpointerdown = function (ev) {
+            if (ev && ev.stopPropagation) ev.stopPropagation();
+            delTimer = setTimeout(doDel, 500);
+          };
+          var cancelDel = function (ev) {
+            if (ev && ev.stopPropagation) ev.stopPropagation();
+            if (delTimer) { clearTimeout(delTimer); delTimer = null; }
+          };
+          el.onpointerup = cancelDel;
+          el.onpointerleave = cancelDel;
+          el.oncontextmenu = function (ev) { if (ev && ev.preventDefault) ev.preventDefault(); };
         });
       }
       ph.querySelectorAll('.lzw-back').forEach(function (el) {
@@ -2082,7 +2095,7 @@
           '<span class="lzw-setdel" data-apdel="' + esc(nm) + '">✕</span></div>';
       }).join('');
       if (savedRows) {
-        detail += '<div class="lzw-setcol"><span class="lzw-setlbl">已存预设（点按即套用，密钥随预设各存一份在本机）</span></div>' + savedRows;
+        detail += '<div class="lzw-setcol"><span class="lzw-setlbl">已存预设（点按即套用；✕ 长按删除，密钥随预设各存一份在本机）</span></div>' + savedRows;
       }
     }
     var pick = '';
