@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-13T13:10:19.139Z
+//  构建时间：2026-09-13T13:16:25.472Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-13 13:10';
+var __LZW_BUILD__ = '2026-09-13 13:16';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -861,10 +861,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var myName = me();
       var tailLines = (tail && tail.length) ? histText(tail, 8, false) : '';
       var p = [
-        '# 数字世界 · 回应生成',
+        '# 虚构沙盒',
+        '',
         FICTION,
         '',
-        '你是一款数字生活应用的模拟引擎。本次任务：生成应用「微信」里，来自「' + contact.name + '」的新消息。',
+        '# 数字世界 · 回应生成',
+        '',
+        '本次任务：生成应用「微信」里，来自「' + contact.name + '」的新消息。',
         '',
         contact.profile ? '## 人物档案 · ' + contact.name + '\n' + contact.profile : '## 人物档案 · ' + contact.name + '\n（暂无档案，依据对话上下文自然演绎）',
         '',
@@ -946,10 +949,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '- 决定须符合上方「关系」阶段与当前情境（深夜/工作时间/在群里刚聊过等）'
       ].join('\n');
       var p = [
-        '# 数字世界 · ' + kind + '邀请',
+        '# 虚构沙盒',
+        '',
         FICTION,
         '',
-        '你是一款数字生活应用的模拟引擎。本次任务：机主「' + myName + '」给「' + contact.name + '」发起了' + kind + '，生成对方的反应。',
+        '# 数字世界 · ' + kind + '邀请',
+        '',
+        '本次任务：机主「' + myName + '」给「' + contact.name + '」发起了' + kind + '，生成对方的反应。',
         '',
         contact.profile ? '## 人物档案 · ' + contact.name + '\n' + contact.profile : '',
         '',
@@ -1004,10 +1010,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '- 不要复述机主刚说的话'
       ].join('\n');
       var p = [
-        '# 数字世界 · ' + kind + (mode === 'video' ? ' · 画面与台词' : '') + '进行中',
+        '# 虚构沙盒',
+        '',
         FICTION,
         '',
-        '你是一款数字生活应用的模拟引擎。本次任务：生成' + kind + '中「' + contact.name + '」接下来的' + (mode === 'video' ? '画面与台词。' : '台词。'),
+        '# 数字世界 · ' + kind + (mode === 'video' ? ' · 画面与台词' : '') + '进行中',
+        '',
+        '本次任务：生成' + kind + '中「' + contact.name + '」接下来的' + (mode === 'video' ? '画面与台词。' : '台词。'),
         '',
         contact.profile ? '## 人物档案 · ' + contact.name + '\n' + contact.profile : '',
         '',
@@ -1052,10 +1061,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   momentsFill: function (people, snapshot, userInfo) {
     var myName = me();
     var p = [
-      '# 数字世界 · 朋友圈动态生成',
+        '# 虚构沙盒',
+        '',
         FICTION,
+        '',
+      '# 数字世界 · 朋友圈动态生成',
       '',
-      '你是一款数字生活应用的模拟引擎。本次任务：为应用「微信·朋友圈」生成几位联系人的近期动态。',
+      '本次任务：为应用「微信·朋友圈」生成几位联系人的近期动态。',
       '机主「' + myName + '」刚打开朋友圈，刷到朋友们这几天陆续发的动态。',
       '',
       '## 当前情境\n' + (situationBlock(snapshot) || '（暂无）'),
@@ -1102,10 +1114,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return (c.replyTo ? c.who + ' 回复 ' + c.replyTo : c.who) + '：' + c.text;
     });
     var p = [
-      '# 数字世界 · 朋友圈评论回复',
+        '# 虚构沙盒',
+        '',
         FICTION,
+        '',
+      '# 数字世界 · 朋友圈评论回复',
       '',
-      '你是一款数字生活应用的模拟引擎。本次任务：机主「' + myName + '」刚评论了「' + post.who + '」的朋友圈动态，生成之后接话的评论。',
+      '本次任务：机主「' + myName + '」刚评论了「' + post.who + '」的朋友圈动态，生成之后接话的评论。',
       '',
       situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
       '',
@@ -1147,10 +1162,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   momentsReact: function (post, people, snapshot, userInfo, recentPriv, recentGrp) {
     var myName = me();
     var p = [
-      '# 数字世界 · 朋友圈回应',
+        '# 虚构沙盒',
+        '',
         FICTION,
+        '',
+      '# 数字世界 · 朋友圈回应',
       '',
-      '你是一款数字生活应用的模拟引擎。本次任务：机主「' + myName + '」刚发了一条朋友圈动态，生成朋友们刷到之后的反应。',
+      '本次任务：机主「' + myName + '」刚发了一条朋友圈动态，生成朋友们刷到之后的反应。',
       '',
       situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
       '',
@@ -1204,10 +1222,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       });
 
       var p = [
-        '# 数字世界 · 回应生成',
+        '# 虚构沙盒',
+        '',
         FICTION,
         '',
-        '你是一款数字生活应用的模拟引擎。本次任务：生成应用「微信」的群「' + group.name + '」里新来的消息。',
+        '# 数字世界 · 回应生成',
+        '',
+        '本次任务：生成应用「微信」的群「' + group.name + '」里新来的消息。',
         '',
         '## 群成员',
         (nameList.length ? nameList.join('、') + '、' + myName : myName) + (group.open ? '，以及若干未具名的其他成员（可让其冒泡，用真实昵称）' : ''),
