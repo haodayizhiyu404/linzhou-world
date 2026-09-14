@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-14T16:27:08.756Z
+//  构建时间：2026-09-14T19:49:54.199Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-14 16:27';
+var __LZW_BUILD__ = '2026-09-14 19:49';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -4862,6 +4862,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
     injectDigest: function () {
       try {
+        // 入口无条件清除同名注入键残留：once 摘除（GENERATION_ENDED/STOPPED）偶发失效时，
+        // 旧快照会留在 ST 注入区 extension_prompts['lzw-phone-digest']（只存内存不落盘）；
+        // 若本轮又无内容可注入直接 return，残留会被 ST 照单全收进 API 请求——
+        // 表现为「重roll携带已删除消息的上一条快照」。先清再判，各 return 分支全覆盖。
+        try { uninjectPrompts(['lzw-phone-digest']); } catch (e0) {}
         var W = window.LZWorld;
         var sec = this.section();
         if (!sec) return;

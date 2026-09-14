@@ -690,6 +690,14 @@ ctx.getWorldbook = async () => [
   eq('关闭app·有点击绑定', wsrc.includes('ph.querySelectorAll(\'[data-app="close"]\').forEach'), true);
   eq('关闭app·绑定未被误改成正则字面量（fdb0520 事故）', /^\s*\/\s*ph\\\./m.test(wsrc), false);
   eq('选线弹窗·按可视视口显式定位', wsrc.includes('function placeLinesPop') && wsrc.includes('visualViewport'), true);
+  // 正文注入·幽灵残留保险丝：入口无条件清除同名键，且先于所有 return 分支
+  // （injectPrompts 要用行首正则找——uninjectPrompts( 里就含着 injectPrompts( 子串）
+  const esrc = fs.readFileSync(path.join(ROOT, 'src/engine.js'), 'utf8');
+  const injBody = esrc.slice(esrc.indexOf('injectDigest: function'));
+  const injCut = injBody.slice(0, injBody.search(/\n\s*injectPrompts\(\[\{/));
+  const injNoCmt = injCut.replace(/\/\/[^\n]*/g, '');
+  eq('正文注入·入口先清同名键', injNoCmt.includes("uninjectPrompts(['lzw-phone-digest'])"), true);
+  eq('正文注入·清除先于所有return分支', injNoCmt.indexOf('uninjectPrompts') !== -1 && injNoCmt.indexOf('uninjectPrompts') < injNoCmt.search(/return/), true);
   global.__msgs = null;
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
