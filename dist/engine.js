@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-14T08:19:51.810Z
+//  构建时间：2026-09-14T08:49:02.837Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-14 08:19';
+var __LZW_BUILD__ = '2026-09-14 08:49';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1827,20 +1827,20 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-ltag.bad{background:#f9e9ee;color:#c07890}',
     '.lzw-ltag.on{background:#bfe8cf;color:#2f7d4f}',
     '.lzw-ltag.off{background:#efeef2;color:#9a94a0}',
-    '.lzw-lineava{display:flex;align-items:center;justify-content:center;font-size:16px;border-radius:50%;background:linear-gradient(135deg,#ffd6e8,#dcd2ff);box-shadow:inset 0 0 0 1px rgba(255,255,255,.65)}',
+    '.lzw-lineava{display:flex;align-items:center;justify-content:center;font-size:16px;border-radius:50%;background:linear-gradient(135deg,rgba(255,214,232,.85),rgba(220,210,255,.85));box-shadow:inset 0 0 0 1px rgba(255,255,255,.85),0 1px 4px rgba(180,140,210,.18)}',
     '.lzw-linerow{cursor:pointer}',
     '.lzw-linerow:active{filter:brightness(.97)}',
     '.lzw-linedis{opacity:.55}',
     // 选线弹窗（独立于手机壳的居中菜单）
     '#lzw-linespop{position:fixed;inset:0;z-index:99992;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font-family:system-ui,"Microsoft YaHei",sans-serif}',
-    '.lzw-lpop-card{width:min(300px,calc(100% - 24px));max-height:78%;background:linear-gradient(165deg,#ffe9f3 0%,#f4e9ff 48%,#e9edff 100%);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(60,30,80,.35);display:flex;flex-direction:column}',
+    '.lzw-lpop-card{width:min(300px,calc(100% - 24px));max-height:78%;background:linear-gradient(165deg,rgba(255,236,244,.88) 0%,rgba(245,236,255,.8) 48%,rgba(236,240,255,.88) 100%);border-radius:20px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.55),inset 0 1px 0 rgba(255,255,255,.6),0 18px 50px rgba(60,30,80,.35);display:flex;flex-direction:column;-webkit-backdrop-filter:blur(18px) saturate(1.15);backdrop-filter:blur(18px) saturate(1.15)}',
     '.lzw-lpop-head{position:relative;padding:16px 14px 12px;text-align:center}',
     '.lzw-lpop-t{font-family:"KaiTi","STKaiti","Microsoft YaHei",serif;font-weight:600;font-size:19px;color:#5a4a6a;letter-spacing:2px}',
     '.lzw-lpop-sub{margin-top:5px;font-size:11px;color:#a08cb8}',
     '.lzw-lpop-x{position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px;color:#b09cc0;line-height:1;padding:0 4px}',
     '.lzw-lpop-x:hover{color:#7a6690}',
     '.lzw-lpop-list{overflow-y:auto;min-height:0;padding:2px 10px 8px}',
-    '.lzw-lpop-list .lzw-conv{margin:6px 2px;border:none;border-radius:14px;background:rgba(255,255,255,.78);box-shadow:0 2px 10px rgba(180,140,210,.14)}',
+    '.lzw-lpop-list .lzw-conv{margin:6px 2px;border:none;border-radius:14px;background:rgba(255,255,255,.66);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 2px 10px rgba(180,140,210,.10)}',
     '.lzw-lpop-list .lzw-conv:last-child{margin-bottom:2px}',
     '.lzw-lpop-foot{padding:2px 14px 12px;font-size:10px;color:#b0a0c4;text-align:center;line-height:1.6}',
     // 聊天
