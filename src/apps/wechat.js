@@ -150,13 +150,13 @@
     '.lzw-linedis{opacity:.55}',
     // 选线弹窗（独立于手机壳的居中菜单）
     '#lzw-linespop{position:fixed;inset:0;z-index:99992;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font-family:system-ui,"Microsoft YaHei",sans-serif}',
-    '.lzw-lpop-card{width:300px;max-height:78vh;background:linear-gradient(165deg,#ffe9f3 0%,#f4e9ff 48%,#e9edff 100%);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(60,30,80,.35);display:flex;flex-direction:column}',
+    '.lzw-lpop-card{width:min(300px,calc(100% - 24px));max-height:78%;background:linear-gradient(165deg,#ffe9f3 0%,#f4e9ff 48%,#e9edff 100%);border-radius:20px;overflow:hidden;box-shadow:0 18px 50px rgba(60,30,80,.35);display:flex;flex-direction:column}',
     '.lzw-lpop-head{position:relative;padding:16px 14px 12px;text-align:center}',
     '.lzw-lpop-t{font-family:"KaiTi","STKaiti","Microsoft YaHei",serif;font-weight:600;font-size:19px;color:#5a4a6a;letter-spacing:2px}',
     '.lzw-lpop-sub{margin-top:5px;font-size:11px;color:#a08cb8}',
     '.lzw-lpop-x{position:absolute;right:10px;top:10px;cursor:pointer;font-size:20px;color:#b09cc0;line-height:1;padding:0 4px}',
     '.lzw-lpop-x:hover{color:#7a6690}',
-    '.lzw-lpop-list{overflow-y:auto;padding:2px 10px 8px}',
+    '.lzw-lpop-list{overflow-y:auto;min-height:0;padding:2px 10px 8px}',
     '.lzw-lpop-list .lzw-conv{margin:6px 2px;border:none;border-radius:14px;background:rgba(255,255,255,.78);box-shadow:0 2px 10px rgba(180,140,210,.14)}',
     '.lzw-lpop-list .lzw-conv:last-child{margin-bottom:2px}',
     '.lzw-lpop-foot{padding:2px 14px 12px;font-size:10px;color:#b0a0c4;text-align:center;line-height:1.6}',
@@ -787,6 +787,17 @@
         pop.onclick = function (e) { if (e.target === pop) UI.closeLines(); }; // 点遮罩关闭
         pdoc().body.appendChild(pop);
       }
+      // 定位：inset:0 锚定布局视口，移动端/缩放时会大于可见区导致卡片飞出屏幕；
+      // 改按 visualViewport 可见矩形显式落位（含缩放偏移），居中交给 flex
+      placeLinesPop();
+      if (!this._lpPlaced) {
+        this._lpPlaced = true;
+        try {
+          var lpt = pwin().visualViewport;
+          if (lpt) { lpt.addEventListener('resize', placeLinesPop); lpt.addEventListener('scroll', placeLinesPop); }
+        } catch (e) {}
+        try { pwin().addEventListener('resize', placeLinesPop); } catch (e) {}
+      }
       this.renderLinesPop();
     },
 
@@ -1185,7 +1196,9 @@
       });
       // 主屏「关闭」app：收起手机。保险——小屏上弹窗可能盖住酒馆页的 QR 开关，
       // 万一被挡死，手机上永远有第二条路可以关掉自己
-/      ph\.querySelectorAll\('\[data-app="close"\]'\)\.forEach\(function \(el\) \{\r?\n        el\.onclick = function \(\) \{ UI\.toggle\(\); \};\r?\n      \}\);/
+      ph.querySelectorAll('[data-app="close"]').forEach(function (el) {
+        el.onclick = function () { UI.toggle(); };
+      });
 
       // 设置 app：模式单选 / 数值与文本即时保存 / 拉取模型与预设列表 / 点选回填
       ph.querySelectorAll('[data-app="settings"]').forEach(function (el) {
@@ -2269,6 +2282,24 @@
 
   // 用 visualViewport 计算位置：F12/移动仿真/页面缩放下依然落在可视区右下角
   var savedPos = null; // 拖动过的位置，关闭再唤起仍记得（刷新重置）
+
+  // 选线弹窗定位：按可视视口（visualViewport）矩形落位，小屏/移动端/缩放下
+  // 始终跟着玩家实际可见的区域走；flex 负责把卡片居中其中
+  function placeLinesPop() {
+    var pop = pdoc().getElementById('lzw-linespop');
+    if (!pop) return;
+    var vp = pwin().visualViewport;
+    var left = vp ? vp.offsetLeft : 0;
+    var top = vp ? vp.offsetTop : 0;
+    var w2 = vp ? vp.width : pwin().innerWidth;
+    var h2 = vp ? vp.height : pwin().innerHeight;
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.style.width = w2 + 'px';
+    pop.style.height = h2 + 'px';
+    pop.style.right = 'auto';
+    pop.style.bottom = 'auto';
+  }
 
   function placePhone() {
     var ph = pdoc().getElementById(ID.phone);

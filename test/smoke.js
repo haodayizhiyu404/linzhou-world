@@ -631,6 +631,12 @@ ctx.getWorldbook = async () => [
   LW.Store.setSettings({ injRounds: 60 });
   eq('cfg·注入键可覆写', LW.Store.cfg().injRounds, 60);
   LW.Store.setSettings({ injRounds: undefined });
+  // ── UI 源码静态检查（回归保险丝）──
+  console.log('[UI 源码]');
+  const wsrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat.js'), 'utf8');
+  eq('关闭app·有点击绑定', wsrc.includes('ph.querySelectorAll(\'[data-app="close"]\').forEach'), true);
+  eq('关闭app·绑定未被误改成正则字面量（fdb0520 事故）', /^\s*\/\s*ph\\\./m.test(wsrc), false);
+  eq('选线弹窗·按可视视口显式定位', wsrc.includes('function placeLinesPop') && wsrc.includes('visualViewport'), true);
   global.__msgs = null;
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
