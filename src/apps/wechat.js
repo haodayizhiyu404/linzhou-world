@@ -789,6 +789,25 @@
       if (!f) return;
       try { window.LZWorld.Store.setMeta('forum:' + line + ':' + this.forumName, { seen: forumTotal(f) }); } catch (e) {}
     },
+    // 重roll 这一版：新帖全部作废重生成，考古旧帖（别的线带过来的）保留
+    rerollForum: function () {
+      var W = window.LZWorld;
+      var name = this.forumName;
+      if (!name || this.fBusy) return;
+      var self = this, line = forumLineKey();
+      this.fBusy = true;
+      this.render();
+      W.Engine.forumReroll(line, name).then(function () {
+        try { toastr.info('已重新生成一版帖子', '霖州手机', { timeOut: 2000 }); } catch (e) {}
+      }).catch(function (e) {
+        console.warn('[霖州引擎] 论坛重roll失败', e);
+        try { toastr.error('重roll失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
+      }).finally(function () {
+        self.fBusy = false;
+        self.markForumSeen();
+        if (self.screen === 'fboard' || self.screen === 'fthread') self.render();
+      });
+    },
 
     momentsEnsureFresh: function () {
       if (this.mBusy) return;
@@ -1436,6 +1455,9 @@
       ph.querySelectorAll('[data-fretry]').forEach(function (el) {
         el.onclick = function () { UI.openForum(el.dataset.fretry); };
       });
+      ph.querySelectorAll('[data-fact="freroll"]').forEach(function (el) {
+        el.onclick = function () { UI.rerollForum(); };
+      });
       // 朋友圈：相机打开发布器、头像/名字进主页、⋯菜单、赞、评论、发送
       ph.querySelectorAll('[data-mcam]').forEach(function (el) {
         el.onclick = function () { UI.screen = 'mpost'; UI.mFrom = 'moments'; UI.render(); };
@@ -1540,7 +1562,8 @@
           UI.momentsSendComment(parseInt(el.dataset.msend, 10), t);
         };
       });
-      ph.querySelectorAll('.lzw-conv:not(.lzw-linerow):not([data-cdet])').forEach(function (el) {
+      // 论坛行（.lzw-frow）也是 .lzw-conv，必须排除——否则点击进空白聊天页
+      ph.querySelectorAll('.lzw-conv:not(.lzw-linerow):not([data-cdet]):not(.lzw-frow)').forEach(function (el) {
         el.onclick = function () { UI.openChat(el.dataset.key, el.dataset.group === '1'); };
       });
       ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
@@ -2281,7 +2304,7 @@
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'settings') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">设置</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'forum') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">论坛</span><span class="lzw-appbar-r"></span></div>';
-    if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？重新生成（考古旧帖保留）">' + ICON_REROLL + '</span>') + '</span></div>';
     if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';

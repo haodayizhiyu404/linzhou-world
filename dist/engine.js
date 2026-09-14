@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-14T16:11:15.548Z
+//  构建时间：2026-09-14T16:27:08.756Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-14 16:11';
+var __LZW_BUILD__ = '2026-09-14 16:27';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2553,6 +2553,25 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!f) return;
       try { window.LZWorld.Store.setMeta('forum:' + line + ':' + this.forumName, { seen: forumTotal(f) }); } catch (e) {}
     },
+    // 重roll 这一版：新帖全部作废重生成，考古旧帖（别的线带过来的）保留
+    rerollForum: function () {
+      var W = window.LZWorld;
+      var name = this.forumName;
+      if (!name || this.fBusy) return;
+      var self = this, line = forumLineKey();
+      this.fBusy = true;
+      this.render();
+      W.Engine.forumReroll(line, name).then(function () {
+        try { toastr.info('已重新生成一版帖子', '霖州手机', { timeOut: 2000 }); } catch (e) {}
+      }).catch(function (e) {
+        console.warn('[霖州引擎] 论坛重roll失败', e);
+        try { toastr.error('重roll失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
+      }).finally(function () {
+        self.fBusy = false;
+        self.markForumSeen();
+        if (self.screen === 'fboard' || self.screen === 'fthread') self.render();
+      });
+    },
 
     momentsEnsureFresh: function () {
       if (this.mBusy) return;
@@ -3200,6 +3219,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ph.querySelectorAll('[data-fretry]').forEach(function (el) {
         el.onclick = function () { UI.openForum(el.dataset.fretry); };
       });
+      ph.querySelectorAll('[data-fact="freroll"]').forEach(function (el) {
+        el.onclick = function () { UI.rerollForum(); };
+      });
       // 朋友圈：相机打开发布器、头像/名字进主页、⋯菜单、赞、评论、发送
       ph.querySelectorAll('[data-mcam]').forEach(function (el) {
         el.onclick = function () { UI.screen = 'mpost'; UI.mFrom = 'moments'; UI.render(); };
@@ -3304,7 +3326,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           UI.momentsSendComment(parseInt(el.dataset.msend, 10), t);
         };
       });
-      ph.querySelectorAll('.lzw-conv:not(.lzw-linerow):not([data-cdet])').forEach(function (el) {
+      // 论坛行（.lzw-frow）也是 .lzw-conv，必须排除——否则点击进空白聊天页
+      ph.querySelectorAll('.lzw-conv:not(.lzw-linerow):not([data-cdet]):not(.lzw-frow)').forEach(function (el) {
         el.onclick = function () { UI.openChat(el.dataset.key, el.dataset.group === '1'); };
       });
       ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
@@ -4045,7 +4068,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'settings') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">设置</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'forum') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">论坛</span><span class="lzw-appbar-r"></span></div>';
-    if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？重新生成（考古旧帖保留）">' + ICON_REROLL + '</span>') + '</span></div>';
     if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
@@ -5121,38 +5144,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return yr + '年' + +m[2] + '月' + +m[3] + '日 ' + ('0' + m[4]).slice(-2) + ':' + m[5];
     },
 
-    // 首次进论坛：空论坛 → 生成一版热帖（6~8 条）。
-    // 跨时代挖坟：别的线的同名论坛挑旧帖带过来（快照语义：原标题/时间/回帖原样保留，carried 标记）。
-    forumEnsure: async function (line, name) {
+    // 生成一版帖子（carried=跨时代挖来的旧帖，排前入列）；一版都没有就抛错
+    forumGenerate: async function (line, name, carried) {
       var W = window.LZWorld, St = W.Store;
-      var f0 = St.forumGet(line, name);
-      if (!f0 || !(f0.posts || []).length) {
-        // 空白差异的同名论坛视为同一个（「霖州吧」=「霖州 吧」），不重复生成
-        var stripped = String(name || '').replace(/\s+/g, '');
-        for (var fn2 in ((St.forumAll() || {})[line || ''] || {})) {
-          if (String(fn2).replace(/\s+/g, '') === stripped) { f0 = St.forumGet(line, fn2); name = fn2; break; }
-        }
-      }
-      if (f0 && f0.posts && f0.posts.length) return false;
       var snap; try { snap = W.Status.snapshot(null); } catch (e0) {}
-      // 同名判定去空白/【】，「霖州吧」与「霖州 吧」视为同一个
-      var want0 = String(name || '').replace(/[\s【】]/g, '');
-      var carried = [];
-      var all = St.forumAll();
-      for (var ln in all) {
-        if (ln === (line || '')) continue;
-        var src = all[ln] || {};
-        for (var fn in src) {
-          if (String(fn).replace(/[\s【】]/g, '') !== want0) continue;
-          var olds = (src[fn].posts || []).slice();
-          olds.sort(function (a, b) { return (b.replies || []).length - (a.replies || []).length; });
-          for (var ci = 0; ci < olds.length && carried.length < 3; ci++) {
-            var c0 = olds[ci];
-            carried.push({ author: c0.author, title: c0.title, text: c0.text, time: c0.time || '',
-              replies: (c0.replies || []).slice(0, 2), carried: true, fromLine: ln });
-          }
-        }
-      }
       // 人名池（联系人+群成员，去重）：AI 可给他们起网名，也可纯陌生网友
       var sec = this.section() || {};
       var pool = [], seen = {};
@@ -5178,8 +5173,51 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         fp.time = cur.getFullYear() + '年' + (cur.getMonth() + 1) + '月' + cur.getDate() + '日 ' +
           ('0' + cur.getHours()).slice(-2) + ':' + ('0' + cur.getMinutes()).slice(-2);
       }
-      St.forumPut(line, name, { posts: carried.concat(fresh) });
+      St.forumPut(line, name, { posts: (carried || []).concat(fresh) });
       return true;
+    },
+
+    // 首次进论坛：空论坛 → 生成一版热帖（6~8 条）。
+    // 跨时代挖坟：别的线的同名论坛挑旧帖带过来（快照语义：原标题/时间/回帖原样保留，carried 标记）。
+    forumEnsure: async function (line, name) {
+      var W = window.LZWorld, St = W.Store;
+      var f0 = St.forumGet(line, name);
+      if (!f0 || !(f0.posts || []).length) {
+        // 空白差异的同名论坛视为同一个（「霖州吧」=「霖州 吧」），不重复生成
+        var stripped = String(name || '').replace(/\s+/g, '');
+        for (var fn2 in ((St.forumAll() || {})[line || ''] || {})) {
+          if (String(fn2).replace(/\s+/g, '') === stripped) { f0 = St.forumGet(line, fn2); name = fn2; break; }
+        }
+      }
+      if (f0 && f0.posts && f0.posts.length) return false;
+      // 同名判定去空白/【】，「霖州吧」与「霖州 吧」视为同一个
+      var want0 = String(name || '').replace(/[\s【】]/g, '');
+      var carried = [];
+      var all = St.forumAll();
+      for (var ln in all) {
+        if (ln === (line || '')) continue;
+        var src = all[ln] || {};
+        for (var fn in src) {
+          if (String(fn).replace(/[\s【】]/g, '') !== want0) continue;
+          var olds = (src[fn].posts || []).slice();
+          olds.sort(function (a, b) { return (b.replies || []).length - (a.replies || []).length; });
+          for (var ci = 0; ci < olds.length && carried.length < 3; ci++) {
+            var c0 = olds[ci];
+            carried.push({ author: c0.author, title: c0.title, text: c0.text, time: c0.time || '',
+              replies: (c0.replies || []).slice(0, 2), carried: true, fromLine: ln });
+          }
+        }
+      }
+      return this.forumGenerate(line, name, carried);
+    },
+
+    // 重roll 这一版：本线生成的新帖全部作废重生成，考古旧帖（别的线带过来的）保留
+    forumReroll: async function (line, name) {
+      var St = window.LZWorld.Store;
+      var f = St.forumGet(line, name);
+      if (!f) return false;
+      var carried = (f.posts || []).filter(function (p) { return p.carried; });
+      return this.forumGenerate(line, name, carried);
     },
     momentsFeed: function () { return window.LZWorld.Store.history(this.momentsKey); },
 

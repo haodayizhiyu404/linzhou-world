@@ -670,6 +670,16 @@ ctx.getWorldbook = async () => [
   eq('论坛·帖契约', ffTxt.indexOf('[帖:网名:标题:正文]') !== -1, true);
   eq('论坛·回复契约', ffTxt.indexOf('[回复:网名:回帖内容]') !== -1, true);
   eq('论坛·人名池', ffTxt.indexOf('周言') !== -1, true);
+  // 重roll：本线生成的新帖作废重生成，考古旧帖保留
+  LW.Store.forumPut('成人时代-破镜重圆', '重roll测试墙', { posts: [
+    { author: '旧人', title: '考古帖', text: '旧内容', time: '2031年1月1日 10:00', replies: [], carried: true, fromLine: '高中时代' },
+    { author: '新人', title: '待换帖', text: '将被换掉的', time: '2034年8月26日 20:00', replies: [], carried: false },
+  ] });
+  ctx.generateRaw = async (req) => '[帖:换后的网友:换血成功:这一版是新的]';
+  eq('论坛·重roll', await LW.Engine.forumReroll('成人时代-破镜重圆', '重roll测试墙'), true);
+  const fRr = LW.Store.forumGet('成人时代-破镜重圆', '重roll测试墙');
+  eq('论坛·重roll旧帖保留', fRr.posts[0].carried === true && fRr.posts[0].title === '考古帖', true);
+  eq('论坛·重roll新帖换代', fRr.posts.length === 2 && fRr.posts[1].title === '换血成功', true);
   // 删除：数据与未读标记一起清
   LW.Store.setMeta('forum:成人时代-破镜重圆:霖州一中树洞墙', { seen: 3 });
   eq('论坛·删除', LW.Store.forumDel('成人时代-破镜重圆', '霖州一中树洞墙'), true);

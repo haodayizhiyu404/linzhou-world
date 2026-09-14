@@ -816,38 +816,10 @@
       return yr + '年' + +m[2] + '月' + +m[3] + '日 ' + ('0' + m[4]).slice(-2) + ':' + m[5];
     },
 
-    // 首次进论坛：空论坛 → 生成一版热帖（6~8 条）。
-    // 跨时代挖坟：别的线的同名论坛挑旧帖带过来（快照语义：原标题/时间/回帖原样保留，carried 标记）。
-    forumEnsure: async function (line, name) {
+    // 生成一版帖子（carried=跨时代挖来的旧帖，排前入列）；一版都没有就抛错
+    forumGenerate: async function (line, name, carried) {
       var W = window.LZWorld, St = W.Store;
-      var f0 = St.forumGet(line, name);
-      if (!f0 || !(f0.posts || []).length) {
-        // 空白差异的同名论坛视为同一个（「霖州吧」=「霖州 吧」），不重复生成
-        var stripped = String(name || '').replace(/\s+/g, '');
-        for (var fn2 in ((St.forumAll() || {})[line || ''] || {})) {
-          if (String(fn2).replace(/\s+/g, '') === stripped) { f0 = St.forumGet(line, fn2); name = fn2; break; }
-        }
-      }
-      if (f0 && f0.posts && f0.posts.length) return false;
       var snap; try { snap = W.Status.snapshot(null); } catch (e0) {}
-      // 同名判定去空白/【】，「霖州吧」与「霖州 吧」视为同一个
-      var want0 = String(name || '').replace(/[\s【】]/g, '');
-      var carried = [];
-      var all = St.forumAll();
-      for (var ln in all) {
-        if (ln === (line || '')) continue;
-        var src = all[ln] || {};
-        for (var fn in src) {
-          if (String(fn).replace(/[\s【】]/g, '') !== want0) continue;
-          var olds = (src[fn].posts || []).slice();
-          olds.sort(function (a, b) { return (b.replies || []).length - (a.replies || []).length; });
-          for (var ci = 0; ci < olds.length && carried.length < 3; ci++) {
-            var c0 = olds[ci];
-            carried.push({ author: c0.author, title: c0.title, text: c0.text, time: c0.time || '',
-              replies: (c0.replies || []).slice(0, 2), carried: true, fromLine: ln });
-          }
-        }
-      }
       // 人名池（联系人+群成员，去重）：AI 可给他们起网名，也可纯陌生网友
       var sec = this.section() || {};
       var pool = [], seen = {};
@@ -873,8 +845,51 @@
         fp.time = cur.getFullYear() + '年' + (cur.getMonth() + 1) + '月' + cur.getDate() + '日 ' +
           ('0' + cur.getHours()).slice(-2) + ':' + ('0' + cur.getMinutes()).slice(-2);
       }
-      St.forumPut(line, name, { posts: carried.concat(fresh) });
+      St.forumPut(line, name, { posts: (carried || []).concat(fresh) });
       return true;
+    },
+
+    // 首次进论坛：空论坛 → 生成一版热帖（6~8 条）。
+    // 跨时代挖坟：别的线的同名论坛挑旧帖带过来（快照语义：原标题/时间/回帖原样保留，carried 标记）。
+    forumEnsure: async function (line, name) {
+      var W = window.LZWorld, St = W.Store;
+      var f0 = St.forumGet(line, name);
+      if (!f0 || !(f0.posts || []).length) {
+        // 空白差异的同名论坛视为同一个（「霖州吧」=「霖州 吧」），不重复生成
+        var stripped = String(name || '').replace(/\s+/g, '');
+        for (var fn2 in ((St.forumAll() || {})[line || ''] || {})) {
+          if (String(fn2).replace(/\s+/g, '') === stripped) { f0 = St.forumGet(line, fn2); name = fn2; break; }
+        }
+      }
+      if (f0 && f0.posts && f0.posts.length) return false;
+      // 同名判定去空白/【】，「霖州吧」与「霖州 吧」视为同一个
+      var want0 = String(name || '').replace(/[\s【】]/g, '');
+      var carried = [];
+      var all = St.forumAll();
+      for (var ln in all) {
+        if (ln === (line || '')) continue;
+        var src = all[ln] || {};
+        for (var fn in src) {
+          if (String(fn).replace(/[\s【】]/g, '') !== want0) continue;
+          var olds = (src[fn].posts || []).slice();
+          olds.sort(function (a, b) { return (b.replies || []).length - (a.replies || []).length; });
+          for (var ci = 0; ci < olds.length && carried.length < 3; ci++) {
+            var c0 = olds[ci];
+            carried.push({ author: c0.author, title: c0.title, text: c0.text, time: c0.time || '',
+              replies: (c0.replies || []).slice(0, 2), carried: true, fromLine: ln });
+          }
+        }
+      }
+      return this.forumGenerate(line, name, carried);
+    },
+
+    // 重roll 这一版：本线生成的新帖全部作废重生成，考古旧帖（别的线带过来的）保留
+    forumReroll: async function (line, name) {
+      var St = window.LZWorld.Store;
+      var f = St.forumGet(line, name);
+      if (!f) return false;
+      var carried = (f.posts || []).filter(function (p) { return p.carried; });
+      return this.forumGenerate(line, name, carried);
     },
     momentsFeed: function () { return window.LZWorld.Store.history(this.momentsKey); },
 
