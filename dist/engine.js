@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-14T08:49:02.837Z
+//  构建时间：2026-09-14T16:11:15.548Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-14 08:49';
+var __LZW_BUILD__ = '2026-09-14 16:11';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -240,6 +240,41 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var r = readRoot();
       r.history = {};
       writeRoot(r);
+    },
+
+    // ── 论坛（按线隔离）：r.forums = { 线名: { 论坛名: {name, createdAt, posts:[…]} } } ──
+    // 未读借用 meta，key = 'forum:'+线名+':'+论坛名，记 {seen:N}（N=上次看到时的总条目数）
+    forumAll: function () {
+      var r = readRoot();
+      return r.forums || {};
+    },
+    forumNames: function (line) {
+      var r = readRoot();
+      var f = (r.forums || {})[line || ''] || {};
+      return Object.keys(f);
+    },
+    forumGet: function (line, name) {
+      var r = readRoot();
+      var f = (r.forums || {})[line || ''] || {};
+      return f[name] || null;
+    },
+    forumPut: function (line, name, forum) {
+      var r = readRoot();
+      r.forums = r.forums || {};
+      var slot = r.forums[line || ''] = r.forums[line || ''] || {};
+      forum.name = name;
+      if (!forum.createdAt) forum.createdAt = Date.now();
+      slot[name] = forum;
+      writeRoot(r);
+    },
+    forumDel: function (line, name) {
+      var r = readRoot();
+      var slot = (r.forums || {})[line || ''];
+      if (!slot || !slot[name]) return false;
+      delete slot[name];
+      if (r.meta) delete r.meta['forum:' + (line || '') + ':' + name];
+      writeRoot(r);
+      return true;
     }
   };
 
@@ -1142,6 +1177,52 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ordered_prompts: [
         { role: 'system', content: p },
         { role: 'user', content: '（请按输出要求生成上述 ' + people.length + ' 位联系人的朋友圈动态。）' }
+      ],
+      should_silence: true,
+      max_chat_history: 0
+    };
+  },
+
+  // ── 论坛 · 首次填充：为空论坛生成一版热帖 ──
+  // name=论坛名 line=当前世界线 carried=跨时代带过来的旧帖 people=可能出没的人名池
+  // 契约语法：[帖:网名:标题:正文]；可紧跟 [时间:M月D日 HH:MM]、[回复:网名:内容]（每帖 ≤2 条）
+  forumFill: function (name, line, carried, people, snapshot, userInfo) {
+    var myName = me();
+    var p = [
+        '# 虚构沙盒',
+        '',
+        FICTION,
+        '',
+      '# 数字世界 · 论坛帖子生成',
+      '',
+      '本次任务：为论坛「' + name + '」生成一版帖子。',
+      '机主「' + myName + '」第一次进入这个论坛，看到的是它此刻的样子。',
+      '',
+      '## 当前情境\n' + (situationBlock(snapshot) || '（暂无）'),
+      '',
+      userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
+      carried.length ? '## 这个论坛的旧帖（从更早的时代留存下来，沉在列表底部）\n' + carried.map(function (c) {
+        return '- 「' + c.title + '」（' + c.author + '，' + (c.time || '久远以前') + '）：' + String(c.text).slice(0, 60) + '…';
+      }).join('\n') + '\n新帖应与这些旧帖一脉相承（同样的论坛口味与传统），但不要改写或复述它们。' : '',
+      '',
+      '## 可能出没的人（可给他们起谐音/外号/缩写网名让熟人认出，也可用纯陌生网友）\n' +
+        (people && people.length ? people.join('、') : '（无名单，全用陌生网友）'),
+      '',
+      '## 输出要求（严格遵守）',
+      '- 输出 6~8 条帖子，按发布时间从新到旧排列（最新的最先输出）',
+      '- 格式严格为：[帖:网名:标题:正文]（单行；标题 ≤20 字，正文 30~150 字）',
+      '- 至多一半的帖子带 1~2 条回帖，紧跟其后：[回复:网名:回帖内容]（每条 ≤40 字，像真实网友：抖机灵、补充、抬杠、歪楼、喊楼主好人）',
+      '- 帖子要有真实论坛感：问事求助、分享、吐槽、炫耀、吃瓜搬运、灌水……标题党可以有但别每条都党',
+      '- 可选：每条帖子后紧跟一行 [时间:M月D日 HH:MM]（24 小时制；不晚于当前时刻；彼此拉开，今天昨天为主，个别可早到几天前）',
+      '- 网名要像真人注册的：字母缩写、中二名、随手起名、带数字都行；不要一水儿文艺名',
+      '- 内容与口吻贴合「' + name + '」这个论坛名该有的画风；楼主们各有各的声口，不要同一副腔调',
+      '- 不要点名单「' + myName + '」，不要写需要机主回应的内容（机主只是路过看看）',
+      '- 除 [帖]/[时间]/[回复] 行外不要输出任何其他内容'
+    ].filter(function (s) { return s !== ''; }).join('\n');
+    return {
+      ordered_prompts: [
+        { role: 'system', content: p },
+        { role: 'user', content: '（请按输出要求生成论坛「' + name + '」的 6~8 条帖子。）' }
       ],
       should_silence: true,
       max_chat_history: 0
@@ -2123,7 +2204,30 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-mpimg:focus,.lzw-mpimg:focus-visible{outline:none !important;box-shadow:none !important;border:none !important;border-top:1px solid rgba(0,0,0,.08) !important;border-radius:0 !important;background:transparent}',
     '.lzw-postsend{background:#22c05e;color:#fff;border-radius:5px;font-size:14px;padding:5px 14px;cursor:pointer;font-family:inherit;border:none;white-space:nowrap}',
     '.lzw-appbar-rw{width:auto;flex:none}',
-    '.lzw-mptip{padding:12px 14px;font-size:12px;color:#9aa0a8}'
+    '.lzw-mptip{padding:12px 14px;font-size:12px;color:#9aa0a8}',
+    // ── 论坛 ──
+    '.lzw-fnew{display:flex;gap:6px;padding:10px 12px;background:#fff;border-bottom:1px solid rgba(0,0,0,.06);flex:none}',
+    '.lzw-fin{flex:1;min-width:0;border:1px solid #e2e5ea;border-radius:16px;padding:6px 12px;font-size:13px;outline:none;font-family:inherit}',
+    '.lzw-fin:focus{border-color:#22c05e}',
+    '.lzw-fgo{flex:none;border:none;border-radius:16px;background:#e8912d;color:#fff;font-size:13px;padding:0 14px;cursor:pointer;font-family:inherit}',
+    '.lzw-fdice{flex:none;width:34px;border:1px solid #e2e5ea;border-radius:16px;background:#f7f7f9;font-size:15px;cursor:pointer}',
+    '.lzw-fempty{padding:48px 24px;text-align:center;color:#9aa0a8;font-size:13px;line-height:2.1}',
+    '.lzw-fretry{margin-top:8px;border:none;border-radius:16px;background:#e8912d;color:#fff;font-size:13px;padding:7px 18px;cursor:pointer;font-family:inherit}',
+    '.lzw-frow{display:flex;align-items:center;background:#fff;cursor:pointer;border-bottom:1px solid rgba(0,0,0,.05)}',
+    '.lzw-fico{flex:none;width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f5b76a,#ee8a3d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;margin-left:12px}',
+    '.lzw-frow .lzw-conv-main{flex:1;min-width:0;padding:10px 10px 10px 0}',
+    '.lzw-frow .lzw-setdel{flex:none;margin-right:10px}',
+    '.lzw-fdot{position:static;display:inline-block;vertical-align:1px;margin-left:6px;border:none}',
+    '.lzw-ftitle{font-size:14px;font-weight:600;color:#111;line-height:1.4;word-break:break-word}',
+    '.lzw-fsub{font-size:11px;color:#9aa0a8;margin-top:3px}',
+    '.lzw-fcarried{font-size:10px;font-weight:400;background:#f0eafa;color:#8a7fc0;border-radius:8px;padding:2px 6px;margin-left:5px;vertical-align:1px}',
+    '.lzw-fmain{margin:12px;padding:14px;background:#fff;border-radius:12px}',
+    '.lzw-fmain-t{font-size:16px}',
+    '.lzw-fmain-b{margin-top:10px;font-size:14px;line-height:1.65;color:#222;word-break:break-word}',
+    '.lzw-freps{margin:0 12px 12px;background:#fff;border-radius:12px;padding:4px 14px}',
+    '.lzw-frep{padding:9px 0;font-size:13px;line-height:1.55;color:#333;border-bottom:1px solid rgba(0,0,0,.05);word-break:break-word}',
+    '.lzw-frep:last-child{border-bottom:none}',
+    '.lzw-frep-a{color:#576b95;font-weight:600}'
   ].join('\n');
 
   var ICON_VOICE = '<svg width="15" height="15" viewBox="0 0 1024 1024"><path fill="#222222" d="M501.269333 517.610667a277.333333 277.333333 0 0 1-81.664 197.546666l-5.12 4.906667-3.306666 2.858667a42.666667 42.666667 0 0 1-58.325334-61.696l3.029334-3.136 6.954666-6.954667a192.042667 192.042667 0 0 0-7.936-273.002667l-3.050666-3.136a42.666667 42.666667 0 0 1 61.248-59.264l5.12 4.906667a277.333333 277.333333 0 0 1 83.050666 196.970667z m187.648 10.197333A418.090667 418.090667 0 0 1 565.845333 814.933333l-7.68 7.466667-3.306666 2.837333a42.666667 42.666667 0 0 1-58.346667-61.674666l3.029333-3.157334 6.101334-5.952a332.928 332.928 0 0 0 97.962666-228.48l0.085334-8.533333a332.821333 332.821333 0 0 0-105.834667-242.24 42.666667 42.666667 0 0 1 58.197333-62.4 418.133333 418.133333 0 0 1 132.970667 304.32l-0.106667 10.709333zM625.877333 137.877333a42.666667 42.666667 0 0 1 58.176-62.421333l-58.176 62.421333z m250.730667 394.026667a606.208 606.208 0 0 1-48.853333 225.365333l-6.293334 14.165334a606.016 606.016 0 0 1-123.2 176.554666l-11.136 10.816-3.306666 2.837334a42.666667 42.666667 0 0 1-58.346667-61.696l3.029333-3.136 9.557334-9.28a520.661333 520.661333 0 0 0 105.856-151.722667l5.397333-12.16a520.853333 520.853333 0 0 0 41.984-193.6l0.128-13.333333a520.341333 520.341333 0 0 0-38.4-194.261334l-5.141333-12.288a520.533333 520.533333 0 0 0-122.026667-172.288l58.197333-62.421333a605.909333 605.909333 0 0 1 142.016 200.533333l6.016 14.293334a605.653333 605.653333 0 0 1 44.672 226.133333l-0.149333 15.509333zM170.666667 518.442667a64 64 0 1 1 128 0 64 64 0 0 1-128 0z"/></svg>';
@@ -2150,6 +2254,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   var ICON_POWEROFF = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.5a8 8 0 1 0 11.4 0"/></svg>';
   // 底栏两个 tab：对话 / 发现（指南针）
   var ICON_GEAR = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2.1" fill="#fff" stroke="none"/><circle cx="9" cy="12" r="2.1" fill="#fff" stroke="none"/><circle cx="17" cy="17" r="2.1" fill="#fff" stroke="none"/></svg>';
+  var ICON_FORUM = '<svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.6 3.4A1 1 0 0 1 4 18.4V5.5z"/><circle cx="9" cy="9.7" r="1.15" fill="#e8912d"/><circle cx="12.5" cy="9.7" r="1.15" fill="#e8912d"/><circle cx="16" cy="9.7" r="1.15" fill="#e8912d"/></svg>';
   var ICON_TAB_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.34-4.1-1L3 20l1.1-4.9A8.5 8.5 0 1 1 21 11.5z"/></svg>';
   var ICON_TAB_DISC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/></svg>';
   var ICON_TAB_CONT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 4.2a3.3 3.3 0 1 1 0 6.6 3.3 3.3 0 0 1 0-6.6z"/><path d="M3.8 19.4c.5-2.9 2.8-4.6 5.8-4.6s5.3 1.7 5.8 4.6"/><path d="M15.6 5.2a3 3 0 0 1 0 5.6M17.4 14.9c1.9.5 3.3 1.9 3.7 3.9"/></svg>';
@@ -2336,6 +2441,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     mConfirmDel: -1,      // 待确认删除的自己的动态下标（-1=无）
     tConfirm: -1,         // 待确认收款的转账消息下标（-1=无）
     pConfirmDel: '',      // 待确认删除的自定义 API 预设名（''=无）
+    forumName: '',        // fboard/fthread 当前论坛名
+    fThread: -1,          // fthread 当前帖子下标
+    fConfirmDel: '',      // 待确认删除的论坛名（''=无）
+    fBusy: false,         // 论坛生成中
     tTarget: '',          // 群聊转账选中的接收方（确定发出后清空）
     _placed: false,
 
@@ -2409,6 +2518,42 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     },
     // 每个故事日首次进入生成 3~4 条动态；生成完若还在朋友圈页就刷新
     // 已生成 / 状态栏日期缺失都不静默跳过：前者由引擎 filledDay 判重，后者兜底生成一次并提示
+    openForum: function (name) {
+      var W = window.LZWorld;
+      name = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
+      if (!name) { try { toastr.info('先输入论坛名', '霖州手机'); } catch (e) {} return; }
+      var line = forumLineKey();
+      // 同名已存在（含空白差异）→ 直接打开；新名字 → 先建空壳（列表留住它），进入后生成内容
+      var stripped = name.replace(/\s+/g, '');
+      for (var fn2 in ((W.Store.forumAll() || {})[line] || {})) {
+        if (String(fn2).replace(/\s+/g, '') === stripped) { name = fn2; break; }
+      }
+      if (!W.Store.forumGet(line, name)) W.Store.forumPut(line, name, { posts: [] });
+      this.forumName = name;
+      this.fThread = -1;
+      this.screen = 'fboard';
+      this.render();
+      var self = this;
+      this.fBusy = true;
+      W.Engine.forumEnsure(line, name).then(function (got) {
+        if (got) try { toastr.info('「' + name + '」已生成一版帖子', '霖州手机', { timeOut: 3000 }); } catch (e) {}
+      }).catch(function (e) {
+        console.warn('[霖州引擎] 论坛生成失败', e);
+        try { toastr.error('论坛生成失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
+      }).finally(function () {
+        self.fBusy = false;
+        self.markForumSeen();
+        if (self.screen === 'fboard' || self.screen === 'fthread') self.render();
+      });
+    },
+    // 打开即已读：把「已看到条目数」记进 meta，回列表后未读清零
+    markForumSeen: function () {
+      var line = forumLineKey();
+      var f = window.LZWorld.Store.forumGet(line, this.forumName);
+      if (!f) return;
+      try { window.LZWorld.Store.setMeta('forum:' + line + ':' + this.forumName, { seen: forumTotal(f) }); } catch (e) {}
+    },
+
     momentsEnsureFresh: function () {
       if (this.mBusy) return;
       var eng = window.LZWorld.Engine;
@@ -2566,16 +2711,36 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           // 与发现 tab 红点是同一份计数（Store.meta(momentsKey).unread）
           W.Store.historyKeys().forEach(function (k) { totalUn += W.Store.meta(k).unread || 0; });
         } catch (e0) {}
+        // 论坛 app 角标：当前线所有论坛的（总条目 - 已读标记）之和
+        var funTotal = 0;
+        try {
+          var fline0 = W.Store.line() || '';
+          W.Store.forumNames(fline0).forEach(function (fn0) {
+            var fm0 = W.Store.forumGet(fline0, fn0);
+            var seen0 = 0;
+            try { seen0 = (W.Store.meta('forum:' + fline0 + ':' + fn0) || {}).seen || 0; } catch (e1) {}
+            var tot0 = 0;
+            ((fm0 && fm0.posts) || []).forEach(function (p0) { tot0 += 1 + (p0.replies || []).length; });
+            funTotal += Math.max(0, tot0 - seen0);
+          });
+        } catch (e0) {}
         body =
           '<div class="lzw-body"><div class="lzw-home-wall">' +
           '<div class="lzw-hometime"><div class="t">' + esc(clock) + '</div><div class="d">' + esc(dateShort || '霖州') + '</div></div>' +
           '<div class="lzw-homegrid">' +
           '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none;position:relative">' + ICON_WECHAT +
           (totalUn ? '<span class="lzw-appdot">' + (totalUn > 99 ? '99+' : totalUn) + '</span>' : '') + '</div><span>微信</span></div>' +
+          '<div class="lzw-app" data-app="forum"><div class="lzw-app-ico" style="background:#e8912d;border:none;color:#fff;position:relative">' + ICON_FORUM + (funTotal ? '<span class="lzw-appdot">' + (funTotal > 99 ? '99+' : funTotal) + '</span>' : '') + '</div><span>论坛</span></div>' +
           '<div class="lzw-app" data-app="settings"><div class="lzw-app-ico" style="background:#8e97a8;border:none;color:#fff">' + ICON_GEAR + '</div><span>设置</span></div>' +
           '<div class="lzw-app" data-app="close" title="收起手机"><div class="lzw-app-ico" style="background:#e5484d;border:none;color:#fff">' + ICON_POWEROFF + '</div><span>关闭</span></div>' +
           '</div></div></div>';
 
+      } else if (this.screen === 'forum') {
+        body = forumListHtml();
+      } else if (this.screen === 'fboard') {
+        body = forumBoardHtml(this.forumName);
+      } else if (this.screen === 'fthread') {
+        body = forumThreadHtml(this.forumName, this.fThread);
       } else if (this.screen === 'settings') {
         body = settingsHtml();
       } else if (this.screen === 'list') {
@@ -2819,6 +2984,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             '<button class="lzw-cbtn yes" data-cact="taccok">收下</button></div></div></div>';
         })() : '') +
         (this.pConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除预设「' + esc(this.pConfirmDel) + '」？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="pdelno">取消</button><button class="lzw-cbtn yes" data-cact="pdelok">删除</button></div></div></div>' : '') +
+        (this.fConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除论坛「' + esc(this.fConfirmDel) + '」及全部帖子？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="fdelno">取消</button><button class="lzw-cbtn yes" data-cact="fdelok">删除</button></div></div></div>' : '') +
         '</div></div>';
 
       this.bind(ph);
@@ -2986,7 +3152,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         el.onclick = function () {
           // mprofile 的返回看来源：详细资料进来回详细资料，朋友圈进来回朋友圈
           var act = el.dataset.act === 'mback' ? (UI.mFrom === 'cdetail' ? 'cdetail' : 'moments') : el.dataset.act;
-          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : 'list';
+          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fboard' ? 'fboard' : 'list';
           UI.panel = null;
           UI.render();
         };
@@ -2998,6 +3164,41 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       // 发现页：朋友圈入口
       ph.querySelectorAll('[data-mom]').forEach(function (el) {
         el.onclick = function () { UI.openMoments(); };
+      });
+      // 论坛：入口 / 输入回车或点进入 / 骰子随机取名 / ✕删除 / 进版 / 进帖 / 空版重试
+      ph.querySelectorAll('[data-app="forum"]').forEach(function (el) {
+        el.onclick = function () { UI.screen = 'forum'; UI.render(); };
+      });
+      ph.querySelectorAll('[data-fgo]').forEach(function (el) {
+        el.onclick = function () {
+          var inp = ph.querySelector('[data-fnew]');
+          UI.openForum(inp ? inp.value : '');
+        };
+      });
+      ph.querySelectorAll('[data-fnew]').forEach(function (el) {
+        el.onkeydown = function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); UI.openForum(el.value); } };
+      });
+      ph.querySelectorAll('[data-fdice]').forEach(function (el) {
+        el.onclick = function () {
+          var inp = ph.querySelector('[data-fnew]');
+          if (inp) { inp.value = diceName(); inp.focus(); }
+        };
+      });
+      ph.querySelectorAll('[data-fdel]').forEach(function (el) {
+        el.onclick = function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          UI.fConfirmDel = el.dataset.fdel;
+          UI.render();
+        };
+      });
+      ph.querySelectorAll('[data-fopen]').forEach(function (el) {
+        el.onclick = function () { UI.openForum(el.dataset.fopen); };
+      });
+      ph.querySelectorAll('[data-fthr]').forEach(function (el) {
+        el.onclick = function () { UI.fThread = +el.dataset.fthr; UI.screen = 'fthread'; UI.render(); };
+      });
+      ph.querySelectorAll('[data-fretry]').forEach(function (el) {
+        el.onclick = function () { UI.openForum(el.dataset.fretry); };
       });
       // 朋友圈：相机打开发布器、头像/名字进主页、⋯菜单、赞、评论、发送
       ph.querySelectorAll('[data-mcam]').forEach(function (el) {
@@ -3285,6 +3486,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             delete apiX.presets[pn2];
             window.LZWorld.Store.setSettings({ api: apiX });
             try { localStorage.removeItem('lzworld_phone_apikey::' + pn2); } catch (e) {}
+            UI.render();
+          }
+          else if (a === 'fdelno') { UI.fConfirmDel = ''; UI.render(); }
+          else if (a === 'fdelok') {
+            var fn0 = UI.fConfirmDel; UI.fConfirmDel = '';
+            try { window.LZWorld.Store.forumDel(forumLineKey(), fn0); } catch (e) {}
+            if (UI.forumName === fn0) { UI.forumName = ''; UI.fThread = -1; UI.screen = 'forum'; }
             UI.render();
           }
           else if (a === 'taccok') { var ti = UI.tConfirm; UI.tConfirm = -1; UI.stageTVerdict('taccept', ti); }
@@ -3836,6 +4044,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     if (UI.call) return ''; // 通话界面：无顶栏（名字在通话屏里）
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'settings') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">设置</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'forum') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">论坛</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
@@ -3966,8 +4177,91 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // 用 visualViewport 计算位置：F12/移动仿真/页面缩放下依然落在可视区右下角
   var savedPos = null; // 拖动过的位置，关闭再唤起仍记得（刷新重置）
 
+  // ── 论坛辅助 ──
+  function forumLineKey() {
+    try { return window.LZWorld.Store.line() || ''; } catch (e) { return ''; }
+  }
+  function forumTotal(f) {
+    var n = 0;
+    ((f && f.posts) || []).forEach(function (p) { n += 1 + (p.replies || []).length; });
+    return n;
+  }
+  function forumUnread(name) {
+    var line = forumLineKey();
+    var f = window.LZWorld.Store.forumGet(line, name);
+    if (!f) return 0;
+    var seen = 0;
+    try { seen = (window.LZWorld.Store.meta('forum:' + line + ':' + name) || {}).seen || 0; } catch (e) {}
+    return Math.max(0, forumTotal(f) - seen);
+  }
+  function shortTime(t) {
+    var m = /(\d{4})年(\d{1,2})月(\d{1,2})日\s*([\d:]{4,5})/.exec(String(t || ''));
+    if (!m) return String(t || '').slice(0, 12);
+    return m[2] + '-' + m[3] + ' ' + m[4];
+  }
+  function fmtCreated(ms) {
+    var d = new Date(ms);
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+  }
+  var DICE_A = ['霖州', '霖州城南', '霖州城西', '老城区', '大学城', '天禧城'];
+  var DICE_B = ['生活', '灌水', '花草', '宠物', '吃喝玩乐', '恋爱交友', '二手闲置', '八卦', '学习', '职场', '游戏', '影音', '树洞'];
+  var DICE_C = ['墙', '吧', '论坛', '小组', '社区', '圈', '板'];
+  function diceName() {
+    var p = function (arr) { return arr[Math.floor(Math.random() * arr.length)]; };
+    return p(DICE_A) + p(DICE_B) + p(DICE_C);
+  }
   // 选线弹窗定位：按可视视口（visualViewport）矩形落位，小屏/移动端/缩放下
   // 始终跟着玩家实际可见的区域走；flex 负责把卡片居中其中
+  function forumListHtml() {
+    var line = forumLineKey();
+    var names = [];
+    try { names = window.LZWorld.Store.forumNames(line); } catch (e) {}
+    var rows = names.map(function (n) {
+      var f = window.LZWorld.Store.forumGet(line, n) || { posts: [] };
+      var un = forumUnread(n);
+      return "<div class='lzw-conv lzw-frow' data-fopen='" + esc(n) + "'>" +
+        "<div class='lzw-fico'>论</div>" +
+        "<div class='lzw-conv-main'><div class='lzw-conv-name'>" + esc(n) + (un ? "<span class='lzw-appdot lzw-fdot'>" + (un > 99 ? '99+' : un) + "</span>" : '') + "</div>" +
+        "<div class='lzw-conv-prev'>" + (f.posts || []).length + ' 帖 · 创建于 ' + fmtCreated(f.createdAt || Date.now()) + "</div></div>" +
+        "<span class='lzw-setdel' data-fdel='" + esc(n) + "' title='删除论坛'>✕</span></div>";
+    }).join('');
+    return '<div class="lzw-body">' +
+      '<div class="lzw-fnew"><input class="lzw-fin" data-fnew maxlength="16" placeholder="输入论坛名，进入即创建">' +
+      '<button class="lzw-fgo" data-fgo>进入</button><button class="lzw-fdice" data-fdice title="随机取名">🎲</button></div>' +
+      (rows ? rows : "<div class='lzw-fempty'>还没有论坛<br>输入名字创建，或点 🎲 随机来一个</div>") +
+      '</div>';
+  }
+  function forumBoardHtml(name) {
+    var f = window.LZWorld.Store.forumGet(forumLineKey(), name);
+    if (!f || !(f.posts || []).length) {
+      return '<div class="lzw-body"><div class="lzw-fempty">' +
+        (UI.fBusy ? '论坛加载中…' : '这里还没有帖子<br><button class="lzw-fretry" data-fretry="' + esc(name) + '">生成一版</button>') +
+        '</div></div>';
+    }
+    var rows = f.posts.map(function (p, i) {
+      return "<div class='lzw-conv lzw-frow' data-fthr='" + i + "'>" +
+        "<div class='lzw-conv-main'><div class='lzw-ftitle'>" + esc(p.title) +
+        (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '') + "</div>" +
+        "<div class='lzw-fsub'>" + esc(p.author) + ' · ' + (p.time ? esc(shortTime(p.time)) : '很久以前') +
+        ' · ' + (p.replies || []).length + ' 回复</div></div></div>';
+    }).join('');
+    return '<div class="lzw-body">' + rows + '</div>';
+  }
+  function forumThreadHtml(name, idx) {
+    var f = window.LZWorld.Store.forumGet(forumLineKey(), name);
+    var p = f && (f.posts || [])[idx];
+    if (!p) return '<div class="lzw-body"><div class="lzw-fempty">帖子不存在</div></div>';
+    var reps = (p.replies || []).map(function (r) {
+      return "<div class='lzw-frep'><span class='lzw-frep-a'>" + esc(r.author) + "</span>：" + esc(r.text) + "</div>";
+    }).join('');
+    return '<div class="lzw-body">' +
+      "<div class='lzw-fmain'><div class='lzw-ftitle lzw-fmain-t'>" + esc(p.title) + "</div>" +
+      "<div class='lzw-fsub'>" + esc(p.author) + ' · ' + (p.time ? esc(p.time) : '很久以前') + "</div>" +
+      "<div class='lzw-fmain-b'>" + esc(p.text) + "</div></div>" +
+      (reps ? "<div class='lzw-freps'>" + reps + "</div>" : '') +
+      '</div>';
+  }
+
   function placeLinesPop() {
     var pop = pdoc().getElementById('lzw-linespop');
     if (!pop) return;
@@ -4794,6 +5088,99 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // pt = 动态自身发布时间 'YYYY年M月D日 HH:MM'（AI 生成 or 兜底推算）；day/time = 入库戳（真实刷出时间，判重/未读用）
     // 首次进入按故事日生成一次（filledDay 打卡）；互动痕迹（不带全文）进同日私聊上下文。
     momentsKey: '__moments__',
+
+    // ── 论坛 ──
+    // 契约输出解析：[帖:网名:标题:正文]；可紧跟 [时间:M月D日 HH:MM]、[回复:网名:内容]（≤2 条，挂紧贴的帖）
+    parseForumPosts: function (text) {
+      var posts = [];
+      String(text || '').split('\n').forEach(function (line) {
+        line = line.trim();
+        if (!line) return;
+        var m = line.match(/^\[帖[:：]([^:：\]]{1,16})[:：]([^:：\]]{1,40})[:：]([\s\S]+)\]$/);
+        if (m) { posts.push({ author: m[1].trim(), title: m[2].trim(), text: m[3].trim(), time: '', replies: [], carried: false }); return; }
+        var tm = line.match(/^\[时间[:：]([\s\S]+)\]$/);
+        if (tm) { var tp = posts[posts.length - 1]; if (tp) tp.time = tm[1].trim(); return; }
+        var rp = line.match(/^\[回复[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
+        if (rp) {
+          var tg = posts[posts.length - 1];
+          if (tg && tg.replies.length < 2) tg.replies.push({ author: rp[1].trim(), text: rp[2].trim(), time: '' });
+        }
+      });
+      return posts.filter(function (p) { return p.author && p.title && p.text; }).slice(0, 8);
+    },
+
+    // 论坛时间归一化：缺少年份补快照年；认不出的格式返回 ''（调用方兜底推算）
+    normForumTime: function (raw, snap) {
+      var m = /(?:(\d{4})年)?(\d{1,2})月(\d{1,2})日\s*(\d{1,2}):(\d{2})/.exec(String(raw || ''));
+      if (!m) return '';
+      var yr = m[1] ? +m[1] : 0;
+      if (!yr) {
+        var sy = /(\d{4})年/.exec((snap && snap.dateText) || '');
+        yr = sy ? +sy[1] : new Date().getFullYear();
+      }
+      return yr + '年' + +m[2] + '月' + +m[3] + '日 ' + ('0' + m[4]).slice(-2) + ':' + m[5];
+    },
+
+    // 首次进论坛：空论坛 → 生成一版热帖（6~8 条）。
+    // 跨时代挖坟：别的线的同名论坛挑旧帖带过来（快照语义：原标题/时间/回帖原样保留，carried 标记）。
+    forumEnsure: async function (line, name) {
+      var W = window.LZWorld, St = W.Store;
+      var f0 = St.forumGet(line, name);
+      if (!f0 || !(f0.posts || []).length) {
+        // 空白差异的同名论坛视为同一个（「霖州吧」=「霖州 吧」），不重复生成
+        var stripped = String(name || '').replace(/\s+/g, '');
+        for (var fn2 in ((St.forumAll() || {})[line || ''] || {})) {
+          if (String(fn2).replace(/\s+/g, '') === stripped) { f0 = St.forumGet(line, fn2); name = fn2; break; }
+        }
+      }
+      if (f0 && f0.posts && f0.posts.length) return false;
+      var snap; try { snap = W.Status.snapshot(null); } catch (e0) {}
+      // 同名判定去空白/【】，「霖州吧」与「霖州 吧」视为同一个
+      var want0 = String(name || '').replace(/[\s【】]/g, '');
+      var carried = [];
+      var all = St.forumAll();
+      for (var ln in all) {
+        if (ln === (line || '')) continue;
+        var src = all[ln] || {};
+        for (var fn in src) {
+          if (String(fn).replace(/[\s【】]/g, '') !== want0) continue;
+          var olds = (src[fn].posts || []).slice();
+          olds.sort(function (a, b) { return (b.replies || []).length - (a.replies || []).length; });
+          for (var ci = 0; ci < olds.length && carried.length < 3; ci++) {
+            var c0 = olds[ci];
+            carried.push({ author: c0.author, title: c0.title, text: c0.text, time: c0.time || '',
+              replies: (c0.replies || []).slice(0, 2), carried: true, fromLine: ln });
+          }
+        }
+      }
+      // 人名池（联系人+群成员，去重）：AI 可给他们起网名，也可纯陌生网友
+      var sec = this.section() || {};
+      var pool = [], seen = {};
+      (sec.contacts || []).forEach(function (c) { if (c.name && !seen[c.name]) { seen[c.name] = 1; pool.push(c.name); } });
+      (sec.groups || []).forEach(function (g) {
+        (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
+      });
+      var req = W.Prompt.forumFill(name, line, carried, pool, snap, this.userBlock());
+      var raw = await this.gen(req);
+      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      var fresh = this.parseForumPosts(text);
+      if (!fresh.length && !carried.length) throw new Error('论坛生成结果为空');
+      // 缺时间的帖按快照时刻往前 hash 散布（最新 0.5~3 小时前，往后逐条再退 2~8 小时），绝不越过「现在」
+      var sb = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec((snap && snap.dateText) || '');
+      var st0 = /(\d{1,2}):(\d{2})/.exec((snap && snap.time) || '');
+      var cur = sb ? new Date(+sb[1], +sb[2] - 1, +sb[3], st0 ? +st0[1] : 23, st0 ? +st0[2] : 59) : null;
+      for (var fi = 0; fi < fresh.length; fi++) {
+        var fp = fresh[fi];
+        if (fp.time) { fp.time = this.normForumTime(fp.time, snap) || fp.time; continue; }
+        if (!cur) continue;
+        var h2 = parseInt(hashStr(fp.author + fp.title), 36);
+        cur = new Date(cur.getTime() - (fi === 0 ? 30 + h2 % 150 : 120 + h2 % 480) * 60000);
+        fp.time = cur.getFullYear() + '年' + (cur.getMonth() + 1) + '月' + cur.getDate() + '日 ' +
+          ('0' + cur.getHours()).slice(-2) + ':' + ('0' + cur.getMinutes()).slice(-2);
+      }
+      St.forumPut(line, name, { posts: carried.concat(fresh) });
+      return true;
+    },
     momentsFeed: function () { return window.LZWorld.Store.history(this.momentsKey); },
 
     // 契约输出解析：[动态:名:文字] / [配图:名:描述]（跟在对应动态后）

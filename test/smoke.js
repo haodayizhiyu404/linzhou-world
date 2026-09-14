@@ -631,6 +631,49 @@ ctx.getWorldbook = async () => [
   LW.Store.setSettings({ injRounds: 60 });
   eq('cfg·注入键可覆写', LW.Store.cfg().injRounds, 60);
   LW.Store.setSettings({ injRounds: undefined });
+  // ── 论坛：存储 / 解析 / 生成 / 跨时代挖坟 ──
+  console.log('[论坛]');
+  LW.Store.forumPut('高中时代', '霖州一中树洞墙', { posts: [
+    { author: '隔壁老王的猫', title: '三年前的老帖', text: '有人还记得校庆那晚吗', time: '2031年10月2日 21:30',
+      replies: [{ author: '学弟A', text: '考古' }], carried: false },
+  ] });
+  eq('论坛·建版可读', (LW.Store.forumGet('高中时代', '霖州一中树洞墙').posts || []).length, 1);
+  eq('论坛·按线隔离', LW.Store.forumGet('大学时代', '霖州一中树洞墙'), null);
+  // 跨时代挖坟：成人线建同名论坛，旧帖被带过来（原时间原样 + carried 标记）
+  LW.Engine.applyLine('成人时代-破镜重圆', '测试');
+  global.__msgs = [{ role: 'assistant', message: statusText }];
+  ctx.generateRaw = async (req) => '[帖:城南老猫:出分了吗:如题，今天一模出分了，大家都怎么样]\n[回复:考砸了的鱼:别说了，已经准备复读了]\n[帖:路过网友:求推荐:城南哪家烧烤好吃，求真实推荐]';
+  eq('论坛·首次生成', await LW.Engine.forumEnsure('成人时代-破镜重圆', '霖州一中树洞墙'), true);
+  const fAdult = LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙');
+  eq('论坛·挖坟带旧帖', fAdult.posts[0].carried === true && fAdult.posts[0].time === '2031年10月2日 21:30', true);
+  eq('论坛·挖坟旧帖带fromLine', fAdult.posts[0].fromLine === '高中时代', true);
+  eq('论坛·新帖在后', fAdult.posts.length, 3);
+  eq('论坛·回帖解析', fAdult.posts[1].replies.length, 1);
+  eq('论坛·已生成不重复', await LW.Engine.forumEnsure('成人时代-破镜重圆', '霖州一中树洞墙'), false);
+  eq('论坛·空白同名不重复生成', await LW.Engine.forumEnsure('成人时代-破镜重圆', '霖州 一中树洞墙'), false);
+  // 解析：时间行/回复行挂紧贴的帖，回复封顶 2，非法行忽略
+  const fp = LW.Engine.parseForumPosts('[帖:a:标题一:正文一]\n[时间:8月26日 20:00]\n[回复:b:沙发]\n[回复:c:板凳]\n[回复:d:地板]\n胡言乱语行\n[帖:e:标题二:正文二]');
+  eq('论坛·解析条数', fp.length, 2);
+  eq('论坛·时间挂载', fp[0].time, '8月26日 20:00');
+  eq('论坛·回复封顶2', fp[0].replies.length, 2);
+  eq('论坛·坏行忽略', fp[1].replies.length === 0 && fp[1].time === '', true);
+  // 时间归一化：缺年补快照年，整年时间保留
+  eq('论坛·时间补年', LW.Engine.normForumTime('8月26日 9:05', { dateText: '2034年8月26日 星期五' }), '2034年8月26日 09:05');
+  eq('论坛·整年时间保留', LW.Engine.normForumTime('2031年10月2日 21:30', { dateText: '2034年8月26日 星期五' }), '2031年10月2日 21:30');
+  // 提示词装配
+  const ff = LW.Prompt.forumFill('霖州一中树洞墙', '成人时代-破镜重圆',
+    [{ title: '三年前的老帖', author: '隔壁老王的猫', time: '2031年10月2日 21:30', text: '有人还记得校庆那晚吗' }],
+    ['周言', '陆飞'], { dateText: '2034年8月26日 星期五', time: '22:49' }, '机主资料');
+  const ffTxt = ff.ordered_prompts[0].content;
+  eq('论坛·任务带论坛名', ffTxt.indexOf('霖州一中树洞墙') !== -1, true);
+  eq('论坛·旧帖段', ffTxt.indexOf('三年前的老帖') !== -1, true);
+  eq('论坛·帖契约', ffTxt.indexOf('[帖:网名:标题:正文]') !== -1, true);
+  eq('论坛·回复契约', ffTxt.indexOf('[回复:网名:回帖内容]') !== -1, true);
+  eq('论坛·人名池', ffTxt.indexOf('周言') !== -1, true);
+  // 删除：数据与未读标记一起清
+  LW.Store.setMeta('forum:成人时代-破镜重圆:霖州一中树洞墙', { seen: 3 });
+  eq('论坛·删除', LW.Store.forumDel('成人时代-破镜重圆', '霖州一中树洞墙'), true);
+  eq('论坛·删后无残留', LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙') === null && !LW.Store.meta('forum:成人时代-破镜重圆:霖州一中树洞墙').seen, true);
   // ── UI 源码静态检查（回归保险丝）──
   console.log('[UI 源码]');
   const wsrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat.js'), 'utf8');

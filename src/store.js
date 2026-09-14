@@ -231,6 +231,41 @@
       var r = readRoot();
       r.history = {};
       writeRoot(r);
+    },
+
+    // ── 论坛（按线隔离）：r.forums = { 线名: { 论坛名: {name, createdAt, posts:[…]} } } ──
+    // 未读借用 meta，key = 'forum:'+线名+':'+论坛名，记 {seen:N}（N=上次看到时的总条目数）
+    forumAll: function () {
+      var r = readRoot();
+      return r.forums || {};
+    },
+    forumNames: function (line) {
+      var r = readRoot();
+      var f = (r.forums || {})[line || ''] || {};
+      return Object.keys(f);
+    },
+    forumGet: function (line, name) {
+      var r = readRoot();
+      var f = (r.forums || {})[line || ''] || {};
+      return f[name] || null;
+    },
+    forumPut: function (line, name, forum) {
+      var r = readRoot();
+      r.forums = r.forums || {};
+      var slot = r.forums[line || ''] = r.forums[line || ''] || {};
+      forum.name = name;
+      if (!forum.createdAt) forum.createdAt = Date.now();
+      slot[name] = forum;
+      writeRoot(r);
+    },
+    forumDel: function (line, name) {
+      var r = readRoot();
+      var slot = (r.forums || {})[line || ''];
+      if (!slot || !slot[name]) return false;
+      delete slot[name];
+      if (r.meta) delete r.meta['forum:' + (line || '') + ':' + name];
+      writeRoot(r);
+      return true;
     }
   };
 

@@ -783,6 +783,99 @@
     // pt = 动态自身发布时间 'YYYY年M月D日 HH:MM'（AI 生成 or 兜底推算）；day/time = 入库戳（真实刷出时间，判重/未读用）
     // 首次进入按故事日生成一次（filledDay 打卡）；互动痕迹（不带全文）进同日私聊上下文。
     momentsKey: '__moments__',
+
+    // ── 论坛 ──
+    // 契约输出解析：[帖:网名:标题:正文]；可紧跟 [时间:M月D日 HH:MM]、[回复:网名:内容]（≤2 条，挂紧贴的帖）
+    parseForumPosts: function (text) {
+      var posts = [];
+      String(text || '').split('\n').forEach(function (line) {
+        line = line.trim();
+        if (!line) return;
+        var m = line.match(/^\[帖[:：]([^:：\]]{1,16})[:：]([^:：\]]{1,40})[:：]([\s\S]+)\]$/);
+        if (m) { posts.push({ author: m[1].trim(), title: m[2].trim(), text: m[3].trim(), time: '', replies: [], carried: false }); return; }
+        var tm = line.match(/^\[时间[:：]([\s\S]+)\]$/);
+        if (tm) { var tp = posts[posts.length - 1]; if (tp) tp.time = tm[1].trim(); return; }
+        var rp = line.match(/^\[回复[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
+        if (rp) {
+          var tg = posts[posts.length - 1];
+          if (tg && tg.replies.length < 2) tg.replies.push({ author: rp[1].trim(), text: rp[2].trim(), time: '' });
+        }
+      });
+      return posts.filter(function (p) { return p.author && p.title && p.text; }).slice(0, 8);
+    },
+
+    // 论坛时间归一化：缺少年份补快照年；认不出的格式返回 ''（调用方兜底推算）
+    normForumTime: function (raw, snap) {
+      var m = /(?:(\d{4})年)?(\d{1,2})月(\d{1,2})日\s*(\d{1,2}):(\d{2})/.exec(String(raw || ''));
+      if (!m) return '';
+      var yr = m[1] ? +m[1] : 0;
+      if (!yr) {
+        var sy = /(\d{4})年/.exec((snap && snap.dateText) || '');
+        yr = sy ? +sy[1] : new Date().getFullYear();
+      }
+      return yr + '年' + +m[2] + '月' + +m[3] + '日 ' + ('0' + m[4]).slice(-2) + ':' + m[5];
+    },
+
+    // 首次进论坛：空论坛 → 生成一版热帖（6~8 条）。
+    // 跨时代挖坟：别的线的同名论坛挑旧帖带过来（快照语义：原标题/时间/回帖原样保留，carried 标记）。
+    forumEnsure: async function (line, name) {
+      var W = window.LZWorld, St = W.Store;
+      var f0 = St.forumGet(line, name);
+      if (!f0 || !(f0.posts || []).length) {
+        // 空白差异的同名论坛视为同一个（「霖州吧」=「霖州 吧」），不重复生成
+        var stripped = String(name || '').replace(/\s+/g, '');
+        for (var fn2 in ((St.forumAll() || {})[line || ''] || {})) {
+          if (String(fn2).replace(/\s+/g, '') === stripped) { f0 = St.forumGet(line, fn2); name = fn2; break; }
+        }
+      }
+      if (f0 && f0.posts && f0.posts.length) return false;
+      var snap; try { snap = W.Status.snapshot(null); } catch (e0) {}
+      // 同名判定去空白/【】，「霖州吧」与「霖州 吧」视为同一个
+      var want0 = String(name || '').replace(/[\s【】]/g, '');
+      var carried = [];
+      var all = St.forumAll();
+      for (var ln in all) {
+        if (ln === (line || '')) continue;
+        var src = all[ln] || {};
+        for (var fn in src) {
+          if (String(fn).replace(/[\s【】]/g, '') !== want0) continue;
+          var olds = (src[fn].posts || []).slice();
+          olds.sort(function (a, b) { return (b.replies || []).length - (a.replies || []).length; });
+          for (var ci = 0; ci < olds.length && carried.length < 3; ci++) {
+            var c0 = olds[ci];
+            carried.push({ author: c0.author, title: c0.title, text: c0.text, time: c0.time || '',
+              replies: (c0.replies || []).slice(0, 2), carried: true, fromLine: ln });
+          }
+        }
+      }
+      // 人名池（联系人+群成员，去重）：AI 可给他们起网名，也可纯陌生网友
+      var sec = this.section() || {};
+      var pool = [], seen = {};
+      (sec.contacts || []).forEach(function (c) { if (c.name && !seen[c.name]) { seen[c.name] = 1; pool.push(c.name); } });
+      (sec.groups || []).forEach(function (g) {
+        (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
+      });
+      var req = W.Prompt.forumFill(name, line, carried, pool, snap, this.userBlock());
+      var raw = await this.gen(req);
+      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      var fresh = this.parseForumPosts(text);
+      if (!fresh.length && !carried.length) throw new Error('论坛生成结果为空');
+      // 缺时间的帖按快照时刻往前 hash 散布（最新 0.5~3 小时前，往后逐条再退 2~8 小时），绝不越过「现在」
+      var sb = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec((snap && snap.dateText) || '');
+      var st0 = /(\d{1,2}):(\d{2})/.exec((snap && snap.time) || '');
+      var cur = sb ? new Date(+sb[1], +sb[2] - 1, +sb[3], st0 ? +st0[1] : 23, st0 ? +st0[2] : 59) : null;
+      for (var fi = 0; fi < fresh.length; fi++) {
+        var fp = fresh[fi];
+        if (fp.time) { fp.time = this.normForumTime(fp.time, snap) || fp.time; continue; }
+        if (!cur) continue;
+        var h2 = parseInt(hashStr(fp.author + fp.title), 36);
+        cur = new Date(cur.getTime() - (fi === 0 ? 30 + h2 % 150 : 120 + h2 % 480) * 60000);
+        fp.time = cur.getFullYear() + '年' + (cur.getMonth() + 1) + '月' + cur.getDate() + '日 ' +
+          ('0' + cur.getHours()).slice(-2) + ':' + ('0' + cur.getMinutes()).slice(-2);
+      }
+      St.forumPut(line, name, { posts: carried.concat(fresh) });
+      return true;
+    },
     momentsFeed: function () { return window.LZWorld.Store.history(this.momentsKey); },
 
     // 契约输出解析：[动态:名:文字] / [配图:名:描述]（跟在对应动态后）
