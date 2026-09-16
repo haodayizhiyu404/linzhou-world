@@ -1207,18 +1207,24 @@
     },
 
     // 机主对待收款转账的处置（收下/退还）随小飞机发出即生效：按 发送方+金额+备注 定位待收款卡就地翻转。
+    // 金额省略（空串/null）时对到该发送方最近一笔待收款（从尾部向早取）；找到后把回执记录
+    // （taccept/tdecline，传 recIdx 时）的金额/备注补全成实际值，回执卡才能显示 ¥。
     // 找不到对应卡（已删/已翻过）也照常——记录行本身已进上下文，AI 下一轮照样知情
-    verdictTransfer: function (key, verdict, sender, amount, note) {
+    verdictTransfer: function (key, verdict, sender, amount, note, recIdx) {
       var W = window.LZWorld, h = W.Store.history(key);
-      for (var i = 0; i < h.length; i++) {
+      var idx = -1;
+      for (var i = h.length - 1; i >= 0; i--) {
         var m = h[i];
         if (m && m.who === sender && m.kind === 'transfer' && m.state === 'waiting'
-          && m.amount === amount && (m.note || '') === (note || '')) {
-          W.Store.patchAt(key, i, { state: verdict });
-          return true;
-        }
+          && (amount == null || amount === ''
+            || (m.amount === amount && (m.note || '') === (note || '')))) { idx = i; break; }
       }
-      return false;
+      if (idx < 0) return false;
+      W.Store.patchAt(key, idx, { state: verdict });
+      if (recIdx != null) {
+        try { W.Store.patchAt(key, recIdx, { amount: h[idx].amount, note: h[idx].note || '' }); } catch (e) {}
+      }
+      return true;
     },
 
     // 重roll 回退转账：历史尾部连续的用户消息串里，已翻「已收款/已退还」的恢复「待收款」。
@@ -1244,7 +1250,20 @@
       for (var i = 0; i < h.length; i++) {
         var m = h[i];
         if (m && m.who !== 'user' && m.kind === 'tdecline') {
-          if (this.verdictTransfer(key, 'declined', 'user', m.amount, m.note)) n++;
+          if (this.verdictTransfer(key, 'declined', 'user', m.amount, m.note, i)) n++;
+        }
+      }
+      return n;
+    },
+
+    // NPC 输出 [接收转账] 契约并生成成功：把机主对应待收款卡翻「已收款」（显式收下，优先于默认推断）。
+    // 与拒收同一对账规则：金额备注可省，省略时对到机主最近一笔待收款；回执金额回填
+    applyNpcAccepts: function (key) {
+      var W = window.LZWorld, h = W.Store.history(key), n = 0;
+      for (var i = 0; i < h.length; i++) {
+        var m = h[i];
+        if (m && m.who !== 'user' && m.kind === 'taccept') {
+          if (this.verdictTransfer(key, 'accepted', 'user', m.amount, m.note, i)) n++;
         }
       }
       return n;

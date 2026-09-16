@@ -546,6 +546,32 @@ ctx.getWorldbook = async () => [
   const tdec = LW.Floor.parseNpcLines('[拒收转账:50:这钱不能收]', '周言');
   eq('转账·NPC拒收契约解析', tdec.length === 1 && tdec[0].kind === 'tdecline' && tdec[0].amount === 50 && tdec[0].note === '这钱不能收', true);
   eq('转账·拒收非法金额忽略', LW.Floor.parseNpcLines('[拒收转账:abc]', '周言').length, 0);
+  // [接收转账] 契约：带参精确 / 裸标识空参占位 / 非法参数忽略
+  const tacc = LW.Floor.parseNpcLines('[接收转账:50:奶茶钱]', '周言');
+  eq('转账·NPC接收契约解析', tacc.length === 1 && tacc[0].kind === 'taccept' && tacc[0].amount === 50 && tacc[0].note === '奶茶钱', true);
+  const taccB = LW.Floor.parseNpcLines('[接收转账]', '周言');
+  eq('转账·接收裸标识', taccB.length === 1 && taccB[0].kind === 'taccept' && taccB[0].amount === '', true);
+  eq('转账·接收非法金额忽略', LW.Floor.parseNpcLines('[接收转账:abc]', '周言').length, 0);
+  const tdecB = LW.Floor.parseNpcLines('[拒收转账]', '周言');
+  eq('转账·拒收裸标识', tdecB.length === 1 && tdecB[0].kind === 'tdecline' && tdecB[0].amount === '', true);
+  // 裸标识宽松对账：对到该发送方最近一笔待收款，回执金额回填
+  LW.Store.push('宽松对账', [
+    { who: 'user', kind: 'transfer', amount: 10, note: '旧', to: '周言', state: 'waiting' },
+    { who: 'user', kind: 'transfer', amount: 50, note: '新', to: '周言', state: 'waiting' },
+    { who: '周言', kind: 'taccept', amount: '', note: '', from: '', time: '' },
+  ], 100);
+  eq('转账·裸接收对最近一笔', LW.Engine.applyNpcAccepts('宽松对账'), 1);
+  eq('转账·最近一笔已收', LW.Store.history('宽松对账')[1].state, 'accepted');
+  eq('转账·较早一笔仍待收', LW.Store.history('宽松对账')[0].state, 'waiting');
+  eq('转账·回执金额回填', LW.Store.history('宽松对账')[2].amount === 50 && LW.Store.history('宽松对账')[2].note === '新', true);
+  // 拒收同规则：裸 [拒收转账] 对最近待收款翻退还并回填
+  LW.Store.push('宽松对账', [
+    { who: 'user', kind: 'transfer', amount: 10, note: '旧', to: '周言', state: 'waiting' },
+    { who: '周言', kind: 'tdecline', amount: '', note: '', from: '', time: '' },
+  ], 100);
+  eq('转账·裸拒收对最近一笔', LW.Engine.applyNpcDeclines('宽松对账'), 1);
+  eq('转账·裸拒收翻退还', LW.Store.history('宽松对账')[3].state, 'declined');
+  eq('转账·拒收回执回填', LW.Store.history('宽松对账')[4].amount, 10);
   const tk2 = '转账处置测试';
   LW.Store.push(tk2, [
     { who: '周言', kind: 'transfer', amount: 66, note: '红包', to: '', state: 'waiting', time: '' },
@@ -564,6 +590,7 @@ ctx.getWorldbook = async () => [
   eq('转账·无契约时拒收落地零条', LW.Engine.applyNpcDeclines(tk), 0);
   const reqT = LW.Prompt.private({ name: '周言', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null, null, '', '');
   eq('转账·私聊契约说明', reqT.ordered_prompts[0].content.indexOf('[转账:金额:备注]') !== -1, true);
+  eq('转账·私聊接收契约说明', reqT.ordered_prompts[0].content.indexOf('[接收转账:金额:备注]') !== -1, true);
   eq('转账·私聊拒收契约说明', reqT.ordered_prompts[0].content.indexOf('[拒收转账:金额:备注]') !== -1, true);
   // 转账/处置记录行进提示词上下文：AI 全知情，不会重复转账（回归：msgBody 缺 case 时空行）
   const reqTT = LW.Prompt.private({ name: '周言', profile: '' }, [

@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-16T17:00:34.718Z
+//  构建时间：2026-09-16T17:08:44.783Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-16 17:00';
+var __LZW_BUILD__ = '2026-09-16 17:08';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -885,7 +885,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '- [戳一戳]',
       '- [定位:地点名]',
       '- [转账:金额:备注]  单独成行：给机主转一笔钱，备注可省（罕用，剧情真的需要给钱时；机主会在手机上点收下或拒绝）',
-      '- [拒收转账:金额:备注]  单独成行：拒收机主发来的转账（更罕用，剧情需要退钱时，如不好意思收、赌气退回；机主的卡会显示已退还）',
+      '- [接收转账:金额:备注]  单独成行：收下机主发来的转账（金额备注可省，程序自动对到最近一笔待收款；机主的卡会显示已收款）',
+      '- [拒收转账:金额:备注]  单独成行：拒收机主发来的转账（金额备注可省；机主的卡会显示已退还）',
+      '- 机主发来的转账：回复里没有 [拒收转账] 即视为已收下，无需特意声明',
       '- [撤回]  单独成行：撤回自己刚发的上一条消息（打错字、冲动后悔时用，罕用）'
     ].join('\n');
   }
@@ -1452,6 +1454,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     return { amount: Math.round(amount * 100) / 100, note: String(parts[1] || '').trim().slice(0, 30) };
   }
 
+  // 接收/拒收转账的参数可全省：空参返回空串占位，由引擎对到该发送方最近一笔待收款
+  function parseTransferArgLoose(arg) {
+    if (!String(arg || '').trim()) return { amount: '', note: '' };
+    return parseTransferArg(arg);
+  }
+
   function msgToLine(m, userName) {
     if (m.who === 'sys') return String(m.text || ''); // 系统条目（通话时长等）不带人名前缀
     var who = m.who === 'user' ? userName : m.who;
@@ -1681,9 +1689,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           if (tt) out.push({ who: who, kind: 'transfer', amount: tt.amount, note: tt.note, to: '', state: 'waiting', time: '' });
           return;
         }
-        if (/^\[拒收转账[:：|｜]/.test(body)) { // 整行：拒收机主发来的转账（显式拒绝，优先于「回复即收款」的默认推断）
-          var dm = body.match(/^\[拒收转账[:：|｜]([^\]]*)\]$/);
-          var dt = dm && parseTransferArg(dm[1]);
+        if (/^\[接收转账(?:[:：|｜]([^\]]*))?\]$/.test(body)) { // 整行：收下机主发来的转账（参数可省，对到最近一笔待收款）
+          var am = body.match(/^\[接收转账(?:[:：|｜]([^\]]*))?\]$/);
+          var at2 = am && parseTransferArgLoose(am[1]);
+          if (at2) out.push({ who: who, kind: 'taccept', amount: at2.amount, note: at2.note, from: '', time: '' });
+          return;
+        }
+        if (/^\[拒收转账(?:[:：|｜]([^\]]*))?\]$/.test(body)) { // 整行：拒收机主发来的转账（参数可省；显式拒绝优先于「回复即收款」的默认推断）
+          var dm = body.match(/^\[拒收转账(?:[:：|｜]([^\]]*))?\]$/);
+          var dt = dm && parseTransferArgLoose(dm[1]);
           if (dt) out.push({ who: who, kind: 'tdecline', amount: dt.amount, note: dt.note, from: '', time: '' });
           return;
         }
@@ -3725,9 +3739,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         this.failed = false;
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(key, result.msgs, 100);
-          // 转账处置两连（顺序敏感）：先落 NPC 的 [拒收转账] 契约（显式拒绝优先），
-          // 再按「对方回了话 = 收了钱」把机主发出的待收款批量翻「已收款」，同帧渲染
+          // 转账处置三连（顺序敏感）：先落 NPC 的 [拒收转账]（显式拒绝最优先），
+          // 再落 [接收转账]（显式收下），最后按「对方回了话 = 收了钱」把剩下的待收款批量翻「已收款」，同帧渲染
           try { eng.applyNpcDeclines(key); } catch (e) {}
+          try { eng.applyNpcAccepts(key); } catch (e) {}
           try { eng.markTransfersAccepted(key); } catch (e) {}
           // 生成是异步的：发出后生成了回复、人已经切去别的会话/主页 → 记未读红点
           if (this.screen !== 'chat' || this.chatKey !== key) W.Store.bumpUnread(key, result.msgs.length);
@@ -5551,18 +5566,24 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     },
 
     // 机主对待收款转账的处置（收下/退还）随小飞机发出即生效：按 发送方+金额+备注 定位待收款卡就地翻转。
+    // 金额省略（空串/null）时对到该发送方最近一笔待收款（从尾部向早取）；找到后把回执记录
+    // （taccept/tdecline，传 recIdx 时）的金额/备注补全成实际值，回执卡才能显示 ¥。
     // 找不到对应卡（已删/已翻过）也照常——记录行本身已进上下文，AI 下一轮照样知情
-    verdictTransfer: function (key, verdict, sender, amount, note) {
+    verdictTransfer: function (key, verdict, sender, amount, note, recIdx) {
       var W = window.LZWorld, h = W.Store.history(key);
-      for (var i = 0; i < h.length; i++) {
+      var idx = -1;
+      for (var i = h.length - 1; i >= 0; i--) {
         var m = h[i];
         if (m && m.who === sender && m.kind === 'transfer' && m.state === 'waiting'
-          && m.amount === amount && (m.note || '') === (note || '')) {
-          W.Store.patchAt(key, i, { state: verdict });
-          return true;
-        }
+          && (amount == null || amount === ''
+            || (m.amount === amount && (m.note || '') === (note || '')))) { idx = i; break; }
       }
-      return false;
+      if (idx < 0) return false;
+      W.Store.patchAt(key, idx, { state: verdict });
+      if (recIdx != null) {
+        try { W.Store.patchAt(key, recIdx, { amount: h[idx].amount, note: h[idx].note || '' }); } catch (e) {}
+      }
+      return true;
     },
 
     // 重roll 回退转账：历史尾部连续的用户消息串里，已翻「已收款/已退还」的恢复「待收款」。
@@ -5588,7 +5609,20 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       for (var i = 0; i < h.length; i++) {
         var m = h[i];
         if (m && m.who !== 'user' && m.kind === 'tdecline') {
-          if (this.verdictTransfer(key, 'declined', 'user', m.amount, m.note)) n++;
+          if (this.verdictTransfer(key, 'declined', 'user', m.amount, m.note, i)) n++;
+        }
+      }
+      return n;
+    },
+
+    // NPC 输出 [接收转账] 契约并生成成功：把机主对应待收款卡翻「已收款」（显式收下，优先于默认推断）。
+    // 与拒收同一对账规则：金额备注可省，省略时对到机主最近一笔待收款；回执金额回填
+    applyNpcAccepts: function (key) {
+      var W = window.LZWorld, h = W.Store.history(key), n = 0;
+      for (var i = 0; i < h.length; i++) {
+        var m = h[i];
+        if (m && m.who !== 'user' && m.kind === 'taccept') {
+          if (this.verdictTransfer(key, 'accepted', 'user', m.amount, m.note, i)) n++;
         }
       }
       return n;

@@ -1961,9 +1961,10 @@
         this.failed = false;
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(key, result.msgs, 100);
-          // 转账处置两连（顺序敏感）：先落 NPC 的 [拒收转账] 契约（显式拒绝优先），
-          // 再按「对方回了话 = 收了钱」把机主发出的待收款批量翻「已收款」，同帧渲染
+          // 转账处置三连（顺序敏感）：先落 NPC 的 [拒收转账]（显式拒绝最优先），
+          // 再落 [接收转账]（显式收下），最后按「对方回了话 = 收了钱」把剩下的待收款批量翻「已收款」，同帧渲染
           try { eng.applyNpcDeclines(key); } catch (e) {}
+          try { eng.applyNpcAccepts(key); } catch (e) {}
           try { eng.markTransfersAccepted(key); } catch (e) {}
           // 生成是异步的：发出后生成了回复、人已经切去别的会话/主页 → 记未读红点
           if (this.screen !== 'chat' || this.chatKey !== key) W.Store.bumpUnread(key, result.msgs.length);
