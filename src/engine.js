@@ -1221,6 +1221,22 @@
       return false;
     },
 
+    // 重roll 回退转账：历史尾部连续的用户消息串里，已翻「已收款/已退还」的恢复「待收款」。
+    // 只碰本轮（发送→回复→重roll 这一回合）——从尾部向早追溯，遇 NPC 消息即停；
+    // 更早轮次已落账的旧账不动。新回复生成成功后 markTransfersAccepted 会重新翻账。
+    rollbackTransfers: function (key) {
+      var W = window.LZWorld, h = W.Store.history(key), n = 0;
+      for (var i = h.length - 1; i >= 0; i--) {
+        var m = h[i];
+        if (!m || m.who !== 'user') break;   // 本轮边界：NPC 消息为止
+        if (m.kind === 'transfer' && (m.state === 'accepted' || m.state === 'declined')) {
+          W.Store.patchAt(key, i, { state: 'waiting' });
+          n++;
+        }
+      }
+      return n;
+    },
+
     // NPC 输出 [拒收转账] 契约并生成成功：把机主对应待收款卡翻「已退还」。
     // 调用须先于 markTransfersAccepted——显式拒收优先于「回复即收款」的默认推断
     applyNpcDeclines: function (key) {

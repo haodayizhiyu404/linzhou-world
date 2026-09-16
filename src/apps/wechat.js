@@ -1938,6 +1938,9 @@
       for (var i = h.length - 1; i >= 0 && h[i].who !== 'user' && n < 12; i--) n++;
       var popped = W.Store.popLast(this.chatKey, n);
       if (!popped.length) { this.render(); return; }
+      // 重roll 回退本轮转账：旧回复作废了，它「收下」的推断也一并作废，
+      // 恢复待收款让新回复重新决定（只回退本轮，旧账不动）
+      try { W.Engine.rollbackTransfers(this.chatKey); } catch (e) {}
       try { toastr.info('重roll中……', '📱 霖州引擎'); } catch (e) {}
       this.render();
       await this.generate(W.Engine.userName());

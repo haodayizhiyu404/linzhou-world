@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-16T16:48:35.635Z
+//  构建时间：2026-09-16T17:00:34.718Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-16 16:48';
+var __LZW_BUILD__ = '2026-09-16 17:00';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -3702,6 +3702,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       for (var i = h.length - 1; i >= 0 && h[i].who !== 'user' && n < 12; i--) n++;
       var popped = W.Store.popLast(this.chatKey, n);
       if (!popped.length) { this.render(); return; }
+      // 重roll 回退本轮转账：旧回复作废了，它「收下」的推断也一并作废，
+      // 恢复待收款让新回复重新决定（只回退本轮，旧账不动）
+      try { W.Engine.rollbackTransfers(this.chatKey); } catch (e) {}
       try { toastr.info('重roll中……', '📱 霖州引擎'); } catch (e) {}
       this.render();
       await this.generate(W.Engine.userName());
@@ -5560,6 +5563,22 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         }
       }
       return false;
+    },
+
+    // 重roll 回退转账：历史尾部连续的用户消息串里，已翻「已收款/已退还」的恢复「待收款」。
+    // 只碰本轮（发送→回复→重roll 这一回合）——从尾部向早追溯，遇 NPC 消息即停；
+    // 更早轮次已落账的旧账不动。新回复生成成功后 markTransfersAccepted 会重新翻账。
+    rollbackTransfers: function (key) {
+      var W = window.LZWorld, h = W.Store.history(key), n = 0;
+      for (var i = h.length - 1; i >= 0; i--) {
+        var m = h[i];
+        if (!m || m.who !== 'user') break;   // 本轮边界：NPC 消息为止
+        if (m.kind === 'transfer' && (m.state === 'accepted' || m.state === 'declined')) {
+          W.Store.patchAt(key, i, { state: 'waiting' });
+          n++;
+        }
+      }
+      return n;
     },
 
     // NPC 输出 [拒收转账] 契约并生成成功：把机主对应待收款卡翻「已退还」。

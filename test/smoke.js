@@ -507,6 +507,20 @@ ctx.getWorldbook = async () => [
   eq('转账·机主已退还状态尾巴', LW.Floor.msgToLine({ who: '周言', kind: 'transfer', amount: 20, note: '', to: '', state: 'declined' }, '陈默'), '周言：[周言转账 ¥20]（机主已退还）');
   const tnpc = LW.Floor.parseNpcLines('[转账:50:奶茶钱]', '周言');
   eq('转账·NPC契约解析', tnpc.length === 1 && tnpc[0].kind === 'transfer' && tnpc[0].amount === 50 && tnpc[0].note === '奶茶钱' && tnpc[0].state === 'waiting', true);
+  // 重roll 回退：本轮已翻账的恢复待收款；更早轮次（前面隔了 NPC 消息）的旧账不动
+  LW.Store.push('回退测试', [
+    { who: 'user', kind: 'transfer', amount: 10, note: '旧账', to: '周言', state: 'waiting' },
+    { who: '周言', kind: 'text', text: '上次的钱我收啦' },
+    { who: 'user', kind: 'transfer', amount: 50, note: '本轮', to: '周言', state: 'waiting' },
+  ], 100);
+  eq('转账·回复成功翻账（批量翻全部待收款）', LW.Engine.markTransfersAccepted('回退测试'), 2);
+  eq('转账·本轮已收款', LW.Store.history('回退测试')[2].state, 'accepted');
+  eq('转账·重roll回退本轮', LW.Engine.rollbackTransfers('回退测试'), 1);
+  eq('转账·回退后待收款', LW.Store.history('回退测试')[2].state, 'waiting');
+  eq('转账·旧账不被动', LW.Store.history('回退测试')[0].state, 'accepted');
+  // 回退后再生成成功会重新翻账
+  eq('转账·重roll后再翻账', LW.Engine.markTransfersAccepted('回退测试'), 1);
+  eq('转账·再翻后已收款', LW.Store.history('回退测试')[2].state, 'accepted');
   eq('转账·非法金额忽略', LW.Floor.parseNpcLines('[转账:abc]', '周言').length, 0);
   eq('转账·超限金额忽略', LW.Floor.parseNpcLines('[转账:99999999]', '周言').length, 0);
   const tseg = LW.Floor.parseNpcLines('拿着 [转账:20] 不用找了', '周言');
