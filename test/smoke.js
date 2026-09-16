@@ -698,6 +698,12 @@ ctx.getWorldbook = async () => [
   const injNoCmt = injCut.replace(/\/\/[^\n]*/g, '');
   eq('正文注入·入口先清同名键', injNoCmt.includes("uninjectPrompts(['lzw-phone-digest'])"), true);
   eq('正文注入·清除先于所有return分支', injNoCmt.indexOf('uninjectPrompts') !== -1 && injNoCmt.indexOf('uninjectPrompts') < injNoCmt.search(/return/), true);
+  // 图床双源保险丝：主源 jsdelivr、catbox 兜底、回退监听、壁纸 CSS 变量
+  const esrc2 = fs.readFileSync(path.join(ROOT, 'src/engine.js'), 'utf8');
+  eq('图床·主源jsdelivr', esrc2.indexOf("var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/'") !== -1, true);
+  eq('图床·catbox兜底常量', esrc2.indexOf("IMG_BASE_FALLBACK = 'https://files.catbox.moe/'") !== -1, true);
+  eq('图床·img回退监听', esrc2.indexOf("addEventListener('error', function (ev)") !== -1 && esrc2.indexOf('lzwFbk') !== -1, true);
+  eq('壁纸·CSS变量可换源', wsrc.includes('var(--lzw-wall') && wsrc.includes("setProperty('--lzw-wall'") && wsrc.includes('HOME_WALL_FB'), true);
   global.__msgs = null;
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');

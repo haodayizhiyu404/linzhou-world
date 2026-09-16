@@ -12,9 +12,19 @@
   function pwin() { return window.parent; }
   // 主屏壁纸（浅色可爱系；换图只改这里）。必须定义在 CSS 数组之前——
   // 数组在脚本加载时立即求值，引用晚于它的变量会得到 undefined。
-  var HOME_WALL = 'https://files.catbox.moe/2rg9in.jpg';
-  // 预载壁纸：引擎加载时就拉取，避免首次打开手机屏幕空白 1~2 秒
-  try { var _wallPre = new Image(); _wallPre.src = HOME_WALL; } catch (e) {}
+  // 壁纸主源 jsdelivr（随仓库），catbox 兜底：探针失败时把 CSS 变量切到原站重渲染
+  var HOME_WALL = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/2rg9in.jpg';
+  var HOME_WALL_FB = 'https://files.catbox.moe/2rg9in.jpg';
+  // 预载壁纸：引擎加载时就拉取，避免首次打开手机屏幕空白 1~2 秒；
+  // onerror 说明主源被拦/丢失 → 换兜底源并重写 CSS 变量（壁纸在 CSS 里，<img> 回退监听管不到）
+  try {
+    var _wallPre = new Image();
+    _wallPre.onerror = function () {
+      HOME_WALL = HOME_WALL_FB;
+      try { window.LZWorld.Apps.wechat.injectStyle(); } catch (e) {}
+    };
+    _wallPre.src = HOME_WALL;
+  } catch (e) {}
   function parseDay(s) {
     var m = /(\d+)年(\d+)月(\d+)日/.exec(s || '');
     return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null;
@@ -109,7 +119,7 @@
     // 主体
     '.lzw-body{flex:1;min-height:0;overflow-y:auto;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
-    '.lzw-scr-home{background:url(' + HOME_WALL + ') center/cover no-repeat #f4f6fb}',
+    '.lzw-scr-home{background:var(--lzw-wall,none) center/cover no-repeat #f4f6fb}',
     '.lzw-scr-home .lzw-sbar{background:transparent}',
     '.lzw-home-wall{height:100%;padding:20px 16px 26px;display:flex;flex-direction:column;justify-content:space-between;',
     'box-sizing:border-box}',
@@ -686,12 +696,15 @@
 
     injectStyle: function () {
       var doc = pdoc();
-      if (!doc.getElementById('lzw-style')) {
-        var st = doc.createElement('style');
+      var st = doc.getElementById('lzw-style');
+      if (!st) {
+        st = doc.createElement('style');
         st.id = 'lzw-style';
-        st.textContent = CSS;
         doc.head.appendChild(st);
       }
+      st.textContent = CSS;
+      // 壁纸走 CSS 变量：主源加载失败时探针 onerror 改 HOME_WALL 后重入本函数即换源
+      try { doc.documentElement.style.setProperty('--lzw-wall', 'url("' + HOME_WALL + '")'); } catch (e) {}
     },
 
     inject: function () {

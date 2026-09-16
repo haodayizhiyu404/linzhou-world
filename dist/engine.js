@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-14T19:49:54.199Z
+//  构建时间：2026-09-16T16:48:35.635Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-14 19:49';
+var __LZW_BUILD__ = '2026-09-16 16:48';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -724,7 +724,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       file = String(file || '').trim();
       if (!file) return '';
       if (/^https?:\/\//i.test(file)) return file;
-      return (window.LZWorld.IMG_BASE || 'https://files.catbox.moe/') + file;
+      return (window.LZWorld.IMG_BASE || 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/') + file;
     }
   };
 
@@ -1776,9 +1776,19 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   function pwin() { return window.parent; }
   // 主屏壁纸（浅色可爱系；换图只改这里）。必须定义在 CSS 数组之前——
   // 数组在脚本加载时立即求值，引用晚于它的变量会得到 undefined。
-  var HOME_WALL = 'https://files.catbox.moe/2rg9in.jpg';
-  // 预载壁纸：引擎加载时就拉取，避免首次打开手机屏幕空白 1~2 秒
-  try { var _wallPre = new Image(); _wallPre.src = HOME_WALL; } catch (e) {}
+  // 壁纸主源 jsdelivr（随仓库），catbox 兜底：探针失败时把 CSS 变量切到原站重渲染
+  var HOME_WALL = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/2rg9in.jpg';
+  var HOME_WALL_FB = 'https://files.catbox.moe/2rg9in.jpg';
+  // 预载壁纸：引擎加载时就拉取，避免首次打开手机屏幕空白 1~2 秒；
+  // onerror 说明主源被拦/丢失 → 换兜底源并重写 CSS 变量（壁纸在 CSS 里，<img> 回退监听管不到）
+  try {
+    var _wallPre = new Image();
+    _wallPre.onerror = function () {
+      HOME_WALL = HOME_WALL_FB;
+      try { window.LZWorld.Apps.wechat.injectStyle(); } catch (e) {}
+    };
+    _wallPre.src = HOME_WALL;
+  } catch (e) {}
   function parseDay(s) {
     var m = /(\d+)年(\d+)月(\d+)日/.exec(s || '');
     return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null;
@@ -1873,7 +1883,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 主体
     '.lzw-body{flex:1;min-height:0;overflow-y:auto;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
-    '.lzw-scr-home{background:url(' + HOME_WALL + ') center/cover no-repeat #f4f6fb}',
+    '.lzw-scr-home{background:var(--lzw-wall,none) center/cover no-repeat #f4f6fb}',
     '.lzw-scr-home .lzw-sbar{background:transparent}',
     '.lzw-home-wall{height:100%;padding:20px 16px 26px;display:flex;flex-direction:column;justify-content:space-between;',
     'box-sizing:border-box}',
@@ -2450,12 +2460,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
     injectStyle: function () {
       var doc = pdoc();
-      if (!doc.getElementById('lzw-style')) {
-        var st = doc.createElement('style');
+      var st = doc.getElementById('lzw-style');
+      if (!st) {
+        st = doc.createElement('style');
         st.id = 'lzw-style';
-        st.textContent = CSS;
         doc.head.appendChild(st);
       }
+      st.textContent = CSS;
+      // 壁纸走 CSS 变量：主源加载失败时探针 onerror 改 HOME_WALL 后重入本函数即换源
+      try { doc.documentElement.style.setProperty('--lzw-wall', 'url("' + HOME_WALL + '")'); } catch (e) {}
     },
 
     inject: function () {
@@ -4333,7 +4346,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 (function () {
   'use strict';
 
-  var IMG_BASE = 'https://files.catbox.moe/';
+  // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
+  // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
+  var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
+  var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
   // 注入块的日期相对标签（与手机界面/提示词同一套口径）
   function parseDayE(s) {
@@ -5847,6 +5863,20 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     init: async function () {
       var W = window.LZWorld;
       W.IMG_BASE = IMG_BASE;
+      W.IMG_BASE_FALLBACK = IMG_BASE_FALLBACK;
+
+      // 图片双源兜底：主源（jsdelivr）加载失败的 <img> 自动回退 catbox 原站。
+      // error 不冒泡，用捕获阶段委托挂在宿主文档上一次覆盖手机/楼层所有图。
+      try {
+        window.parent.document.addEventListener('error', function (ev) {
+          var t = ev.target;
+          if (!t || t.tagName !== 'IMG') return;
+          var src = t.getAttribute('src') || '';
+          if (src.indexOf(IMG_BASE) !== 0 || t.dataset.lzwFbk) return;
+          t.dataset.lzwFbk = '1';
+          t.src = IMG_BASE_FALLBACK + src.slice(IMG_BASE.length);
+        }, true);
+      } catch (e) {}
 
       await this.load();
 
