@@ -722,7 +722,7 @@ ctx.getWorldbook = async () => [
   LW.Store.setSettings({ injRounds: 60 });
   eq('cfg·注入键可覆写', LW.Store.cfg().injRounds, 60);
   LW.Store.setSettings({ injRounds: undefined });
-  // ── 论坛：存储 / 解析 / 生成 / 跨时代挖坟 ──
+  // ── 论坛 2.0：目录/帖子两阶段懒加载 / 收藏钉住 / 换一版 / 跨时代挖坟 ──
   console.log('[论坛]');
   LW.Store.forumPut('高中时代', '霖州一中树洞墙', { posts: [
     { author: '隔壁老王的猫', title: '三年前的老帖', text: '有人还记得校庆那晚吗', time: '2031年10月2日 21:30',
@@ -733,44 +733,67 @@ ctx.getWorldbook = async () => [
   // 跨时代挖坟：成人线建同名论坛，旧帖被带过来（原时间原样 + carried 标记）
   LW.Engine.applyLine('成人时代-破镜重圆', '测试');
   global.__msgs = [{ role: 'assistant', message: statusText }];
-  ctx.generateRaw = async (req) => '[帖:城南老猫:出分了吗:如题，今天一模出分了，大家都怎么样]\n[回复:考砸了的鱼:别说了，已经准备复读了]\n[帖:路过网友:求推荐:城南哪家烧烤好吃，求真实推荐]';
+  ctx.generateRaw = async (req) => '[帖:城南老猫:出分了吗:如题今天一模出分了大家都怎么样:342:89]\n[帖:路过网友:求推荐:城南哪家烧烤好吃求真实推荐:12:45]';
   eq('论坛·首次生成', await LW.Engine.forumEnsure('成人时代-破镜重圆', '霖州一中树洞墙'), true);
   const fAdult = LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙');
   eq('论坛·挖坟带旧帖', fAdult.posts[0].carried === true && fAdult.posts[0].time === '2031年10月2日 21:30', true);
   eq('论坛·挖坟旧帖带fromLine', fAdult.posts[0].fromLine === '高中时代', true);
-  eq('论坛·新帖在后', fAdult.posts.length, 3);
-  eq('论坛·回帖解析', fAdult.posts[1].replies.length, 1);
+  eq('论坛·目录条数', fAdult.posts.length, 3);
+  eq('论坛·热度解析', fAdult.posts[1].likes === 342 && fAdult.posts[1].cmts === 89, true);
+  eq('论坛·懒加载未出正文', fAdult.posts[1].generated === false && !fAdult.posts[1].body, true);
   eq('论坛·已生成不重复', await LW.Engine.forumEnsure('成人时代-破镜重圆', '霖州一中树洞墙'), false);
   eq('论坛·空白同名不重复生成', await LW.Engine.forumEnsure('成人时代-破镜重圆', '霖州 一中树洞墙'), false);
-  // 解析：时间行/回复行挂紧贴的帖，回复封顶 2，非法行忽略
-  const fp = LW.Engine.parseForumPosts('[帖:a:标题一:正文一]\n[时间:8月26日 20:00]\n[回复:b:沙发]\n[回复:c:板凳]\n[回复:d:地板]\n胡言乱语行\n[帖:e:标题二:正文二]');
-  eq('论坛·解析条数', fp.length, 2);
+  // 目录解析：时间行挂紧贴的帖；预览可含全角/半角冒号；坏行忽略
+  const fp = LW.Engine.parseForumList('[帖:a:标题一:预览一句话:128:12]\n[时间:8月26日 20:00]\n[帖:b:标题二:带：冒号的预览:23000:5]\n胡言乱语行');
+  eq('论坛·目录解析条数', fp.length, 2);
   eq('论坛·时间挂载', fp[0].time, '8月26日 20:00');
-  eq('论坛·回复封顶2', fp[0].replies.length, 2);
-  eq('论坛·坏行忽略', fp[1].replies.length === 0 && fp[1].time === '', true);
+  eq('论坛·id稳定', fp[0].id, 'a|标题一');
+  eq('论坛·冒号预览', fp[1].preview, '带：冒号的预览');
+  // 热度格式化：千→k，万→w
+  eq('论坛·热度格式化', [LW.Engine.forumHeat(342), LW.Engine.forumHeat(1234), LW.Engine.forumHeat(23000), LW.Engine.forumHeat(999)], ['342', '1.2k', '2.3w', '999']);
+  // 帖子契约解析：正文=首个标记行前；[回复] 只挂最近一条 [热评]（楼中楼）
+  const th = LW.Engine.parseForumThread('正文第一段。\n正文第二段。\n[热评:快乐风男:4521:前排，说得好]\n[回复:杠精本精:@快乐风男:不同意]\n[回复:路人甲:@杠精本精:楼上急了]\n[评论:网友丁:马克]\n[评论:网友戊:顶]');
+  eq('论坛·帖子正文', th.body, '正文第一段。\n正文第二段。');
+  eq('论坛·热评解析', th.hot.length === 1 && th.hot[0].likes === 4521, true);
+  eq('论坛·楼中楼挂热评', th.hot[0].nest.length === 2 && th.hot[0].nest[0].to === '快乐风男', true);
+  eq('论坛·最新评论', th.latest.length === 2 && th.latest[1].author === '网友戊', true);
   // 时间归一化：缺年补快照年，整年时间保留
   eq('论坛·时间补年', LW.Engine.normForumTime('8月26日 9:05', { dateText: '2034年8月26日 星期五' }), '2034年8月26日 09:05');
   eq('论坛·整年时间保留', LW.Engine.normForumTime('2031年10月2日 21:30', { dateText: '2034年8月26日 星期五' }), '2031年10月2日 21:30');
-  // 提示词装配
-  const ff = LW.Prompt.forumFill('霖州一中树洞墙', '成人时代-破镜重圆',
-    [{ title: '三年前的老帖', author: '隔壁老王的猫', time: '2031年10月2日 21:30', text: '有人还记得校庆那晚吗' }],
-    ['周言', '陆飞'], { dateText: '2034年8月26日 星期五', time: '22:49' }, '机主资料');
+  // 提示词装配：目录
+  const ff = LW.Prompt.forumList('霖州一中树洞墙', '成人时代-破镜重圆',
+    [{ title: '三年前的老帖', author: '隔壁老王的猫', time: '2031年10月2日 21:30', preview: '有人还记得校庆那晚吗' }],
+    ['周言', '陆飞'], { 周言: '档案节选' }, { dateText: '2034年8月26日 星期五', time: '22:49' }, '机主资料', '卡描述正文');
   const ffTxt = ff.ordered_prompts[0].content;
   eq('论坛·任务带论坛名', ffTxt.indexOf('霖州一中树洞墙') !== -1, true);
   eq('论坛·旧帖段', ffTxt.indexOf('三年前的老帖') !== -1, true);
-  eq('论坛·帖契约', ffTxt.indexOf('[帖:网名:标题:正文]') !== -1, true);
-  eq('论坛·回复契约', ffTxt.indexOf('[回复:网名:回帖内容]') !== -1, true);
-  eq('论坛·人名池', ffTxt.indexOf('周言') !== -1, true);
-  // 重roll：本线生成的新帖作废重生成，考古旧帖保留
-  LW.Store.forumPut('成人时代-破镜重圆', '重roll测试墙', { posts: [
-    { author: '旧人', title: '考古帖', text: '旧内容', time: '2031年1月1日 10:00', replies: [], carried: true, fromLine: '高中时代' },
-    { author: '新人', title: '待换帖', text: '将被换掉的', time: '2034年8月26日 20:00', replies: [], carried: false },
-  ] });
-  ctx.generateRaw = async (req) => '[帖:换后的网友:换血成功:这一版是新的]';
-  eq('论坛·重roll', await LW.Engine.forumReroll('成人时代-破镜重圆', '重roll测试墙'), true);
-  const fRr = LW.Store.forumGet('成人时代-破镜重圆', '重roll测试墙');
-  eq('论坛·重roll旧帖保留', fRr.posts[0].carried === true && fRr.posts[0].title === '考古帖', true);
-  eq('论坛·重roll新帖换代', fRr.posts.length === 2 && fRr.posts[1].title === '换血成功', true);
+  eq('论坛·目录契约', ffTxt.indexOf('[帖:网名:标题:预览:赞:评]') !== -1, true);
+  eq('论坛·热度口径', ffTxt.indexOf('纯整数') !== -1, true);
+  eq('论坛·卡描述段', ffTxt.indexOf('卡描述正文') !== -1, true);
+  eq('论坛·人名带档案', ffTxt.indexOf('周言：档案节选') !== -1, true);
+  // 提示词装配：帖子（正文+热评/楼中楼/最新 三契约与预览一致约束）
+  const ft = LW.Prompt.forumThread({ title: '出分了吗', author: '城南老猫', preview: '如题今天出分', likes: 342, cmts: 89 },
+    '霖州一中树洞墙', ['周言'], {}, { dateText: '2034年8月26日 星期五', time: '22:49' }, '机主资料', '卡描述正文');
+  const ftTxt = ft.ordered_prompts[0].content;
+  eq('论坛·帖子契约·热评', ftTxt.indexOf('[热评:网名:赞数:内容]') !== -1, true);
+  eq('论坛·帖子契约·楼中楼', ftTxt.indexOf('[回复:网名:@被回复者:内容]') !== -1, true);
+  eq('论坛·帖子契约·最新', ftTxt.indexOf('[评论:网名:内容]') !== -1, true);
+  eq('论坛·预览一致约束', ftTxt.indexOf('如题今天出分') !== -1, true);
+  // 懒加载：点进才生成正文+评论，只生成一次
+  ctx.generateRaw = async (req) => '正文来了。\n[热评:网友:100:沙发]\n[评论:水友:顶顶]';
+  eq('论坛·帖子生成', await LW.Engine.forumThreadGenerate('成人时代-破镜重圆', '霖州一中树洞墙', fAdult.posts[1].id), true);
+  const fAdult2 = LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙');
+  eq('论坛·帖子生成落库', fAdult2.posts[1].body === '正文来了。' && fAdult2.posts[1].hot.length === 1, true);
+  eq('论坛·帖子不重复生成', await LW.Engine.forumThreadGenerate('成人时代-破镜重圆', '霖州一中树洞墙', fAdult.posts[1].id), false);
+  // 收藏钉住：fav 标记 + 收藏夹扫描 + 换一版豁免沉底
+  eq('论坛·收藏钉住', LW.Engine.forumFavToggle('成人时代-破镜重圆', '霖州一中树洞墙', fAdult2.posts[1].id), true);
+  eq('论坛·收藏夹', LW.Engine.forumFavorites('成人时代-破镜重圆').length, 1);
+  ctx.generateRaw = async (req) => '[帖:新人:新瓜:今夜大瓜速进:99999:9999]';
+  eq('论坛·换版', await LW.Engine.forumReroll('成人时代-破镜重圆', '霖州一中树洞墙'), true);
+  const fAdult3 = LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙');
+  eq('论坛·换版收藏保留', fAdult3.posts.some(function (p) { return p.fav === true && p.title === '出分了吗'; }), true);
+  eq('论坛·换版新帖在后', fAdult3.posts[fAdult3.posts.length - 1].title === '新瓜', true);
+  eq('论坛·取消收藏', LW.Engine.forumFavToggle('成人时代-破镜重圆', '霖州一中树洞墙', fAdult2.posts[1].id), false);
   // 删除：数据与未读标记一起清
   LW.Store.setMeta('forum:成人时代-破镜重圆:霖州一中树洞墙', { seen: 3 });
   eq('论坛·删除', LW.Store.forumDel('成人时代-破镜重圆', '霖州一中树洞墙'), true);
@@ -813,7 +836,7 @@ ctx.getWorldbook = async () => [
   const W2 = wc.window.LZWorld, UI2 = W2 && W2.Apps && W2.Apps.wechat, C2 = W2 && W2.WechatCore;
   eq('装载·宿主对象', typeof UI2, 'object');
   eq('装载·共享内核', typeof C2, 'object');
-  eq('装载·各屏body挂齐', ['bodyHome', 'bodyList', 'bodyCdetail', 'bodyChat', 'bodyMoments', 'bodyMprofile', 'bodyMpost', 'bodyForum', 'bodyFboard', 'bodyFthread', 'bodySettings'].every(function (k) { return typeof UI2[k] === 'function'; }), true);
+  eq('装载·各屏body挂齐', ['bodyHome', 'bodyList', 'bodyCdetail', 'bodyChat', 'bodyMoments', 'bodyMprofile', 'bodyMpost', 'bodyForum', 'bodyFav', 'bodyFboard', 'bodyFthread', 'bodySettings'].every(function (k) { return typeof UI2[k] === 'function'; }), true);
   eq('装载·各屏方法挂齐', ['openChat', 'openMoments', 'openForum', 'sendText', 'generate', 'dial', 'callSend', 'callReroll', 'hangup', 'syncMomentBar', 'forumLineKey', 'render', 'bind', 'switchLine', 'showLines'].every(function (k) { return typeof UI2[k] === 'function'; }), true);
   eq('装载·屏绑定器≥7', UI2._binders.length >= 7, true);
   eq('装载·内核通话导出', typeof C2.callHtml === 'function' && typeof C2.fmtDur === 'function', true);

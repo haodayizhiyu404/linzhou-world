@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-22d';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-23a';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -161,6 +161,19 @@
           (typeof getPersona === 'function' ? '' : '，getPersona 不存在（酒馆助手版本较旧）'));
       }
       return desc;
+    },
+
+    // 角色卡描述（故事主线背景）：走主页面 getContext 拿当前卡 description，截断用。
+    // 论坛/帖子等「世界侧」生成用它垫主线质感；每次现读，换卡即换。
+    charDesc: function () {
+      try {
+        var st = window.parent.SillyTavern;
+        var ctx = st && st.getContext && st.getContext();
+        var ch = ctx && ctx.characterId != null && ctx.characters && ctx.characters[ctx.characterId];
+        var d = ch && ch.description ? String(ch.description) : '';
+        if (d.length > 1500) d = d.slice(0, 1500) + '……';
+        return d;
+      } catch (e) { return ''; }
     },
 
     // 取某人在当前线的档案：线NPC库有 → 只读它（各线重写的独立档案）；
@@ -834,26 +847,60 @@
     momentsKey: '__moments__',
 
     // ── 论坛 ──
-    // 契约输出解析：[帖:网名:标题:正文]；可紧跟 [时间:M月D日 HH:MM]、[回复:网名:内容]（≤2 条，挂紧贴的帖）
-    parseForumPosts: function (text) {
+    // 两阶段：【生成一版】只出目录（标题/预览/热度，懒加载）；点进帖子才生成正文+评论区，结果缓存。
+    // 列表契约：[帖:网名:标题:预览:赞:评]（赞/评为纯整数，AI 按瓜大小自己拿捏）；可紧跟 [时间:M月D日 HH:MM]
+    // 帖子契约：正文自由段落（时间行之前的非标记行），其后 [热评:网名:赞数:内容]（可紧跟
+    //           [回复:网名:@谁:内容] 楼中楼，挂最近一条热评）、[评论:网名:内容]（最新区，新→旧）
+    parseForumList: function (text) {
       var posts = [];
       String(text || '').split('\n').forEach(function (line) {
         line = line.trim();
         if (!line) return;
-        var m = line.match(/^\[帖[:：]([^:：\]]{1,16})[:：]([^:：\]]{1,40})[:：]([\s\S]+)\]$/);
-        if (m) { posts.push({ author: m[1].trim(), title: m[2].trim(), text: m[3].trim(), time: '', replies: [], carried: false }); return; }
-        var tm = line.match(/^\[时间[:：]([\s\S]+)\]$/);
-        if (tm) { var tp = posts[posts.length - 1]; if (tp) tp.time = tm[1].trim(); return; }
-        var rp = line.match(/^\[回复[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
-        if (rp) {
-          var tg = posts[posts.length - 1];
-          if (tg && tg.replies.length < 2) tg.replies.push({ author: rp[1].trim(), text: rp[2].trim(), time: '' });
+        var m = line.match(/^\[帖[:：]([^:：\]]{1,16})[:：]([^:：\]]{1,40})[:：]([\s\S]+?)[:：](\d{1,6})[:：](\d{1,6})\]$/);
+        if (m) {
+          posts.push({
+            id: m[1].trim() + '|' + m[2].trim(),
+            author: m[1].trim(), title: m[2].trim(), preview: m[3].trim(),
+            likes: +m[4], cmts: +m[5], time: '', fav: false, generated: false
+          });
+          return;
         }
+        var tm = line.match(/^\[时间[:：]([\s\S]+)\]$/);
+        if (tm) { var tp = posts[posts.length - 1]; if (tp) tp.time = tm[1].trim(); }
       });
-      return posts.filter(function (p) { return p.author && p.title && p.text; }).slice(0, 8);
+      return posts.filter(function (p) { return p.author && p.title && p.preview; }).slice(0, 10);
     },
 
-    // 论坛时间归一化：缺少年份补快照年；认不出的格式返回 ''（调用方兜底推算）
+    // 帖子正文+评论解析：首个标记行之前是正文；[回复] 只挂最近一条 [热评]（楼中楼，封顶3）
+    parseForumThread: function (text) {
+      var body = [], hot = [], latest = [], stage = 0;
+      String(text || '').split('\n').forEach(function (line) {
+        line = line.trim();
+        if (!line) return;
+        var hm = line.match(/^\[热评[:：]([^:：\]]{1,16})[:：](\d{1,6})[:：]([\s\S]+)\]$/);
+        if (hm) { hot.push({ author: hm[1].trim(), likes: +hm[2], text: hm[3].trim(), nest: [] }); stage = 1; return; }
+        var rm = line.match(/^\[回复[:：]([^:：\]]{1,16})[:：]\s*@?([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
+        if (rm && stage === 1 && hot.length) {
+          var tg = hot[hot.length - 1];
+          if (tg.nest.length < 3) tg.nest.push({ author: rm[1].trim(), to: rm[2].trim(), text: rm[3].trim() });
+          return;
+        }
+        var cm = line.match(/^\[评论[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
+        if (cm) { latest.push({ author: cm[1].trim(), text: cm[2].trim() }); stage = 2; return; }
+        if (stage === 0) body.push(line);
+      });
+      return { body: body.join('\n').trim(), hot: hot, latest: latest };
+    },
+
+    // 热度显示格式化：<1000 原样；千→k；万→w（1234→1.2k，23000→2.3w）
+    forumHeat: function (n) {
+      n = Math.max(0, Math.floor(+n || 0));
+      if (n < 1000) return String(n);
+      if (n < 10000) return String(Math.round(n / 100) / 10) + 'k';
+      return String(Math.round(n / 1000) / 10) + 'w';
+    },
+
+    // 时间归一化：缺少年份补快照年；认不出的格式返回 ''（调用方兜底推算）
     normForumTime: function (raw, snap) {
       var m = /(?:(\d{4})年)?(\d{1,2})月(\d{1,2})日\s*(\d{1,2}):(\d{2})/.exec(String(raw || ''));
       if (!m) return '';
@@ -865,8 +912,43 @@
       return yr + '年' + +m[2] + '月' + +m[3] + '日 ' + ('0' + m[4]).slice(-2) + ':' + m[5];
     },
 
-    // 生成一版帖子（carried=跨时代挖来的旧帖，排前入列）；一版都没有就抛错
-    forumGenerate: async function (line, name, carried) {
+    // 收藏 = 帖子上钉 fav 标记；换一版时 fav/考古 帖豁免清除，沉在列表底部
+    forumFavToggle: function (line, name, id) {
+      var St = window.LZWorld.Store;
+      var f = St.forumGet(line, name);
+      var p = f && (f.posts || []).filter(function (x) { return (x.id || (x.author + '|' + x.title)) === id; })[0];
+      if (!p) return false;
+      if (!p.id) p.id = p.author + '|' + p.title;
+      p.fav = !p.fav;
+      St.forumPut(line, name, f);
+      return p.fav;
+    },
+    // 收藏夹：扫当前线全部论坛，收 fav 帖（读活数据，与列表永远同一份）
+    forumFavorites: function (line) {
+      var all = window.LZWorld.Store.forumAll() || {};
+      var out = [];
+      var slot = all[line || ''] || {};
+      for (var fn in slot) {
+        (slot[fn].posts || []).forEach(function (p) {
+          if (p.fav) out.push({ forum: fn, post: p });
+        });
+      }
+      return out;
+    },
+
+    // 帖子 id → 帖子（fthread 用 id 寻址，换一版后下标变了也不怕）
+    forumFindPost: function (line, name, id) {
+      var f = window.LZWorld.Store.forumGet(line, name);
+      var ps = (f && f.posts) || [];
+      for (var i = 0; i < ps.length; i++) {
+        if ((ps[i].id || (ps[i].author + '|' + ps[i].title)) === id) return { forum: f, post: ps[i] };
+      }
+      return { forum: f, post: null };
+    },
+
+    // 【生成一版】/换一版共用：kept = 考古旧帖 + 收藏帖（沉底），fresh 新列表在前
+    // 一版都没有就抛错
+    forumGenerate: async function (line, name, kept) {
       var W = window.LZWorld, St = W.Store;
       var snap; try { snap = W.Status.snapshot(null); } catch (e0) {}
       // 人名池（联系人+群成员，去重）：AI 可给他们起网名，也可纯陌生网友
@@ -876,11 +958,11 @@
       (sec.groups || []).forEach(function (g) {
         (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
       });
-      var req = W.Prompt.forumFill(name, line, carried, pool, snap, this.userBlock());
+      var req = W.Prompt.forumList(name, line, kept || [], pool, this.profiles(), snap, this.userBlock(), this.charDesc());
       var raw = await this.gen(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
-      var fresh = this.parseForumPosts(text);
-      if (!fresh.length && !carried.length) throw new Error('论坛生成结果为空');
+      var fresh = this.parseForumList(text);
+      if (!fresh.length && !(kept || []).length) throw new Error('论坛生成结果为空');
       // 缺时间的帖按快照时刻往前 hash 散布（最新 0.5~3 小时前，往后逐条再退 2~8 小时），绝不越过「现在」
       var sb = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec((snap && snap.dateText) || '');
       var st0 = /(\d{1,2}):(\d{2})/.exec((snap && snap.time) || '');
@@ -894,12 +976,38 @@
         fp.time = cur.getFullYear() + '年' + (cur.getMonth() + 1) + '月' + cur.getDate() + '日 ' +
           ('0' + cur.getHours()).slice(-2) + ':' + ('0' + cur.getMinutes()).slice(-2);
       }
-      St.forumPut(line, name, { posts: (carried || []).concat(fresh) });
+      St.forumPut(line, name, { posts: (kept || []).concat(fresh) });
       return true;
     },
 
-    // 首次进论坛：空论坛 → 生成一版热帖（6~8 条）。
-    // 跨时代挖坟：别的线的同名论坛挑旧帖带过来（快照语义：原标题/时间/回帖原样保留，carried 标记）。
+    // 点进帖子才生成正文+评论（懒加载，只生成一次）；旧版内联正文帖视为已生成
+    forumThreadGenerate: async function (line, name, id) {
+      var W = window.LZWorld, St = W.Store;
+      var found = this.forumFindPost(line, name, id);
+      var f = found.forum, p = found.post;
+      if (!f || !p) throw new Error('帖子不存在');
+      if (p.generated || p.text) return false;
+      var snap; try { snap = W.Status.snapshot(null); } catch (e0) {}
+      var sec = this.section() || {};
+      var pool = [], seen = {};
+      (sec.contacts || []).forEach(function (c) { if (c.name && !seen[c.name]) { seen[c.name] = 1; pool.push(c.name); } });
+      (sec.groups || []).forEach(function (g) {
+        (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
+      });
+      var req = W.Prompt.forumThread(p, name, pool, this.profiles(), snap, this.userBlock(), this.charDesc());
+      var raw = await this.gen(req);
+      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      var th = this.parseForumThread(text);
+      if (!th.body) throw new Error('帖子生成结果为空');
+      p.body = th.body;
+      p.hot = th.hot;
+      p.latest = th.latest;
+      p.generated = true;
+      St.forumPut(line, name, f);
+      return true;
+    },
+
+    // 首次【生成一版】：空论坛 → 出目录（6~8 条）。跨时代挖坟：别的线同名论坛挑旧帖带过来。
     forumEnsure: async function (line, name) {
       var W = window.LZWorld, St = W.Store;
       var f0 = St.forumGet(line, name);
@@ -924,21 +1032,22 @@
           olds.sort(function (a, b) { return (b.replies || []).length - (a.replies || []).length; });
           for (var ci = 0; ci < olds.length && carried.length < 3; ci++) {
             var c0 = olds[ci];
-            carried.push({ author: c0.author, title: c0.title, text: c0.text, time: c0.time || '',
-              replies: (c0.replies || []).slice(0, 2), carried: true, fromLine: ln });
+            carried.push({ id: (c0.author + '|' + c0.title), author: c0.author, title: c0.title, text: c0.text || '',
+              preview: c0.preview || String(c0.text || '').slice(0, 40), likes: c0.likes || 0, cmts: c0.cmts || ((c0.replies || []).length),
+              time: c0.time || '', replies: (c0.replies || []).slice(0, 2), carried: true, fromLine: ln });
           }
         }
       }
       return this.forumGenerate(line, name, carried);
     },
 
-    // 重roll 这一版：本线生成的新帖全部作废重生成，考古旧帖（别的线带过来的）保留
+    // 换一版：本版新帖作废重生成；收藏帖与考古旧帖豁免，沉底保留
     forumReroll: async function (line, name) {
       var St = window.LZWorld.Store;
       var f = St.forumGet(line, name);
       if (!f) return false;
-      var carried = (f.posts || []).filter(function (p) { return p.carried; });
-      return this.forumGenerate(line, name, carried);
+      var kept = (f.posts || []).filter(function (p) { return p.carried || p.fav; });
+      return this.forumGenerate(line, name, kept);
     },
     momentsFeed: function () { return window.LZWorld.Store.history(this.momentsKey); },
 

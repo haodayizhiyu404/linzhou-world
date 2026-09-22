@@ -481,6 +481,18 @@
     '.lzw-frep{padding:9px 0;font-size:13px;line-height:1.55;color:#333;border-bottom:1px solid rgba(0,0,0,.05);word-break:break-word}',
     '.lzw-frep:last-child{border-bottom:none}',
     '.lzw-frep-a{color:#576b95;font-weight:600}',
+    // ── 论坛 2.0：预览/热度/收藏/热评楼中楼 ──
+    '.lzw-fprev{font-size:12px;color:#666;margin-top:3px;line-height:1.45;word-break:break-word}',
+    '.lzw-fsubdim{color:#c0c4cc}',
+    '.lzw-fstar{color:#e8912d;margin-left:5px;font-size:13px}',
+    '.lzw-fdim{opacity:.55}',
+    '.lzw-fico-star{background:linear-gradient(135deg,#f7d06a,#e8a02d)}',
+    '.lzw-ffav{font-size:19px;line-height:1;color:#e8912d}',
+    '.lzw-fsec{margin:14px 12px 6px;font-size:12px;color:#9aa0a8;font-weight:600}',
+    '.lzw-fhot{padding:9px 0;border-bottom:1px solid rgba(0,0,0,.05)}',
+    '.lzw-fhot:last-child{border-bottom:none}',
+    '.lzw-fhot-badge{display:inline-block;font-size:10px;color:#e8912d;background:#fdf3e7;border-radius:8px;padding:2px 7px;margin-bottom:4px}',
+    '.lzw-fnest{margin:6px 0 2px 14px;padding:8px 10px;background:#f7f7f9;border-radius:10px;font-size:12.5px;line-height:1.5;color:#444;word-break:break-word}',
     // ── 备忘录（lzw-memo-*）：选人 chips / 存档列表 / 阅读页 ──
     '.lzw-memo-chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 8px;flex:none;background:#f7f7f9;border-bottom:1px solid rgba(0,0,0,.06)}',
     '.lzw-memo-chip{flex:none;border:1px solid rgba(0,0,0,.12);background:#fff;color:#333;border-radius:14px;padding:4px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}',
@@ -722,8 +734,9 @@
     if (screen === 'forum') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">论坛</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'memo') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">备忘录</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'mread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="memo">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
-    if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？重新生成（考古旧帖保留）">' + ICON_REROLL + '</span>') + '</span></div>';
-    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'fav') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">我的收藏</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？换一版（收藏的帖子保留）">' + ICON_REROLL + '</span>') + '</span></div>';
+    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"><span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.forumFavNow && UI.forumFavNow() ? '★' : '☆') + '</span></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
@@ -829,7 +842,8 @@
     tConfirm: -1,         // 待确认收款的转账消息下标（-1=无）
     pConfirmDel: '',      // 待确认删除的自定义 API 预设名（''=无）
     forumName: '',        // fboard/fthread 当前论坛名
-    fThread: -1,          // fthread 当前帖子下标
+    fThreadId: '',        // fthread 当前帖子 id（作者|标题，换一版后下标变 id 不变）
+    fTBusy: false,        // 帖子正文生成中
     fConfirmDel: '',      // 待确认删除的论坛名（''=无）
     sConfirmDel: '',      // 待确认删除的陌生人会话 key（''=无）
     memoNpc: null,        // 备忘录当前选中的人（默认通讯录第一位）
@@ -1070,7 +1084,7 @@
           else if (a === 'fdelok') {
             var fn0 = UI.fConfirmDel; UI.fConfirmDel = '';
             try { window.LZWorld.Store.forumDel(UI.forumLineKey(), fn0); } catch (e) {}
-            if (UI.forumName === fn0) { UI.forumName = ''; UI.fThread = -1; UI.screen = 'forum'; }
+            if (UI.forumName === fn0) { UI.forumName = ''; UI.fThreadId = ''; UI.screen = 'forum'; }
             UI.render();
           }
           else if (a === 'sdelno') { UI.sConfirmDel = ''; UI.render(); }

@@ -193,6 +193,16 @@
     return lines.join('\n');
   }
 
+  // ── 论坛共用段：可能出没的人（名单 + 档案节选，NPC 冒泡的素材） ──
+  function forumPeopleBlock(people, profiles) {
+    if (!people || !people.length) return '## 可能出没的人\n（无名单，全用陌生网友）';
+    return '## 可能出没的人（可给他们起谐音/外号/缩写网名让熟人认出，也可用纯陌生网友）\n' +
+      people.map(function (n) {
+        var p = profiles && profiles[n];
+        return '- ' + n + (p ? '：' + String(p).replace(/\n+/g, ' ').slice(0, 120) : '');
+      }).join('\n');
+  }
+
   var Prompt = {
 
     // ── 私聊 ──
@@ -452,43 +462,91 @@
   // ── 论坛 · 首次填充：为空论坛生成一版热帖 ──
   // name=论坛名 line=当前世界线 carried=跨时代带过来的旧帖 people=可能出没的人名池
   // 契约语法：[帖:网名:标题:正文]；可紧跟 [时间:M月D日 HH:MM]、[回复:网名:内容]（每帖 ≤2 条）
-  forumFill: function (name, line, carried, people, snapshot, userInfo) {
+  // ── 论坛 · 阶段一：只出目录（标题/预览/热度），不烧正文的 API ──
+  forumList: function (name, line, kept, people, profiles, snapshot, userInfo, charDesc) {
     var myName = me();
     var p = [
         '# 虚构沙盒',
         '',
         FICTION,
         '',
-      '# 数字世界 · 论坛帖子生成',
+      '# 数字世界 · 论坛目录生成',
       '',
-      '本次任务：为论坛「' + name + '」生成一版帖子。',
-      '机主「' + myName + '」第一次进入这个论坛，看到的是它此刻的样子。',
+      '本次任务：为论坛「' + name + '」生成此刻的帖子目录。机主「' + myName + '」第一次进入这个论坛，手指上下滑，看到的是一屏标题列表——正文要点进帖子才看得到，这里只要目录。',
       '',
-      '## 当前情境\n' + (situationBlock(snapshot) || '（暂无）'),
+      charDesc ? '## 故事主线背景\n' + charDesc : '',
+      '',
+      mainContext() ? '## 主线近况（只作背景，别搬进帖子）\n' + mainContext() : '',
+      '',
+      situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
       '',
       userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
-      carried.length ? '## 这个论坛的旧帖（从更早的时代留存下来，沉在列表底部）\n' + carried.map(function (c) {
-        return '- 「' + c.title + '」（' + c.author + '，' + (c.time || '久远以前') + '）：' + String(c.text).slice(0, 60) + '…';
+      '',
+      (kept && kept.length) ? '## 这个论坛的旧帖（从更早的时代留存下来，沉在列表底部）\n' + kept.map(function (c) {
+        return '- 「' + c.title + '」（' + c.author + '，' + (c.time || '久远以前') + '）：' + String(c.preview || c.text || '').slice(0, 60);
       }).join('\n') + '\n新帖应与这些旧帖一脉相承（同样的论坛口味与传统），但不要改写或复述它们。' : '',
       '',
-      '## 可能出没的人（可给他们起谐音/外号/缩写网名让熟人认出，也可用纯陌生网友）\n' +
-        (people && people.length ? people.join('、') : '（无名单，全用陌生网友）'),
+      forumPeopleBlock(people, profiles),
       '',
       '## 输出要求（严格遵守）',
       '- 输出 6~8 条帖子，按发布时间从新到旧排列（最新的最先输出）',
-      '- 格式严格为：[帖:网名:标题:正文]（单行；标题 ≤20 字，正文 30~150 字）',
-      '- 至多一半的帖子带 1~2 条回帖，紧跟其后：[回复:网名:回帖内容]（每条 ≤40 字，像真实网友：抖机灵、补充、抬杠、歪楼、喊楼主好人）',
-      '- 帖子要有真实论坛感：问事求助、分享、吐槽、炫耀、吃瓜搬运、灌水……标题党可以有但别每条都党',
+      '- 格式严格单行：[帖:网名:标题:预览:赞:评]（标题 ≤20 字；预览 15~40 字的一句话，勾人点进去；赞/评为纯整数）',
+      '- 热度由你拿捏：社会热点、公告、超级大瓜自然高（几万到几十万）；日常灌水几十到几百。分布要真实，别条条都高',
       '- 可选：每条帖子后紧跟一行 [时间:M月D日 HH:MM]（24 小时制；不晚于当前时刻；彼此拉开，今天昨天为主，个别可早到几天前）',
+      '- 帖子要有真实论坛感：问事求助、分享、吐槽、炫耀、吃瓜搬运、灌水……标题党可以有但别每条都党',
       '- 网名要像真人注册的：字母缩写、中二名、随手起名、带数字都行；不要一水儿文艺名',
       '- 内容与口吻贴合「' + name + '」这个论坛名该有的画风；楼主们各有各的声口，不要同一副腔调',
       '- 不要点名单「' + myName + '」，不要写需要机主回应的内容（机主只是路过看看）',
-      '- 除 [帖]/[时间]/[回复] 行外不要输出任何其他内容'
+      '- 除 [帖]/[时间] 行外不要输出任何其他内容'
     ].filter(function (s) { return s !== ''; }).join('\n');
     return {
       ordered_prompts: [
         { role: 'system', content: p },
-        { role: 'user', content: '（请按输出要求生成论坛「' + name + '」的 6~8 条帖子。）' }
+        { role: 'user', content: '（请按输出要求生成论坛「' + name + '」此刻的 6~8 条帖子目录。）' }
+      ],
+      should_silence: true,
+      max_chat_history: 0
+    };
+  },
+
+  // ── 论坛 · 阶段二：点进帖子才生成正文+评论区（结果缓存，只生成一次） ──
+  forumThread: function (post, forumName, people, profiles, snapshot, userInfo, charDesc) {
+    var myName = me();
+    var p = [
+        '# 虚构沙盒',
+        '',
+        FICTION,
+        '',
+      '# 数字世界 · 帖子正文与评论区生成',
+      '',
+      '本次任务：论坛「' + forumName + '」里的一条帖子此前只生成了目录，机主「' + myName + '」刚点进来——请补全它的正文与评论区。',
+      '',
+      '## 这条帖子',
+      '- 标题：「' + post.title + '」（楼主：' + post.author + (post.time ? '，' + post.time : '') + '，目录标注 赞' + (post.likes || 0) + ' · 评' + (post.cmts || 0) + '）',
+      '- 目录预览（正文必须与之一致）：' + (post.preview || ''),
+      '',
+      charDesc ? '## 故事主线背景\n' + charDesc : '',
+      '',
+      mainContext() ? '## 主线近况（只作背景，别搬进帖子）\n' + mainContext() : '',
+      '',
+      situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+      '',
+      userInfo ? '## 机主资料 · ' + myName + '\n' + userInfo : '',
+      '',
+      forumPeopleBlock(people, profiles),
+      '',
+      '## 输出要求（严格遵守）',
+      '- 先写正文：100~400 字，可多段，楼主本人的口吻与处境；必须与标题、目录预览相符，可展开细节但不能是两个故事',
+      '- 然后 2~4 条热评，格式 [热评:网名:赞数:内容]（赞数为整数；抖机灵、共鸣、补充、抬杠、歪楼都行，像真实高赞）',
+      '- 每条热评可紧跟 0~2 条楼中楼，格式 [回复:网名:@被回复者:内容]（只挂最近一条热评；互怼、补刀、劝架都可以）',
+      '- 然后 3~6 条普通评论，格式 [评论:网名:内容]（按发布时间新→旧；真实水友口气，越普通越好）',
+      '- 评论区可出现上方名单里的人（用网名/缩写/外号，熟人能认出），也可全用陌生网友；不要点名机主、不要写需要机主回应的内容',
+      '- 除正文与标记行外不要输出任何其他内容'
+    ].filter(function (s) { return s !== ''; }).join('\n');
+    return {
+      ordered_prompts: [
+        { role: 'system', content: p },
+        { role: 'user', content: '（请按输出要求补全这条帖子：先正文，再热评与楼中楼，再普通评论。）' }
       ],
       should_silence: true,
       max_chat_history: 0
