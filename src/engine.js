@@ -7,6 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
+  var ENGINE_VER = '2026-09-22c';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -1659,6 +1660,7 @@
     // ── 启动 ──
     init: async function () {
       var W = window.LZWorld;
+      try { console.log('[霖州引擎] v' + ENGINE_VER); } catch (e) {}
       W.IMG_BASE = IMG_BASE;
       W.IMG_BASE_FALLBACK = IMG_BASE_FALLBACK;
 
