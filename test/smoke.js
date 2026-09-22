@@ -642,7 +642,7 @@ ctx.getWorldbook = async () => [
   const gMe = LW.Engine.capturePhoneText('<!--phone\n陈默：你自己加油\n-->');
   eq('白名单·机主本人拒收', gMe.length, 0);
   // 红点求和兜底静态保险丝：两处求和（桌面角标/微信tab）都必须过 phoneAllow
-  const wSrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat.js'), 'utf8');
+  const wSrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-home.js'), 'utf8') + fs.readFileSync(path.join(ROOT, 'src/apps/wechat-list.js'), 'utf8');
   eq('兜底·桌面角标过白名单', wSrc.indexOf('allowK && !allowK[k] && k !== eng.momentsKey') !== -1, true);
   eq('兜底·微信tab过白名单', wSrc.indexOf('allowK2 && !allowK2[k]') !== -1, true);
   // sys 条目：msgToLine 不带人名前缀（跨场景携带里就是干净的「语音通话 · 03:24」）
@@ -747,7 +747,8 @@ ctx.getWorldbook = async () => [
   // ── UI 源码静态检查（回归保险丝）──
   console.log('[UI 源码]');
   const wsrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat.js'), 'utf8');
-  eq('关闭app·有点击绑定', wsrc.includes('ph.querySelectorAll(\'[data-app="close"]\').forEach'), true);
+  const whome = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-home.js'), 'utf8');
+  eq('关闭app·有点击绑定', whome.includes('ph.querySelectorAll(\'[data-app="close"]\').forEach'), true);
   eq('关闭app·绑定未被误改成正则字面量（fdb0520 事故）', /^\s*\/\s*ph\\\./m.test(wsrc), false);
   eq('选线弹窗·按可视视口显式定位', wsrc.includes('function placeLinesPop') && wsrc.includes('visualViewport'), true);
   // 正文注入·幽灵残留保险丝：入口无条件清除同名键，且先于所有 return 分支
@@ -765,6 +766,24 @@ ctx.getWorldbook = async () => [
   eq('图床·img回退监听', esrc2.indexOf("addEventListener('error', function (ev)") !== -1 && esrc2.indexOf('lzwFbk') !== -1, true);
   eq('壁纸·CSS变量可换源', wsrc.includes('var(--lzw-wall') && wsrc.includes("setProperty('--lzw-wall'") && wsrc.includes('HOME_WALL_FB'), true);
   global.__msgs = null;
+  // ── 微信拆分·注册装载（壳+7屏按构建序入沙盒，断言各屏往宿主挂接成功）──
+  console.log('[微信拆分·注册装载]');
+  const wc = { console, Image: function () { return { set src(v) {} }; } };
+  wc.window = wc;
+  wc.parent = { document: { getElementById: function () { return null; }, createElement: function () { return { style: {}, setAttribute: function () {} }; }, head: { appendChild: function () {} } } };
+  vm.createContext(wc);
+  for (const f of ['wechat.js', 'wechat-home.js', 'wechat-list.js', 'wechat-chat.js', 'wechat-moments.js', 'wechat-forum.js', 'wechat-call.js', 'wechat-settings.js']) {
+    vm.runInContext(fs.readFileSync(path.join(ROOT, 'src/apps', f), 'utf8'), wc, { filename: f });
+  }
+  const W2 = wc.window.LZWorld, UI2 = W2 && W2.Apps && W2.Apps.wechat, C2 = W2 && W2.WechatCore;
+  eq('装载·宿主对象', typeof UI2, 'object');
+  eq('装载·共享内核', typeof C2, 'object');
+  eq('装载·各屏body挂齐', ['bodyHome', 'bodyList', 'bodyCdetail', 'bodyChat', 'bodyMoments', 'bodyMprofile', 'bodyMpost', 'bodyForum', 'bodyFboard', 'bodyFthread', 'bodySettings'].every(function (k) { return typeof UI2[k] === 'function'; }), true);
+  eq('装载·各屏方法挂齐', ['openChat', 'openMoments', 'openForum', 'sendText', 'generate', 'dial', 'callSend', 'callReroll', 'hangup', 'syncMomentBar', 'forumLineKey', 'render', 'bind', 'switchLine', 'showLines'].every(function (k) { return typeof UI2[k] === 'function'; }), true);
+  eq('装载·屏绑定器≥7', UI2._binders.length >= 7, true);
+  eq('装载·内核通话导出', typeof C2.callHtml === 'function' && typeof C2.fmtDur === 'function', true);
+  eq('装载·内核卡片导出', typeof C2.transferCardHtml === 'function' && typeof C2.chatRowHtml === 'function' && typeof C2.appbarHtml === 'function', true);
+
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
   process.exit(fail ? 1 : 0);

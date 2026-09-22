@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-22T11:48:28.291Z
+//  构建时间：2026-09-22T12:57:34.696Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-22 11:48';
+var __LZW_BUILD__ = '2026-09-22 12:57';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1777,7 +1777,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
 // ── src/apps/wechat.js ──
 // ═══════════════════════════════════════════════════════════
-//  apps/wechat.js —— 微信应用（引擎装载的第一个应用）
+//  apps/wechat.js —— 微信应用：壳 + 共享内核（WechatCore）
+//  壳：UI 宿主、render/bind 主骨架、注入/拖动/选线弹层、样式与图标库
+//  屏实现拆在 wechat-*.js（按构建顺序往宿主上挂 body*/方法/绑定）：
+//    home 桌面 | list 会话列表+通讯录+详细资料 | chat 聊天 | moments 朋友圈
+//    forum 论坛 | call 通话 | settings 设置面板
 //  UI 全部为本项目自有设计（仿真手机壳 + 亮色屏）。
 //  展示层注入主页面（沙盒内经 parent.document 操作）。
 // ═══════════════════════════════════════════════════════════
@@ -1788,6 +1792,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   function pdoc() { return window.parent.document; }
   function pwin() { return window.parent; }
+
   // 主屏壁纸（浅色可爱系；换图只改这里）。必须定义在 CSS 数组之前——
   // 数组在脚本加载时立即求值，引用晚于它的变量会得到 undefined。
   // 壁纸主源 jsdelivr（随仓库），catbox 兜底：探针失败时把 CSS 变量切到原站重渲染
@@ -1803,6 +1808,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     };
     _wallPre.src = HOME_WALL;
   } catch (e) {}
+
   function parseDay(s) {
     var m = /(\d+)年(\d+)月(\d+)日/.exec(s || '');
     return m ? { y: +m[1], mo: +m[2], d: +m[3] } : null;
@@ -2254,6 +2260,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-frep-a{color:#576b95;font-weight:600}'
   ].join('\n');
 
+
   var ICON_VOICE = '<svg width="15" height="15" viewBox="0 0 1024 1024"><path fill="#222222" d="M501.269333 517.610667a277.333333 277.333333 0 0 1-81.664 197.546666l-5.12 4.906667-3.306666 2.858667a42.666667 42.666667 0 0 1-58.325334-61.696l3.029334-3.136 6.954666-6.954667a192.042667 192.042667 0 0 0-7.936-273.002667l-3.050666-3.136a42.666667 42.666667 0 0 1 61.248-59.264l5.12 4.906667a277.333333 277.333333 0 0 1 83.050666 196.970667z m187.648 10.197333A418.090667 418.090667 0 0 1 565.845333 814.933333l-7.68 7.466667-3.306666 2.837333a42.666667 42.666667 0 0 1-58.346667-61.674666l3.029333-3.157334 6.101334-5.952a332.928 332.928 0 0 0 97.962666-228.48l0.085334-8.533333a332.821333 332.821333 0 0 0-105.834667-242.24 42.666667 42.666667 0 0 1 58.197333-62.4 418.133333 418.133333 0 0 1 132.970667 304.32l-0.106667 10.709333zM625.877333 137.877333a42.666667 42.666667 0 0 1 58.176-62.421333l-58.176 62.421333z m250.730667 394.026667a606.208 606.208 0 0 1-48.853333 225.365333l-6.293334 14.165334a606.016 606.016 0 0 1-123.2 176.554666l-11.136 10.816-3.306666 2.837334a42.666667 42.666667 0 0 1-58.346667-61.696l3.029333-3.136 9.557334-9.28a520.661333 520.661333 0 0 0 105.856-151.722667l5.397333-12.16a520.853333 520.853333 0 0 0 41.984-193.6l0.128-13.333333a520.341333 520.341333 0 0 0-38.4-194.261334l-5.141333-12.288a520.533333 520.533333 0 0 0-122.026667-172.288l58.197333-62.421333a605.909333 605.909333 0 0 1 142.016 200.533333l6.016 14.293334a605.653333 605.653333 0 0 1 44.672 226.133333l-0.149333 15.509333zM170.666667 518.442667a64 64 0 1 1 128 0 64 64 0 0 1-128 0z"/></svg>';
 
   var ICON_REROLL = '<svg width="18" height="18" viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 85.333333c102.869333 0 199.509333 36.693333 275.029333 100.437334l93.866667-94.037334a21.333333 21.333333 0 0 1 36.437333 15.061334V384a21.333333 21.333333 0 0 1-21.333333 21.333333h-276.693333a21.333333 21.333333 0 0 1-15.104-36.394666l122.325333-122.496a341.333333 341.333333 0 1 0 118.314667 341.632 42.666667 42.666667 0 1 1 83.2 18.901333A426.794667 426.794667 0 0 1 512 938.666667C276.352 938.666667 85.333333 747.648 85.333333 512S276.352 85.333333 512 85.333333z"/></svg>';
@@ -2304,12 +2311,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 转账卡：微信同款结构——左侧大徽标圈（高度≈金额+状态两行），右侧金额+状态上下排，
   // 备注放在最底的小字行；全状态同卡（黄卡/退还是灰卡），发送与接收双方同卡同款，
-  // 群聊发送方卡在金额旁标「给 X」，待收款的对方卡可点收款。
+
   function fmtTAmount(a) {
     var n = Number(a);
     if (isNaN(n) || n <= 0) return '0';
     return n % 1 === 0 ? String(n) : n.toFixed(2);
   }
+  // 群聊发送方卡在金额旁标「给 X」，待收款的对方卡可点收款。
   function tcardHtml(amount, note, badge, status, back, toTag, clickable, ring) {
     return '<div class="lzw-tcard' + (back ? ' back' : '') + (clickable ? ' waiting' : '') + '"' + (clickable ? ' data-taccept="1"' : '') + '>' +
       '<div class="lzw-tmain"><span class="lzw-tbadge' + (ring ? ' ring' : '') + '">' + badge + '</span>' +
@@ -2331,6 +2339,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   function verdictCardHtml(m) {
     return tcardHtml(m.amount, m.note, m.kind === 'taccept' ? ICON_TOK : ICON_TNO, m.kind === 'taccept' ? '已收款' : '已退还', m.kind === 'tdecline', '', false);
   }
+
 
   // ── 手机内气泡行 ──
   // targetName：会话对象显示名（私聊=联系人，群聊=群名），用户戳一戳时显示「你戳了戳 TA」
@@ -2392,6 +2401,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     return '<div class="lzw-chatrow' + (isUser ? ' me' : '') + '" data-del="' + idx + '">' + avatar + bub + '</div>';
   }
 
+
   // 富消息气泡：voice/image/location/poke 的真实渲染（chatRowHtml 与待发预览共用）
   function richBub(m, isUser, who, targetName, pokeIt) {
     if (m.kind === 'poke') {
@@ -2409,6 +2419,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     }
     return '<div class="lzw-bub">' + esc(m.text) + '</div>';
   }
+
 
   // ── 待发区气泡（攒好的消息，小飞机一键全发） ──
   function stagedHtml(userName) {
@@ -2444,6 +2455,108 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     }).join('');
   }
 
+  function withTimeout(promise, ms) {
+    return Promise.race([
+      promise,
+      new Promise(function (resolve, reject) {
+        setTimeout(function () { reject(new Error('生成超时（' + Math.round(ms / 1000) + '秒无响应），请重试')); }, ms);
+      })
+    ]);
+  }
+
+  // 选线列表：五条线，标出「此聊天」的记录线与开关实况——
+  // 记录和开关不一致时（带错线进聊天/中途手动翻过）两种徽标同时出现，一眼可见
+
+  function appbarHtml(screen, disp, act) {
+    if (UI.call) return ''; // 通话界面：无顶栏（名字在通话屏里）
+    if (screen === 'home') return ''; // 真手机主屏没有标题栏
+    if (screen === 'settings') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">设置</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'forum') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">论坛</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？重新生成（考古旧帖保留）">' + ICON_REROLL + '</span>') + '</span></div>';
+    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
+    if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'mpost') return '<div class="lzw-appbar"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r lzw-appbar-rw"><button class="lzw-postsend" data-mpost-send="1">发表</button></span></div>';
+    if (screen === 'cdetail') return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
+    return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
+      (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
+      '</span></div>';
+  }
+
+  // 朋友圈动态卡片。
+  // feedMode=true  动态流：头像(可进主页) + 名字 + 文字 + 配图 + 时间label + ⋯菜单(赞/评论)
+  // feedMode=false 个人主页时间轴：不要头像/名字，头像位换成 今天/昨天/M月D日，meta 不再重复时间
+  // idx = 动态在 Store 里的下标（点赞/评论按下标回写）
+
+  function linesRowsHtml() {
+    var W = window.LZWorld;
+    var eng = W.Engine;
+    var saved = W.Store.line();
+    var states = eng.entryStates();
+    var cur = eng.line();
+    var norm = function (s) { return String(s || '').replace(/[【】\s]/g, ''); };
+    return eng.LINES.map(function (ln) {
+      var st = null;
+      for (var k in states) {
+        if (norm(k) === norm(ln)) { st = states[k]; break; }
+      }
+      var ros = eng.roster(ln);
+      var hasPhone = !!(ros && ((ros.contacts || []).length || (ros.groups || []).length));
+      var tags = '';
+      if (saved === ln) tags += '<span class="lzw-ltag rec">绑定:本聊天</span>';
+      else if (cur === ln) tags += '<span class="lzw-ltag cur">当前</span>';
+      if (st === null) tags += '<span class="lzw-ltag bad">条目未找到</span>';
+      else tags += '<span class="lzw-ltag ' + (st ? 'on' : 'off') + '">世界书:' + (st ? '开' : '关') + '</span>';
+      if (!hasPhone) tags += '<span class="lzw-ltag bad">无手机</span>';
+      return '<div class="lzw-conv lzw-linerow' + (st === null ? ' lzw-linedis' : '') + '" data-line="' + esc(ln) + '">' +
+        '<div class="lzw-ava lzw-lineava">' + (hasPhone ? '📱' : '🏮') + '</div>' +
+        '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(ln) + '</div>' +
+        '<div class="lzw-ltags">' + tags + '</div></div></div>';
+    }).join('');
+  }
+
+  // 朋友圈顶栏渐白：封面底边滚过顶栏区域的过程中，状态栏+应用栏从透明渐变到白底，
+  // 到位时补一条发丝分割线——真实微信同款。滚动到下面时 < / 相机 不再悬空
+
+  var savedPos = null; // 拖动过的位置，关闭再唤起仍记得（刷新重置）
+
+
+  function placeLinesPop() {
+    var pop = pdoc().getElementById('lzw-linespop');
+    if (!pop) return;
+    var vp = pwin().visualViewport;
+    var left = vp ? vp.offsetLeft : 0;
+    var top = vp ? vp.offsetTop : 0;
+    var w2 = vp ? vp.width : pwin().innerWidth;
+    var h2 = vp ? vp.height : pwin().innerHeight;
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+    pop.style.width = w2 + 'px';
+    pop.style.height = h2 + 'px';
+    pop.style.right = 'auto';
+    pop.style.bottom = 'auto';
+  }
+
+  function placePhone() {
+    var ph = pdoc().getElementById(ID.phone);
+    if (!ph || !ph.classList.contains('lzw-open')) return;
+    var vp = pwin().visualViewport;
+    var vw = vp ? vp.width : pwin().innerWidth;
+    var vh = vp ? vp.height : pwin().innerHeight;
+    var w = Math.max(280, Math.min(348, vw - 16));
+    var h = Math.max(420, Math.min(680, vh - 20));
+    ph.style.width = w + 'px';
+    ph.style.height = h + 'px';
+    var left = savedPos ? savedPos.left : (vp ? vp.offsetLeft : 0) + vw - w - 8;
+    var top = savedPos ? savedPos.top : (vp ? vp.offsetTop : 0) + vh - h - 8;
+    ph.style.left = Math.max(4, Math.min(left, vw - w - 4)) + 'px';
+    ph.style.top = Math.max(4, Math.min(top, vh - h - 4)) + 'px';
+    ph.style.right = 'auto';
+    ph.style.bottom = 'auto';
+  }
+
+
   var UI = {
     screen: 'home',      // home | list | moments | mprofile | cdetail | chat
     tab: 'chats',        // list 页底栏：chats | contacts | discover
@@ -2471,6 +2584,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     fBusy: false,         // 论坛生成中
     tTarget: '',          // 群聊转账选中的接收方（确定发出后清空）
     _placed: false,
+
+    _binders: [],        // 各屏注册的局部绑定（wechat-*.js 里 push，bind 主骨架逐个执行）
 
     injectStyle: function () {
       var doc = pdoc();
@@ -2522,205 +2637,6 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       }
     },
 
-    openChat: function (key, isGroup) {
-      this.chatKey = key;
-      this.isGroup = !!isGroup;
-      this.screen = 'chat';
-      this.panel = null;
-      this.staged = [];
-      try { window.LZWorld.Store.clearUnread(key); } catch (e) {}
-      this.render();
-    },
-
-    // ── 朋友圈 ──
-    openMoments: function () {
-      var W = window.LZWorld;
-      this.tab = 'discover';
-      this.screen = 'moments';
-      this.mMenu = -1;
-      this.mCmt = -1;
-      try { W.Store.clearUnread(W.Engine.momentsKey); } catch (e) {}
-      this.render();
-      this.momentsEnsureFresh();
-    },
-    // 每个故事日首次进入生成 3~4 条动态；生成完若还在朋友圈页就刷新
-    // 已生成 / 状态栏日期缺失都不静默跳过：前者由引擎 filledDay 判重，后者兜底生成一次并提示
-    openForum: function (name) {
-      var W = window.LZWorld;
-      name = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
-      if (!name) { try { toastr.info('先输入论坛名', '霖州手机'); } catch (e) {} return; }
-      var line = forumLineKey();
-      // 同名已存在（含空白差异）→ 直接打开；新名字 → 先建空壳（列表留住它），进入后生成内容
-      var stripped = name.replace(/\s+/g, '');
-      for (var fn2 in ((W.Store.forumAll() || {})[line] || {})) {
-        if (String(fn2).replace(/\s+/g, '') === stripped) { name = fn2; break; }
-      }
-      if (!W.Store.forumGet(line, name)) W.Store.forumPut(line, name, { posts: [] });
-      this.forumName = name;
-      this.fThread = -1;
-      this.screen = 'fboard';
-      this.render();
-      var self = this;
-      this.fBusy = true;
-      W.Engine.forumEnsure(line, name).then(function (got) {
-        if (got) try { toastr.info('「' + name + '」已生成一版帖子', '霖州手机', { timeOut: 3000 }); } catch (e) {}
-      }).catch(function (e) {
-        console.warn('[霖州引擎] 论坛生成失败', e);
-        try { toastr.error('论坛生成失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
-      }).finally(function () {
-        self.fBusy = false;
-        self.markForumSeen();
-        if (self.screen === 'fboard' || self.screen === 'fthread') self.render();
-      });
-    },
-    // 打开即已读：把「已看到条目数」记进 meta，回列表后未读清零
-    markForumSeen: function () {
-      var line = forumLineKey();
-      var f = window.LZWorld.Store.forumGet(line, this.forumName);
-      if (!f) return;
-      try { window.LZWorld.Store.setMeta('forum:' + line + ':' + this.forumName, { seen: forumTotal(f) }); } catch (e) {}
-    },
-    // 重roll 这一版：新帖全部作废重生成，考古旧帖（别的线带过来的）保留
-    rerollForum: function () {
-      var W = window.LZWorld;
-      var name = this.forumName;
-      if (!name || this.fBusy) return;
-      var self = this, line = forumLineKey();
-      this.fBusy = true;
-      this.render();
-      W.Engine.forumReroll(line, name).then(function () {
-        try { toastr.info('已重新生成一版帖子', '霖州手机', { timeOut: 2000 }); } catch (e) {}
-      }).catch(function (e) {
-        console.warn('[霖州引擎] 论坛重roll失败', e);
-        try { toastr.error('重roll失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
-      }).finally(function () {
-        self.fBusy = false;
-        self.markForumSeen();
-        if (self.screen === 'fboard' || self.screen === 'fthread') self.render();
-      });
-    },
-
-    momentsEnsureFresh: function () {
-      if (this.mBusy) return;
-      var eng = window.LZWorld.Engine;
-      var stamp = null;
-      try { stamp = window.LZWorld.Status.snapshot(null); } catch (e) {}
-      if (!(stamp && stamp.dateText)) {
-        console.warn('[霖州引擎] 朋友圈：最近 6 层未解析到 <status> 里的 <环境> 日期，按无日期兜底生成一次');
-        try { toastr.warning('未解析到状态栏日期，朋友圈已按无日期生成；检查最近楼层的状态栏 <环境> 块', '霖州手机', { timeOut: 6000 }); } catch (e) {}
-      }
-      this.mBusy = true;
-      this.render();
-      var self = this;
-      eng.momentsEnsure().then(function (got) {
-        if (got) try { toastr.info('📱 朋友们更新了朋友圈', '霖州手机', { timeOut: 3000 }); } catch (e) {}
-      }).catch(function (e) {
-        console.warn('[霖州引擎] 朋友圈填充失败', e);
-        try { toastr.error('朋友圈加载失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
-      }).finally(function () {
-        self.mBusy = false;
-        if (self.screen === 'moments') self.render();
-      });
-    },
-    // 赞：纯本地往返
-    momentsLike: function (idx) {
-      try { window.LZWorld.Engine.momentsLike(idx); } catch (e) {}
-      this.mMenu = -1;
-      this.render();
-    },
-    // 删自己的动态：下标移位会让 mMenu/mCmt 指向别的条目，一并复位再渲染
-    momentsDeleteAt: function (idx) {
-      try { window.LZWorld.Engine.momentsDelete(idx); } catch (e) {}
-      this.mMenu = -1;
-      this.mCmt = -1;
-      this.render();
-    },
-    // 评论：先落库，接话生成完若还在朋友圈页就刷新（不在场时红点由引擎挂）
-    momentsSendComment: function (idx, text) {
-      var eng = window.LZWorld.Engine;
-      this.mCmt = -1;
-      this.mBusy = true;
-      this.render();
-      var self = this;
-      eng.momentsComment(idx, text).catch(function (e) {
-        console.warn('[霖州引擎] 朋友圈评论失败', e);
-        try { toastr.error('评论发送失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
-      }).finally(function () {
-        self.mBusy = false;
-        if (self.screen === 'moments' || self.screen === 'mprofile') self.render();
-      });
-    },
-
-    // 选线弹窗：居中菜单，独立于手机壳——古代线没有手机也要能由此换回现代线
-    showLines: function () {
-      this.injectStyle();
-      var pop = pdoc().getElementById('lzw-linespop');
-      if (!pop) {
-        pop = pdoc().createElement('div');
-        pop.id = 'lzw-linespop';
-        pop.onclick = function (e) { if (e.target === pop) UI.closeLines(); }; // 点遮罩关闭
-        pdoc().body.appendChild(pop);
-      }
-      // 定位：inset:0 锚定布局视口，移动端/缩放时会大于可见区导致卡片飞出屏幕；
-      // 改按 visualViewport 可见矩形显式落位（含缩放偏移），居中交给 flex
-      placeLinesPop();
-      if (!this._lpPlaced) {
-        this._lpPlaced = true;
-        try {
-          var lpt = pwin().visualViewport;
-          if (lpt) { lpt.addEventListener('resize', placeLinesPop); lpt.addEventListener('scroll', placeLinesPop); }
-        } catch (e) {}
-        try { pwin().addEventListener('resize', placeLinesPop); } catch (e) {}
-      }
-      this.renderLinesPop();
-    },
-
-    closeLines: function () {
-      var pop = pdoc().getElementById('lzw-linespop');
-      if (pop) pop.remove();
-    },
-
-    renderLinesPop: function () {
-      var pop = pdoc().getElementById('lzw-linespop');
-      if (!pop) return;
-      pop.innerHTML =
-        '<div class="lzw-lpop-card">' +
-        '<div class="lzw-lpop-head"><div class="lzw-lpop-t">世界线</div><div class="lzw-lpop-sub">切换后世界书条目代劳开关 · 并记入本聊天</div><span class="lzw-lpop-x" data-lpx title="关闭">×</span></div>' +
-        '<div class="lzw-lpop-list">' + linesRowsHtml() + '</div>' +
-        '<div class="lzw-lpop-foot">手动开关世界书不再影响本聊天</div>' +
-        '</div>';
-      pop.querySelector('[data-lpx]').onclick = function () { UI.closeLines(); };
-      pop.querySelectorAll('.lzw-linerow').forEach(function (el) {
-        el.onclick = function () { UI.switchLine(el.dataset.line); };
-      });
-    },
-
-    // 玩家在选线弹窗拍板：写世界书条目 + 更新记录，两边一起动（唯一合法的换线动作）。
-    // 弹窗留在原地刷新徽标，不碰手机——手机开不开由玩家自己决定。
-    switchLine: async function (line) {
-      if (this.lineBusy) return;
-      var W = window.LZWorld;
-      var eng = W.Engine;
-      if (!eng.entryKnown(line)) {
-        try { toastr.warning('世界书里找不到【' + line + '】条目，无法切换', '📱 霖州引擎'); } catch (e) {}
-        return;
-      }
-      this.lineBusy = true;
-      try {
-        await W.Worldbook.setEntriesEnabled(eng.lineOps(line));
-        W.Store.setLine(line);
-        eng.noteLineEntries(line);
-        eng.locateLine(); // 记录与快照已一致，只归位内部状态，不会二次写条目，也不会打开手机
-        try {
-          toastr.info(eng.section() ? ('已切换到【' + line + '】') : ('已切换到【' + line + '】（该世界线没有手机）'), '📱 霖州引擎');
-        } catch (e) {}
-        this.renderLinesPop();
-      } catch (e) {
-        console.warn('[霖州引擎] 切换世界线失败', e);
-        try { toastr.error('切换世界线失败：' + (e && e.message || e), '📱 霖州引擎'); } catch (e2) {}
-      } finally { this.lineBusy = false; }
-    },
-
     render: function () {
       var ph = pdoc().getElementById(ID.phone);
       if (!ph) return;
@@ -2747,258 +2663,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         } catch (e) { callBg = '<div class="lzw-callshade"></div>'; }
       }
 
+      // 各屏 body 在屏文件里实现（UI.bodyXxx），此处只做调度与手机骨架
+      var disp = (this.screen === 'chat' && this.chatKey)
+        ? (this.isGroup ? this.chatKey.replace(/^group:/, '') : this.chatKey)
+        : '';
+      var ctx = { W: W, eng: eng, userName: userName, snap: snap, clock: clock, dateShort: dateShort, disp: disp };
       var body;
       if (this.call) {
-        body = callHtml(this.call, userName);
-      } else if (this.screen === 'home') {
-        var totalUn = 0;
-        try {
-          // 桌面图标是 app 级角标：会话未读 + 朋友圈动态未读（朋友对机主动态的赞/评论）都上角标，
-          // 与发现 tab 红点是同一份计数（Store.meta(momentsKey).unread）
-          // 存量兜底：历史遗留的幽灵会话键（错收件人）不过白名单，永不上桌面角标
-          var allowK = eng.phoneAllow ? eng.phoneAllow() : null;
-          W.Store.historyKeys().forEach(function (k) {
-            if (allowK && !allowK[k] && k !== eng.momentsKey) return;
-            totalUn += W.Store.meta(k).unread || 0;
-          });
-        } catch (e0) {}
-        // 论坛 app 角标：当前线所有论坛的（总条目 - 已读标记）之和
-        var funTotal = 0;
-        try {
-          var fline0 = W.Store.line() || '';
-          W.Store.forumNames(fline0).forEach(function (fn0) {
-            var fm0 = W.Store.forumGet(fline0, fn0);
-            var seen0 = 0;
-            try { seen0 = (W.Store.meta('forum:' + fline0 + ':' + fn0) || {}).seen || 0; } catch (e1) {}
-            var tot0 = 0;
-            ((fm0 && fm0.posts) || []).forEach(function (p0) { tot0 += 1 + (p0.replies || []).length; });
-            funTotal += Math.max(0, tot0 - seen0);
-          });
-        } catch (e0) {}
-        body =
-          '<div class="lzw-body"><div class="lzw-home-wall">' +
-          '<div class="lzw-hometime"><div class="t">' + esc(clock) + '</div><div class="d">' + esc(dateShort || '霖州') + '</div></div>' +
-          '<div class="lzw-homegrid">' +
-          '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none;position:relative">' + ICON_WECHAT +
-          (totalUn ? '<span class="lzw-appdot">' + (totalUn > 99 ? '99+' : totalUn) + '</span>' : '') + '</div><span>微信</span></div>' +
-          '<div class="lzw-app" data-app="forum"><div class="lzw-app-ico" style="background:#e8912d;border:none;color:#fff;position:relative">' + ICON_FORUM + (funTotal ? '<span class="lzw-appdot">' + (funTotal > 99 ? '99+' : funTotal) + '</span>' : '') + '</div><span>论坛</span></div>' +
-          '<div class="lzw-app" data-app="settings"><div class="lzw-app-ico" style="background:#8e97a8;border:none;color:#fff">' + ICON_GEAR + '</div><span>设置</span></div>' +
-          '<div class="lzw-app" data-app="close" title="收起手机"><div class="lzw-app-ico" style="background:#e5484d;border:none;color:#fff">' + ICON_POWEROFF + '</div><span>关闭</span></div>' +
-          '</div></div></div>';
-
-      } else if (this.screen === 'forum') {
-        body = forumListHtml();
-      } else if (this.screen === 'fboard') {
-        body = forumBoardHtml(this.forumName);
-      } else if (this.screen === 'fthread') {
-        body = forumThreadHtml(this.forumName, this.fThread);
-      } else if (this.screen === 'settings') {
-        body = settingsHtml();
-      } else if (this.screen === 'list') {
-        var sec = eng.section();
-        var rowsHtml = '';
-        if (this.tab === 'discover') {
-          // 发现页：朋友圈入口（红点 = 机主不在场时新产生的接话评论数），无缩略行
-          var mUn = 0;
-          try { mUn = W.Store.meta(eng.momentsKey).unread || 0; } catch (e0) {}
-          rowsHtml =
-            '<div class="lzw-disc-row" data-mom="1"><div class="lzw-disc-ico">' + ICON_MOMENTS + '</div>' +
-            '<div class="lzw-disc-main"><div class="lzw-disc-name">朋友圈</div></div>' +
-            (mUn ? '<span class="lzw-unread">' + (mUn > 99 ? '99+' : mUn) + '</span>' : '') +
-            '<span class="lzw-disc-chev">' + ICON_CHEV + '</span></div>';
-        } else if (this.tab === 'contacts') {
-          // 通讯录：群聊分组（点直接进群）+ 联系人平铺（点进详细资料）
-          if (sec) {
-            var gRows = (sec.groups || []).map(function (g) {
-              var gav = g.avatar
-                ? '<img class="lzw-ava" src="' + esc(W.Worldbook.imgUrl(g.avatar)) + '">'
-                : '<div class="lzw-ava">👥</div>';
-              return '<div class="lzw-conv" data-key="group:' + esc(g.name) + '" data-group="1">' + gav +
-                '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(g.name) + '</div></div></div>';
-            }).join('');
-            var pRows = (sec.contacts || []).map(function (c) {
-              var cav = c.avatar
-                ? '<img class="lzw-ava" src="' + esc(W.Worldbook.imgUrl(c.avatar)) + '">'
-                : '<div class="lzw-ava">' + esc(c.name.slice(0, 1)) + '</div>';
-              return '<div class="lzw-conv" data-cdet="' + esc(c.name) + '">' + cav +
-                '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(c.name) + '</div></div></div>';
-            }).join('');
-            rowsHtml =
-              (gRows ? '<div class="lzw-sechead">群聊</div>' + gRows : '') +
-              (pRows ? '<div class="lzw-sechead">联系人</div>' + pRows : '') ||
-              '<div class="lzw-sysrow">本世界线暂无联系人</div>';
-          } else {
-            rowsHtml = '<div class="lzw-sysrow">未定位到当前世界线<br>进行一次主对话生成后自动归位</div>';
-          }
-        } else if (sec) {
-          var convs = [];
-          var kindCn = { sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' };
-          (sec.contacts || []).forEach(function (c) { convs.push({ key: c.name, name: c.name, avatar: c.avatar, group: false }); });
-          (sec.groups || []).forEach(function (g) { convs.push({ key: 'group:' + g.name, name: g.name, avatar: g.avatar || '', group: true }); });
-          // 只留有消息的会话；按最后一条消息的时间倒序（真微信：最近说话的排最上面）
-          var dayNum = function (s) {
-            var m = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec(s || '');
-            return m ? (+m[1]) * 372 + (+m[2]) * 31 + (+m[3]) : -1;
-          };
-          convs = convs.filter(function (cv) { return W.Store.history(cv.key).length > 0; });
-          convs.sort(function (a, b) {
-            var ha = W.Store.history(a.key), hb = W.Store.history(b.key);
-            var la = ha[ha.length - 1], lb = hb[hb.length - 1];
-            var da = dayNum(la && la.day), db = dayNum(lb && lb.day);
-            if (da !== db) return db - da;
-            var ta = (la && la.time) || '', tb = (lb && lb.time) || '';
-            return ta === tb ? 0 : (ta > tb ? -1 : 1);
-          });
-          rowsHtml = convs.map(function (cv) {
-            var h = W.Store.history(cv.key);
-            var last = h[h.length - 1];
-            var prev = last
-              ? (last.kind === 'text' ? last.text
-                : last.kind === 'calllog' ? '[' + (last.mode === 'video' ? '视频通话' : '语音通话') + ']'
-                : '[' + (kindCn[last.kind] || last.kind) + ']')
-              : '';
-            var av = cv.avatar
-              ? '<img class="lzw-ava" src="' + esc(W.Worldbook.imgUrl(cv.avatar)) + '">'
-              : (cv.group ? '<div class="lzw-ava">👥</div>' : '<div class="lzw-ava">' + esc(cv.name.slice(0, 1)) + '</div>');
-            return '<div class="lzw-conv" data-key="' + esc(cv.key) + '" data-group="' + (cv.group ? 1 : 0) + '">' +
-              av + '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(cv.name) + '</div>' +
-              '<div class="lzw-conv-prev">' + esc(prev) + '</div></div>' +
-              (function () { var un = W.Store.meta(cv.key).unread || 0; return un ? '<span class="lzw-unread">' + (un > 99 ? '99+' : un) + '</span>' : ''; })() +
-              '</div>';
-          }).join('') || '<div class="lzw-sysrow">暂无会话<br>去通讯录找人聊聊吧</div>';
-        } else {
-          rowsHtml = '<div class="lzw-sysrow">未定位到当前世界线<br>进行一次主对话生成后自动归位</div>';
-        }
-        // 底栏：微信 | 通讯录 | 发现（发现挂朋友圈未读红点；微信挂会话总红点）
-        var totalUn2 = 0;
-        try {
-          // 只算会话未读；朋友圈的未读挂发现 tab（mUn2），别混进微信 tab
-          // 存量兜底：幽灵会话键不过白名单，微信 tab 红点只数真会话
-          var allowK2 = eng.phoneAllow ? eng.phoneAllow() : null;
-          W.Store.historyKeys().forEach(function (k) {
-            if (k === eng.momentsKey) return;
-            if (allowK2 && !allowK2[k]) return;
-            totalUn2 += W.Store.meta(k).unread || 0;
-          });
-        } catch (e0) {}
-        var mUn2 = 0;
-        try { mUn2 = W.Store.meta(eng.momentsKey).unread || 0; } catch (e0) {}
-        body = '<div class="lzw-body">' + rowsHtml + '</div>' +
-          '<div class="lzw-tabbar">' +
-          '<button class="lzw-tab' + (this.tab === 'chats' ? ' on' : '') + '" data-tab="chats">' + ICON_TAB_CHAT + '<span>微信</span>' + (totalUn2 ? '<span class="lzw-tabdot">' + (totalUn2 > 99 ? '99+' : totalUn2) + '</span>' : '') + '</button>' +
-          '<button class="lzw-tab' + (this.tab === 'contacts' ? ' on' : '') + '" data-tab="contacts">' + ICON_TAB_CONT + '<span>通讯录</span></button>' +
-          '<button class="lzw-tab' + (this.tab === 'discover' ? ' on' : '') + '" data-tab="discover">' + ICON_TAB_DISC + '<span>发现</span>' + (mUn2 ? '<span class="lzw-tabdot">' + (mUn2 > 99 ? '99+' : mUn2) + '</span>' : '') + '</button>' +
-          '</div>';
-
-      } else if (this.screen === 'moments') {
-        var secM = eng.section() || {};
-        var coverF = (secM.moments && secM.moments.cover) || '';
-        var coverU = coverF ? W.Worldbook.imgUrl(coverF) : '';
-        var uav = '';
-        try { uav = eng.userAvatar(); } catch (e0) {}
-        var mfeed2 = eng.momentsFeed();
-        var postsHtml = '';
-        for (var mi = mfeed2.length - 1; mi >= 0; mi--) postsHtml += momentsPostHtml(mfeed2[mi], mi, userName, eng, W, true, snap.dateText || '');
-        body = '<div class="lzw-mfeed">' +
-          '<div class="lzw-mcover">' + (coverU ? '<img src="' + esc(coverU) + '" alt="">' : '') +
-          '<div class="lzw-mcover-shade"></div>' +
-          '<div class="lzw-mme"><span class="nm">' + esc(userName) + '</span>' +
-          (uav ? '<img class="av" src="' + esc(uav) + '" alt="">' : '<div class="av">' + esc(userName.slice(0, 1)) + '</div>') + '</div></div>' +
-          '<div class="lzw-mpad"></div>' +
-          (postsHtml || '<div class="lzw-sysrow" style="margin-top:44px">朋友们还没发动态<br>稍等片刻，或退出重进刷新</div>') +
-          (this.mBusy ? '<div class="lzw-sysrow">朋友们正在更新…</div>' : '') +
-          (this.mConfirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条动态？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="mdelno">取消</button><button class="lzw-cbtn yes" data-cact="mdelok">删除</button></div></div></div>' : '') +
-          '</div>';
-
-      } else if (this.screen === 'mprofile') {
-        var pn = this.mProfile || '';
-        var pc = eng.findContact(pn) || {};
-        var covF2 = pc.cover || ((eng.section() || {}).moments || {}).cover || '';
-        var covU2 = covF2 ? W.Worldbook.imgUrl(covF2) : '';
-        // feed 只取一次、下标就地记录：沙箱桥接里 getVariables 每次返回的是副本，
-        // 跨两次调用 indexOf 必然 -1——而 idx=-1 会让「UI.mMenu===idx」对所有动态恒真：
-        // 进主页默认每条都弹菜单、点 ⋯ 切换失灵
-        var feedAll = eng.momentsFeed();
-        var hisIdx = [];
-        for (var fi2 = feedAll.length - 1; fi2 >= 0 && hisIdx.length < 5; fi2--) {
-          if (feedAll[fi2].who === pn) hisIdx.push(fi2);
-        }
-        var hisHtml = '';
-        for (var hi2 = 0; hi2 < hisIdx.length; hi2++) hisHtml += momentsPostHtml(feedAll[hisIdx[hi2]], hisIdx[hi2], userName, eng, W, false, snap.dateText || '');
-        body = '<div class="lzw-mfeed">' +
-          '<div class="lzw-mcover">' + (covU2 ? '<img src="' + esc(covU2) + '" alt="">' : '') +
-          '<div class="lzw-mcover-shade"></div>' +
-          '<div class="lzw-mme"><span class="nm">' + esc(pn) + '</span>' +
-          (pc.avatar ? '<img class="av" src="' + esc(W.Worldbook.imgUrl(pc.avatar)) + '" alt="">' : '<div class="av">' + esc(pn.slice(0, 1)) + '</div>') + '</div></div>' +
-          '<div class="lzw-mpad"></div>' +
-          (hisHtml || '<div class="lzw-sysrow" style="margin-top:36px">TA 还没有动态</div>') +
-          '</div>';
-
-      } else if (this.screen === 'mpost') {
-        // body 必须包 .lzw-body（flex:1）——否则底部横条不贴底，跟着内容跑
-        body = '<div class="lzw-body"><div class="lzw-mptext"><textarea class="lzw-mpta" id="lzw-mptext" maxlength="280" placeholder="这一刻的想法…"></textarea></div>' +
-          '<textarea class="lzw-mpimg" id="lzw-mpimg" maxlength="60" placeholder="图片（可选）：用文字描述这张图片的画面，如：一张拍糊的试卷"></textarea></div>';
-
-      } else if (this.screen === 'cdetail') {
-        // 联系人详细资料：头像姓名 + 朋友圈入口（带最新动态预览）+ 发消息/通话
-        var dn = this.cdetName || '';
-        var dc = eng.findContact(dn) || {};
-        var dLast = '';
-        try {
-          var dfeed = eng.momentsFeed();
-          for (var di = dfeed.length - 1; di >= 0; di--) {
-            if (dfeed[di].who === dn) { dLast = String(dfeed[di].text || '').slice(0, 18); break; }
-          }
-        } catch (e0) {}
-        var dav = dc.avatar
-          ? '<img class="lzw-cava" src="' + esc(W.Worldbook.imgUrl(dc.avatar)) + '">'
-          : '<div class="lzw-cava">' + esc(dn.slice(0, 1)) + '</div>';
-        body = '<div class="lzw-body">' +
-          '<div class="lzw-cdetcard">' + dav + '<div class="lzw-cdetnm">' + esc(dn) + '</div></div>' +
-          '<div class="lzw-cdetrow" data-mpf="' + esc(dn) + '" data-mfrom="cdetail">' +
-          '<span class="l">朋友圈</span>' +
-          '<span class="lzw-cdetpv">' + esc(dLast || '还没发动态') + '</span>' +
-          '<span class="lzw-cdetcv">' + ICON_CHEV + '</span></div>' +
-          '<div class="lzw-cdetmsg" data-cmsg="' + esc(dn) + '">发消息</div>' +
-          '<div class="lzw-cdetcalls">' +
-          '<div class="lzw-cdetcall" data-ccall="' + esc(dn) + ':audio">' + ICON_CALL + '<span>语音通话</span></div>' +
-          '<div class="lzw-cdetcall" data-ccall="' + esc(dn) + ':video">' + ICON_VCALL + '<span>视频通话</span></div>' +
-          '</div></div>';
-
-      } else { // chat
-        var key = this.chatKey || '';
-        var g = this.isGroup;
-        var disp = g ? key.replace(/^group:/, '') : key;
-        var hist = W.Store.history(key);
-        var contactMap = {};
-        var secNow = eng.section();
-        if (g) {
-          var grp = secNow ? (secNow.groups || []).filter(function (x) { return 'group:' + x.name === key; })[0] : null;
-          if (grp) grp.members.forEach(function (n) { contactMap[n] = eng.findContact(n) || { name: n, avatar: '' }; });
-        } else {
-          contactMap[disp] = eng.findContact(disp) || { name: disp, avatar: '' };
-        }
-        var curDay = '';
-        try { curDay = W.Status.snapshot(null).dateText; } catch (e2) {}
-        var prevDay = null;
-        var rows = hist.map(function (m, i) {
-          var pre = '';
-          if (m.day && m.day !== prevDay) {
-            pre = '<div class="lzw-sysrow">' + esc(relDay(m.day, curDay) + (m.time ? ' ' + m.time : '')) + '</div>';
-            prevDay = m.day;
-          }
-          return pre + chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i], this.isGroup);
-        }, this).join('');
-        if (this.failed && this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
-        if (this.staged.length) rows += stagedHtml(userName);
-        body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
-          '<div class="lzw-bottom">' +
-          panelHtml(this.panel) +
-          '<div class="lzw-inputbar">' +
-          '<button class="lzw-plus" data-act="plus">' + ICON_PLUS + '</button>' +
-          '<input class="lzw-input" id="lzw-input" placeholder="回车攒一条，小飞机一起发" maxlength="300">' +
-          '<button class="lzw-send" data-act="send" title="发送（把攒下的消息一起发出）">' + ICON_PLANE + '</button>' +
-          '</div></div>';
+        body = C.callHtml(this.call, userName);
+      } else {
+        var f = this['_body_' + this.screen];
+        body = f ? f.call(this, ctx) : '<div class="lzw-body"></div>';
       }
 
       var prevScroll = -1, prevNearBottom = true;
@@ -3069,7 +2744,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       // 记住本次 DOM 的 feed 属于哪个屏：下次重绘只在本屏内还原滚动
       this.feedScr = (this.screen === 'moments' || this.screen === 'mprofile') ? this.screen : null;
       // 朋友圈/主页：顶栏随滚动渐白（含滚动位置还原后的初始状态）
-      if (this.screen === 'moments' || this.screen === 'mprofile') syncMomentBar(ph);
+      if (this.screen === 'moments' || this.screen === 'mprofile') this.syncMomentBar(ph);
       // 朋友圈评论输入：回车即发
       var cmtIn = ph.querySelector('#lzw-cmtin');
       if (cmtIn) cmtIn.addEventListener('keydown', function (e) {
@@ -3091,120 +2766,18 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           var c = UI.call;
           var el = pdoc().getElementById('lzw-callstatus');
           if (!c || !el) return;
-          el.textContent = fmtDur(Math.max(0, Math.round((Date.now() - c.startAt) / 1000)));
+          el.textContent = C.fmtDur(Math.max(0, Math.round((Date.now() - c.startAt) / 1000)));
         }, 1000);
       }
     },
 
     bind: function (ph) {
-      ph.querySelectorAll('[data-app="wechat"]').forEach(function (el) {
-        el.onclick = function () { UI.screen = 'list'; UI.render(); };
-      });
-      // 主屏「关闭」app：收起手机。保险——小屏上弹窗可能盖住酒馆页的 QR 开关，
-      // 万一被挡死，手机上永远有第二条路可以关掉自己
-      ph.querySelectorAll('[data-app="close"]').forEach(function (el) {
-        el.onclick = function () { UI.toggle(); };
-      });
-
-      // 设置 app：模式单选 / 数值与文本即时保存 / 拉取模型与预设列表 / 点选回填
-      ph.querySelectorAll('[data-app="settings"]').forEach(function (el) {
-        el.onclick = function () { UI.screen = 'settings'; UI._setpick = null; UI.render(); };
-      });
-      if (UI.screen === 'settings') {
-        var saveApi = function (patch) {
-          var api0 = {};
-          try { api0 = window.LZWorld.Store.settings().api || {}; } catch (e) {}
-          for (var k in patch) api0[k] = patch[k];
-          window.LZWorld.Store.setSettings({ api: api0 });
-        };
-        ph.querySelectorAll('[data-amode]').forEach(function (el) {
-          el.onclick = function () {
-            saveApi({ mode: el.dataset.amode });
-            UI._setpick = null;
-            UI.render();
-          };
-        });
-        ph.querySelectorAll('[data-num]').forEach(function (el) {
-          el.onchange = function () {
-            var lo = +el.dataset.min, hi = +el.dataset.max;
-            var v = Math.round(Number(el.value));
-            if (!isFinite(v)) v = window.LZWorld.Store.DEFAULTS[el.dataset.num];
-            el.value = Math.min(hi, Math.max(lo, v));
-            var patch = {}; patch[el.dataset.num] = +el.value;
-            window.LZWorld.Store.setSettings(patch);
-          };
-        });
-        ph.querySelectorAll('[data-atext]').forEach(function (el) {
-          el.onchange = function () { var patch = {}; patch[el.dataset.atext] = el.value; saveApi(patch); };
-        });
-        ph.querySelectorAll('[data-akey]').forEach(function (el) {
-          el.onchange = function () {
-            try { localStorage.setItem('lzworld_phone_apikey', el.value); } catch (e) {}
-          };
-        });
-        ph.querySelectorAll('[data-afetch]').forEach(function (el) {
-          el.onclick = async function () {
-            try {
-              if (el.dataset.afetch === 'savepreset') {
-                var nmEl = ph.querySelector('[data-apname]');
-                var nm = ((nmEl && nmEl.value) || '').trim();
-                if (!nm) {
-                  UI._setpick = { field: null, items: ['（先输入预设名再保存）'] };
-                } else {
-                  var read = function (sel) { var x = ph.querySelector(sel); return x ? x.value.trim() : ''; };
-                  var preset = { source: read('[data-atext="source"]') || 'openai', apiurl: read('[data-atext="apiurl"]'), cmodel: read('[data-atext="cmodel"]') };
-                  var api1 = {};
-                  try { api1 = window.LZWorld.Store.settings().api || {}; } catch (e) {}
-                  var presets0 = api1.presets || {};
-                  presets0[nm] = preset;
-                  saveApi({ presets: presets0, source: preset.source, apiurl: preset.apiurl, cmodel: preset.cmodel });
-                  var kyEl = ph.querySelector('[data-akey]');
-                  try { localStorage.setItem('lzworld_phone_apikey::' + nm, kyEl ? kyEl.value : ''); } catch (e) {}
-                  UI._setpick = null;
-                }
-              } else {
-                var api2 = {};
-                try { api2 = window.LZWorld.Store.settings().api || {}; } catch (e) {}
-                var key1 = '';
-                try { key1 = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
-                var list = await getModelList({ apiurl: api2.apiurl || '', key: key1 });
-                UI._setpick = { field: api2.mode === 'custom' ? 'cmodel' : 'model', items: list || [] };
-              }
-            } catch (e) {
-              UI._setpick = { field: null, items: ['（操作失败：' + String(e && e.message || e) + '）'] };
-            }
-            UI.render();
-          };
-        });
-        ph.querySelectorAll('[data-pick]').forEach(function (el) {
-          el.onclick = function () {
-            var patch = {};
-            patch[(UI._setpick && UI._setpick.field) || 'model'] = el.dataset.pick;
-            saveApi(patch);
-            UI._setpick = null;
-            UI.render();
-          };
-        });
-        ph.querySelectorAll('[data-aapply]').forEach(function (el) {
-          el.onclick = function () {
-            var nm = el.dataset.aapply;
-            var p = {};
-            try { p = ((window.LZWorld.Store.settings().api || {}).presets || {})[nm] || {}; } catch (e) {}
-            saveApi({ source: p.source || 'openai', apiurl: p.apiurl || '', cmodel: p.cmodel || '' });
-            var ky = '';
-            try { ky = localStorage.getItem('lzworld_phone_apikey::' + nm) || ''; } catch (e) {}
-            try { localStorage.setItem('lzworld_phone_apikey', ky); } catch (e) {}
-            UI.render();
-          };
-        });
-        ph.querySelectorAll('[data-apdel]').forEach(function (el) {
-          el.onclick = function (ev) {
-            if (ev && ev.stopPropagation) ev.stopPropagation();
-            UI.pConfirmDel = el.dataset.apdel;
-            UI.render();
-          };
-        });
+      // 各屏自带的局部绑定（_binders 由屏文件注册，bind 主骨架逐屏执行；
+      // 单屏绑定炸了整个手机不能跟着哑，逐屏兜底）
+      for (var bi = 0; bi < this._binders.length; bi++) {
+        try { this._binders[bi].call(this, ph); } catch (e) { console.warn('[霖州引擎] 屏绑定执行失败', e); }
       }
+
       ph.querySelectorAll('.lzw-back').forEach(function (el) {
         el.onclick = function () {
           // mprofile 的返回看来源：详细资料进来回详细资料，朋友圈进来回朋友圈
@@ -3214,162 +2787,58 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           UI.render();
         };
       });
-      // 微信底栏 tab：微信 | 发现
-      ph.querySelectorAll('[data-tab]').forEach(function (el) {
-        el.onclick = function () { UI.tab = el.dataset.tab; UI.render(); };
-      });
-      // 发现页：朋友圈入口
-      ph.querySelectorAll('[data-mom]').forEach(function (el) {
-        el.onclick = function () { UI.openMoments(); };
-      });
-      // 论坛：入口 / 输入回车或点进入 / 骰子随机取名 / ✕删除 / 进版 / 进帖 / 空版重试
-      ph.querySelectorAll('[data-app="forum"]').forEach(function (el) {
-        el.onclick = function () { UI.screen = 'forum'; UI.render(); };
-      });
-      ph.querySelectorAll('[data-fgo]').forEach(function (el) {
+
+      // [data-cact] 统一分发：聊天删除确认（cancel/del）+ 通话屏按钮组
+      ph.querySelectorAll('[data-cact]').forEach(function (el) {
         el.onclick = function () {
-          var inp = ph.querySelector('[data-fnew]');
-          UI.openForum(inp ? inp.value : '');
-        };
-      });
-      ph.querySelectorAll('[data-fnew]').forEach(function (el) {
-        el.onkeydown = function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); UI.openForum(el.value); } };
-      });
-      ph.querySelectorAll('[data-fdice]').forEach(function (el) {
-        el.onclick = function () {
-          var inp = ph.querySelector('[data-fnew]');
-          if (inp) { inp.value = diceName(); inp.focus(); }
-        };
-      });
-      ph.querySelectorAll('[data-fdel]').forEach(function (el) {
-        el.onclick = function (ev) {
-          if (ev && ev.stopPropagation) ev.stopPropagation();
-          UI.fConfirmDel = el.dataset.fdel;
-          UI.render();
-        };
-      });
-      ph.querySelectorAll('[data-fopen]').forEach(function (el) {
-        el.onclick = function () { UI.openForum(el.dataset.fopen); };
-      });
-      ph.querySelectorAll('[data-fthr]').forEach(function (el) {
-        el.onclick = function () { UI.fThread = +el.dataset.fthr; UI.screen = 'fthread'; UI.render(); };
-      });
-      ph.querySelectorAll('[data-fretry]').forEach(function (el) {
-        el.onclick = function () { UI.openForum(el.dataset.fretry); };
-      });
-      ph.querySelectorAll('[data-fact="freroll"]').forEach(function (el) {
-        el.onclick = function () { UI.rerollForum(); };
-      });
-      // 朋友圈：相机打开发布器、头像/名字进主页、⋯菜单、赞、评论、发送
-      ph.querySelectorAll('[data-mcam]').forEach(function (el) {
-        el.onclick = function () { UI.screen = 'mpost'; UI.mFrom = 'moments'; UI.render(); };
-      });
-      ph.querySelectorAll('[data-mpost-send]').forEach(function (el) {
-        el.onclick = function () {
-          var ta = pdoc().getElementById('lzw-mptext');
-          var t = ta ? ta.value.trim() : '';
-          if (!t) { try { toastr.info('写点什么再发表吧', '霖州手机'); } catch (e) {} return; }
-          var im = pdoc().getElementById('lzw-mpimg');
-          var img = im ? im.value.trim().slice(0, 60) : '';
-          var W = window.LZWorld, eng = W.Engine;
-          var idx = eng.momentsPost(t, img);
-          if (idx < 0) return;
-          UI.screen = 'moments';
-          UI.render();
-          // 朋友们的反应后台生成：落地时人在朋友圈就直接重渲染，不在就挂发现页红点
-          eng.momentsReact(idx);
-        };
-      });
-      ph.querySelectorAll('[data-mpf]').forEach(function (el) {
-        el.onclick = function (ev) {
-          ev.stopPropagation();
-          UI.mProfile = el.dataset.mpf;
-          UI.mFrom = el.dataset.mfrom || 'moments';
-          UI.mMenu = -1;
-          UI.mCmt = -1;
-          UI.screen = 'mprofile';
-          UI.render();
-        };
-      });
-      // 通讯录：联系人行 → 详细资料；详细资料页：发消息 / 语音·视频通话
-      ph.querySelectorAll('[data-cdet]').forEach(function (el) {
-        el.onclick = function () {
-          UI.cdetName = el.dataset.cdet;
-          UI.screen = 'cdetail';
-          UI.panel = null;
-          UI.render();
-        };
-      });
-      ph.querySelectorAll('[data-cmsg]').forEach(function (el) {
-        el.onclick = function () { UI.openChat(el.dataset.cmsg, false); };
-      });
-      ph.querySelectorAll('[data-ccall]').forEach(function (el) {
-        el.onclick = function () {
-          var p = el.dataset.ccall.split(':');
-          if (p.length !== 2) return;
-          UI.chatKey = p[0];
-          UI.isGroup = false;
-          UI.panel = null;
-          UI.dial(p[1]);
-        };
-      });
-      ph.querySelectorAll('[data-mmenu]').forEach(function (el) {
-        el.onclick = function (ev) {
-          ev.stopPropagation();
-          var i = parseInt(el.dataset.mmenu, 10);
-          UI.mMenu = UI.mMenu === i ? -1 : i;
-          UI.mCmt = -1;
-          UI.render();
-          // 点菜单外任意处收起（当前这次点击不生效，所以延迟挂监听）
-          // 注意必须挂在 pdoc()（父页文档）——手机 UI 注入在父页，挂在沙箱自己的
-          // document 上永远收不到点击，「点空白收起」会表现为完全失灵
-          if (UI.mMenu !== -1) {
-            setTimeout(function () {
-              var doc = pdoc();
-              doc.addEventListener('click', function onDocTap(ev2) {
-                if (ev2.target.closest && (ev2.target.closest('.lzw-pmenu') || ev2.target.closest('[data-mmenu]'))) return;
-                doc.removeEventListener('click', onDocTap);
-                UI.mMenu = -1;
-                UI.mCmt = -1;
-                if (UI.screen === 'moments' || UI.screen === 'mprofile') UI.render();
-              });
-            }, 0);
+          var a = el.dataset.cact;
+          if (a === 'cancel') { UI.confirmDel = -1; UI.render(); }
+          else if (a === 'del') { UI.removeAt(UI.confirmDel); UI.confirmDel = -1; UI.render(); }
+          else if (a === 'mdelno') { UI.mConfirmDel = -1; UI.render(); }
+          else if (a === 'mdelok') { var mdi = UI.mConfirmDel; UI.mConfirmDel = -1; UI.momentsDeleteAt(mdi); }
+          else if (a === 'tswap') { UI.panel = 'transferto'; UI.render(); }
+          else if (a === 'taccno') { UI.tConfirm = -1; UI.render(); }
+          else if (a === 'pdelno') { UI.pConfirmDel = ''; UI.render(); }
+          else if (a === 'pdelok') {
+            var pn2 = UI.pConfirmDel; UI.pConfirmDel = '';
+            var apiX = {};
+            try { apiX = window.LZWorld.Store.settings().api || {}; } catch (e) {}
+            apiX.presets = apiX.presets || {};
+            delete apiX.presets[pn2];
+            window.LZWorld.Store.setSettings({ api: apiX });
+            try { localStorage.removeItem('lzworld_phone_apikey::' + pn2); } catch (e) {}
+            UI.render();
           }
+          else if (a === 'fdelno') { UI.fConfirmDel = ''; UI.render(); }
+          else if (a === 'fdelok') {
+            var fn0 = UI.fConfirmDel; UI.fConfirmDel = '';
+            try { window.LZWorld.Store.forumDel(UI.forumLineKey(), fn0); } catch (e) {}
+            if (UI.forumName === fn0) { UI.forumName = ''; UI.fThread = -1; UI.screen = 'forum'; }
+            UI.render();
+          }
+          else if (a === 'taccok') { var ti = UI.tConfirm; UI.tConfirm = -1; UI.stageTVerdict('taccept', ti); }
+          else if (a === 'tdecl') { var td = UI.tConfirm; UI.tConfirm = -1; UI.stageTVerdict('tdecline', td); }
+          else if (a === 'hangup') UI.hangup(false);
+          else if (a === 'cancelcall') UI.hangup(true);
+          else if (a === 'callreroll') UI.callReroll();
+          else if (a === 'micpop') { UI.callPop = true; UI.render(); }
+          else if (a === 'popok') {
+            var ta = ph.querySelector('#lzw-calltext');
+            var t = ta ? ta.value.trim() : '';
+            UI.callPop = false;
+            UI.render();
+            if (t) UI.callSend(t);
+          }
+          else if (a === 'popcancel') { UI.callPop = false; UI.render(); }
+          else if (a === 'delok') {
+            if (UI.callDel != null) { try { window.LZWorld.Store.removeAt(window.LZWorld.Engine.callKey(UI.call.name), UI.callDel); } catch (e) {} }
+            UI.callDel = null; UI.render();
+          }
+          else if (a === 'delno') { UI.callDel = null; UI.render(); }
         };
       });
-      ph.querySelectorAll('[data-mlike]').forEach(function (el) {
-        el.onclick = function () { UI.momentsLike(parseInt(el.dataset.mlike, 10)); };
-      });
-      ph.querySelectorAll('[data-mcmt]').forEach(function (el) {
-        el.onclick = function () {
-          UI.mMenu = -1;
-          UI.mCmt = parseInt(el.dataset.mcmt, 10);
-          UI.render();
-          var ci = ph.querySelector('#lzw-cmtin');
-          if (ci) ci.focus();
-        };
-      });
-      ph.querySelectorAll('[data-mdel]').forEach(function (el) {
-        el.onclick = function () {
-          UI.mMenu = -1;
-          UI.mConfirmDel = parseInt(el.dataset.mdel, 10);
-          UI.render();
-        };
-      });
-      ph.querySelectorAll('[data-msend]').forEach(function (el) {
-        el.onclick = function () {
-          var ci = ph.querySelector('#lzw-cmtin');
-          var t = ci ? ci.value.trim() : '';
-          if (!t) return;
-          UI.momentsSendComment(parseInt(el.dataset.msend, 10), t);
-        };
-      });
-      // 论坛行（.lzw-frow）也是 .lzw-conv，必须排除——否则点击进空白聊天页
-      ph.querySelectorAll('.lzw-conv:not(.lzw-linerow):not([data-cdet]):not(.lzw-frow)').forEach(function (el) {
-        el.onclick = function () { UI.openChat(el.dataset.key, el.dataset.group === '1'); };
-      });
-      ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
-      ph.querySelectorAll('[data-act="reroll"]').forEach(function (el) { el.onclick = function () { UI.reroll(); }; });
+      // 通话字幕删除：由上方 contextmenu / 长按统一处理（data-cdel 仅作下标载体）
+
       // 待发区：点红 ✕ 删一条
       // 右键（PC）或长按 550ms（触屏）→ 弹确认窗，防止误删。
       // 聊天记录行走 data-del，通话字幕走 data-cdel，同一套交互。
@@ -3402,18 +2871,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       };
       ph.ontouchend = function () { clearTimeout(lpTimer); };
       ph.ontouchmove = function () { clearTimeout(lpTimer); };
-      ph.querySelectorAll('[data-voice]').forEach(function (el) {
-        el.onclick = function () { el.classList.toggle('open'); };
-      });
-      ph.querySelectorAll('[data-poke]').forEach(function (el) {
-        el.onclick = function () {
-          ph.classList.remove('shake');
-          void ph.offsetWidth; // 重启动画
-          ph.classList.add('shake');
-          // 动画结束务必卸类：class 留着的话，下次开屏（display 切换）会重放抖动
-          setTimeout(function () { ph.classList.remove('shake'); }, 550);
-        };
-      });
+
       // 顶部拖动挪位置
       ph.querySelectorAll('.lzw-sbar').forEach(function (hd) {
         hd.addEventListener('pointerdown', function (ev) {
@@ -3447,139 +2905,465 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           hd.addEventListener('pointercancel', up);
         });
       });
-      ph.querySelectorAll('[data-peek]').forEach(function (el) {
-        el.onclick = function () {
-          UI.togglePeek(parseInt(el.getAttribute('data-peek'), 10));
-        };
-      });
-      ph.querySelectorAll('[data-sdel]').forEach(function (el) {
-        el.onclick = function (ev) {
-          ev.stopPropagation();
-          UI.staged.splice(parseInt(el.dataset.sdel, 10), 1);
-          UI.render();
-          var i2 = ph.querySelector('#lzw-input'); if (i2) i2.focus();
-        };
-      });
-      ph.querySelectorAll('[data-act="plus"]').forEach(function (el) {
-        el.onclick = function () {
-          UI.panel = UI.panel ? null : 'actions';
-          UI.render();
-          var inp = ph.querySelector('#lzw-input');
-          if (inp && UI.panel) inp.focus();
-        };
-      });
-      // [+] 面板内的动作
-      ph.querySelectorAll('[data-mode]').forEach(function (el) {
-        el.onclick = function () {
-          var mode = el.dataset.mode;
-          if (mode === 'poke') { UI.stageTyped('poke', ''); return; } // 戳一戳也先攒着，随小飞机一起发
-          if (mode === 'transfer') { // 群聊先选接收方；私聊直接表单（收款人=对方）
-            UI.panel = (UI.isGroup && !UI.tTarget) ? 'transferto' : 'transfer';
-            UI.render();
-            return;
-          }
-          UI.panel = mode; // sticker | image | voice | location
-          UI.render();
-        };
-      });
-      ph.querySelectorAll('[data-ttarget]').forEach(function (el) {
-        el.onclick = function () { UI.tTarget = el.dataset.ttarget; UI.panel = 'transfer'; UI.render(); };
-      });
-      ph.querySelectorAll('[data-tsend]').forEach(function (el) {
-        el.onclick = function () {
-          var amtIn = ph.querySelector('#lzw-tamt');
-          var raw = amtIn ? amtIn.value.trim().replace(/[¥￥\s元]/g, '') : '';
-          var amount = Number(raw);
-          if (!raw || isNaN(amount) || amount <= 0 || amount > 99999) {
-            try { toastr.error('金额要是 1~99999 的数字', '霖州手机'); } catch (e) {}
-            return;
-          }
-          var noteIn = ph.querySelector('#lzw-tnote');
-          var note = noteIn ? noteIn.value.trim().slice(0, 30) : '';
-          var to = UI.isGroup ? UI.tTarget : UI.chatKey;
-          if (!to) { UI.panel = 'transferto'; UI.render(); return; }
-          UI.stageTransfer(Math.round(amount * 100) / 100, note, to);
-        };
-      });
-      ph.querySelectorAll('[data-taccept]').forEach(function (el) {
-        el.onclick = function () {
-          var row = el.closest('.lzw-chatrow');
-          if (!row) return;
-          UI.tConfirm = parseInt(row.dataset.del, 10);
-          UI.render();
-        };
-      });
-      ph.querySelectorAll('[data-stick]').forEach(function (el) {
-        el.onclick = function () { UI.stageTyped('sticker', el.dataset.stick); }; // 表情也攒着
-      });
-      ph.querySelectorAll('[data-act="modecancel"]').forEach(function (el) {
-        el.onclick = function () { UI.panel = null; UI.render(); };
-      });
-      ph.querySelectorAll('[data-modesend]').forEach(function (el) {
-        el.onclick = function () {
-          var kind = el.dataset.modesend;
-          var inp = ph.querySelector('#lzw-modeinput');
-          var t = inp ? inp.value.trim() : '';
-          if (!t) return;
-          UI.stageTyped(kind, t);
-        };
-      });
-      // 通话：拨打入口 + 通话屏按钮组
-      ph.querySelectorAll('[data-act="dial"]').forEach(function (el) {
-        el.onclick = function () { UI.dial(el.dataset.dial); };
-      });
-      // [data-cact] 统一分发：聊天删除确认（cancel/del）+ 通话屏按钮组
-      ph.querySelectorAll('[data-cact]').forEach(function (el) {
-        el.onclick = function () {
-          var a = el.dataset.cact;
-          if (a === 'cancel') { UI.confirmDel = -1; UI.render(); }
-          else if (a === 'del') { UI.removeAt(UI.confirmDel); UI.confirmDel = -1; UI.render(); }
-          else if (a === 'mdelno') { UI.mConfirmDel = -1; UI.render(); }
-          else if (a === 'mdelok') { var mdi = UI.mConfirmDel; UI.mConfirmDel = -1; UI.momentsDeleteAt(mdi); }
-          else if (a === 'tswap') { UI.panel = 'transferto'; UI.render(); }
-          else if (a === 'taccno') { UI.tConfirm = -1; UI.render(); }
-          else if (a === 'pdelno') { UI.pConfirmDel = ''; UI.render(); }
-          else if (a === 'pdelok') {
-            var pn2 = UI.pConfirmDel; UI.pConfirmDel = '';
-            var apiX = {};
-            try { apiX = window.LZWorld.Store.settings().api || {}; } catch (e) {}
-            apiX.presets = apiX.presets || {};
-            delete apiX.presets[pn2];
-            window.LZWorld.Store.setSettings({ api: apiX });
-            try { localStorage.removeItem('lzworld_phone_apikey::' + pn2); } catch (e) {}
-            UI.render();
-          }
-          else if (a === 'fdelno') { UI.fConfirmDel = ''; UI.render(); }
-          else if (a === 'fdelok') {
-            var fn0 = UI.fConfirmDel; UI.fConfirmDel = '';
-            try { window.LZWorld.Store.forumDel(forumLineKey(), fn0); } catch (e) {}
-            if (UI.forumName === fn0) { UI.forumName = ''; UI.fThread = -1; UI.screen = 'forum'; }
-            UI.render();
-          }
-          else if (a === 'taccok') { var ti = UI.tConfirm; UI.tConfirm = -1; UI.stageTVerdict('taccept', ti); }
-          else if (a === 'tdecl') { var td = UI.tConfirm; UI.tConfirm = -1; UI.stageTVerdict('tdecline', td); }
-          else if (a === 'hangup') UI.hangup(false);
-          else if (a === 'cancelcall') UI.hangup(true);
-          else if (a === 'callreroll') UI.callReroll();
-          else if (a === 'micpop') { UI.callPop = true; UI.render(); }
-          else if (a === 'popok') {
-            var ta = ph.querySelector('#lzw-calltext');
-            var t = ta ? ta.value.trim() : '';
-            UI.callPop = false;
-            UI.render();
-            if (t) UI.callSend(t);
-          }
-          else if (a === 'popcancel') { UI.callPop = false; UI.render(); }
-          else if (a === 'delok') {
-            if (UI.callDel != null) { try { window.LZWorld.Store.removeAt(window.LZWorld.Engine.callKey(UI.call.name), UI.callDel); } catch (e) {} }
-            UI.callDel = null; UI.render();
-          }
-          else if (a === 'delno') { UI.callDel = null; UI.render(); }
-        };
-      });
-      // 通话字幕删除：由上方 contextmenu / 长按统一处理（data-cdel 仅作下标载体）
     },
 
+    showLines: function () {
+      this.injectStyle();
+      var pop = pdoc().getElementById('lzw-linespop');
+      if (!pop) {
+        pop = pdoc().createElement('div');
+        pop.id = 'lzw-linespop';
+        pop.onclick = function (e) { if (e.target === pop) UI.closeLines(); }; // 点遮罩关闭
+        pdoc().body.appendChild(pop);
+      }
+      // 定位：inset:0 锚定布局视口，移动端/缩放时会大于可见区导致卡片飞出屏幕；
+      // 改按 visualViewport 可见矩形显式落位（含缩放偏移），居中交给 flex
+      placeLinesPop();
+      if (!this._lpPlaced) {
+        this._lpPlaced = true;
+        try {
+          var lpt = pwin().visualViewport;
+          if (lpt) { lpt.addEventListener('resize', placeLinesPop); lpt.addEventListener('scroll', placeLinesPop); }
+        } catch (e) {}
+        try { pwin().addEventListener('resize', placeLinesPop); } catch (e) {}
+      }
+      this.renderLinesPop();
+    },
+
+    closeLines: function () {
+      var pop = pdoc().getElementById('lzw-linespop');
+      if (pop) pop.remove();
+    },
+
+    renderLinesPop: function () {
+      var pop = pdoc().getElementById('lzw-linespop');
+      if (!pop) return;
+      pop.innerHTML =
+        '<div class="lzw-lpop-card">' +
+        '<div class="lzw-lpop-head"><div class="lzw-lpop-t">世界线</div><div class="lzw-lpop-sub">切换后世界书条目代劳开关 · 并记入本聊天</div><span class="lzw-lpop-x" data-lpx title="关闭">×</span></div>' +
+        '<div class="lzw-lpop-list">' + linesRowsHtml() + '</div>' +
+        '<div class="lzw-lpop-foot">手动开关世界书不再影响本聊天</div>' +
+        '</div>';
+      pop.querySelector('[data-lpx]').onclick = function () { UI.closeLines(); };
+      pop.querySelectorAll('.lzw-linerow').forEach(function (el) {
+        el.onclick = function () { UI.switchLine(el.dataset.line); };
+      });
+    },
+
+    // 玩家在选线弹窗拍板：写世界书条目 + 更新记录，两边一起动（唯一合法的换线动作）。
+
+    switchLine: async function (line) {
+      if (this.lineBusy) return;
+      var W = window.LZWorld;
+      var eng = W.Engine;
+      if (!eng.entryKnown(line)) {
+        try { toastr.warning('世界书里找不到【' + line + '】条目，无法切换', '📱 霖州引擎'); } catch (e) {}
+        return;
+      }
+      this.lineBusy = true;
+      try {
+        await W.Worldbook.setEntriesEnabled(eng.lineOps(line));
+        W.Store.setLine(line);
+        eng.noteLineEntries(line);
+        eng.locateLine(); // 记录与快照已一致，只归位内部状态，不会二次写条目，也不会打开手机
+        try {
+          toastr.info(eng.section() ? ('已切换到【' + line + '】') : ('已切换到【' + line + '】（该世界线没有手机）'), '📱 霖州引擎');
+        } catch (e) {}
+        this.renderLinesPop();
+      } catch (e) {
+        console.warn('[霖州引擎] 切换世界线失败', e);
+        try { toastr.error('切换世界线失败：' + (e && e.message || e), '📱 霖州引擎'); } catch (e2) {}
+      } finally { this.lineBusy = false; }
+    },
+  };
+
+  // ── 共享内核：屏文件经 window.LZWorld.WechatCore 取通用助手/图标/卡片渲染 ──
+  var C = {
+    esc: esc, parseDay: parseDay, relDay: relDay, momentLabel: momentLabel, stampParts: stampParts,
+    pdoc: pdoc, pwin: pwin,
+    fmtTAmount: fmtTAmount, tcardHtml: tcardHtml, transferCardHtml: transferCardHtml, verdictCardHtml: verdictCardHtml,
+    chatRowHtml: chatRowHtml, richBub: richBub, stagedHtml: stagedHtml, appbarHtml: appbarHtml, withTimeout: withTimeout
+  };
+  C.ICON_VOICE = ICON_VOICE; C.ICON_REROLL = ICON_REROLL; C.ICON_CALL = ICON_CALL; C.ICON_TWAIT = ICON_TWAIT;
+  C.ICON_TOK = ICON_TOK; C.ICON_TNO = ICON_TNO; C.ICON_VCALL = ICON_VCALL; C.ICON_MIC = ICON_MIC;
+  C.ICON_HANG = ICON_HANG; C.ICON_BACK = ICON_BACK; C.ICON_WIFI = ICON_WIFI; C.ICON_BATT = ICON_BATT;
+  C.ICON_PLANE = ICON_PLANE; C.ICON_PLUS = ICON_PLUS; C.ICON_POWEROFF = ICON_POWEROFF; C.ICON_GEAR = ICON_GEAR;
+  C.ICON_FORUM = ICON_FORUM; C.ICON_TAB_CHAT = ICON_TAB_CHAT; C.ICON_TAB_DISC = ICON_TAB_DISC;
+  C.ICON_TAB_CONT = ICON_TAB_CONT; C.ICON_MOMENTS = ICON_MOMENTS; C.ICON_CHEV = ICON_CHEV; C.ICON_CAM = ICON_CAM;
+  C.ICON_HEART = ICON_HEART; C.ICON_HEART_F = ICON_HEART_F; C.ICON_BUBBLE = ICON_BUBBLE; C.ICON_WECHAT = ICON_WECHAT;
+  C.ICO = ICO;
+
+  window.LZWorld = window.LZWorld || {};
+  window.LZWorld.WechatCore = C;
+  window.LZWorld.Apps = window.LZWorld.Apps || {};
+  window.LZWorld.Apps.wechat = UI;
+})();
+
+
+// ── src/apps/wechat-home.js ──
+// ═══════════════════════════════════════════════════════════
+//  apps/wechat-home.js —— 桌面屏：壁纸/大时钟/app 网格/角标
+//  由 wechat.js（壳）经 window.LZWorld.Apps.wechat / WechatCore 挂接
+// ═══════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  var W = window.LZWorld, UI = W.Apps.wechat, C = W.WechatCore;
+
+
+  UI.bodyHome = function (ctx) {
+    var W = ctx.W, eng = ctx.eng, clock = ctx.clock, dateShort = ctx.dateShort;
+    var totalUn = 0;
+    try {
+      // 桌面图标是 app 级角标：会话未读 + 朋友圈动态未读（朋友对机主动态的赞/评论）都上角标，
+      // 与发现 tab 红点是同一份计数（Store.meta(momentsKey).unread）
+      // 存量兜底：历史遗留的幽灵会话键（错收件人）不过白名单，永不上桌面角标
+      var allowK = eng.phoneAllow ? eng.phoneAllow() : null;
+      W.Store.historyKeys().forEach(function (k) {
+        if (allowK && !allowK[k] && k !== eng.momentsKey) return;
+        totalUn += W.Store.meta(k).unread || 0;
+      });
+    } catch (e0) {}
+    // 论坛 app 角标：当前线所有论坛的（总条目 - 已读标记）之和
+    var funTotal = 0;
+    try {
+      var fline0 = W.Store.line() || '';
+      W.Store.forumNames(fline0).forEach(function (fn0) {
+        var fm0 = W.Store.forumGet(fline0, fn0);
+        var seen0 = 0;
+        try { seen0 = (W.Store.meta('forum:' + fline0 + ':' + fn0) || {}).seen || 0; } catch (e1) {}
+        var tot0 = 0;
+        ((fm0 && fm0.posts) || []).forEach(function (p0) { tot0 += 1 + (p0.replies || []).length; });
+        funTotal += Math.max(0, tot0 - seen0);
+      });
+    } catch (e0) {}
+    body =
+      '<div class="lzw-body"><div class="lzw-home-wall">' +
+      '<div class="lzw-hometime"><div class="t">' + C.esc(clock) + '</div><div class="d">' + C.esc(dateShort || '霖州') + '</div></div>' +
+      '<div class="lzw-homegrid">' +
+      '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none;position:relative">' + C.ICON_WECHAT +
+      (totalUn ? '<span class="lzw-appdot">' + (totalUn > 99 ? '99+' : totalUn) + '</span>' : '') + '</div><span>微信</span></div>' +
+      '<div class="lzw-app" data-app="forum"><div class="lzw-app-ico" style="background:#e8912d;border:none;color:#fff;position:relative">' + C.ICON_FORUM + (funTotal ? '<span class="lzw-appdot">' + (funTotal > 99 ? '99+' : funTotal) + '</span>' : '') + '</div><span>论坛</span></div>' +
+      '<div class="lzw-app" data-app="settings"><div class="lzw-app-ico" style="background:#8e97a8;border:none;color:#fff">' + C.ICON_GEAR + '</div><span>设置</span></div>' +
+      '<div class="lzw-app" data-app="close" title="收起手机"><div class="lzw-app-ico" style="background:#e5484d;border:none;color:#fff">' + C.ICON_POWEROFF + '</div><span>关闭</span></div>' +
+      '</div></div></div>';
+  };
+
+
+  UI._binders.push(function (ph) {
+    ph.querySelectorAll('[data-app="wechat"]').forEach(function (el) {
+      el.onclick = function () { UI.screen = 'list'; UI.render(); };
+    });
+    // 主屏「关闭」app：收起手机。保险——小屏上弹窗可能盖住酒馆页的 QR 开关，
+    // 万一被挡死，手机上永远有第二条路可以关掉自己
+    ph.querySelectorAll('[data-app="close"]').forEach(function (el) {
+      el.onclick = function () { UI.toggle(); };
+    });
+    // 设置 app：模式单选 / 数值与文本即时保存 / 拉取模型与预设列表 / 点选回填
+    ph.querySelectorAll('[data-app="settings"]').forEach(function (el) {
+      el.onclick = function () { UI.screen = 'settings'; UI._setpick = null; UI.render(); };
+    });
+  });
+})();
+
+
+// ── src/apps/wechat-list.js ──
+// ═══════════════════════════════════════════════════════════
+//  apps/wechat-list.js —— 列表屏：会话（微信tab）/通讯录/发现tab + 联系人详细资料
+//  由 wechat.js（壳）经 window.LZWorld.Apps.wechat / WechatCore 挂接
+// ═══════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  var W = window.LZWorld, UI = W.Apps.wechat, C = W.WechatCore;
+
+
+  UI.bodyList = function (ctx) {
+    var W = ctx.W, eng = ctx.eng;
+    var sec = eng.section();
+    var rowsHtml = '';
+    if (this.tab === 'discover') {
+      // 发现页：朋友圈入口（红点 = 机主不在场时新产生的接话评论数），无缩略行
+      var mUn = 0;
+      try { mUn = W.Store.meta(eng.momentsKey).unread || 0; } catch (e0) {}
+      rowsHtml =
+        '<div class="lzw-disc-row" data-mom="1"><div class="lzw-disc-ico">' + C.ICON_MOMENTS + '</div>' +
+        '<div class="lzw-disc-main"><div class="lzw-disc-name">朋友圈</div></div>' +
+        (mUn ? '<span class="lzw-unread">' + (mUn > 99 ? '99+' : mUn) + '</span>' : '') +
+        '<span class="lzw-disc-chev">' + C.ICON_CHEV + '</span></div>';
+    } else if (this.tab === 'contacts') {
+      // 通讯录：群聊分组（点直接进群）+ 联系人平铺（点进详细资料）
+      if (sec) {
+        var gRows = (sec.groups || []).map(function (g) {
+          var gav = g.avatar
+            ? '<img class="lzw-ava" src="' + C.esc(W.Worldbook.imgUrl(g.avatar)) + '">'
+            : '<div class="lzw-ava">👥</div>';
+          return '<div class="lzw-conv" data-key="group:' + C.esc(g.name) + '" data-group="1">' + gav +
+            '<div class="lzw-conv-main"><div class="lzw-conv-name">' + C.esc(g.name) + '</div></div></div>';
+        }).join('');
+        var pRows = (sec.contacts || []).map(function (c) {
+          var cav = c.avatar
+            ? '<img class="lzw-ava" src="' + C.esc(W.Worldbook.imgUrl(c.avatar)) + '">'
+            : '<div class="lzw-ava">' + C.esc(c.name.slice(0, 1)) + '</div>';
+          return '<div class="lzw-conv" data-cdet="' + C.esc(c.name) + '">' + cav +
+            '<div class="lzw-conv-main"><div class="lzw-conv-name">' + C.esc(c.name) + '</div></div></div>';
+        }).join('');
+        rowsHtml =
+          (gRows ? '<div class="lzw-sechead">群聊</div>' + gRows : '') +
+          (pRows ? '<div class="lzw-sechead">联系人</div>' + pRows : '') ||
+          '<div class="lzw-sysrow">本世界线暂无联系人</div>';
+      } else {
+        rowsHtml = '<div class="lzw-sysrow">未定位到当前世界线<br>进行一次主对话生成后自动归位</div>';
+      }
+    } else if (sec) {
+      var convs = [];
+      var kindCn = { sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位' };
+      (sec.contacts || []).forEach(function (c) { convs.push({ key: c.name, name: c.name, avatar: c.avatar, group: false }); });
+      (sec.groups || []).forEach(function (g) { convs.push({ key: 'group:' + g.name, name: g.name, avatar: g.avatar || '', group: true }); });
+      // 只留有消息的会话；按最后一条消息的时间倒序（真微信：最近说话的排最上面）
+      var dayNum = function (s) {
+        var m = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec(s || '');
+        return m ? (+m[1]) * 372 + (+m[2]) * 31 + (+m[3]) : -1;
+      };
+      convs = convs.filter(function (cv) { return W.Store.history(cv.key).length > 0; });
+      convs.sort(function (a, b) {
+        var ha = W.Store.history(a.key), hb = W.Store.history(b.key);
+        var la = ha[ha.length - 1], lb = hb[hb.length - 1];
+        var da = dayNum(la && la.day), db = dayNum(lb && lb.day);
+        if (da !== db) return db - da;
+        var ta = (la && la.time) || '', tb = (lb && lb.time) || '';
+        return ta === tb ? 0 : (ta > tb ? -1 : 1);
+      });
+      rowsHtml = convs.map(function (cv) {
+        var h = W.Store.history(cv.key);
+        var last = h[h.length - 1];
+        var prev = last
+          ? (last.kind === 'text' ? last.text
+            : last.kind === 'calllog' ? '[' + (last.mode === 'video' ? '视频通话' : '语音通话') + ']'
+            : '[' + (kindCn[last.kind] || last.kind) + ']')
+          : '';
+        var av = cv.avatar
+          ? '<img class="lzw-ava" src="' + C.esc(W.Worldbook.imgUrl(cv.avatar)) + '">'
+          : (cv.group ? '<div class="lzw-ava">👥</div>' : '<div class="lzw-ava">' + C.esc(cv.name.slice(0, 1)) + '</div>');
+        return '<div class="lzw-conv" data-key="' + C.esc(cv.key) + '" data-group="' + (cv.group ? 1 : 0) + '">' +
+          av + '<div class="lzw-conv-main"><div class="lzw-conv-name">' + C.esc(cv.name) + '</div>' +
+          '<div class="lzw-conv-prev">' + C.esc(prev) + '</div></div>' +
+          (function () { var un = W.Store.meta(cv.key).unread || 0; return un ? '<span class="lzw-unread">' + (un > 99 ? '99+' : un) + '</span>' : ''; })() +
+          '</div>';
+      }).join('') || '<div class="lzw-sysrow">暂无会话<br>去通讯录找人聊聊吧</div>';
+    } else {
+      rowsHtml = '<div class="lzw-sysrow">未定位到当前世界线<br>进行一次主对话生成后自动归位</div>';
+    }
+    // 底栏：微信 | 通讯录 | 发现（发现挂朋友圈未读红点；微信挂会话总红点）
+    var totalUn2 = 0;
+    try {
+      // 只算会话未读；朋友圈的未读挂发现 tab（mUn2），别混进微信 tab
+      // 存量兜底：幽灵会话键不过白名单，微信 tab 红点只数真会话
+      var allowK2 = eng.phoneAllow ? eng.phoneAllow() : null;
+      W.Store.historyKeys().forEach(function (k) {
+        if (k === eng.momentsKey) return;
+        if (allowK2 && !allowK2[k]) return;
+        totalUn2 += W.Store.meta(k).unread || 0;
+      });
+    } catch (e0) {}
+    var mUn2 = 0;
+    try { mUn2 = W.Store.meta(eng.momentsKey).unread || 0; } catch (e0) {}
+    body = '<div class="lzw-body">' + rowsHtml + '</div>' +
+      '<div class="lzw-tabbar">' +
+      '<button class="lzw-tab' + (this.tab === 'chats' ? ' on' : '') + '" data-tab="chats">' + C.ICON_TAB_CHAT + '<span>微信</span>' + (totalUn2 ? '<span class="lzw-tabdot">' + (totalUn2 > 99 ? '99+' : totalUn2) + '</span>' : '') + '</button>' +
+      '<button class="lzw-tab' + (this.tab === 'contacts' ? ' on' : '') + '" data-tab="contacts">' + C.ICON_TAB_CONT + '<span>通讯录</span></button>' +
+      '<button class="lzw-tab' + (this.tab === 'discover' ? ' on' : '') + '" data-tab="discover">' + C.ICON_TAB_DISC + '<span>发现</span>' + (mUn2 ? '<span class="lzw-tabdot">' + (mUn2 > 99 ? '99+' : mUn2) + '</span>' : '') + '</button>' +
+      '</div>';
+  };
+
+  // 联系人详细资料：头像姓名 + 朋友圈入口（带最新动态预览）+ 发消息/通话
+  UI.bodyCdetail = function (ctx) {
+    var W = ctx.W, eng = ctx.eng;
+    var dn = this.cdetName || '';
+    var dc = eng.findContact(dn) || {};
+    var dLast = '';
+    try {
+      var dfeed = eng.momentsFeed();
+      for (var di = dfeed.length - 1; di >= 0; di--) {
+        if (dfeed[di].who === dn) { dLast = String(dfeed[di].text || '').slice(0, 18); break; }
+      }
+    } catch (e0) {}
+    var dav = dc.avatar
+      ? '<img class="lzw-cava" src="' + C.esc(W.Worldbook.imgUrl(dc.avatar)) + '">'
+      : '<div class="lzw-cava">' + C.esc(dn.slice(0, 1)) + '</div>';
+    body = '<div class="lzw-body">' +
+      '<div class="lzw-cdetcard">' + dav + '<div class="lzw-cdetnm">' + C.esc(dn) + '</div></div>' +
+      '<div class="lzw-cdetrow" data-mpf="' + C.esc(dn) + '" data-mfrom="cdetail">' +
+      '<span class="l">朋友圈</span>' +
+      '<span class="lzw-cdetpv">' + C.esc(dLast || '还没发动态') + '</span>' +
+      '<span class="lzw-cdetcv">' + C.ICON_CHEV + '</span></div>' +
+      '<div class="lzw-cdetmsg" data-cmsg="' + C.esc(dn) + '">发消息</div>' +
+      '<div class="lzw-cdetcalls">' +
+      '<div class="lzw-cdetcall" data-ccall="' + C.esc(dn) + ':audio">' + C.ICON_CALL + '<span>语音通话</span></div>' +
+      '<div class="lzw-cdetcall" data-ccall="' + C.esc(dn) + ':video">' + C.ICON_VCALL + '<span>视频通话</span></div>' +
+      '</div></div>';
+  };
+
+
+  UI._binders.push(function (ph) {
+    // 微信底栏 tab：微信 | 发现
+    ph.querySelectorAll('[data-tab]').forEach(function (el) {
+      el.onclick = function () { UI.tab = el.dataset.tab; UI.render(); };
+    });
+    // 发现页：朋友圈入口
+    ph.querySelectorAll('[data-mom]').forEach(function (el) {
+      el.onclick = function () { UI.openMoments(); };
+    });
+    // 通讯录：联系人行 → 详细资料；详细资料页：发消息 / 语音·视频通话
+    ph.querySelectorAll('[data-cdet]').forEach(function (el) {
+      el.onclick = function () {
+        UI.cdetName = el.dataset.cdet;
+        UI.screen = 'cdetail';
+        UI.panel = null;
+        UI.render();
+      };
+    });
+    ph.querySelectorAll('[data-cmsg]').forEach(function (el) {
+      el.onclick = function () { UI.openChat(el.dataset.cmsg, false); };
+    });
+    ph.querySelectorAll('[data-ccall]').forEach(function (el) {
+      el.onclick = function () {
+        var p = el.dataset.ccall.split(':');
+        if (p.length !== 2) return;
+        UI.chatKey = p[0];
+        UI.isGroup = false;
+        UI.panel = null;
+        UI.dial(p[1]);
+      };
+    });
+    // 论坛行（.lzw-frow）也是 .lzw-conv，必须排除——否则点击进空白聊天页
+    ph.querySelectorAll('.lzw-conv:not(.lzw-linerow):not([data-cdet]):not(.lzw-frow)').forEach(function (el) {
+      el.onclick = function () { UI.openChat(el.dataset.key, el.dataset.group === '1'); };
+    });
+  });
+})();
+
+
+// ── src/apps/wechat-chat.js ──
+// ═══════════════════════════════════════════════════════════
+//  apps/wechat-chat.js —— 聊天屏：气泡/输入区/+号面板/转账卡/待发区
+//  由 wechat.js（壳）经 window.LZWorld.Apps.wechat / WechatCore 挂接
+// ═══════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  var W = window.LZWorld, UI = W.Apps.wechat, C = W.WechatCore;
+
+
+  UI.bodyChat = function (ctx) {
+    var W = ctx.W, eng = ctx.eng, userName = ctx.userName;
+    var key = this.chatKey || '';
+    var g = this.isGroup;
+    var disp = g ? key.replace(/^group:/, '') : key;
+    var hist = W.Store.history(key);
+    var contactMap = {};
+    var secNow = eng.section();
+    if (g) {
+      var grp = secNow ? (secNow.groups || []).filter(function (x) { return 'group:' + x.name === key; })[0] : null;
+      if (grp) grp.members.forEach(function (n) { contactMap[n] = eng.findContact(n) || { name: n, avatar: '' }; });
+    } else {
+      contactMap[disp] = eng.findContact(disp) || { name: disp, avatar: '' };
+    }
+    var curDay = '';
+    try { curDay = W.Status.snapshot(null).dateText; } catch (e2) {}
+    var prevDay = null;
+    var rows = hist.map(function (m, i) {
+      var pre = '';
+      if (m.day && m.day !== prevDay) {
+        pre = '<div class="lzw-sysrow">' + C.esc(C.relDay(m.day, curDay) + (m.time ? ' ' + m.time : '')) + '</div>';
+        prevDay = m.day;
+      }
+      return pre + C.chatRowHtml(m, userName, contactMap, disp, i, !!this.peek[key + ':' + i], this.isGroup);
+    }, this).join('');
+    if (this.failed && this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
+    if (this.staged.length) rows += C.stagedHtml(userName);
+    body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
+      '<div class="lzw-bottom">' +
+      panelHtml(this.panel) +
+      '<div class="lzw-inputbar">' +
+      '<button class="lzw-plus" data-act="plus">' + C.ICON_PLUS + '</button>' +
+      '<input class="lzw-input" id="lzw-input" placeholder="回车攒一条，小飞机一起发" maxlength="300">' +
+      '<button class="lzw-send" data-act="send" title="发送（把攒下的消息一起发出）">' + C.ICON_PLANE + '</button>' +
+      '</div></div>';
+  };
+
+  function panelHtml(panel) {
+    if (!panel) return '<div class="lzw-panel" id="lzw-panel"></div>';
+    if (panel === 'sticker') {
+      var stickers = window.LZWorld.Engine.stickers();
+      var names = Object.keys(stickers);
+      var grid = names.length
+        ? names.map(function (n) {
+            return '<div class="lzw-stickcell" data-stick="' + C.esc(n) + '"><div class="imgw">' +
+              '<img src="' + C.esc(window.LZWorld.Worldbook.imgUrl(stickers[n])) + '" loading="lazy"></div></div>';
+          }).join('')
+        : '<div class="lzw-sysrow">世界书中未找到「霖州手机::表情包」条目</div>';
+      return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-stickgrid">' + grid + '</div></div>';
+    }
+    if (panel === 'transferto') {
+      // 群聊转账先选接收方（机主自己除外）
+      var Wt = window.LZWorld, engT = Wt.Engine, secT = engT.section() || {};
+      var myNameT = engT.userName();
+      var gT = null;
+      (secT.groups || []).forEach(function (g) { if ('group:' + g.name === UI.chatKey) gT = g; });
+      var cells = ((gT && gT.members) || []).filter(function (n) { return n && n !== myNameT; }).map(function (n) {
+        var c = engT.findContact(n) || {};
+        var avT = c.avatar
+          ? '<img class="lzw-ava" src="' + C.esc(Wt.Worldbook.imgUrl(c.avatar)) + '">'
+          : '<div class="lzw-ava">' + C.esc(n.slice(0, 1)) + '</div>';
+        return '<div class="lzw-conv" data-ttarget="' + C.esc(n) + '">' + avT + '<div class="lzw-conv-main"><div class="lzw-conv-name">' + C.esc(n) + '</div></div></div>';
+      }).join('');
+      return '<div class="lzw-panel lzw-open lzw-pto" id="lzw-panel"><div class="lzw-ttohd">转账给群里的谁？</div><div class="lzw-ttolist">' +
+        (cells || '<div class="lzw-sysrow">群成员名单空空如也</div>') + '</div>' +
+        '<div class="lzw-ttofoot"><button class="lzw-modecancel" data-act="modecancel">取消</button></div></div>';
+    }
+    if (panel === 'transfer') {
+      var toWhom = UI.isGroup ? UI.tTarget : UI.chatKey;
+      var swapBtn = UI.isGroup ? '<button class="lzw-modecancel" data-cact="tswap">更换</button>' : '';
+      return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-modeform">' +
+        '<div class="lzw-tto-line">转账给 <b>' + C.esc(toWhom || '…') + '</b></div>' +
+        '<input class="lzw-modeinput" id="lzw-tamt" maxlength="8" inputmode="decimal" placeholder="金额，1 ~ 99999">' +
+        '<input class="lzw-modeinput" id="lzw-tnote" maxlength="30" placeholder="备注（可选），如：奶茶钱">' +
+        '<div class="lzw-modebtns"><button class="lzw-modeok" data-tsend="1">确定</button>' + swapBtn +
+        '<button class="lzw-modecancel" data-act="modecancel">取消</button></div></div></div>';
+    }
+    if (panel === 'image' || panel === 'voice' || panel === 'location') {
+      var hint = panel === 'image' ? '描述这张图片的画面，如：一张拍糊的试卷' : panel === 'voice' ? '这句语音说了什么，如：到了吱一声' : '地点名称，如：霖州一中北门';
+      return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-modeform">' +
+        '<textarea class="lzw-modeinput" id="lzw-modeinput" rows="2" maxlength="200" placeholder="' + hint + '"></textarea>' +
+        '<div class="lzw-modebtns"><button class="lzw-modeok" data-modesend="' + panel + '">确定</button>' +
+        '<button class="lzw-modecancel" data-act="modecancel">取消</button></div></div></div>';
+    }
+    // actions（戳一戳只能私聊用：群里没有指定对象）
+    return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-actions">' +
+      '<div class="lzw-act" data-mode="sticker"><div class="lzw-act-ico">' + C.ICO.sticker + '</div><span>表情</span></div>' +
+      '<div class="lzw-act" data-mode="image"><div class="lzw-act-ico">' + C.ICO.image + '</div><span>图片</span></div>' +
+      '<div class="lzw-act" data-mode="voice"><div class="lzw-act-ico">' + C.ICO.voice + '</div><span>语音</span></div>' +
+      (UI.isGroup ? '' : '<div class="lzw-act" data-mode="poke"><div class="lzw-act-ico">' + C.ICO.poke + '</div><span>戳一戳</span></div>') +
+      '<div class="lzw-act" data-mode="location"><div class="lzw-act-ico">' + C.ICO.location + '</div><span>定位</span></div>' +
+      '<div class="lzw-act" data-mode="transfer"><div class="lzw-act-ico">' + C.ICO.transfer + '</div><span>转账</span></div>' +
+      (UI.isGroup ? '' :
+        '<div class="lzw-act" data-act="dial" data-dial="audio"><div class="lzw-act-ico">' + C.ICON_CALL + '</div><span>语音通话</span></div>' +
+        '<div class="lzw-act" data-act="dial" data-dial="video"><div class="lzw-act-ico">' + C.ICON_VCALL + '</div><span>视频通话</span></div>') +
+      '</div></div>';
+  }
+
+  // 用 visualViewport 计算位置：F12/移动仿真/页面缩放下依然落在可视区右下角
+
+  Object.assign(UI, {
+    openChat: function (key, isGroup) {
+      this.chatKey = key;
+      this.isGroup = !!isGroup;
+      this.screen = 'chat';
+      this.panel = null;
+      this.staged = [];
+      try { window.LZWorld.Store.clearUnread(key); } catch (e) {}
+      this.render();
+    },
+
+    // ── 朋友圈 ──
     // 回车：攒一条进待发区（[+] 二级模式的输入除外，那仍是即发）
     sendText: function () {
       var inp = pdoc().getElementById('lzw-input') || pdoc().getElementById('lzw-modeinput');
@@ -3770,7 +3554,614 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         this.busy = false;
       }
     },
+  });
 
+
+  UI._binders.push(function (ph) {
+    ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
+    ph.querySelectorAll('[data-act="reroll"]').forEach(function (el) { el.onclick = function () { UI.reroll(); }; });
+    ph.querySelectorAll('[data-voice]').forEach(function (el) {
+      el.onclick = function () { el.classList.toggle('open'); };
+    });
+    ph.querySelectorAll('[data-poke]').forEach(function (el) {
+      el.onclick = function () {
+        ph.classList.remove('shake');
+        void ph.offsetWidth; // 重启动画
+        ph.classList.add('shake');
+        // 动画结束务必卸类：class 留着的话，下次开屏（display 切换）会重放抖动
+        setTimeout(function () { ph.classList.remove('shake'); }, 550);
+      };
+    });
+    ph.querySelectorAll('[data-peek]').forEach(function (el) {
+      el.onclick = function () {
+        UI.togglePeek(parseInt(el.getAttribute('data-peek'), 10));
+      };
+    });
+    ph.querySelectorAll('[data-sdel]').forEach(function (el) {
+      el.onclick = function (ev) {
+        ev.stopPropagation();
+        UI.staged.splice(parseInt(el.dataset.sdel, 10), 1);
+        UI.render();
+        var i2 = ph.querySelector('#lzw-input'); if (i2) i2.focus();
+      };
+    });
+    ph.querySelectorAll('[data-act="plus"]').forEach(function (el) {
+      el.onclick = function () {
+        UI.panel = UI.panel ? null : 'actions';
+        UI.render();
+        var inp = ph.querySelector('#lzw-input');
+        if (inp && UI.panel) inp.focus();
+      };
+    });
+    // [+] 面板内的动作
+    ph.querySelectorAll('[data-mode]').forEach(function (el) {
+      el.onclick = function () {
+        var mode = el.dataset.mode;
+        if (mode === 'poke') { UI.stageTyped('poke', ''); return; } // 戳一戳也先攒着，随小飞机一起发
+        if (mode === 'transfer') { // 群聊先选接收方；私聊直接表单（收款人=对方）
+          UI.panel = (UI.isGroup && !UI.tTarget) ? 'transferto' : 'transfer';
+          UI.render();
+          return;
+        }
+        UI.panel = mode; // sticker | image | voice | location
+        UI.render();
+      };
+    });
+    ph.querySelectorAll('[data-ttarget]').forEach(function (el) {
+      el.onclick = function () { UI.tTarget = el.dataset.ttarget; UI.panel = 'transfer'; UI.render(); };
+    });
+    ph.querySelectorAll('[data-tsend]').forEach(function (el) {
+      el.onclick = function () {
+        var amtIn = ph.querySelector('#lzw-tamt');
+        var raw = amtIn ? amtIn.value.trim().replace(/[¥￥\s元]/g, '') : '';
+        var amount = Number(raw);
+        if (!raw || isNaN(amount) || amount <= 0 || amount > 99999) {
+          try { toastr.error('金额要是 1~99999 的数字', '霖州手机'); } catch (e) {}
+          return;
+        }
+        var noteIn = ph.querySelector('#lzw-tnote');
+        var note = noteIn ? noteIn.value.trim().slice(0, 30) : '';
+        var to = UI.isGroup ? UI.tTarget : UI.chatKey;
+        if (!to) { UI.panel = 'transferto'; UI.render(); return; }
+        UI.stageTransfer(Math.round(amount * 100) / 100, note, to);
+      };
+    });
+    ph.querySelectorAll('[data-taccept]').forEach(function (el) {
+      el.onclick = function () {
+        var row = el.closest('.lzw-chatrow');
+        if (!row) return;
+        UI.tConfirm = parseInt(row.dataset.del, 10);
+        UI.render();
+      };
+    });
+    ph.querySelectorAll('[data-stick]').forEach(function (el) {
+      el.onclick = function () { UI.stageTyped('sticker', el.dataset.stick); }; // 表情也攒着
+    });
+    ph.querySelectorAll('[data-act="modecancel"]').forEach(function (el) {
+      el.onclick = function () { UI.panel = null; UI.render(); };
+    });
+    ph.querySelectorAll('[data-modesend]').forEach(function (el) {
+      el.onclick = function () {
+        var kind = el.dataset.modesend;
+        var inp = ph.querySelector('#lzw-modeinput');
+        var t = inp ? inp.value.trim() : '';
+        if (!t) return;
+        UI.stageTyped(kind, t);
+      };
+    });
+  });
+})();
+
+
+// ── src/apps/wechat-moments.js ──
+// ═══════════════════════════════════════════════════════════
+//  apps/wechat-moments.js —— 朋友圈屏：feed/发布器/个人主页/赞评
+//  由 wechat.js（壳）经 window.LZWorld.Apps.wechat / WechatCore 挂接
+// ═══════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  var W = window.LZWorld, UI = W.Apps.wechat, C = W.WechatCore;
+
+
+  UI.bodyMoments = function (ctx) {
+    var W = ctx.W, eng = ctx.eng, userName = ctx.userName, snap = ctx.snap;
+    var secM = eng.section() || {};
+    var coverF = (secM.moments && secM.moments.cover) || '';
+    var coverU = coverF ? W.Worldbook.imgUrl(coverF) : '';
+    var uav = '';
+    try { uav = eng.userAvatar(); } catch (e0) {}
+    var mfeed2 = eng.momentsFeed();
+    var postsHtml = '';
+    for (var mi = mfeed2.length - 1; mi >= 0; mi--) postsHtml += momentsPostHtml(mfeed2[mi], mi, userName, eng, W, true, snap.dateText || '');
+    body = '<div class="lzw-mfeed">' +
+      '<div class="lzw-mcover">' + (coverU ? '<img src="' + C.esc(coverU) + '" alt="">' : '') +
+      '<div class="lzw-mcover-shade"></div>' +
+      '<div class="lzw-mme"><span class="nm">' + C.esc(userName) + '</span>' +
+      (uav ? '<img class="av" src="' + C.esc(uav) + '" alt="">' : '<div class="av">' + C.esc(userName.slice(0, 1)) + '</div>') + '</div></div>' +
+      '<div class="lzw-mpad"></div>' +
+      (postsHtml || '<div class="lzw-sysrow" style="margin-top:44px">朋友们还没发动态<br>稍等片刻，或退出重进刷新</div>') +
+      (this.mBusy ? '<div class="lzw-sysrow">朋友们正在更新…</div>' : '') +
+      (this.mConfirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条动态？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="mdelno">取消</button><button class="lzw-cbtn yes" data-cact="mdelok">删除</button></div></div></div>' : '') +
+      '</div>';
+  };
+
+  UI.bodyMprofile = function (ctx) {
+    var W = ctx.W, eng = ctx.eng, userName = ctx.userName, snap = ctx.snap;
+    var pn = this.mProfile || '';
+    var pc = eng.findContact(pn) || {};
+    var covF2 = pc.cover || ((eng.section() || {}).moments || {}).cover || '';
+    var covU2 = covF2 ? W.Worldbook.imgUrl(covF2) : '';
+    // feed 只取一次、下标就地记录：沙箱桥接里 getVariables 每次返回的是副本，
+    // 跨两次调用 indexOf 必然 -1——而 idx=-1 会让「UI.mMenu===idx」对所有动态恒真：
+    // 进主页默认每条都弹菜单、点 ⋯ 切换失灵
+    var feedAll = eng.momentsFeed();
+    var hisIdx = [];
+    for (var fi2 = feedAll.length - 1; fi2 >= 0 && hisIdx.length < 5; fi2--) {
+      if (feedAll[fi2].who === pn) hisIdx.push(fi2);
+    }
+    var hisHtml = '';
+    for (var hi2 = 0; hi2 < hisIdx.length; hi2++) hisHtml += momentsPostHtml(feedAll[hisIdx[hi2]], hisIdx[hi2], userName, eng, W, false, snap.dateText || '');
+    body = '<div class="lzw-mfeed">' +
+      '<div class="lzw-mcover">' + (covU2 ? '<img src="' + C.esc(covU2) + '" alt="">' : '') +
+      '<div class="lzw-mcover-shade"></div>' +
+      '<div class="lzw-mme"><span class="nm">' + C.esc(pn) + '</span>' +
+      (pc.avatar ? '<img class="av" src="' + C.esc(W.Worldbook.imgUrl(pc.avatar)) + '" alt="">' : '<div class="av">' + C.esc(pn.slice(0, 1)) + '</div>') + '</div></div>' +
+      '<div class="lzw-mpad"></div>' +
+      (hisHtml || '<div class="lzw-sysrow" style="margin-top:36px">TA 还没有动态</div>') +
+      '</div>';
+  };
+
+  // body 必须包 .lzw-body（flex:1）——否则底部横条不贴底，跟着内容跑
+  UI.bodyMpost = function (ctx) {
+    body = '<div class="lzw-body"><div class="lzw-mptext"><textarea class="lzw-mpta" id="lzw-mptext" maxlength="280" placeholder="这一刻的想法…"></textarea></div>' +
+      '<textarea class="lzw-mpimg" id="lzw-mpimg" maxlength="60" placeholder="图片（可选）：用文字描述这张图片的画面，如：一张拍糊的试卷"></textarea></div>';
+  };
+
+  function syncMomentBar(ph) {
+    var feed = ph.querySelector('.lzw-mfeed');
+    var scr = ph.querySelector('.lzw-screen');
+    if (!feed || !scr) return;
+    var sbar = scr.querySelector('.lzw-sbar');
+    var bar = scr.querySelector('.lzw-appbar-ovl');
+    var cover = feed.querySelector('.lzw-mcover');
+    if (!bar || !cover) return;
+    var onScroll = function () {
+      var p = Math.max(0, Math.min(1, feed.scrollTop / Math.max(1, cover.offsetHeight - 89)));
+      var bg = 'rgba(255,255,255,' + (p * 0.97).toFixed(3) + ')';
+      if (sbar) sbar.style.background = bg;
+      bar.style.background = bg;
+      bar.style.borderBottom = p > 0.95 ? '1px solid rgba(0,0,0,.09)' : 'none';
+    };
+    feed.addEventListener('scroll', onScroll);
+    onScroll();
+  }
+
+  // 设置屏：生成 API（跟随正文/只换模型/自定义+可存预设）+ 提示词携带量。全部即时保存。
+  UI.syncMomentBar = syncMomentBar;
+
+  function momentsPostHtml(e, idx, userName, eng, W, feedMode, curDay) {
+    var c = {};
+    try { c = eng.findContact(e.who) || {}; } catch (e0) {}
+    var isMine = e.who === userName;
+    var mpfAttr = isMine ? '' : ' data-mpf="' + C.esc(e.who) + '"';
+    var head;
+    if (feedMode) {
+      // 机主自己的条目：头像走机主头像，名字/头像都不挂进主页的跳转
+      var avaHtml;
+      if (isMine) {
+        var myAv = '';
+        try { myAv = eng.userAvatar(); } catch (e1) {}
+        avaHtml = myAv
+          ? '<img class="lzw-post-ava" src="' + C.esc(myAv) + '" alt="">'
+          : '<div class="lzw-post-ava">' + C.esc(e.who.slice(0, 1)) + '</div>';
+      } else {
+        avaHtml = c.avatar
+          ? '<img class="lzw-post-ava" src="' + C.esc(W.Worldbook.imgUrl(c.avatar)) + '"' + mpfAttr + ' alt="">'
+          : '<div class="lzw-post-ava"' + mpfAttr + '>' + C.esc(e.who.slice(0, 1)) + '</div>';
+      }
+      head = avaHtml +
+        '<div class="lzw-post-main"><div class="lzw-post-name"' + mpfAttr + '>' + C.esc(e.who) + '</div>';
+    } else {
+      // 主页时间戳：与 feed 同源自 pt（动态自身时间），两边永远不会再打架
+      head = '<div class="lzw-post-stamp">' + C.stampParts(e.pt, e.label, curDay) + '</div><div class="lzw-post-main">';
+    }
+    var liked = (e.likes || []).indexOf(userName) !== -1;
+    var menu = UI.mMenu === idx
+      ? '<div class="lzw-pmenu">' + (isMine ? '' : '<button data-mlike="' + idx + '">' + (liked ? C.ICON_HEART_F + ' 取消' : C.ICON_HEART + ' 赞') + '</button>') + '<button data-mcmt="' + idx + '">' + C.ICON_BUBBLE + ' 评论</button>' + (isMine ? '<button data-mdel="' + idx + '">删除</button>' : '') + '</div>'
+      : '';    var cmtbar = UI.mCmt === idx
+      ? '<div class="lzw-cmtbar"><input id="lzw-cmtin" maxlength="60" placeholder="说点什么…"><button data-msend="' + idx + '">发送</button></div>'
+      : '';
+    var likeRow = (e.likes && e.likes.length)
+      ? '<div class="lzw-plike">❤ ' + e.likes.map(C.esc).join('、') + '</div>'
+      : '';
+    var cmtRows = (e.comments || []).map(function (cm) {
+      return '<div><span class="n">' + C.esc(cm.who) + '</span>' +
+        (cm.replyTo ? ' 回复 <span class="n">' + C.esc(cm.replyTo) + '</span>' : '') +
+        '<span class="cs">:</span><span class="c">' + C.esc(cm.text) + '</span></div>';
+    }).join('');
+    var cmtBlock = cmtRows ? '<div class="lzw-pcmts">' + cmtRows + '</div>' : '';
+    return '<div class="lzw-post">' + head +
+      '<div class="lzw-post-text">' + C.esc(e.text) + '</div>' +
+      (e.img ? '<div class="lzw-post-img">' + C.esc(e.img) + '</div>' : '') +
+      '<div class="lzw-post-meta">' + (feedMode ? '<span>' + C.esc(C.momentLabel(e.pt, e.label, curDay)) + '</span>' : '') + '<span class="sp"></span>' +
+      menu +
+      '<button class="lzw-post-more" data-mmenu="' + idx + '">⋯</button></div>' +
+      likeRow + cmtBlock + cmtbar +
+      '</div></div>';
+  }
+
+  // [+] 面板内容
+
+  // 弹窗留在原地刷新徽标，不碰手机——手机开不开由玩家自己决定。
+  Object.assign(UI, {
+    openMoments: function () {
+      var W = window.LZWorld;
+      this.tab = 'discover';
+      this.screen = 'moments';
+      this.mMenu = -1;
+      this.mCmt = -1;
+      try { W.Store.clearUnread(W.Engine.momentsKey); } catch (e) {}
+      this.render();
+      this.momentsEnsureFresh();
+    },
+    // 每个故事日首次进入生成 3~4 条动态；生成完若还在朋友圈页就刷新
+    // 已生成 / 状态栏日期缺失都不静默跳过：前者由引擎 filledDay 判重，后者兜底生成一次并提示
+    momentsEnsureFresh: function () {
+      if (this.mBusy) return;
+      var eng = window.LZWorld.Engine;
+      var stamp = null;
+      try { stamp = window.LZWorld.Status.snapshot(null); } catch (e) {}
+      if (!(stamp && stamp.dateText)) {
+        console.warn('[霖州引擎] 朋友圈：最近 6 层未解析到 <status> 里的 <环境> 日期，按无日期兜底生成一次');
+        try { toastr.warning('未解析到状态栏日期，朋友圈已按无日期生成；检查最近楼层的状态栏 <环境> 块', '霖州手机', { timeOut: 6000 }); } catch (e) {}
+      }
+      this.mBusy = true;
+      this.render();
+      var self = this;
+      eng.momentsEnsure().then(function (got) {
+        if (got) try { toastr.info('📱 朋友们更新了朋友圈', '霖州手机', { timeOut: 3000 }); } catch (e) {}
+      }).catch(function (e) {
+        console.warn('[霖州引擎] 朋友圈填充失败', e);
+        try { toastr.error('朋友圈加载失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
+      }).finally(function () {
+        self.mBusy = false;
+        if (self.screen === 'moments') self.render();
+      });
+    },
+    // 赞：纯本地往返
+    momentsLike: function (idx) {
+      try { window.LZWorld.Engine.momentsLike(idx); } catch (e) {}
+      this.mMenu = -1;
+      this.render();
+    },
+    // 删自己的动态：下标移位会让 mMenu/mCmt 指向别的条目，一并复位再渲染
+    momentsDeleteAt: function (idx) {
+      try { window.LZWorld.Engine.momentsDelete(idx); } catch (e) {}
+      this.mMenu = -1;
+      this.mCmt = -1;
+      this.render();
+    },
+    // 评论：先落库，接话生成完若还在朋友圈页就刷新（不在场时红点由引擎挂）
+    momentsSendComment: function (idx, text) {
+      var eng = window.LZWorld.Engine;
+      this.mCmt = -1;
+      this.mBusy = true;
+      this.render();
+      var self = this;
+      eng.momentsComment(idx, text).catch(function (e) {
+        console.warn('[霖州引擎] 朋友圈评论失败', e);
+        try { toastr.error('评论发送失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
+      }).finally(function () {
+        self.mBusy = false;
+        if (self.screen === 'moments' || self.screen === 'mprofile') self.render();
+      });
+    },
+
+    // 选线弹窗：居中菜单，独立于手机壳——古代线没有手机也要能由此换回现代线
+  });
+
+
+  UI._binders.push(function (ph) {
+    // 朋友圈：相机打开发布器、头像/名字进主页、⋯菜单、赞、评论、发送
+    ph.querySelectorAll('[data-mcam]').forEach(function (el) {
+      el.onclick = function () { UI.screen = 'mpost'; UI.mFrom = 'moments'; UI.render(); };
+    });
+    ph.querySelectorAll('[data-mpost-send]').forEach(function (el) {
+      el.onclick = function () {
+        var ta = pdoc().getElementById('lzw-mptext');
+        var t = ta ? ta.value.trim() : '';
+        if (!t) { try { toastr.info('写点什么再发表吧', '霖州手机'); } catch (e) {} return; }
+        var im = pdoc().getElementById('lzw-mpimg');
+        var img = im ? im.value.trim().slice(0, 60) : '';
+        var W = window.LZWorld, eng = W.Engine;
+        var idx = eng.momentsPost(t, img);
+        if (idx < 0) return;
+        UI.screen = 'moments';
+        UI.render();
+        // 朋友们的反应后台生成：落地时人在朋友圈就直接重渲染，不在就挂发现页红点
+        eng.momentsReact(idx);
+      };
+    });
+    ph.querySelectorAll('[data-mpf]').forEach(function (el) {
+      el.onclick = function (ev) {
+        ev.stopPropagation();
+        UI.mProfile = el.dataset.mpf;
+        UI.mFrom = el.dataset.mfrom || 'moments';
+        UI.mMenu = -1;
+        UI.mCmt = -1;
+        UI.screen = 'mprofile';
+        UI.render();
+      };
+    });
+    ph.querySelectorAll('[data-mmenu]').forEach(function (el) {
+      el.onclick = function (ev) {
+        ev.stopPropagation();
+        var i = parseInt(el.dataset.mmenu, 10);
+        UI.mMenu = UI.mMenu === i ? -1 : i;
+        UI.mCmt = -1;
+        UI.render();
+        // 点菜单外任意处收起（当前这次点击不生效，所以延迟挂监听）
+        // 注意必须挂在 pdoc()（父页文档）——手机 UI 注入在父页，挂在沙箱自己的
+        // document 上永远收不到点击，「点空白收起」会表现为完全失灵
+        if (UI.mMenu !== -1) {
+          setTimeout(function () {
+            var doc = pdoc();
+            doc.addEventListener('click', function onDocTap(ev2) {
+              if (ev2.target.closest && (ev2.target.closest('.lzw-pmenu') || ev2.target.closest('[data-mmenu]'))) return;
+              doc.removeEventListener('click', onDocTap);
+              UI.mMenu = -1;
+              UI.mCmt = -1;
+              if (UI.screen === 'moments' || UI.screen === 'mprofile') UI.render();
+            });
+          }, 0);
+        }
+      };
+    });
+    ph.querySelectorAll('[data-mlike]').forEach(function (el) {
+      el.onclick = function () { UI.momentsLike(parseInt(el.dataset.mlike, 10)); };
+    });
+    ph.querySelectorAll('[data-mcmt]').forEach(function (el) {
+      el.onclick = function () {
+        UI.mMenu = -1;
+        UI.mCmt = parseInt(el.dataset.mcmt, 10);
+        UI.render();
+        var ci = ph.querySelector('#lzw-cmtin');
+        if (ci) ci.focus();
+      };
+    });
+    ph.querySelectorAll('[data-mdel]').forEach(function (el) {
+      el.onclick = function () {
+        UI.mMenu = -1;
+        UI.mConfirmDel = parseInt(el.dataset.mdel, 10);
+        UI.render();
+      };
+    });
+    ph.querySelectorAll('[data-msend]').forEach(function (el) {
+      el.onclick = function () {
+        var ci = ph.querySelector('#lzw-cmtin');
+        var t = ci ? ci.value.trim() : '';
+        if (!t) return;
+        UI.momentsSendComment(parseInt(el.dataset.msend, 10), t);
+      };
+    });
+  });
+})();
+
+
+// ── src/apps/wechat-forum.js ──
+// ═══════════════════════════════════════════════════════════
+//  apps/wechat-forum.js —— 论坛屏：论坛列表/版面/帖子/盖楼重roll
+//  由 wechat.js（壳）经 window.LZWorld.Apps.wechat / WechatCore 挂接
+// ═══════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  var W = window.LZWorld, UI = W.Apps.wechat, C = W.WechatCore;
+
+
+  UI.bodyForum = function (ctx) { return forumListHtml(); };
+  UI.bodyFboard = function (ctx) { return forumBoardHtml(this.forumName); };
+  UI.bodyFthread = function (ctx) { return forumThreadHtml(this.forumName, this.fThread); };
+
+  // ── 论坛辅助 ──
+  function forumLineKey() {
+    try { return window.LZWorld.Store.line() || ''; } catch (e) { return ''; }
+  }
+  function forumTotal(f) {
+    var n = 0;
+    ((f && f.posts) || []).forEach(function (p) { n += 1 + (p.replies || []).length; });
+    return n;
+  }
+  function forumUnread(name) {
+    var line = forumLineKey();
+    var f = window.LZWorld.Store.forumGet(line, name);
+    if (!f) return 0;
+    var seen = 0;
+    try { seen = (window.LZWorld.Store.meta('forum:' + line + ':' + name) || {}).seen || 0; } catch (e) {}
+    return Math.max(0, forumTotal(f) - seen);
+  }
+  function shortTime(t) {
+    var m = /(\d{4})年(\d{1,2})月(\d{1,2})日\s*([\d:]{4,5})/.exec(String(t || ''));
+    if (!m) return String(t || '').slice(0, 12);
+    return m[2] + '-' + m[3] + ' ' + m[4];
+  }
+  function fmtCreated(ms) {
+    var d = new Date(ms);
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日';
+  }
+  var DICE_A = ['霖州', '霖州城南', '霖州城西', '老城区', '大学城', '天禧城'];
+  var DICE_B = ['生活', '灌水', '花草', '宠物', '吃喝玩乐', '恋爱交友', '二手闲置', '八卦', '学习', '职场', '游戏', '影音', '树洞'];
+  var DICE_C = ['墙', '吧', '论坛', '小组', '社区', '圈', '板'];
+  function diceName() {
+    var p = function (arr) { return arr[Math.floor(Math.random() * arr.length)]; };
+    return p(DICE_A) + p(DICE_B) + p(DICE_C);
+  }
+  // 选线弹窗定位：按可视视口（visualViewport）矩形落位，小屏/移动端/缩放下
+  // 始终跟着玩家实际可见的区域走；flex 负责把卡片居中其中
+  function forumListHtml() {
+    var line = forumLineKey();
+    var names = [];
+    try { names = window.LZWorld.Store.forumNames(line); } catch (e) {}
+    var rows = names.map(function (n) {
+      var f = window.LZWorld.Store.forumGet(line, n) || { posts: [] };
+      var un = forumUnread(n);
+      return "<div class='lzw-conv lzw-frow' data-fopen='" + C.esc(n) + "'>" +
+        "<div class='lzw-fico'>论</div>" +
+        "<div class='lzw-conv-main'><div class='lzw-conv-name'>" + C.esc(n) + (un ? "<span class='lzw-appdot lzw-fdot'>" + (un > 99 ? '99+' : un) + "</span>" : '') + "</div>" +
+        "<div class='lzw-conv-prev'>" + (f.posts || []).length + ' 帖 · 创建于 ' + fmtCreated(f.createdAt || Date.now()) + "</div></div>" +
+        "<span class='lzw-setdel' data-fdel='" + C.esc(n) + "' title='删除论坛'>✕</span></div>";
+    }).join('');
+    return '<div class="lzw-body">' +
+      '<div class="lzw-fnew"><input class="lzw-fin" data-fnew maxlength="16" placeholder="输入论坛名，进入即创建">' +
+      '<button class="lzw-fgo" data-fgo>进入</button><button class="lzw-fdice" data-fdice title="随机取名">🎲</button></div>' +
+      (rows ? rows : "<div class='lzw-fempty'>还没有论坛<br>输入名字创建，或点 🎲 随机来一个</div>") +
+      '</div>';
+  }
+  function forumBoardHtml(name) {
+    var f = window.LZWorld.Store.forumGet(forumLineKey(), name);
+    if (!f || !(f.posts || []).length) {
+      return '<div class="lzw-body"><div class="lzw-fempty">' +
+        (UI.fBusy ? '论坛加载中…' : '这里还没有帖子<br><button class="lzw-fretry" data-fretry="' + C.esc(name) + '">生成一版</button>') +
+        '</div></div>';
+    }
+    var rows = f.posts.map(function (p, i) {
+      return "<div class='lzw-conv lzw-frow' data-fthr='" + i + "'>" +
+        "<div class='lzw-conv-main'><div class='lzw-ftitle'>" + C.esc(p.title) +
+        (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '') + "</div>" +
+        "<div class='lzw-fsub'>" + C.esc(p.author) + ' · ' + (p.time ? C.esc(shortTime(p.time)) : '很久以前') +
+        ' · ' + (p.replies || []).length + ' 回复</div></div></div>';
+    }).join('');
+    return '<div class="lzw-body">' + rows + '</div>';
+  }
+  function forumThreadHtml(name, idx) {
+    var f = window.LZWorld.Store.forumGet(forumLineKey(), name);
+    var p = f && (f.posts || [])[idx];
+    if (!p) return '<div class="lzw-body"><div class="lzw-fempty">帖子不存在</div></div>';
+    var reps = (p.replies || []).map(function (r) {
+      return "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + "</div>";
+    }).join('');
+    return '<div class="lzw-body">' +
+      "<div class='lzw-fmain'><div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
+      "<div class='lzw-fsub'>" + C.esc(p.author) + ' · ' + (p.time ? C.esc(p.time) : '很久以前') + "</div>" +
+      "<div class='lzw-fmain-b'>" + C.esc(p.text) + "</div></div>" +
+      (reps ? "<div class='lzw-freps'>" + reps + "</div>" : '') +
+      '</div>';
+  }
+
+  UI.forumLineKey = forumLineKey;
+
+  Object.assign(UI, {
+    openForum: function (name) {
+      var W = window.LZWorld;
+      name = String(name || '').trim().replace(/\s+/g, ' ').slice(0, 16);
+      if (!name) { try { toastr.info('先输入论坛名', '霖州手机'); } catch (e) {} return; }
+      var line = forumLineKey();
+      // 同名已存在（含空白差异）→ 直接打开；新名字 → 先建空壳（列表留住它），进入后生成内容
+      var stripped = name.replace(/\s+/g, '');
+      for (var fn2 in ((W.Store.forumAll() || {})[line] || {})) {
+        if (String(fn2).replace(/\s+/g, '') === stripped) { name = fn2; break; }
+      }
+      if (!W.Store.forumGet(line, name)) W.Store.forumPut(line, name, { posts: [] });
+      this.forumName = name;
+      this.fThread = -1;
+      this.screen = 'fboard';
+      this.render();
+      var self = this;
+      this.fBusy = true;
+      W.Engine.forumEnsure(line, name).then(function (got) {
+        if (got) try { toastr.info('「' + name + '」已生成一版帖子', '霖州手机', { timeOut: 3000 }); } catch (e) {}
+      }).catch(function (e) {
+        console.warn('[霖州引擎] 论坛生成失败', e);
+        try { toastr.error('论坛生成失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
+      }).finally(function () {
+        self.fBusy = false;
+        self.markForumSeen();
+        if (self.screen === 'fboard' || self.screen === 'fthread') self.render();
+      });
+    },
+    // 打开即已读：把「已看到条目数」记进 meta，回列表后未读清零
+    markForumSeen: function () {
+      var line = forumLineKey();
+      var f = window.LZWorld.Store.forumGet(line, this.forumName);
+      if (!f) return;
+      try { window.LZWorld.Store.setMeta('forum:' + line + ':' + this.forumName, { seen: forumTotal(f) }); } catch (e) {}
+    },
+    // 重roll 这一版：新帖全部作废重生成，考古旧帖（别的线带过来的）保留
+    rerollForum: function () {
+      var W = window.LZWorld;
+      var name = this.forumName;
+      if (!name || this.fBusy) return;
+      var self = this, line = forumLineKey();
+      this.fBusy = true;
+      this.render();
+      W.Engine.forumReroll(line, name).then(function () {
+        try { toastr.info('已重新生成一版帖子', '霖州手机', { timeOut: 2000 }); } catch (e) {}
+      }).catch(function (e) {
+        console.warn('[霖州引擎] 论坛重roll失败', e);
+        try { toastr.error('重roll失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
+      }).finally(function () {
+        self.fBusy = false;
+        self.markForumSeen();
+        if (self.screen === 'fboard' || self.screen === 'fthread') self.render();
+      });
+    },
+
+  });
+
+
+  UI._binders.push(function (ph) {
+    // 论坛：入口 / 输入回车或点进入 / 骰子随机取名 / ✕删除 / 进版 / 进帖 / 空版重试
+    ph.querySelectorAll('[data-app="forum"]').forEach(function (el) {
+      el.onclick = function () { UI.screen = 'forum'; UI.render(); };
+    });
+    ph.querySelectorAll('[data-fgo]').forEach(function (el) {
+      el.onclick = function () {
+        var inp = ph.querySelector('[data-fnew]');
+        UI.openForum(inp ? inp.value : '');
+      };
+    });
+    ph.querySelectorAll('[data-fnew]').forEach(function (el) {
+      el.onkeydown = function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); UI.openForum(el.value); } };
+    });
+    ph.querySelectorAll('[data-fdice]').forEach(function (el) {
+      el.onclick = function () {
+        var inp = ph.querySelector('[data-fnew]');
+        if (inp) { inp.value = diceName(); inp.focus(); }
+      };
+    });
+    ph.querySelectorAll('[data-fdel]').forEach(function (el) {
+      el.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        UI.fConfirmDel = el.dataset.fdel;
+        UI.render();
+      };
+    });
+    ph.querySelectorAll('[data-fopen]').forEach(function (el) {
+      el.onclick = function () { UI.openForum(el.dataset.fopen); };
+    });
+    ph.querySelectorAll('[data-fthr]').forEach(function (el) {
+      el.onclick = function () { UI.fThread = +el.dataset.fthr; UI.screen = 'fthread'; UI.render(); };
+    });
+    ph.querySelectorAll('[data-fretry]').forEach(function (el) {
+      el.onclick = function () { UI.openForum(el.dataset.fretry); };
+    });
+    ph.querySelectorAll('[data-fact="freroll"]').forEach(function (el) {
+      el.onclick = function () { UI.rerollForum(); };
+    });
+  });
+})();
+
+
+// ── src/apps/wechat-call.js ──
+// ═══════════════════════════════════════════════════════════
+//  apps/wechat-call.js —— 通话屏：拨打/字幕/重roll/挂断
+//  由 wechat.js（壳）经 window.LZWorld.Apps.wechat / WechatCore 挂接
+// ═══════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  var W = window.LZWorld, UI = W.Apps.wechat, C = W.WechatCore;
+
+
+  Object.assign(UI, {
     // ── 语音/视频通话 ──
     // 拨打：呼叫页等一次「邀请生成」——AI 以 [拒绝] 开头 = 拒接（理由落聊天记录，
     // 回聊天页）；否则开场白进 transcript 直接接通。通话中锁屏，仅挂断可退。
@@ -3895,7 +4286,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       this.isGroup = false;
       this.render();
     }
-  };
+  });
 
   function fmtDur(sec) {
     sec = Math.max(0, Math.round(sec));
@@ -3907,43 +4298,44 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // 通话屏：背景（模糊头像+厚遮罩）由 render() 铺在整个屏幕上，这里只排内容。
   // 字幕双人对白都上；底部一左一右：麦克风（点开多行输入弹窗）/ 挂断（电话倒扣）。右上角重说。
   // 右键/长按字幕 = 弹确认窗删除该条通话对白（与聊天记录同一套交互）。
+  C.fmtDur = fmtDur;
   function callHtml(call, userName) {
     var W = window.LZWorld;
     var eng = W.Engine;
     var av;
     try {
       var c = eng.findContact(call.name) || { name: call.name, avatar: '' };
-      var imgUrl = c.avatar ? esc(W.Worldbook.imgUrl(c.avatar)) : '';
-      av = imgUrl ? '<img src="' + imgUrl + '">' : esc(call.name.slice(0, 1));
-    } catch (e) { av = esc(call.name.slice(0, 1)); }
+      var imgUrl = c.avatar ? C.esc(W.Worldbook.imgUrl(c.avatar)) : '';
+      av = imgUrl ? '<img src="' + imgUrl + '">' : C.esc(call.name.slice(0, 1));
+    } catch (e) { av = C.esc(call.name.slice(0, 1)); }
     var hist = W.Store.history(eng.callKey(call.name));
     // PiP 自视窗：优先 persona 头像（同聊天页"我"的气泡头像来源），没有则退名首字
     var pip = '';
     if (call.mode === 'video' && call.phase === 'active') {
       var uav = '';
       try { uav = eng.userAvatar(); } catch (e) {}
-      pip = '<div class="lzw-callpip">' + (uav ? '<img src="' + esc(uav) + '" alt="">' : esc(userName.slice(0, 1))) + '</div>';
+      pip = '<div class="lzw-callpip">' + (uav ? '<img src="' + C.esc(uav) + '" alt="">' : C.esc(userName.slice(0, 1))) + '</div>';
     }
     // 视频的画面条目穿插在气泡流中间：说第一句时吃薯片、说第二句时抬头看镜头……
     var subs = hist.map(function (m, i) {
       if (m.who === 'sys') return '';
-      if (m.kind === 'scene') return '<div class="lzw-callscene" data-cdel="' + i + '">' + esc(m.text || '').replace(/\n/g, '<br>') + '</div>';
+      if (m.kind === 'scene') return '<div class="lzw-callscene" data-cdel="' + i + '">' + C.esc(m.text || '').replace(/\n/g, '<br>') + '</div>';
       var isMe = m.who === 'user';
-      return '<div class="lzw-sub' + (isMe ? ' me' : '') + '" data-cdel="' + i + '">' + esc(m.text || '') + '</div>';
+      return '<div class="lzw-sub' + (isMe ? ' me' : '') + '" data-cdel="' + i + '">' + C.esc(m.text || '') + '</div>';
     }).join('');
     var status = call.phase === 'ringing'
       ? '正在呼叫…'
       : (call.busy ? '对方说话中…' : fmtDur(Math.max(0, Math.round((Date.now() - call.startAt) / 1000))));
     var roll = (call.phase === 'active' && !call.busy)
-      ? '<span class="lzw-callroll" data-cact="callreroll" title="重说对方上一段">' + ICON_REROLL + '</span>'
+      ? '<span class="lzw-callroll" data-cact="callreroll" title="重说对方上一段">' + C.ICON_REROLL + '</span>'
       : '';
     var btns;
     if (call.phase === 'ringing') {
-      btns = '<div class="lzw-callmid" style="justify-content:center"><button class="lzw-callbtn hang" data-cact="cancelcall"><i>' + ICON_HANG + '</i><span>取消</span></button></div>';
+      btns = '<div class="lzw-callmid" style="justify-content:center"><button class="lzw-callbtn hang" data-cact="cancelcall"><i>' + C.ICON_HANG + '</i><span>取消</span></button></div>';
     } else {
       btns = '<div class="lzw-callmid">' +
-        '<button class="lzw-callbtn" data-cact="micpop"><i>' + ICON_MIC + '</i><span>说话</span></button>' +
-        '<button class="lzw-callbtn hang" data-cact="hangup"><i>' + ICON_HANG + '</i><span>挂断</span></button>' +
+        '<button class="lzw-callbtn" data-cact="micpop"><i>' + C.ICON_MIC + '</i><span>说话</span></button>' +
+        '<button class="lzw-callbtn hang" data-cact="hangup"><i>' + C.ICON_HANG + '</i><span>挂断</span></button>' +
         '</div>';
     }
     var conf = (UI.callDel != null)
@@ -3955,74 +4347,38 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       : '';
     return '<div class="lzw-callbody">' + roll + pip +
       '<div class="lzw-calltop"><div class="lzw-callava">' + av + '</div>' +
-      '<div class="lzw-callname">' + esc(call.name) + '</div>' +
-      '<div class="lzw-callstatus" id="lzw-callstatus">' + esc(status) + '</div></div>' +
+      '<div class="lzw-callname">' + C.esc(call.name) + '</div>' +
+      '<div class="lzw-callstatus" id="lzw-callstatus">' + C.esc(status) + '</div></div>' +
       '<div class="lzw-callsubs">' + subs + '</div>' +
       (call.phase === 'ringing' ? '<div class="lzw-cwait">等待对方接听…</div>' : '') +
       conf + btns + '</div>' + pop;
   }
 
   // 生成超时保护：API 故障时 generateRaw 可能永远不返回，不兜底会让小飞机永远失灵
-  function withTimeout(promise, ms) {
-    return Promise.race([
-      promise,
-      new Promise(function (resolve, reject) {
-        setTimeout(function () { reject(new Error('生成超时（' + Math.round(ms / 1000) + '秒无响应），请重试')); }, ms);
-      })
-    ]);
-  }
+  C.callHtml = callHtml;
 
-  // 选线列表：五条线，标出「此聊天」的记录线与开关实况——
-  // 记录和开关不一致时（带错线进聊天/中途手动翻过）两种徽标同时出现，一眼可见
-  function linesRowsHtml() {
-    var W = window.LZWorld;
-    var eng = W.Engine;
-    var saved = W.Store.line();
-    var states = eng.entryStates();
-    var cur = eng.line();
-    var norm = function (s) { return String(s || '').replace(/[【】\s]/g, ''); };
-    return eng.LINES.map(function (ln) {
-      var st = null;
-      for (var k in states) {
-        if (norm(k) === norm(ln)) { st = states[k]; break; }
-      }
-      var ros = eng.roster(ln);
-      var hasPhone = !!(ros && ((ros.contacts || []).length || (ros.groups || []).length));
-      var tags = '';
-      if (saved === ln) tags += '<span class="lzw-ltag rec">绑定:本聊天</span>';
-      else if (cur === ln) tags += '<span class="lzw-ltag cur">当前</span>';
-      if (st === null) tags += '<span class="lzw-ltag bad">条目未找到</span>';
-      else tags += '<span class="lzw-ltag ' + (st ? 'on' : 'off') + '">世界书:' + (st ? '开' : '关') + '</span>';
-      if (!hasPhone) tags += '<span class="lzw-ltag bad">无手机</span>';
-      return '<div class="lzw-conv lzw-linerow' + (st === null ? ' lzw-linedis' : '') + '" data-line="' + esc(ln) + '">' +
-        '<div class="lzw-ava lzw-lineava">' + (hasPhone ? '📱' : '🏮') + '</div>' +
-        '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(ln) + '</div>' +
-        '<div class="lzw-ltags">' + tags + '</div></div></div>';
-    }).join('');
-  }
 
-  // 朋友圈顶栏渐白：封面底边滚过顶栏区域的过程中，状态栏+应用栏从透明渐变到白底，
-  // 到位时补一条发丝分割线——真实微信同款。滚动到下面时 < / 相机 不再悬空
-  function syncMomentBar(ph) {
-    var feed = ph.querySelector('.lzw-mfeed');
-    var scr = ph.querySelector('.lzw-screen');
-    if (!feed || !scr) return;
-    var sbar = scr.querySelector('.lzw-sbar');
-    var bar = scr.querySelector('.lzw-appbar-ovl');
-    var cover = feed.querySelector('.lzw-mcover');
-    if (!bar || !cover) return;
-    var onScroll = function () {
-      var p = Math.max(0, Math.min(1, feed.scrollTop / Math.max(1, cover.offsetHeight - 89)));
-      var bg = 'rgba(255,255,255,' + (p * 0.97).toFixed(3) + ')';
-      if (sbar) sbar.style.background = bg;
-      bar.style.background = bg;
-      bar.style.borderBottom = p > 0.95 ? '1px solid rgba(0,0,0,.09)' : 'none';
-    };
-    feed.addEventListener('scroll', onScroll);
-    onScroll();
-  }
+  UI._binders.push(function (ph) {
+    // 通话：拨打入口 + 通话屏按钮组
+    ph.querySelectorAll('[data-act="dial"]').forEach(function (el) {
+      el.onclick = function () { UI.dial(el.dataset.dial); };
+    });
+  });
+})();
 
-  // 设置屏：生成 API（跟随正文/只换模型/自定义+可存预设）+ 提示词携带量。全部即时保存。
+
+// ── src/apps/wechat-settings.js ──
+// ═══════════════════════════════════════════════════════════
+//  apps/wechat-settings.js —— 设置屏：四模式/数值/自定义API/预设管理
+//  由 wechat.js（壳）经 window.LZWorld.Apps.wechat / WechatCore 挂接
+// ═══════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  var W = window.LZWorld, UI = W.Apps.wechat, C = W.WechatCore;
+
+
+  UI.bodySettings = function (ctx) { return settingsHtml(); };
+
   var SET_NRANGES = { plotFloors: [1, 20], plotCap: [100, 2000], histPriv: [10, 100], histGroup: [10, 100], crossMax: [1, 6], crossLines: [5, 50], injRecent: [1, 30], injMention: [1, 20], injMax: [1, 6], injRounds: [10, 100] };
   function settingsHtml() {
     var W = window.LZWorld;
@@ -4038,12 +4394,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var rows = modes.map(function (m) {
       return '<div class="lzw-setrow' + (mode === m[0] ? ' on' : '') + '" data-amode="' + m[0] + '">' +
         '<div class="lzw-setmain"><div class="lzw-setname">' + m[1] + '</div><div class="lzw-setdesc">' + m[2] + '</div></div>' +
-        '<span class="lzw-setck">' + ICON_TOK + '</span></div>';
+        '<span class="lzw-setck">' + C.ICON_TOK + '</span></div>';
     }).join('');
     var detail = '';
     if (mode === 'model') {
       detail = '<div class="lzw-setcol"><span class="lzw-setlbl">模型名</span><div class="lzw-setrow2">' +
-        '<input class="lzw-settxt" data-atext="model" value="' + esc(api.model || '') + '" placeholder="如 gemini-3.1-flash"></div></div>';
+        '<input class="lzw-settxt" data-atext="model" value="' + C.esc(api.model || '') + '" placeholder="如 gemini-3.1-flash"></div></div>';
     } else if (mode === 'custom') {
       var key = '';
       try { key = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
@@ -4055,11 +4411,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '<div class="lzw-setcol"><span class="lzw-setlbl">API 源（决定请求格式）</span><div class="lzw-setrow2">' +
         '<select class="lzw-settxt" data-atext="source">' + srcSel + '</select></div></div>' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">API 地址（OpenAI 中转 或 谷歌反代）</span><div class="lzw-setrow2">' +
-        '<input class="lzw-settxt" data-atext="apiurl" value="' + esc(api.apiurl || '') + '" placeholder="https://…"></div></div>' +
+        '<input class="lzw-settxt" data-atext="apiurl" value="' + C.esc(api.apiurl || '') + '" placeholder="https://…"></div></div>' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">密钥 / 反代密码（仅本机保存）</span><div class="lzw-setrow2">' +
-        '<input class="lzw-settxt" data-akey="1" value="' + esc(key) + '" placeholder="sk-…"></div></div>' +
+        '<input class="lzw-settxt" data-akey="1" value="' + C.esc(key) + '" placeholder="sk-…"></div></div>' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">模型（先填地址与密钥）</span><div class="lzw-setrow2">' +
-        '<input class="lzw-settxt" data-atext="cmodel" value="' + esc(api.cmodel || '') + '" placeholder="模型名">' +
+        '<input class="lzw-settxt" data-atext="cmodel" value="' + C.esc(api.cmodel || '') + '" placeholder="模型名">' +
         '<button class="lzw-setbtn" data-afetch="models">拉取模型</button></div></div>' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">预设名（把上面整套存下来）</span><div class="lzw-setrow2">' +
         '<input class="lzw-settxt" data-apname="1" placeholder="如：谷歌反代">' +
@@ -4068,10 +4424,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var savedRows = Object.keys(saved).map(function (nm) {
         var p = saved[nm] || {};
         var srcName = p.source === 'makersuite' ? '谷歌反代' : 'OpenAI';
-        return '<div class="lzw-setrow" data-aapply="' + esc(nm) + '">' +
-          '<div class="lzw-setmain"><div class="lzw-setname">' + esc(nm) + '</div>' +
-          '<div class="lzw-setdesc">' + srcName + (p.apiurl ? ' · ' + esc(p.apiurl) : '') + (p.cmodel ? ' · ' + esc(p.cmodel) : '') + '</div></div>' +
-          '<span class="lzw-setdel" data-apdel="' + esc(nm) + '">✕</span></div>';
+        return '<div class="lzw-setrow" data-aapply="' + C.esc(nm) + '">' +
+          '<div class="lzw-setmain"><div class="lzw-setname">' + C.esc(nm) + '</div>' +
+          '<div class="lzw-setdesc">' + srcName + (p.apiurl ? ' · ' + C.esc(p.apiurl) : '') + (p.cmodel ? ' · ' + C.esc(p.cmodel) : '') + '</div></div>' +
+          '<span class="lzw-setdel" data-apdel="' + C.esc(nm) + '">✕</span></div>';
       }).join('');
       if (savedRows) {
         detail += '<div class="lzw-setcol"><span class="lzw-setlbl">已存预设（点按即套用；点 ✕ 需确认后删除，密钥随预设各存一份在本机）</span></div>' + savedRows;
@@ -4080,7 +4436,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var pick = '';
     if (UI._setpick && UI._setpick.items.length) {
       pick = '<div class="lzw-setpick">' + UI._setpick.items.map(function (it) {
-        return '<span data-pick="' + esc(it) + '">' + esc(it) + '</span>';
+        return '<span data-pick="' + C.esc(it) + '">' + C.esc(it) + '</span>';
       }).join('') + '</div>';
     }
     function numrow(key, name) {
@@ -4105,265 +4461,105 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '</div></div>';
   }
 
-  function appbarHtml(screen, disp, act) {
-    if (UI.call) return ''; // 通话界面：无顶栏（名字在通话屏里）
-    if (screen === 'home') return ''; // 真手机主屏没有标题栏
-    if (screen === 'settings') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">设置</span><span class="lzw-appbar-r"></span></div>';
-    if (screen === 'forum') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">论坛</span><span class="lzw-appbar-r"></span></div>';
-    if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？重新生成（考古旧帖保留）">' + ICON_REROLL + '</span>') + '</span></div>';
-    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"></span></div>';
-    if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
-    if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
-    if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
-    if (screen === 'mpost') return '<div class="lzw-appbar"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r lzw-appbar-rw"><button class="lzw-postsend" data-mpost-send="1">发表</button></span></div>';
-    if (screen === 'cdetail') return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
-    return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
-      (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
-      '</span></div>';
-  }
 
-  // 朋友圈动态卡片。
-  // feedMode=true  动态流：头像(可进主页) + 名字 + 文字 + 配图 + 时间label + ⋯菜单(赞/评论)
-  // feedMode=false 个人主页时间轴：不要头像/名字，头像位换成 今天/昨天/M月D日，meta 不再重复时间
-  // idx = 动态在 Store 里的下标（点赞/评论按下标回写）
-  function momentsPostHtml(e, idx, userName, eng, W, feedMode, curDay) {
-    var c = {};
-    try { c = eng.findContact(e.who) || {}; } catch (e0) {}
-    var isMine = e.who === userName;
-    var mpfAttr = isMine ? '' : ' data-mpf="' + esc(e.who) + '"';
-    var head;
-    if (feedMode) {
-      // 机主自己的条目：头像走机主头像，名字/头像都不挂进主页的跳转
-      var avaHtml;
-      if (isMine) {
-        var myAv = '';
-        try { myAv = eng.userAvatar(); } catch (e1) {}
-        avaHtml = myAv
-          ? '<img class="lzw-post-ava" src="' + esc(myAv) + '" alt="">'
-          : '<div class="lzw-post-ava">' + esc(e.who.slice(0, 1)) + '</div>';
-      } else {
-        avaHtml = c.avatar
-          ? '<img class="lzw-post-ava" src="' + esc(W.Worldbook.imgUrl(c.avatar)) + '"' + mpfAttr + ' alt="">'
-          : '<div class="lzw-post-ava"' + mpfAttr + '>' + esc(e.who.slice(0, 1)) + '</div>';
-      }
-      head = avaHtml +
-        '<div class="lzw-post-main"><div class="lzw-post-name"' + mpfAttr + '>' + esc(e.who) + '</div>';
-    } else {
-      // 主页时间戳：与 feed 同源自 pt（动态自身时间），两边永远不会再打架
-      head = '<div class="lzw-post-stamp">' + stampParts(e.pt, e.label, curDay) + '</div><div class="lzw-post-main">';
+
+  UI._binders.push(function (ph) {
+    if (UI.screen === 'settings') {
+      var saveApi = function (patch) {
+        var api0 = {};
+        try { api0 = window.LZWorld.Store.settings().api || {}; } catch (e) {}
+        for (var k in patch) api0[k] = patch[k];
+        window.LZWorld.Store.setSettings({ api: api0 });
+      };
+      ph.querySelectorAll('[data-amode]').forEach(function (el) {
+        el.onclick = function () {
+          saveApi({ mode: el.dataset.amode });
+          UI._setpick = null;
+          UI.render();
+        };
+      });
+      ph.querySelectorAll('[data-num]').forEach(function (el) {
+        el.onchange = function () {
+          var lo = +el.dataset.min, hi = +el.dataset.max;
+          var v = Math.round(Number(el.value));
+          if (!isFinite(v)) v = window.LZWorld.Store.DEFAULTS[el.dataset.num];
+          el.value = Math.min(hi, Math.max(lo, v));
+          var patch = {}; patch[el.dataset.num] = +el.value;
+          window.LZWorld.Store.setSettings(patch);
+        };
+      });
+      ph.querySelectorAll('[data-atext]').forEach(function (el) {
+        el.onchange = function () { var patch = {}; patch[el.dataset.atext] = el.value; saveApi(patch); };
+      });
+      ph.querySelectorAll('[data-akey]').forEach(function (el) {
+        el.onchange = function () {
+          try { localStorage.setItem('lzworld_phone_apikey', el.value); } catch (e) {}
+        };
+      });
+      ph.querySelectorAll('[data-afetch]').forEach(function (el) {
+        el.onclick = async function () {
+          try {
+            if (el.dataset.afetch === 'savepreset') {
+              var nmEl = ph.querySelector('[data-apname]');
+              var nm = ((nmEl && nmEl.value) || '').trim();
+              if (!nm) {
+                UI._setpick = { field: null, items: ['（先输入预设名再保存）'] };
+              } else {
+                var read = function (sel) { var x = ph.querySelector(sel); return x ? x.value.trim() : ''; };
+                var preset = { source: read('[data-atext="source"]') || 'openai', apiurl: read('[data-atext="apiurl"]'), cmodel: read('[data-atext="cmodel"]') };
+                var api1 = {};
+                try { api1 = window.LZWorld.Store.settings().api || {}; } catch (e) {}
+                var presets0 = api1.presets || {};
+                presets0[nm] = preset;
+                saveApi({ presets: presets0, source: preset.source, apiurl: preset.apiurl, cmodel: preset.cmodel });
+                var kyEl = ph.querySelector('[data-akey]');
+                try { localStorage.setItem('lzworld_phone_apikey::' + nm, kyEl ? kyEl.value : ''); } catch (e) {}
+                UI._setpick = null;
+              }
+            } else {
+              var api2 = {};
+              try { api2 = window.LZWorld.Store.settings().api || {}; } catch (e) {}
+              var key1 = '';
+              try { key1 = localStorage.getItem('lzworld_phone_apikey') || ''; } catch (e) {}
+              var list = await getModelList({ apiurl: api2.apiurl || '', key: key1 });
+              UI._setpick = { field: api2.mode === 'custom' ? 'cmodel' : 'model', items: list || [] };
+            }
+          } catch (e) {
+            UI._setpick = { field: null, items: ['（操作失败：' + String(e && e.message || e) + '）'] };
+          }
+          UI.render();
+        };
+      });
+      ph.querySelectorAll('[data-pick]').forEach(function (el) {
+        el.onclick = function () {
+          var patch = {};
+          patch[(UI._setpick && UI._setpick.field) || 'model'] = el.dataset.pick;
+          saveApi(patch);
+          UI._setpick = null;
+          UI.render();
+        };
+      });
+      ph.querySelectorAll('[data-aapply]').forEach(function (el) {
+        el.onclick = function () {
+          var nm = el.dataset.aapply;
+          var p = {};
+          try { p = ((window.LZWorld.Store.settings().api || {}).presets || {})[nm] || {}; } catch (e) {}
+          saveApi({ source: p.source || 'openai', apiurl: p.apiurl || '', cmodel: p.cmodel || '' });
+          var ky = '';
+          try { ky = localStorage.getItem('lzworld_phone_apikey::' + nm) || ''; } catch (e) {}
+          try { localStorage.setItem('lzworld_phone_apikey', ky); } catch (e) {}
+          UI.render();
+        };
+      });
+      ph.querySelectorAll('[data-apdel]').forEach(function (el) {
+        el.onclick = function (ev) {
+          if (ev && ev.stopPropagation) ev.stopPropagation();
+          UI.pConfirmDel = el.dataset.apdel;
+          UI.render();
+        };
+      });
     }
-    var liked = (e.likes || []).indexOf(userName) !== -1;
-    var menu = UI.mMenu === idx
-      ? '<div class="lzw-pmenu">' + (isMine ? '' : '<button data-mlike="' + idx + '">' + (liked ? ICON_HEART_F + ' 取消' : ICON_HEART + ' 赞') + '</button>') + '<button data-mcmt="' + idx + '">' + ICON_BUBBLE + ' 评论</button>' + (isMine ? '<button data-mdel="' + idx + '">删除</button>' : '') + '</div>'
-      : '';    var cmtbar = UI.mCmt === idx
-      ? '<div class="lzw-cmtbar"><input id="lzw-cmtin" maxlength="60" placeholder="说点什么…"><button data-msend="' + idx + '">发送</button></div>'
-      : '';
-    var likeRow = (e.likes && e.likes.length)
-      ? '<div class="lzw-plike">❤ ' + e.likes.map(esc).join('、') + '</div>'
-      : '';
-    var cmtRows = (e.comments || []).map(function (cm) {
-      return '<div><span class="n">' + esc(cm.who) + '</span>' +
-        (cm.replyTo ? ' 回复 <span class="n">' + esc(cm.replyTo) + '</span>' : '') +
-        '<span class="cs">:</span><span class="c">' + esc(cm.text) + '</span></div>';
-    }).join('');
-    var cmtBlock = cmtRows ? '<div class="lzw-pcmts">' + cmtRows + '</div>' : '';
-    return '<div class="lzw-post">' + head +
-      '<div class="lzw-post-text">' + esc(e.text) + '</div>' +
-      (e.img ? '<div class="lzw-post-img">' + esc(e.img) + '</div>' : '') +
-      '<div class="lzw-post-meta">' + (feedMode ? '<span>' + esc(momentLabel(e.pt, e.label, curDay)) + '</span>' : '') + '<span class="sp"></span>' +
-      menu +
-      '<button class="lzw-post-more" data-mmenu="' + idx + '">⋯</button></div>' +
-      likeRow + cmtBlock + cmtbar +
-      '</div></div>';
-  }
-
-  // [+] 面板内容
-  function panelHtml(panel) {
-    if (!panel) return '<div class="lzw-panel" id="lzw-panel"></div>';
-    if (panel === 'sticker') {
-      var stickers = window.LZWorld.Engine.stickers();
-      var names = Object.keys(stickers);
-      var grid = names.length
-        ? names.map(function (n) {
-            return '<div class="lzw-stickcell" data-stick="' + esc(n) + '"><div class="imgw">' +
-              '<img src="' + esc(window.LZWorld.Worldbook.imgUrl(stickers[n])) + '" loading="lazy"></div></div>';
-          }).join('')
-        : '<div class="lzw-sysrow">世界书中未找到「霖州手机::表情包」条目</div>';
-      return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-stickgrid">' + grid + '</div></div>';
-    }
-    if (panel === 'transferto') {
-      // 群聊转账先选接收方（机主自己除外）
-      var Wt = window.LZWorld, engT = Wt.Engine, secT = engT.section() || {};
-      var myNameT = engT.userName();
-      var gT = null;
-      (secT.groups || []).forEach(function (g) { if ('group:' + g.name === UI.chatKey) gT = g; });
-      var cells = ((gT && gT.members) || []).filter(function (n) { return n && n !== myNameT; }).map(function (n) {
-        var c = engT.findContact(n) || {};
-        var avT = c.avatar
-          ? '<img class="lzw-ava" src="' + esc(Wt.Worldbook.imgUrl(c.avatar)) + '">'
-          : '<div class="lzw-ava">' + esc(n.slice(0, 1)) + '</div>';
-        return '<div class="lzw-conv" data-ttarget="' + esc(n) + '">' + avT + '<div class="lzw-conv-main"><div class="lzw-conv-name">' + esc(n) + '</div></div></div>';
-      }).join('');
-      return '<div class="lzw-panel lzw-open lzw-pto" id="lzw-panel"><div class="lzw-ttohd">转账给群里的谁？</div><div class="lzw-ttolist">' +
-        (cells || '<div class="lzw-sysrow">群成员名单空空如也</div>') + '</div>' +
-        '<div class="lzw-ttofoot"><button class="lzw-modecancel" data-act="modecancel">取消</button></div></div>';
-    }
-    if (panel === 'transfer') {
-      var toWhom = UI.isGroup ? UI.tTarget : UI.chatKey;
-      var swapBtn = UI.isGroup ? '<button class="lzw-modecancel" data-cact="tswap">更换</button>' : '';
-      return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-modeform">' +
-        '<div class="lzw-tto-line">转账给 <b>' + esc(toWhom || '…') + '</b></div>' +
-        '<input class="lzw-modeinput" id="lzw-tamt" maxlength="8" inputmode="decimal" placeholder="金额，1 ~ 99999">' +
-        '<input class="lzw-modeinput" id="lzw-tnote" maxlength="30" placeholder="备注（可选），如：奶茶钱">' +
-        '<div class="lzw-modebtns"><button class="lzw-modeok" data-tsend="1">确定</button>' + swapBtn +
-        '<button class="lzw-modecancel" data-act="modecancel">取消</button></div></div></div>';
-    }
-    if (panel === 'image' || panel === 'voice' || panel === 'location') {
-      var hint = panel === 'image' ? '描述这张图片的画面，如：一张拍糊的试卷' : panel === 'voice' ? '这句语音说了什么，如：到了吱一声' : '地点名称，如：霖州一中北门';
-      return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-modeform">' +
-        '<textarea class="lzw-modeinput" id="lzw-modeinput" rows="2" maxlength="200" placeholder="' + hint + '"></textarea>' +
-        '<div class="lzw-modebtns"><button class="lzw-modeok" data-modesend="' + panel + '">确定</button>' +
-        '<button class="lzw-modecancel" data-act="modecancel">取消</button></div></div></div>';
-    }
-    // actions（戳一戳只能私聊用：群里没有指定对象）
-    return '<div class="lzw-panel lzw-open" id="lzw-panel"><div class="lzw-actions">' +
-      '<div class="lzw-act" data-mode="sticker"><div class="lzw-act-ico">' + ICO.sticker + '</div><span>表情</span></div>' +
-      '<div class="lzw-act" data-mode="image"><div class="lzw-act-ico">' + ICO.image + '</div><span>图片</span></div>' +
-      '<div class="lzw-act" data-mode="voice"><div class="lzw-act-ico">' + ICO.voice + '</div><span>语音</span></div>' +
-      (UI.isGroup ? '' : '<div class="lzw-act" data-mode="poke"><div class="lzw-act-ico">' + ICO.poke + '</div><span>戳一戳</span></div>') +
-      '<div class="lzw-act" data-mode="location"><div class="lzw-act-ico">' + ICO.location + '</div><span>定位</span></div>' +
-      '<div class="lzw-act" data-mode="transfer"><div class="lzw-act-ico">' + ICO.transfer + '</div><span>转账</span></div>' +
-      (UI.isGroup ? '' :
-        '<div class="lzw-act" data-act="dial" data-dial="audio"><div class="lzw-act-ico">' + ICON_CALL + '</div><span>语音通话</span></div>' +
-        '<div class="lzw-act" data-act="dial" data-dial="video"><div class="lzw-act-ico">' + ICON_VCALL + '</div><span>视频通话</span></div>') +
-      '</div></div>';
-  }
-
-  // 用 visualViewport 计算位置：F12/移动仿真/页面缩放下依然落在可视区右下角
-  var savedPos = null; // 拖动过的位置，关闭再唤起仍记得（刷新重置）
-
-  // ── 论坛辅助 ──
-  function forumLineKey() {
-    try { return window.LZWorld.Store.line() || ''; } catch (e) { return ''; }
-  }
-  function forumTotal(f) {
-    var n = 0;
-    ((f && f.posts) || []).forEach(function (p) { n += 1 + (p.replies || []).length; });
-    return n;
-  }
-  function forumUnread(name) {
-    var line = forumLineKey();
-    var f = window.LZWorld.Store.forumGet(line, name);
-    if (!f) return 0;
-    var seen = 0;
-    try { seen = (window.LZWorld.Store.meta('forum:' + line + ':' + name) || {}).seen || 0; } catch (e) {}
-    return Math.max(0, forumTotal(f) - seen);
-  }
-  function shortTime(t) {
-    var m = /(\d{4})年(\d{1,2})月(\d{1,2})日\s*([\d:]{4,5})/.exec(String(t || ''));
-    if (!m) return String(t || '').slice(0, 12);
-    return m[2] + '-' + m[3] + ' ' + m[4];
-  }
-  function fmtCreated(ms) {
-    var d = new Date(ms);
-    return (d.getMonth() + 1) + '月' + d.getDate() + '日';
-  }
-  var DICE_A = ['霖州', '霖州城南', '霖州城西', '老城区', '大学城', '天禧城'];
-  var DICE_B = ['生活', '灌水', '花草', '宠物', '吃喝玩乐', '恋爱交友', '二手闲置', '八卦', '学习', '职场', '游戏', '影音', '树洞'];
-  var DICE_C = ['墙', '吧', '论坛', '小组', '社区', '圈', '板'];
-  function diceName() {
-    var p = function (arr) { return arr[Math.floor(Math.random() * arr.length)]; };
-    return p(DICE_A) + p(DICE_B) + p(DICE_C);
-  }
-  // 选线弹窗定位：按可视视口（visualViewport）矩形落位，小屏/移动端/缩放下
-  // 始终跟着玩家实际可见的区域走；flex 负责把卡片居中其中
-  function forumListHtml() {
-    var line = forumLineKey();
-    var names = [];
-    try { names = window.LZWorld.Store.forumNames(line); } catch (e) {}
-    var rows = names.map(function (n) {
-      var f = window.LZWorld.Store.forumGet(line, n) || { posts: [] };
-      var un = forumUnread(n);
-      return "<div class='lzw-conv lzw-frow' data-fopen='" + esc(n) + "'>" +
-        "<div class='lzw-fico'>论</div>" +
-        "<div class='lzw-conv-main'><div class='lzw-conv-name'>" + esc(n) + (un ? "<span class='lzw-appdot lzw-fdot'>" + (un > 99 ? '99+' : un) + "</span>" : '') + "</div>" +
-        "<div class='lzw-conv-prev'>" + (f.posts || []).length + ' 帖 · 创建于 ' + fmtCreated(f.createdAt || Date.now()) + "</div></div>" +
-        "<span class='lzw-setdel' data-fdel='" + esc(n) + "' title='删除论坛'>✕</span></div>";
-    }).join('');
-    return '<div class="lzw-body">' +
-      '<div class="lzw-fnew"><input class="lzw-fin" data-fnew maxlength="16" placeholder="输入论坛名，进入即创建">' +
-      '<button class="lzw-fgo" data-fgo>进入</button><button class="lzw-fdice" data-fdice title="随机取名">🎲</button></div>' +
-      (rows ? rows : "<div class='lzw-fempty'>还没有论坛<br>输入名字创建，或点 🎲 随机来一个</div>") +
-      '</div>';
-  }
-  function forumBoardHtml(name) {
-    var f = window.LZWorld.Store.forumGet(forumLineKey(), name);
-    if (!f || !(f.posts || []).length) {
-      return '<div class="lzw-body"><div class="lzw-fempty">' +
-        (UI.fBusy ? '论坛加载中…' : '这里还没有帖子<br><button class="lzw-fretry" data-fretry="' + esc(name) + '">生成一版</button>') +
-        '</div></div>';
-    }
-    var rows = f.posts.map(function (p, i) {
-      return "<div class='lzw-conv lzw-frow' data-fthr='" + i + "'>" +
-        "<div class='lzw-conv-main'><div class='lzw-ftitle'>" + esc(p.title) +
-        (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '') + "</div>" +
-        "<div class='lzw-fsub'>" + esc(p.author) + ' · ' + (p.time ? esc(shortTime(p.time)) : '很久以前') +
-        ' · ' + (p.replies || []).length + ' 回复</div></div></div>';
-    }).join('');
-    return '<div class="lzw-body">' + rows + '</div>';
-  }
-  function forumThreadHtml(name, idx) {
-    var f = window.LZWorld.Store.forumGet(forumLineKey(), name);
-    var p = f && (f.posts || [])[idx];
-    if (!p) return '<div class="lzw-body"><div class="lzw-fempty">帖子不存在</div></div>';
-    var reps = (p.replies || []).map(function (r) {
-      return "<div class='lzw-frep'><span class='lzw-frep-a'>" + esc(r.author) + "</span>：" + esc(r.text) + "</div>";
-    }).join('');
-    return '<div class="lzw-body">' +
-      "<div class='lzw-fmain'><div class='lzw-ftitle lzw-fmain-t'>" + esc(p.title) + "</div>" +
-      "<div class='lzw-fsub'>" + esc(p.author) + ' · ' + (p.time ? esc(p.time) : '很久以前') + "</div>" +
-      "<div class='lzw-fmain-b'>" + esc(p.text) + "</div></div>" +
-      (reps ? "<div class='lzw-freps'>" + reps + "</div>" : '') +
-      '</div>';
-  }
-
-  function placeLinesPop() {
-    var pop = pdoc().getElementById('lzw-linespop');
-    if (!pop) return;
-    var vp = pwin().visualViewport;
-    var left = vp ? vp.offsetLeft : 0;
-    var top = vp ? vp.offsetTop : 0;
-    var w2 = vp ? vp.width : pwin().innerWidth;
-    var h2 = vp ? vp.height : pwin().innerHeight;
-    pop.style.left = left + 'px';
-    pop.style.top = top + 'px';
-    pop.style.width = w2 + 'px';
-    pop.style.height = h2 + 'px';
-    pop.style.right = 'auto';
-    pop.style.bottom = 'auto';
-  }
-
-  function placePhone() {
-    var ph = pdoc().getElementById(ID.phone);
-    if (!ph || !ph.classList.contains('lzw-open')) return;
-    var vp = pwin().visualViewport;
-    var vw = vp ? vp.width : pwin().innerWidth;
-    var vh = vp ? vp.height : pwin().innerHeight;
-    var w = Math.max(280, Math.min(348, vw - 16));
-    var h = Math.max(420, Math.min(680, vh - 20));
-    ph.style.width = w + 'px';
-    ph.style.height = h + 'px';
-    var left = savedPos ? savedPos.left : (vp ? vp.offsetLeft : 0) + vw - w - 8;
-    var top = savedPos ? savedPos.top : (vp ? vp.offsetTop : 0) + vh - h - 8;
-    ph.style.left = Math.max(4, Math.min(left, vw - w - 4)) + 'px';
-    ph.style.top = Math.max(4, Math.min(top, vh - h - 4)) + 'px';
-    ph.style.right = 'auto';
-    ph.style.bottom = 'auto';
-  }
-
-  window.LZWorld = window.LZWorld || {};
-  window.LZWorld.Apps = window.LZWorld.Apps || {};
-  window.LZWorld.Apps.wechat = UI;
+  });
 })();
 
 

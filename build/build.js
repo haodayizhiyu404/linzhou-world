@@ -11,6 +11,13 @@ const ORDER = [
   'src/prompt.js',
   'src/floor.js',
   'src/apps/wechat.js',
+  'src/apps/wechat-home.js',
+  'src/apps/wechat-list.js',
+  'src/apps/wechat-chat.js',
+  'src/apps/wechat-moments.js',
+  'src/apps/wechat-forum.js',
+  'src/apps/wechat-call.js',
+  'src/apps/wechat-settings.js',
   'src/engine.js',
 ];
 
