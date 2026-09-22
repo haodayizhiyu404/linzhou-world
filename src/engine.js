@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-23a';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-23b';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -191,6 +191,27 @@
           : evo;
       }
       return this.deref(base);
+    },
+
+    // 论坛用人物档案：profileFor（线特异+演化层）打底，剥 /* */ 注释、[MAIN·] 段标记、
+    // 收空白，再按句界截到 ~160 字。与私聊/朋友圈/备忘录同一取法，只是多一层论坛专属的清洗。
+    forumPeopleProfiles: function (pool) {
+      var out = {}, self = this;
+      (pool || []).forEach(function (n) {
+        if (!n) return;
+        var p = String(self.profileFor(n) || '')
+          .replace(/\/\*[\s\S]*?\*\//g, ' ')
+          .replace(/^\s*\[[^\]]*MAIN[^\]]*\]\s*/i, '')
+          .replace(/\s+/g, ' ').trim();
+        if (p.length > 160) {
+          var cut = p.lastIndexOf('。', 160);
+          if (cut < 80) cut = p.lastIndexOf('，', 160);
+          if (cut < 80) cut = 160;
+          p = p.slice(0, cut + 1) + '……';
+        }
+        if (p) out[n] = p;
+      });
+      return out;
     },
 
     // ── 跨会话上下文（当天时效）──
@@ -958,7 +979,7 @@
       (sec.groups || []).forEach(function (g) {
         (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
       });
-      var req = W.Prompt.forumList(name, line, kept || [], pool, this.profiles(), snap, this.userBlock(), this.charDesc());
+      var req = W.Prompt.forumList(name, line, kept || [], pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc());
       var raw = await this.gen(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var fresh = this.parseForumList(text);
@@ -994,7 +1015,7 @@
       (sec.groups || []).forEach(function (g) {
         (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
       });
-      var req = W.Prompt.forumThread(p, name, pool, this.profiles(), snap, this.userBlock(), this.charDesc());
+      var req = W.Prompt.forumThread(p, name, pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc());
       var raw = await this.gen(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var th = this.parseForumThread(text);

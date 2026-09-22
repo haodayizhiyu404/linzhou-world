@@ -779,6 +779,27 @@ ctx.getWorldbook = async () => [
   eq('论坛·帖子契约·楼中楼', ftTxt.indexOf('[回复:网名:@被回复者:内容]') !== -1, true);
   eq('论坛·帖子契约·最新', ftTxt.indexOf('[评论:网名:内容]') !== -1, true);
   eq('论坛·预览一致约束', ftTxt.indexOf('如题今天出分') !== -1, true);
+  // 思维链剔除补漏：未闭合 think（部分前端不补闭标签，开口之后全文皆思考）+ 带属性 cot，内容一律不进提示词
+  global.__msgs = [
+    { role: 'user', message: '今晚老地方见' },
+    { role: 'assistant', message: '好，我准时到。\n<think>让我规划下路线——走南门更快' },
+    { role: 'assistant', message: '<cot engine="reasoning">权重计算过程blah</cot>周言把手机扣在桌上。' },
+  ];
+  let capPrompt = null;
+  ctx.generateRaw = async (req) => { capPrompt = req; return '[帖:夜行人:测试帖:测试预览:3:1]'; };
+  await LW.Engine.forumEnsure('成人时代-破镜重圆', '思维链剔除墙');
+  const capTxt = capPrompt.ordered_prompts[0].content;
+  eq('思维链·未闭合think剥净', capTxt.indexOf('走南门更快') === -1, true);
+  eq('思维链·未闭合think正文保留', capTxt.indexOf('我准时到') !== -1, true);
+  eq('思维链·带属性cot剥净', capTxt.indexOf('权重计算') === -1, true);
+  eq('思维链·cot后正文保留', capTxt.indexOf('把手机扣在桌上') !== -1, true);
+  // 论坛人物档案清洗：剥 /* */ 注释与 [MAIN·] 段标记（profileFor 打底，与私聊/朋友圈同一取法）
+  LW.Engine.profiles()['周言'] = '/* 这是作者注释不该进提示词 */\n[MAIN·周言]\n性别: 男。\n身份: 班长，外冷内热。';
+  const fpp = LW.Engine.forumPeopleProfiles(['周言', '不存在的人']);
+  eq('论坛·档案剥注释', fpp['周言'].indexOf('作者注释') === -1 && fpp['周言'].indexOf('/*') === -1, true);
+  eq('论坛·档案剥MAIN前缀', fpp['周言'].indexOf('[MAIN') === -1, true);
+  eq('论坛·档案正文保留', fpp['周言'].indexOf('班长') !== -1, true);
+  eq('论坛·空档案不出键', '不存在的人' in fpp, false);
   // 懒加载：点进才生成正文+评论，只生成一次
   ctx.generateRaw = async (req) => '正文来了。\n[热评:网友:100:沙发]\n[评论:水友:顶顶]';
   eq('论坛·帖子生成', await LW.Engine.forumThreadGenerate('成人时代-破镜重圆', '霖州一中树洞墙', fAdult.posts[1].id), true);

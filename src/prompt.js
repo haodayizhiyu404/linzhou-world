@@ -54,9 +54,11 @@
           // 旧版写进主楼层的手机记录块一并剔除（手机历史在「聊天记录」节单独给出）
           .replace(/\[📱[\s\S]*?\/\📱\]\s*/g, '')
           // 思维链：think 与 cot 两种标签都剥（后者见于部分前端/预设的推理输出）
-          .replace(/<think>[\s\S]*?<\/think>/gi, '')
-          .replace(/<thinking>[\s\S]*?<\/thinking>/gi, '')
-          .replace(/<cot>[\s\S]*?<\/cot>/gi, '')
+          .replace(/<think[^>]*>[\s\S]*?<\/think\s*>/gi, '')
+          .replace(/<thinking[^>]*>[\s\S]*?<\/thinking\s*>/gi, '')
+          .replace(/<cot[^>]*>[\s\S]*?<\/cot\s*>/gi, '')
+          .replace(/<think(?:ing)?[^>]*>[\s\S]*$/gi, '')
+          .replace(/<cot[^>]*>[\s\S]*$/gi, '')
           // 预设的结构化输出块：summary 摘要 / choice(s) 分支选项，只剥标签会留碎片，整段剔除
           .replace(/<summary>[\s\S]*?<\/summary>/gi, '')
           .replace(/<choices?>[\s\S]*?<\/choices?>/gi, '')
@@ -193,13 +195,13 @@
     return lines.join('\n');
   }
 
-  // ── 论坛共用段：可能出没的人（名单 + 档案节选，NPC 冒泡的素材） ──
+  // ── 论坛共用段：可能出没的人（档案由 engine.forumPeopleProfiles 预清洗截断，此处原样用） ──
   function forumPeopleBlock(people, profiles) {
     if (!people || !people.length) return '## 可能出没的人\n（无名单，全用陌生网友）';
     return '## 可能出没的人（可给他们起谐音/外号/缩写网名让熟人认出，也可用纯陌生网友）\n' +
       people.map(function (n) {
         var p = profiles && profiles[n];
-        return '- ' + n + (p ? '：' + String(p).replace(/\n+/g, ' ').slice(0, 120) : '');
+        return '- ' + n + (p ? '：' + String(p) : '');
       }).join('\n');
   }
 
