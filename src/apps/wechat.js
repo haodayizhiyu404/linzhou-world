@@ -480,7 +480,30 @@
     '.lzw-freps{margin:0 12px 12px;background:#fff;border-radius:12px;padding:4px 14px}',
     '.lzw-frep{padding:9px 0;font-size:13px;line-height:1.55;color:#333;border-bottom:1px solid rgba(0,0,0,.05);word-break:break-word}',
     '.lzw-frep:last-child{border-bottom:none}',
-    '.lzw-frep-a{color:#576b95;font-weight:600}'
+    '.lzw-frep-a{color:#576b95;font-weight:600}',
+    // ── 备忘录（lzw-memo-*）：选人 chips / 存档列表 / 阅读页 ──
+    '.lzw-memo-chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 8px;flex:none;background:#f7f7f9;border-bottom:1px solid rgba(0,0,0,.06)}',
+    '.lzw-memo-chip{flex:none;border:1px solid rgba(0,0,0,.12);background:#fff;color:#333;border-radius:14px;padding:4px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}',
+    '.lzw-memo-chip.on{background:#4d7cfe;border-color:#4d7cfe;color:#fff}',
+    '.lzw-memo-list{flex:1;min-height:0;overflow-y:auto;padding:6px 0 12px}',
+    '.lzw-memo-row{display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer}',
+    '.lzw-memo-row:active{background:rgba(0,0,0,.05)}',
+    '.lzw-memo-rowmain{flex:1;min-width:0}',
+    '.lzw-memo-rowt{font-size:14px;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.lzw-memo-rows{font-size:11.5px;color:#9aa0a8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.lzw-memo-rowdate{flex:none;font-size:11px;color:#9aa0a8}',
+    '.lzw-memo-rowops{flex:none;display:flex}',
+    '.lzw-memo-op{border:none;background:none;color:#a0a6ad;padding:6px;cursor:pointer;font-family:inherit;line-height:0;border-radius:8px}',
+    '.lzw-memo-op:active{color:#4d7cfe;background:rgba(0,0,0,.05)}',
+    '.lzw-memo-foot{flex:none;padding:10px 14px 12px;border-top:1px solid rgba(0,0,0,.06);background:#f7f7f9}',
+    '.lzw-memo-write{width:100%;border:none;background:#22c05e;color:#fff;border-radius:8px;padding:10px 0;font-size:14px;cursor:pointer;font-family:inherit}',
+    '.lzw-memo-write:disabled{background:#a8ddb9}',
+    '.lzw-memo-read{flex:1;min-height:0;overflow-y:auto;background:#faf8f2;padding:26px 22px 48px}',
+    '.lzw-memo-readh{font-size:12px;color:#9aa0a8;letter-spacing:.05em;margin-bottom:6px}',
+    '.lzw-memo-readt{font-size:21px;font-weight:600;color:#1a1d21;padding-bottom:14px;border-bottom:1px solid rgba(0,0,0,.06);margin-bottom:18px}',
+    '.lzw-memo-readc{font-size:15px;line-height:1.95;color:#262a2e}',
+    '.lzw-memo-readc p{margin:0 0 14px}',
+    '.lzw-memo-readc p:last-child{margin-bottom:0}'
   ].join('\n');
 
 
@@ -509,6 +532,8 @@
   // 底栏两个 tab：对话 / 发现（指南针）
   var ICON_GEAR = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2.1" fill="#fff" stroke="none"/><circle cx="9" cy="12" r="2.1" fill="#fff" stroke="none"/><circle cx="17" cy="17" r="2.1" fill="#fff" stroke="none"/></svg>';
   var ICON_FORUM = '<svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.6 3.4A1 1 0 0 1 4 18.4V5.5z"/><circle cx="9" cy="9.7" r="1.15" fill="#e8912d"/><circle cx="12.5" cy="9.7" r="1.15" fill="#e8912d"/><circle cx="16" cy="9.7" r="1.15" fill="#e8912d"/></svg>';
+  var ICON_MEMO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4.5"/></svg>';
+  var ICON_TRASH = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7M6.8 7l.9 12.2a1.2 1.2 0 0 0 1.2 1.1h6.2a1.2 1.2 0 0 0 1.2-1.1L17.2 7"/><path d="M10 11v6.5M14 11v6.5"/></svg>';
   var ICON_TAB_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.34-4.1-1L3 20l1.1-4.9A8.5 8.5 0 1 1 21 11.5z"/></svg>';
   var ICON_TAB_DISC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/></svg>';
   var ICON_TAB_CONT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 4.2a3.3 3.3 0 1 1 0 6.6 3.3 3.3 0 0 1 0-6.6z"/><path d="M3.8 19.4c.5-2.9 2.8-4.6 5.8-4.6s5.3 1.7 5.8 4.6"/><path d="M15.6 5.2a3 3 0 0 1 0 5.6M17.4 14.9c1.9.5 3.3 1.9 3.7 3.9"/></svg>';
@@ -695,6 +720,8 @@
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'settings') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">设置</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'forum') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">论坛</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'memo') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">备忘录</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'mread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="memo">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？重新生成（考古旧帖保留）">' + ICON_REROLL + '</span>') + '</span></div>';
     if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
@@ -805,6 +832,11 @@
     fThread: -1,          // fthread 当前帖子下标
     fConfirmDel: '',      // 待确认删除的论坛名（''=无）
     sConfirmDel: '',      // 待确认删除的陌生人会话 key（''=无）
+    memoNpc: null,        // 备忘录当前选中的人（默认通讯录第一位）
+    memoBusy: false,      // 备忘录生成中（写一篇/重roll 共用一把锁）
+    memoConfirm: -1,      // 待确认删除的备忘录下标（-1=无）
+    memoConfirmR: -1,     // 待确认重roll的备忘录下标（-1=无）
+    memoRead: -1,         // mread 阅读页展示的条目下标
     fBusy: false,         // 论坛生成中
     tTarget: '',          // 群聊转账选中的接收方（确定发出后清空）
     _placed: false,
@@ -1007,7 +1039,7 @@
         el.onclick = function () {
           // mprofile 的返回看来源：详细资料进来回详细资料，朋友圈进来回朋友圈
           var act = el.dataset.act === 'mback' ? (UI.mFrom === 'cdetail' ? 'cdetail' : 'moments') : el.dataset.act;
-          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fboard' ? 'fboard' : 'list';
+          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fboard' ? 'fboard' : act === 'memo' ? 'memo' : 'list';
           UI.panel = null;
           UI.render();
         };
@@ -1223,6 +1255,7 @@
   C.ICON_FORUM = ICON_FORUM; C.ICON_TAB_CHAT = ICON_TAB_CHAT; C.ICON_TAB_DISC = ICON_TAB_DISC;
   C.ICON_TAB_CONT = ICON_TAB_CONT; C.ICON_MOMENTS = ICON_MOMENTS; C.ICON_CHEV = ICON_CHEV; C.ICON_CAM = ICON_CAM;
   C.ICON_HEART = ICON_HEART; C.ICON_HEART_F = ICON_HEART_F; C.ICON_BUBBLE = ICON_BUBBLE; C.ICON_WECHAT = ICON_WECHAT;
+  C.ICON_MEMO = ICON_MEMO; C.ICON_TRASH = ICON_TRASH;
   C.ICO = ICO;
 
   window.LZWorld = window.LZWorld || {};

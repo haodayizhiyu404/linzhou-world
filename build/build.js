@@ -18,6 +18,7 @@ const ORDER = [
   'src/apps/wechat-forum.js',
   'src/apps/wechat-call.js',
   'src/apps/wechat-settings.js',
+  'src/apps/wechat-memo.js',
   'src/engine.js',
 ];
 

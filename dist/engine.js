@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-22T13:29:16.178Z
+//  构建时间：2026-09-22T13:50:49.967Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-22 13:29';
+var __LZW_BUILD__ = '2026-09-22 13:50';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1420,8 +1420,68 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         should_silence: true,
         max_chat_history: 0
       };
+    },
+
+    // 备忘录：以第一人称替 NPC 写手机备忘录（私密文本，玩家有翻阅权限）
+    memo: function (contact, hist, snapshot, userInfo, usedDates, shortRetry) {
+      var myName = me();
+      var ctx = [
+        '# 虚构沙盒',
+        '',
+        FICTION,
+        '',
+        '# 数字世界 · 备忘录生成',
+        '',
+        '本次任务：以第一人称，替「' + contact.name + '」写一篇手机备忘录。它存在这个人的手机里，不打算给任何人看。读者（玩家）拥有翻阅权限——但文本必须是这个人私密的、限知的真实声音，不是全知旁白。',
+        '',
+        contact.profile ? '## 人物档案 · ' + contact.name + '\n' + contact.profile : '## 人物档案 · ' + contact.name + '\n（暂无档案，依据对话上下文自然演绎）',
+        '',
+        userInfo ? '## 机主资料 · ' + myName + '（备忘录里可能以真名出现）\n' + userInfo : '',
+        '',
+        situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+        '',
+        (hist && hist.length)
+          ? '## 与' + myName + '的微信记录（近 30 条，备忘录可以回味这里的事）\n' + histText(hist, 30, true, snapshot && snapshot.dateText)
+          : ''
+      ].filter(function (s) { return s !== ''; }).join('\n');
+
+      var reqs = [
+        '## 输出要求（严格遵守）',
+        '- 格式（独占标记行，一字不改）：',
+        '  第一行：※备忘录※|日期|标题',
+        '  中间：正文（可多段）',
+        '  最后一行：※完※',
+        '- 日期：从当前时间往前 1~7 天内任选一天（不必是当天），格式 YYYY-MM-DD，不得晚于当前时间。',
+        (usedDates && usedDates.length)
+          ? '- **不可使用已存在的日期**：' + usedDates.join('、') + '（这些天已各有一篇，必须避开）'
+          : '- 当前此人无已存在的备忘录日期。',
+        '- 篇幅：正文不少于 500 字。写满，严禁提纲式缩写、严禁用「……（后略）」省字。',
+        shortRetry ? '- ⚠ 上一篇正文过短被驳回：这次必须写足 500 字，宁可写多不可写少。' : '',
+        '- 这是「' + contact.name + '」写给自己看、不打算给任何人看的东西。',
+        '- 白天发生的事可以写、也值得回味——但写的是事情在 Ta 心里沉过之后的样子，不是新闻播报。主体永远是那些 Ta 没对任何人说出口的部分。',
+        '- 分层写，按这个顺序推进：Ta 清楚知道、但从不对人提的事 → Ta 感觉到但不愿细想的事 → Ta 自己都没看懂的事。第三层只呈现、不解释。',
+        '- 用具体的生活细节落地——写什么物件取决于这个人是谁（工具、账本、药盒、车库、课桌都算）。禁止空洞抒情（"生活如此艰难"这类句子一律不要）。',
+        '- **关系亲疏以聊天记录为准**：上方记录藏着' + contact.name + '与' + myName + '一路走到哪一步——哪怕最近几楼对方没出场，那些旧事同样是已发生的事实，备忘录里的熟稔程度、信任深度、说话分寸都必须符合这份积累，严禁写得像刚认识。',
+        '- 记录中若出现成段的剧情提要/摘要（与对话正文格式明显不同的浓缩段）：那是被压缩过的剧情记录，可作参考，不是任何人物说的话，严禁写进备忘录正文。',
+        '- 时间线锚定已发生的剧情，可以引用、回想、甚至曲解白天的事——尤其是 Ta 对 ' + myName + ' 相关事件的私人解读（若 ' + myName + ' 近期没出场，也允许完全不提，但提起来就必须是旧知的口气）。',
+        '- 文体是备忘录：允许不完整句、允许戛然而止、允许只有一段。但整体要有小作文的完成度——读完像窥见了一页真实的人生。',
+        '- 严禁：本人不知道的任何信息（包括 ' + myName + ' 的真实想法与内心）、对未来的预言式感叹、总结中心思想、任何元叙述（"作为……""本章……"）。',
+        '- ※完※ 之后不再输出任何文字。'
+      ].filter(function (s) { return s !== ''; }).join('\n');
+
+      // 聊天记录走标准 chat_history 槽位：generateRaw 按主生成同一管线装配，
+      // 隐藏楼排除/深档注入/宏替换齐全；不设 max_chat_history（上限只截旧侧 summary 衔接带）。
+      return {
+        ordered_prompts: [
+          { role: 'system', content: ctx },
+          'chat_history',
+          { role: 'user', content: reqs + '\n\n（现在请严格按上述要求，输出一篇「' + contact.name + '」的备忘录。只输出标记行、正文与结束标记本身。）' }
+        ],
+        should_silence: true
+      };
     }
   };
+
 
   window.LZWorld = window.LZWorld || {};
   window.LZWorld.Prompt = Prompt;
@@ -2266,7 +2326,30 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-freps{margin:0 12px 12px;background:#fff;border-radius:12px;padding:4px 14px}',
     '.lzw-frep{padding:9px 0;font-size:13px;line-height:1.55;color:#333;border-bottom:1px solid rgba(0,0,0,.05);word-break:break-word}',
     '.lzw-frep:last-child{border-bottom:none}',
-    '.lzw-frep-a{color:#576b95;font-weight:600}'
+    '.lzw-frep-a{color:#576b95;font-weight:600}',
+    // ── 备忘录（lzw-memo-*）：选人 chips / 存档列表 / 阅读页 ──
+    '.lzw-memo-chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 8px;flex:none;background:#f7f7f9;border-bottom:1px solid rgba(0,0,0,.06)}',
+    '.lzw-memo-chip{flex:none;border:1px solid rgba(0,0,0,.12);background:#fff;color:#333;border-radius:14px;padding:4px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}',
+    '.lzw-memo-chip.on{background:#4d7cfe;border-color:#4d7cfe;color:#fff}',
+    '.lzw-memo-list{flex:1;min-height:0;overflow-y:auto;padding:6px 0 12px}',
+    '.lzw-memo-row{display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer}',
+    '.lzw-memo-row:active{background:rgba(0,0,0,.05)}',
+    '.lzw-memo-rowmain{flex:1;min-width:0}',
+    '.lzw-memo-rowt{font-size:14px;color:#111;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.lzw-memo-rows{font-size:11.5px;color:#9aa0a8;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.lzw-memo-rowdate{flex:none;font-size:11px;color:#9aa0a8}',
+    '.lzw-memo-rowops{flex:none;display:flex}',
+    '.lzw-memo-op{border:none;background:none;color:#a0a6ad;padding:6px;cursor:pointer;font-family:inherit;line-height:0;border-radius:8px}',
+    '.lzw-memo-op:active{color:#4d7cfe;background:rgba(0,0,0,.05)}',
+    '.lzw-memo-foot{flex:none;padding:10px 14px 12px;border-top:1px solid rgba(0,0,0,.06);background:#f7f7f9}',
+    '.lzw-memo-write{width:100%;border:none;background:#22c05e;color:#fff;border-radius:8px;padding:10px 0;font-size:14px;cursor:pointer;font-family:inherit}',
+    '.lzw-memo-write:disabled{background:#a8ddb9}',
+    '.lzw-memo-read{flex:1;min-height:0;overflow-y:auto;background:#faf8f2;padding:26px 22px 48px}',
+    '.lzw-memo-readh{font-size:12px;color:#9aa0a8;letter-spacing:.05em;margin-bottom:6px}',
+    '.lzw-memo-readt{font-size:21px;font-weight:600;color:#1a1d21;padding-bottom:14px;border-bottom:1px solid rgba(0,0,0,.06);margin-bottom:18px}',
+    '.lzw-memo-readc{font-size:15px;line-height:1.95;color:#262a2e}',
+    '.lzw-memo-readc p{margin:0 0 14px}',
+    '.lzw-memo-readc p:last-child{margin-bottom:0}'
   ].join('\n');
 
 
@@ -2295,6 +2378,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // 底栏两个 tab：对话 / 发现（指南针）
   var ICON_GEAR = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2.1" fill="#fff" stroke="none"/><circle cx="9" cy="12" r="2.1" fill="#fff" stroke="none"/><circle cx="17" cy="17" r="2.1" fill="#fff" stroke="none"/></svg>';
   var ICON_FORUM = '<svg width="26" height="26" viewBox="0 0 24 24" fill="#fff"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.6 3.4A1 1 0 0 1 4 18.4V5.5z"/><circle cx="9" cy="9.7" r="1.15" fill="#e8912d"/><circle cx="12.5" cy="9.7" r="1.15" fill="#e8912d"/><circle cx="16" cy="9.7" r="1.15" fill="#e8912d"/></svg>';
+  var ICON_MEMO = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4.5"/></svg>';
+  var ICON_TRASH = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7M6.8 7l.9 12.2a1.2 1.2 0 0 0 1.2 1.1h6.2a1.2 1.2 0 0 0 1.2-1.1L17.2 7"/><path d="M10 11v6.5M14 11v6.5"/></svg>';
   var ICON_TAB_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.34-4.1-1L3 20l1.1-4.9A8.5 8.5 0 1 1 21 11.5z"/></svg>';
   var ICON_TAB_DISC = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.6 8.4l-2.1 5.1-5.1 2.1 2.1-5.1z"/></svg>';
   var ICON_TAB_CONT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 4.2a3.3 3.3 0 1 1 0 6.6 3.3 3.3 0 0 1 0-6.6z"/><path d="M3.8 19.4c.5-2.9 2.8-4.6 5.8-4.6s5.3 1.7 5.8 4.6"/><path d="M15.6 5.2a3 3 0 0 1 0 5.6M17.4 14.9c1.9.5 3.3 1.9 3.7 3.9"/></svg>';
@@ -2481,6 +2566,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     if (screen === 'home') return ''; // 真手机主屏没有标题栏
     if (screen === 'settings') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">设置</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'forum') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">论坛</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'memo') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">备忘录</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'mread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="memo">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？重新生成（考古旧帖保留）">' + ICON_REROLL + '</span>') + '</span></div>';
     if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
@@ -2591,6 +2678,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     fThread: -1,          // fthread 当前帖子下标
     fConfirmDel: '',      // 待确认删除的论坛名（''=无）
     sConfirmDel: '',      // 待确认删除的陌生人会话 key（''=无）
+    memoNpc: null,        // 备忘录当前选中的人（默认通讯录第一位）
+    memoBusy: false,      // 备忘录生成中（写一篇/重roll 共用一把锁）
+    memoConfirm: -1,      // 待确认删除的备忘录下标（-1=无）
+    memoConfirmR: -1,     // 待确认重roll的备忘录下标（-1=无）
+    memoRead: -1,         // mread 阅读页展示的条目下标
     fBusy: false,         // 论坛生成中
     tTarget: '',          // 群聊转账选中的接收方（确定发出后清空）
     _placed: false,
@@ -2793,7 +2885,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         el.onclick = function () {
           // mprofile 的返回看来源：详细资料进来回详细资料，朋友圈进来回朋友圈
           var act = el.dataset.act === 'mback' ? (UI.mFrom === 'cdetail' ? 'cdetail' : 'moments') : el.dataset.act;
-          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fboard' ? 'fboard' : 'list';
+          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fboard' ? 'fboard' : act === 'memo' ? 'memo' : 'list';
           UI.panel = null;
           UI.render();
         };
@@ -3009,6 +3101,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   C.ICON_FORUM = ICON_FORUM; C.ICON_TAB_CHAT = ICON_TAB_CHAT; C.ICON_TAB_DISC = ICON_TAB_DISC;
   C.ICON_TAB_CONT = ICON_TAB_CONT; C.ICON_MOMENTS = ICON_MOMENTS; C.ICON_CHEV = ICON_CHEV; C.ICON_CAM = ICON_CAM;
   C.ICON_HEART = ICON_HEART; C.ICON_HEART_F = ICON_HEART_F; C.ICON_BUBBLE = ICON_BUBBLE; C.ICON_WECHAT = ICON_WECHAT;
+  C.ICON_MEMO = ICON_MEMO; C.ICON_TRASH = ICON_TRASH;
   C.ICO = ICO;
 
   window.LZWorld = window.LZWorld || {};
@@ -3060,6 +3153,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '<div class="lzw-homegrid">' +
       '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none;position:relative">' + C.ICON_WECHAT +
       (totalUn ? '<span class="lzw-appdot">' + (totalUn > 99 ? '99+' : totalUn) + '</span>' : '') + '</div><span>微信</span></div>' +
+      '<div class="lzw-app" data-app="memo"><div class="lzw-app-ico" style="background:#e2a600;border:none;color:#fff">' + C.ICON_MEMO + '</div><span>备忘录</span></div>' +
       '<div class="lzw-app" data-app="forum"><div class="lzw-app-ico" style="background:#e8912d;border:none;color:#fff;position:relative">' + C.ICON_FORUM + (funTotal ? '<span class="lzw-appdot">' + (funTotal > 99 ? '99+' : funTotal) + '</span>' : '') + '</div><span>论坛</span></div>' +
       '<div class="lzw-app" data-app="settings"><div class="lzw-app-ico" style="background:#8e97a8;border:none;color:#fff">' + C.ICON_GEAR + '</div><span>设置</span></div>' +
       '<div class="lzw-app" data-app="close" title="收起手机"><div class="lzw-app-ico" style="background:#e5484d;border:none;color:#fff">' + C.ICON_POWEROFF + '</div><span>关闭</span></div>' +
@@ -3079,6 +3173,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 设置 app：模式单选 / 数值与文本即时保存 / 拉取模型与预设列表 / 点选回填
     ph.querySelectorAll('[data-app="settings"]').forEach(function (el) {
       el.onclick = function () { UI.screen = 'settings'; UI._setpick = null; UI.render(); };
+    });
+    // 备忘录 app：进列表（选人 chips + 存档 + 写一篇）
+    ph.querySelectorAll('[data-app="memo"]').forEach(function (el) {
+      el.onclick = function () { UI.openMemo(); };
     });
   });
 })();
@@ -3173,7 +3271,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var cSet = {};
       (sec.contacts || []).forEach(function (c) { cSet[c.name] = 1; });
       var strs = W.Store.historyKeys().filter(function (k) {
-        if (k.indexOf('group:') === 0 || k.indexOf('call:') === 0 || k === eng.momentsKey) return false;
+        if (k.indexOf('group:') === 0 || k.indexOf('call:') === 0 || k.indexOf('memo:') === 0 || k === eng.momentsKey) return false;
         if (cSet[k]) return false;
         return W.Store.history(k).length > 0;
       });
@@ -4625,6 +4723,146 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 })();
 
 
+// ── src/apps/wechat-memo.js ──
+// ═══════════════════════════════════════════════════════════
+//  apps/wechat-memo.js —— 备忘录屏：选人 chips / 存档列表 / 阅读页
+//  由 wechat.js（壳）经 window.LZWorld.Apps.wechat / WechatCore 挂接
+//  存档挂 Store key「memo:名字」：条目 = {date:'YYYY-MM-DD', title, content, day, time}
+//  选人 chips + 存档列表 + 写一篇/重roll/删除（确认弹窗走 data-mact，不占壳的 cact 表）
+// ═══════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  var W = window.LZWorld, UI = W.Apps.wechat, C = W.WechatCore;
+
+  // ── 列表屏：选人 chips + 存档（新→旧）+ 底部「写一篇」+ 确认弹窗 ──
+  UI.bodyMemo = function (ctx) {
+    var W = ctx.W, eng = ctx.eng;
+    var sec = eng.section() || {};
+    var chips = (sec.contacts || []).map(function (c) {
+      return '<button class="lzw-memo-chip' + (c.name === this.memoNpc ? ' on' : '') + '" data-mnpc="' + C.esc(c.name) + '">' + C.esc(c.name) + '</button>';
+    }, this).join('');
+    var ents = this.memoNpc ? eng.memoEntries(this.memoNpc) : [];
+    var rows = '';
+    for (var i = ents.length - 1; i >= 0; i--) {
+      var e = ents[i];
+      rows +=
+        '<div class="lzw-memo-row" data-mopen="' + i + '">' +
+        '<div class="lzw-memo-rowmain"><div class="lzw-memo-rowt">' + C.esc(e.title || '（无标题）') + '</div>' +
+        '<div class="lzw-memo-rows">' + C.esc(String(e.content).replace(/\s+/g, ' ').slice(0, 42)) + '</div></div>' +
+        '<span class="lzw-memo-rowdate">' + C.esc(e.date) + '</span>' +
+        '<div class="lzw-memo-rowops">' +
+        '<button class="lzw-memo-op" data-mreroll="' + i + '" title="删掉这篇，重新生成一篇">' + C.ICON_REROLL + '</button>' +
+        '<button class="lzw-memo-op" data-mdel="' + i + '" title="删除这篇">' + C.ICON_TRASH + '</button>' +
+        '</div></div>';
+    }
+    return '<div class="lzw-body" style="display:flex;flex-direction:column;overflow:hidden">' +
+      '<div class="lzw-memo-chips">' + (chips || '<span class="lzw-sysrow">本世界线暂无联系人</span>') + '</div>' +
+      '<div class="lzw-memo-list">' +
+      (rows || '<div class="lzw-sysrow" style="margin-top:40px">还没有备忘录<br>点下方「写一篇」，偷看 TA 的一天</div>') +
+      (this.memoBusy ? '<div class="lzw-sysrow">正在生成…</div>' : '') +
+      '</div>' +
+      '<div class="lzw-memo-foot"><button class="lzw-memo-write" data-mwrite="1"' + (this.memoBusy ? ' disabled' : '') + '>写一篇</button></div>' +
+      (this.memoConfirm >= 0 || this.memoConfirmR >= 0
+        ? '<div class="lzw-scrim"><div class="lzw-confirm">' + (this.memoConfirm >= 0 ? '删掉这篇备忘录？' : '删掉这篇，重新生成一篇？') +
+          '<div class="lzw-cbtns"><button class="lzw-cbtn no" data-mact="mdelno">取消</button><button class="lzw-cbtn yes" data-mact="' + (this.memoConfirm >= 0 ? 'mdelok' : 'mrerollok') + '">' + (this.memoConfirm >= 0 ? '删除' : '重roll') + '</button></div></div></div>'
+        : '') +
+      '</div>';
+  };
+
+  // ── 阅读屏：整页白纸、无卡片——日期/标题/正文同落一页，靠排版分层（iOS 备忘录式）──
+  UI.bodyMread = function (ctx) {
+    var W = ctx.W, eng = ctx.eng;
+    var ents = this.memoNpc ? eng.memoEntries(this.memoNpc) : [];
+    var e = ents[this.memoRead];
+    var paras = e ? String(e.content).split('\n').filter(function (l) { return l.trim(); })
+      .map(function (l) { return '<p>' + C.esc(l.trim()) + '</p>'; }).join('') : '';
+    return '<div class="lzw-memo-read">' +
+      (e
+        ? '<div class="lzw-memo-readh">' + C.esc(e.date) + (e.day ? ' · 记于' + C.esc(String(e.day).replace(/^\d{4}年/, '')) : '') + '</div>' +
+          (e.title ? '<div class="lzw-memo-readt">' + C.esc(e.title) + '</div>' : '') +
+          '<div class="lzw-memo-readc">' + paras + '</div>'
+        : '<div class="lzw-sysrow" style="margin-top:40px">这篇备忘录不存在了</div>') +
+      '</div>';
+  };
+
+  Object.assign(UI, {
+    openMemo: function (npc) {
+      if (npc) this.memoNpc = npc;
+      if (!this.memoNpc) {
+        var sec0 = W.Engine.section();
+        if (sec0 && sec0.contacts && sec0.contacts.length) this.memoNpc = sec0.contacts[0].name;
+      }
+      this.memoConfirm = -1;
+      this.memoConfirmR = -1;
+      this.memoRead = -1;
+      this.screen = 'memo';
+      this.render();
+    },
+    // 手动「写一篇」：无当日判重——同日想写几篇写几篇，日期由 usedDates 排除、撞车并列不覆盖
+    memoWriteOne: function () {
+      if (this.memoBusy || !this.memoNpc) return;
+      this.memoBusy = true;
+      this.render();
+      var self = this;
+      W.Engine.memoWrite(this.memoNpc).catch(function (e) {
+        console.warn('[霖州引擎] 备忘录生成失败', e);
+        try { toastr.error('备忘录生成失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
+      }).finally(function () {
+        self.memoBusy = false;
+        if (self.screen === 'memo') self.render();
+      });
+    },
+    // 重roll：先弹确认（误触防删），确认后删指定旧篇再生成（AI 选题自然避开其余日期）
+    memoReroll: function (idx) {
+      if (this.memoBusy || !this.memoNpc) return;
+      this.memoConfirmR = idx;
+      this.render();
+    }
+  });
+
+  UI._binders.push(function (ph) {
+    ph.querySelectorAll('[data-mnpc]').forEach(function (el) {
+      el.onclick = function () { UI.openMemo(el.dataset.mnpc); };
+    });
+    ph.querySelectorAll('[data-mwrite]').forEach(function (el) {
+      el.onclick = function () { UI.memoWriteOne(); };
+    });
+    ph.querySelectorAll('[data-mopen]').forEach(function (el) {
+      el.onclick = function () {
+        UI.memoRead = parseInt(el.dataset.mopen, 10);
+        UI.memoConfirm = -1;
+        UI.memoConfirmR = -1;
+        UI.screen = 'mread';
+        UI.render();
+      };
+    });
+    // 行内操作拦冒泡，免得点「重roll/删除」顺手把条目打开
+    ph.querySelectorAll('[data-mreroll]').forEach(function (el) {
+      el.onclick = function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); UI.memoReroll(parseInt(el.dataset.mreroll, 10)); };
+    });
+    ph.querySelectorAll('[data-mdel]').forEach(function (el) {
+      el.onclick = function (ev) { if (ev && ev.stopPropagation) ev.stopPropagation(); UI.memoConfirm = parseInt(el.dataset.mdel, 10); UI.render(); };
+    });
+    // 备忘录确认弹窗三件套（data-mact 独立分发，壳的 data-cact 表不掺和）
+    ph.querySelectorAll('[data-mact]').forEach(function (el) {
+      el.onclick = function () {
+        var a = el.dataset.mact;
+        if (a === 'mdelno') { UI.memoConfirm = -1; UI.memoConfirmR = -1; UI.render(); }
+        else if (a === 'mdelok') {
+          var dx = UI.memoConfirm; UI.memoConfirm = -1;
+          try { W.Engine.memoDeleteAt(UI.memoNpc, dx); } catch (e) {}
+          UI.render();
+        } else if (a === 'mrerollok') {
+          var rx = UI.memoConfirmR; UI.memoConfirmR = -1;
+          try { W.Engine.memoDeleteAt(UI.memoNpc, rx); } catch (e) {}
+          UI.memoWriteOne();
+        }
+      };
+    });
+  });
+})();
+
+
 // ── src/engine.js ──
 // ═══════════════════════════════════════════════════════════
 //  engine.js —— 数字世界引擎 · 核心装配
@@ -6037,6 +6275,69 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     },
 
 
+
+    // ── 备忘录 ──
+    // 存档挂在 Store key「memo:名字」：条目 = {date:'YYYY-MM-DD', title, content, day, time}
+    // 纯手动触发（进 app 不自动生成）：选题注入 usedDates 排除已存在日期；
+    // 即便撞车也不覆盖——同日多篇并列存档。正文过短（<300字）带补强要求重试一次。
+    memoKey: function (name) { return 'memo:' + name; },
+    memoEntries: function (name) { return window.LZWorld.Store.history(this.memoKey(name)); },
+
+    // 契约输出解析：※备忘录※|YYYY-MM-DD|标题（可空）\n正文\n※完※；分隔符容忍常见变体
+    parseMemo: function (text) {
+      var m = /※\s*备忘录\s*※\s*\|\s*(\d{4})\s*[-–—年./]\s*(\d{1,2})\s*[-–—月./]\s*(\d{1,2})\s*日?\s*\|([^\n]*)\n([\s\S]*?)※\s*完\s*※/.exec(String(text || ''));
+      if (!m) return null;
+      return {
+        date: m[1] + '-' + ('0' + m[2]).slice(-2) + '-' + ('0' + m[3]).slice(-2),
+        title: (m[4] || '').trim(),
+        content: m[5].trim()
+      };
+    },
+
+    // 生成一篇（手动「写一篇/重roll」，无当日判重）。重roll 的删旧由 UI 先行
+    // （见 wechat-memo.js memoReroll），这里只负责写。
+    memoWrite: async function (name) {
+      var W = window.LZWorld;
+      var c = this.findContact(name);
+      if (!c) throw new Error('联系人不在本线通讯录：' + name);
+      var key = this.memoKey(name);
+      var snap = W.Status.snapshot(name);
+      var today = (snap && snap.dateText) || '';
+      var usedDates = W.Store.history(key).map(function (e) { return e.date; }).filter(Boolean);
+      var hist = W.Store.history(name).slice(-20);
+      var profile = this.profileFor(name);
+      var self = this;
+      var attempt = async function (retry) {
+        var req = W.Prompt.memo({ name: c.name, profile: profile }, hist, snap, self.userBlock(), usedDates, retry);
+        var raw = await self.gen(req);
+        var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+        return self.parseMemo(text);
+      };
+      var entry = await attempt(false);
+      var len = entry ? entry.content.replace(/\s/g, '').length : 0;
+      if (len && len < 300) {
+        console.warn('[霖州引擎] 备忘录正文过短（' + len + '字），带补强要求重试一次');
+        var retryEntry = await attempt(true);
+        if (retryEntry && retryEntry.content.replace(/\s/g, '').length >= len) entry = retryEntry;
+      }
+      if (!entry || !entry.content) throw new Error('备忘录生成结果无法解析（缺少 ※备忘录※/※完※ 标记）');
+      // 晚于故事当前日的日期不拦（只警告照存）——提示词已禁止，疑模型走神时宁可存不折腾用户
+      var dm = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec(today);
+      var todayKey = dm ? dm[1] + '-' + ('0' + dm[2]).slice(-2) + '-' + ('0' + dm[3]).slice(-2) : '';
+      if (todayKey && entry.date > todayKey) {
+        console.warn('[霖州引擎] 备忘录日期 ' + entry.date + ' 晚于故事当前日 ' + todayKey + '，照存（提示词已禁止，疑模型走神）');
+      }
+      var stampTime = '';
+      try { stampTime = W.Status.nowText() || ''; } catch (e) {}
+      W.Store.push(key, [{ date: entry.date, title: entry.title, content: entry.content, day: today, time: stampTime }], 100);
+      console.log('[霖州引擎] 备忘录：' + name + ' / ' + entry.date + (entry.title ? '「' + entry.title + '」' : '') +
+        ' / 正文 ' + entry.content.length + '字');
+      return entry;
+    },
+
+    memoDeleteAt: function (name, index) {
+      return window.LZWorld.Store.removeAt(this.memoKey(name), index);
+    },
 
     // ── 语音/视频通话 ──
     // transcript 存 Store key「call:名字」，与聊天记录平级的一级历史：

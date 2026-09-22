@@ -572,6 +572,20 @@ ctx.getWorldbook = async () => [
   eq('转账·裸拒收对最近一笔', LW.Engine.applyNpcDeclines('宽松对账'), 1);
   eq('转账·裸拒收翻退还', LW.Store.history('宽松对账')[3].state, 'declined');
   eq('转账·拒收回执回填', LW.Store.history('宽松对账')[4].amount, 10);
+  // ── 备忘录：键位 / 契约解析 / 删除 ──
+  eq('备忘录·键位', LW.Engine.memoKey('周言'), 'memo:周言');
+  const mm1 = LW.Engine.parseMemo('※备忘录※|2034-08-25|周日的账\n上午去对账，老板没在。\n※完※');
+  eq('备忘录·契约解析', mm1 && mm1.date === '2034-08-25' && mm1.title === '周日的账' && mm1.content.indexOf('对账') >= 0, true);
+  const mm2 = LW.Engine.parseMemo('※备忘录※|2034-08-25|\n没标题的一段。\n※完※');
+  eq('备忘录·空标题', mm2 && mm2.title === '' && mm2.content === '没标题的一段。', true);
+  const mm3 = LW.Engine.parseMemo('※备忘录※|2034年8月25日|杂记\n中文日期也要认。\n※完※');
+  eq('备忘录·中文日期容忍', mm3 && mm3.date === '2034-08-25', true);
+  eq('备忘录·无标记拒收', LW.Engine.parseMemo('今天下雨了，没别的。'), null);
+  LW.Store.push(LW.Engine.memoKey('周言'), [{ date: '2034-08-25', title: 'A', content: '一', day: '', time: '' }, { date: '2034-08-24', title: 'B', content: '二', day: '', time: '' }], 100);
+  eq('备忘录·存档读取', LW.Engine.memoEntries('周言').length, 2);
+  eq('备忘录·按下标删除', LW.Engine.memoDeleteAt('周言', 0), true);
+  eq('备忘录·删后剩一篇且为B', (function () { const e = LW.Engine.memoEntries('周言'); return e.length === 1 && e[0].title === 'B'; })(), true);
+
   const tk2 = '转账处置测试';
   LW.Store.push(tk2, [
     { who: '周言', kind: 'transfer', amount: 66, note: '红包', to: '', state: 'waiting', time: '' },
@@ -789,7 +803,7 @@ ctx.getWorldbook = async () => [
   wc.window = wc;
   wc.parent = { document: { getElementById: function () { return null; }, createElement: function () { return { style: {}, setAttribute: function () {} }; }, head: { appendChild: function () {} } } };
   vm.createContext(wc);
-  for (const f of ['wechat.js', 'wechat-home.js', 'wechat-list.js', 'wechat-chat.js', 'wechat-moments.js', 'wechat-forum.js', 'wechat-call.js', 'wechat-settings.js']) {
+  for (const f of ['wechat.js', 'wechat-home.js', 'wechat-list.js', 'wechat-chat.js', 'wechat-moments.js', 'wechat-forum.js', 'wechat-call.js', 'wechat-settings.js', 'wechat-memo.js']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'src/apps', f), 'utf8'), wc, { filename: f });
   }
   const W2 = wc.window.LZWorld, UI2 = W2 && W2.Apps && W2.Apps.wechat, C2 = W2 && W2.WechatCore;
@@ -800,6 +814,7 @@ ctx.getWorldbook = async () => [
   eq('装载·屏绑定器≥7', UI2._binders.length >= 7, true);
   eq('装载·内核通话导出', typeof C2.callHtml === 'function' && typeof C2.fmtDur === 'function', true);
   eq('装载·内核卡片导出', typeof C2.transferCardHtml === 'function' && typeof C2.chatRowHtml === 'function' && typeof C2.appbarHtml === 'function', true);
+  eq('装载·备忘录屏挂接', typeof UI2.bodyMemo === 'function' && typeof UI2.bodyMread === 'function' && typeof UI2.openMemo === 'function' && typeof UI2.memoWriteOne === 'function', true);
 
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');

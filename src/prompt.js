@@ -676,8 +676,68 @@
         should_silence: true,
         max_chat_history: 0
       };
+    },
+
+    // 备忘录：以第一人称替 NPC 写手机备忘录（私密文本，玩家有翻阅权限）
+    memo: function (contact, hist, snapshot, userInfo, usedDates, shortRetry) {
+      var myName = me();
+      var ctx = [
+        '# 虚构沙盒',
+        '',
+        FICTION,
+        '',
+        '# 数字世界 · 备忘录生成',
+        '',
+        '本次任务：以第一人称，替「' + contact.name + '」写一篇手机备忘录。它存在这个人的手机里，不打算给任何人看。读者（玩家）拥有翻阅权限——但文本必须是这个人私密的、限知的真实声音，不是全知旁白。',
+        '',
+        contact.profile ? '## 人物档案 · ' + contact.name + '\n' + contact.profile : '## 人物档案 · ' + contact.name + '\n（暂无档案，依据对话上下文自然演绎）',
+        '',
+        userInfo ? '## 机主资料 · ' + myName + '（备忘录里可能以真名出现）\n' + userInfo : '',
+        '',
+        situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+        '',
+        (hist && hist.length)
+          ? '## 与' + myName + '的微信记录（近 30 条，备忘录可以回味这里的事）\n' + histText(hist, 30, true, snapshot && snapshot.dateText)
+          : ''
+      ].filter(function (s) { return s !== ''; }).join('\n');
+
+      var reqs = [
+        '## 输出要求（严格遵守）',
+        '- 格式（独占标记行，一字不改）：',
+        '  第一行：※备忘录※|日期|标题',
+        '  中间：正文（可多段）',
+        '  最后一行：※完※',
+        '- 日期：从当前时间往前 1~7 天内任选一天（不必是当天），格式 YYYY-MM-DD，不得晚于当前时间。',
+        (usedDates && usedDates.length)
+          ? '- **不可使用已存在的日期**：' + usedDates.join('、') + '（这些天已各有一篇，必须避开）'
+          : '- 当前此人无已存在的备忘录日期。',
+        '- 篇幅：正文不少于 500 字。写满，严禁提纲式缩写、严禁用「……（后略）」省字。',
+        shortRetry ? '- ⚠ 上一篇正文过短被驳回：这次必须写足 500 字，宁可写多不可写少。' : '',
+        '- 这是「' + contact.name + '」写给自己看、不打算给任何人看的东西。',
+        '- 白天发生的事可以写、也值得回味——但写的是事情在 Ta 心里沉过之后的样子，不是新闻播报。主体永远是那些 Ta 没对任何人说出口的部分。',
+        '- 分层写，按这个顺序推进：Ta 清楚知道、但从不对人提的事 → Ta 感觉到但不愿细想的事 → Ta 自己都没看懂的事。第三层只呈现、不解释。',
+        '- 用具体的生活细节落地——写什么物件取决于这个人是谁（工具、账本、药盒、车库、课桌都算）。禁止空洞抒情（"生活如此艰难"这类句子一律不要）。',
+        '- **关系亲疏以聊天记录为准**：上方记录藏着' + contact.name + '与' + myName + '一路走到哪一步——哪怕最近几楼对方没出场，那些旧事同样是已发生的事实，备忘录里的熟稔程度、信任深度、说话分寸都必须符合这份积累，严禁写得像刚认识。',
+        '- 记录中若出现成段的剧情提要/摘要（与对话正文格式明显不同的浓缩段）：那是被压缩过的剧情记录，可作参考，不是任何人物说的话，严禁写进备忘录正文。',
+        '- 时间线锚定已发生的剧情，可以引用、回想、甚至曲解白天的事——尤其是 Ta 对 ' + myName + ' 相关事件的私人解读（若 ' + myName + ' 近期没出场，也允许完全不提，但提起来就必须是旧知的口气）。',
+        '- 文体是备忘录：允许不完整句、允许戛然而止、允许只有一段。但整体要有小作文的完成度——读完像窥见了一页真实的人生。',
+        '- 严禁：本人不知道的任何信息（包括 ' + myName + ' 的真实想法与内心）、对未来的预言式感叹、总结中心思想、任何元叙述（"作为……""本章……"）。',
+        '- ※完※ 之后不再输出任何文字。'
+      ].filter(function (s) { return s !== ''; }).join('\n');
+
+      // 聊天记录走标准 chat_history 槽位：generateRaw 按主生成同一管线装配，
+      // 隐藏楼排除/深档注入/宏替换齐全；不设 max_chat_history（上限只截旧侧 summary 衔接带）。
+      return {
+        ordered_prompts: [
+          { role: 'system', content: ctx },
+          'chat_history',
+          { role: 'user', content: reqs + '\n\n（现在请严格按上述要求，输出一篇「' + contact.name + '」的备忘录。只输出标记行、正文与结束标记本身。）' }
+        ],
+        should_silence: true
+      };
     }
   };
+
 
   window.LZWorld = window.LZWorld || {};
   window.LZWorld.Prompt = Prompt;

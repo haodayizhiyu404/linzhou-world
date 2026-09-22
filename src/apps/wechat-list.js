@@ -86,7 +86,7 @@
       var cSet = {};
       (sec.contacts || []).forEach(function (c) { cSet[c.name] = 1; });
       var strs = W.Store.historyKeys().filter(function (k) {
-        if (k.indexOf('group:') === 0 || k.indexOf('call:') === 0 || k === eng.momentsKey) return false;
+        if (k.indexOf('group:') === 0 || k.indexOf('call:') === 0 || k.indexOf('memo:') === 0 || k === eng.momentsKey) return false;
         if (cSet[k]) return false;
         return W.Store.history(k).length > 0;
       });
