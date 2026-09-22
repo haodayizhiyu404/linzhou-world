@@ -1669,7 +1669,17 @@
           var t = ev.target;
           if (!t || t.tagName !== 'IMG') return;
           var src = t.getAttribute('src') || '';
-          if (src.indexOf(IMG_BASE) !== 0 || t.dataset.lzwFbk) return;
+          // 兜底源也挂：双源皆死 → 记死亡名单。每次渲染都重建 <img>，不拦会把失败请求
+          // 一遍遍重发（控制台 ERR_CONNECTION_CLOSED 刷屏就是这么来的）
+          if (t.dataset.lzwFbk) {
+            if (src.indexOf(IMG_BASE_FALLBACK) === 0) {
+              var dw = window.LZWorld;
+              dw.DEAD_IMGS = dw.DEAD_IMGS || {};
+              dw.DEAD_IMGS[src.slice(IMG_BASE_FALLBACK.length)] = 1;
+            }
+            return;
+          }
+          if (src.indexOf(IMG_BASE) !== 0) return;
           t.dataset.lzwFbk = '1';
           t.src = IMG_BASE_FALLBACK + src.slice(IMG_BASE.length);
         }, true);

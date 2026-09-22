@@ -796,6 +796,10 @@ ctx.getWorldbook = async () => [
   eq('图床·catbox兜底常量', esrc2.indexOf("IMG_BASE_FALLBACK = 'https://files.catbox.moe/'") !== -1, true);
   eq('图床·img回退监听', esrc2.indexOf("addEventListener('error', function (ev)") !== -1 && esrc2.indexOf('lzwFbk') !== -1, true);
   eq('壁纸·CSS变量可换源', wsrc.includes('var(--lzw-wall') && wsrc.includes("setProperty('--lzw-wall'") && wsrc.includes('HOME_WALL_FB'), true);
+  eq('壳调度·bodyXxx命名契约', wsrc.includes("this['body' + this.screen.charAt(0).toUpperCase() + this.screen.slice(1)]") && wsrc.indexOf('_body_') === -1, true);
+  const wbsrc = fs.readFileSync(path.join(ROOT, 'src/worldbook.js'), 'utf8');
+  eq('图床·死亡名单出灰块', wbsrc.indexOf('DEAD_IMGS') !== -1 && wbsrc.indexOf('DEAD_IMG') !== -1, true);
+  eq('图床·双源皆死记名单', esrc2.indexOf('DEAD_IMGS') !== -1, true);
   global.__msgs = null;
   // ── 微信拆分·注册装载（壳+7屏按构建序入沙盒，断言各屏往宿主挂接成功）──
   console.log('[微信拆分·注册装载]');
@@ -815,6 +819,27 @@ ctx.getWorldbook = async () => [
   eq('装载·内核通话导出', typeof C2.callHtml === 'function' && typeof C2.fmtDur === 'function', true);
   eq('装载·内核卡片导出', typeof C2.transferCardHtml === 'function' && typeof C2.chatRowHtml === 'function' && typeof C2.appbarHtml === 'function', true);
   eq('装载·备忘录屏挂接', typeof UI2.bodyMemo === 'function' && typeof UI2.bodyMread === 'function' && typeof UI2.openMemo === 'function' && typeof UI2.memoWriteOne === 'function', true);
+  // 行为断言：屏函数真实返回 HTML——拆分回归保险（typeof 存在 ≠ 渲染契约成立；全屏空白事故留档）
+  // eng 用最小桩（真身是 engine.js 的 Engine，注册沙盒不装引擎）；imgUrl 桩防头像分支炸
+  W2.Worldbook = W2.Worldbook || { imgUrl: function (f) { return f ? 'img:' + f : ''; } };
+  W2.Store = W2.Store || { history: function () { return []; }, historyKeys: function () { return []; }, meta: function () { return {}; }, line: function () { return ''; } };
+  const engStub = {
+    momentsKey: 'moments',
+    phoneAllow: function () { return {}; },
+    section: function () { return null; },
+    findContact: function () { return null; },
+    momentsFeed: function () { return []; },
+    userAvatar: function () { return ''; },
+    memoEntries: function () { return []; },
+    forumNames: function () { return []; }
+  };
+  const ctx2 = { W: W2, eng: engStub, userName: '裴', snap: { dateText: '' }, clock: '15:47', dateShort: '', disp: '' };
+  const renderOk = function (fn, needle) { try { var h = fn.call(UI2, ctx2); return typeof h === 'string' && h.indexOf(needle) !== -1; } catch (e) { return false; } };
+  eq('装载·home屏真实渲染', renderOk(UI2.bodyHome, 'lzw-homegrid'), true);
+  eq('装载·list屏真实渲染', renderOk(UI2.bodyList, 'lzw-tabbar'), true);
+  eq('装载·chat屏真实渲染', (UI2.chatKey = '周言', renderOk(UI2.bodyChat, 'lzw-chatbg')), true);
+  eq('装载·moments屏真实渲染', renderOk(UI2.bodyMoments, 'lzw-mfeed'), true);
+  eq('装载·memo屏真实渲染', renderOk(UI2.bodyMemo, 'lzw-memo-chips'), true);
 
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');

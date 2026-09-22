@@ -133,7 +133,7 @@
     } catch (e0) {}
     var mUn2 = 0;
     try { mUn2 = W.Store.meta(eng.momentsKey).unread || 0; } catch (e0) {}
-    body = '<div class="lzw-body">' + rowsHtml + '</div>' +
+    return '<div class="lzw-body">' + rowsHtml + '</div>' +
       '<div class="lzw-tabbar">' +
       '<button class="lzw-tab' + (this.tab === 'chats' ? ' on' : '') + '" data-tab="chats">' + C.ICON_TAB_CHAT + '<span>微信</span>' + (totalUn2 ? '<span class="lzw-tabdot">' + (totalUn2 > 99 ? '99+' : totalUn2) + '</span>' : '') + '</button>' +
       '<button class="lzw-tab' + (this.tab === 'contacts' ? ' on' : '') + '" data-tab="contacts">' + C.ICON_TAB_CONT + '<span>通讯录</span></button>' +
@@ -156,7 +156,7 @@
     var dav = dc.avatar
       ? '<img class="lzw-cava" src="' + C.esc(W.Worldbook.imgUrl(dc.avatar)) + '">'
       : '<div class="lzw-cava">' + C.esc(dn.slice(0, 1)) + '</div>';
-    body = '<div class="lzw-body">' +
+    return '<div class="lzw-body">' +
       '<div class="lzw-cdetcard">' + dav + '<div class="lzw-cdetnm">' + C.esc(dn) + '</div></div>' +
       '<div class="lzw-cdetrow" data-mpf="' + C.esc(dn) + '" data-mfrom="cdetail">' +
       '<span class="l">朋友圈</span>' +

@@ -17,7 +17,7 @@
     var mfeed2 = eng.momentsFeed();
     var postsHtml = '';
     for (var mi = mfeed2.length - 1; mi >= 0; mi--) postsHtml += momentsPostHtml(mfeed2[mi], mi, userName, eng, W, true, snap.dateText || '');
-    body = '<div class="lzw-mfeed">' +
+    return '<div class="lzw-mfeed">' +
       '<div class="lzw-mcover">' + (coverU ? '<img src="' + C.esc(coverU) + '" alt="">' : '') +
       '<div class="lzw-mcover-shade"></div>' +
       '<div class="lzw-mme"><span class="nm">' + C.esc(userName) + '</span>' +
@@ -45,7 +45,7 @@
     }
     var hisHtml = '';
     for (var hi2 = 0; hi2 < hisIdx.length; hi2++) hisHtml += momentsPostHtml(feedAll[hisIdx[hi2]], hisIdx[hi2], userName, eng, W, false, snap.dateText || '');
-    body = '<div class="lzw-mfeed">' +
+    return '<div class="lzw-mfeed">' +
       '<div class="lzw-mcover">' + (covU2 ? '<img src="' + C.esc(covU2) + '" alt="">' : '') +
       '<div class="lzw-mcover-shade"></div>' +
       '<div class="lzw-mme"><span class="nm">' + C.esc(pn) + '</span>' +
@@ -57,7 +57,7 @@
 
   // body 必须包 .lzw-body（flex:1）——否则底部横条不贴底，跟着内容跑
   UI.bodyMpost = function (ctx) {
-    body = '<div class="lzw-body"><div class="lzw-mptext"><textarea class="lzw-mpta" id="lzw-mptext" maxlength="280" placeholder="这一刻的想法…"></textarea></div>' +
+    return '<div class="lzw-body"><div class="lzw-mptext"><textarea class="lzw-mpta" id="lzw-mptext" maxlength="280" placeholder="这一刻的想法…"></textarea></div>' +
       '<textarea class="lzw-mpimg" id="lzw-mpimg" maxlength="60" placeholder="图片（可选）：用文字描述这张图片的画面，如：一张拍糊的试卷"></textarea></div>';
   };
 

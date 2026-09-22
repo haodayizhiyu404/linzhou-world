@@ -325,11 +325,17 @@
       }
     },
 
+    // 双源（jsdelivr 主源 / catbox 兜底）都失败的图：渲染不再发请求，给灰块 SVG
+    // （与陌生人头像同款 #c9cfd6，视觉无差）。名单会话级，刷新页面即重置重试。
+    DEAD_IMG: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72"><rect width="72" height="72" rx="9" fill="#c9cfd6"/></svg>'),
+
     imgUrl: function (file) {
       file = String(file || '').trim();
       if (!file) return '';
       if (/^https?:\/\//i.test(file)) return file;
-      return (window.LZWorld.IMG_BASE || 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/') + file;
+      var wl = window.LZWorld || {};
+      if (wl.DEAD_IMGS && wl.DEAD_IMGS[file]) return Worldbook.DEAD_IMG;
+      return (wl.IMG_BASE || 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/') + file;
     }
   };
 

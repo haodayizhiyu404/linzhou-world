@@ -928,7 +928,7 @@
       if (this.call) {
         body = C.callHtml(this.call, userName);
       } else {
-        var f = this['_body_' + this.screen];
+        var f = this['body' + this.screen.charAt(0).toUpperCase() + this.screen.slice(1)];
         body = f ? f.call(this, ctx) : '<div class="lzw-body"></div>';
       }
 

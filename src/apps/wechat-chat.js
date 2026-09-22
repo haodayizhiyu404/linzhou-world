@@ -34,7 +34,7 @@
     }, this).join('');
     if (this.failed && this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
     if (this.staged.length) rows += C.stagedHtml(userName);
-    body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
+    return '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
       '<div class="lzw-bottom">' +
       panelHtml(this.panel) +
       '<div class="lzw-inputbar">' +

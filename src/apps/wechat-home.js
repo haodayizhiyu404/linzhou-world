@@ -33,8 +33,7 @@
         funTotal += Math.max(0, tot0 - seen0);
       });
     } catch (e0) {}
-    body =
-      '<div class="lzw-body"><div class="lzw-home-wall">' +
+    return '<div class="lzw-body"><div class="lzw-home-wall">' +
       '<div class="lzw-hometime"><div class="t">' + C.esc(clock) + '</div><div class="d">' + C.esc(dateShort || '霖州') + '</div></div>' +
       '<div class="lzw-homegrid">' +
       '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none;position:relative">' + C.ICON_WECHAT +

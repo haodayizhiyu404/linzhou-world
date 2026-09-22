@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-22T13:50:49.967Z
+//  构建时间：2026-09-22T14:08:08.564Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-22 13:50';
+var __LZW_BUILD__ = '2026-09-22 14:08';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -728,11 +728,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       }
     },
 
+    // 双源（jsdelivr 主源 / catbox 兜底）都失败的图：渲染不再发请求，给灰块 SVG
+    // （与陌生人头像同款 #c9cfd6，视觉无差）。名单会话级，刷新页面即重置重试。
+    DEAD_IMG: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72"><rect width="72" height="72" rx="9" fill="#c9cfd6"/></svg>'),
+
     imgUrl: function (file) {
       file = String(file || '').trim();
       if (!file) return '';
       if (/^https?:\/\//i.test(file)) return file;
-      return (window.LZWorld.IMG_BASE || 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/') + file;
+      var wl = window.LZWorld || {};
+      if (wl.DEAD_IMGS && wl.DEAD_IMGS[file]) return Worldbook.DEAD_IMG;
+      return (wl.IMG_BASE || 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/') + file;
     }
   };
 
@@ -2774,7 +2780,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (this.call) {
         body = C.callHtml(this.call, userName);
       } else {
-        var f = this['_body_' + this.screen];
+        var f = this['body' + this.screen.charAt(0).toUpperCase() + this.screen.slice(1)];
         body = f ? f.call(this, ctx) : '<div class="lzw-body"></div>';
       }
 
@@ -3147,8 +3153,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         funTotal += Math.max(0, tot0 - seen0);
       });
     } catch (e0) {}
-    body =
-      '<div class="lzw-body"><div class="lzw-home-wall">' +
+    return '<div class="lzw-body"><div class="lzw-home-wall">' +
       '<div class="lzw-hometime"><div class="t">' + C.esc(clock) + '</div><div class="d">' + C.esc(dateShort || '霖州') + '</div></div>' +
       '<div class="lzw-homegrid">' +
       '<div class="lzw-app" data-app="wechat"><div class="lzw-app-ico" style="background:#22c05e;border:none;position:relative">' + C.ICON_WECHAT +
@@ -3318,7 +3323,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     } catch (e0) {}
     var mUn2 = 0;
     try { mUn2 = W.Store.meta(eng.momentsKey).unread || 0; } catch (e0) {}
-    body = '<div class="lzw-body">' + rowsHtml + '</div>' +
+    return '<div class="lzw-body">' + rowsHtml + '</div>' +
       '<div class="lzw-tabbar">' +
       '<button class="lzw-tab' + (this.tab === 'chats' ? ' on' : '') + '" data-tab="chats">' + C.ICON_TAB_CHAT + '<span>微信</span>' + (totalUn2 ? '<span class="lzw-tabdot">' + (totalUn2 > 99 ? '99+' : totalUn2) + '</span>' : '') + '</button>' +
       '<button class="lzw-tab' + (this.tab === 'contacts' ? ' on' : '') + '" data-tab="contacts">' + C.ICON_TAB_CONT + '<span>通讯录</span></button>' +
@@ -3341,7 +3346,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var dav = dc.avatar
       ? '<img class="lzw-cava" src="' + C.esc(W.Worldbook.imgUrl(dc.avatar)) + '">'
       : '<div class="lzw-cava">' + C.esc(dn.slice(0, 1)) + '</div>';
-    body = '<div class="lzw-body">' +
+    return '<div class="lzw-body">' +
       '<div class="lzw-cdetcard">' + dav + '<div class="lzw-cdetnm">' + C.esc(dn) + '</div></div>' +
       '<div class="lzw-cdetrow" data-mpf="' + C.esc(dn) + '" data-mfrom="cdetail">' +
       '<span class="l">朋友圈</span>' +
@@ -3439,7 +3444,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     }, this).join('');
     if (this.failed && this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
     if (this.staged.length) rows += C.stagedHtml(userName);
-    body = '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
+    return '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
       '<div class="lzw-bottom">' +
       panelHtml(this.panel) +
       '<div class="lzw-inputbar">' +
@@ -3833,7 +3838,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var mfeed2 = eng.momentsFeed();
     var postsHtml = '';
     for (var mi = mfeed2.length - 1; mi >= 0; mi--) postsHtml += momentsPostHtml(mfeed2[mi], mi, userName, eng, W, true, snap.dateText || '');
-    body = '<div class="lzw-mfeed">' +
+    return '<div class="lzw-mfeed">' +
       '<div class="lzw-mcover">' + (coverU ? '<img src="' + C.esc(coverU) + '" alt="">' : '') +
       '<div class="lzw-mcover-shade"></div>' +
       '<div class="lzw-mme"><span class="nm">' + C.esc(userName) + '</span>' +
@@ -3861,7 +3866,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     }
     var hisHtml = '';
     for (var hi2 = 0; hi2 < hisIdx.length; hi2++) hisHtml += momentsPostHtml(feedAll[hisIdx[hi2]], hisIdx[hi2], userName, eng, W, false, snap.dateText || '');
-    body = '<div class="lzw-mfeed">' +
+    return '<div class="lzw-mfeed">' +
       '<div class="lzw-mcover">' + (covU2 ? '<img src="' + C.esc(covU2) + '" alt="">' : '') +
       '<div class="lzw-mcover-shade"></div>' +
       '<div class="lzw-mme"><span class="nm">' + C.esc(pn) + '</span>' +
@@ -3873,7 +3878,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // body 必须包 .lzw-body（flex:1）——否则底部横条不贴底，跟着内容跑
   UI.bodyMpost = function (ctx) {
-    body = '<div class="lzw-body"><div class="lzw-mptext"><textarea class="lzw-mpta" id="lzw-mptext" maxlength="280" placeholder="这一刻的想法…"></textarea></div>' +
+    return '<div class="lzw-body"><div class="lzw-mptext"><textarea class="lzw-mpta" id="lzw-mptext" maxlength="280" placeholder="这一刻的想法…"></textarea></div>' +
       '<textarea class="lzw-mpimg" id="lzw-mpimg" maxlength="60" placeholder="图片（可选）：用文字描述这张图片的画面，如：一张拍糊的试卷"></textarea></div>';
   };
 
@@ -6535,7 +6540,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           var t = ev.target;
           if (!t || t.tagName !== 'IMG') return;
           var src = t.getAttribute('src') || '';
-          if (src.indexOf(IMG_BASE) !== 0 || t.dataset.lzwFbk) return;
+          // 兜底源也挂：双源皆死 → 记死亡名单。每次渲染都重建 <img>，不拦会把失败请求
+          // 一遍遍重发（控制台 ERR_CONNECTION_CLOSED 刷屏就是这么来的）
+          if (t.dataset.lzwFbk) {
+            if (src.indexOf(IMG_BASE_FALLBACK) === 0) {
+              var dw = window.LZWorld;
+              dw.DEAD_IMGS = dw.DEAD_IMGS || {};
+              dw.DEAD_IMGS[src.slice(IMG_BASE_FALLBACK.length)] = 1;
+            }
+            return;
+          }
+          if (src.indexOf(IMG_BASE) !== 0) return;
           t.dataset.lzwFbk = '1';
           t.src = IMG_BASE_FALLBACK + src.slice(IMG_BASE.length);
         }, true);
