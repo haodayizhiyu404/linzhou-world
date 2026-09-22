@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-22T12:57:34.696Z
+//  构建时间：2026-09-22T13:29:16.178Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-22 12:57';
+var __LZW_BUILD__ = '2026-09-22 13:29';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -89,6 +89,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!h.length && r.meta) delete r.meta[chatKey];
       writeRoot(r);
       return true;
+    },
+
+    // 整段会话删除（陌生人分组用）：历史与元信息一起清，键位彻底拔除
+    dropKey: function (chatKey) {
+      var r = readRoot();
+      if (r.history) delete r.history[chatKey];
+      if (r.meta) delete r.meta[chatKey];
+      writeRoot(r);
     },
 
     // 从末尾弹出 n 条（重roll用）
@@ -1922,6 +1930,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-conv{display:flex;gap:10px;align-items:center;padding:11px 12px;background:#fff;position:relative;',
     'border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer}',
     '.lzw-unread{position:absolute;right:12px;top:50%;transform:translateY(-50%);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#f43530;color:#fff;font-size:11px;line-height:18px;text-align:center;box-sizing:border-box}',
+    '.lzw-sconv .lzw-unread{right:40px}',       // 陌生人行右侧有删除 ✕，红点左移让位
     '.lzw-app-ico .lzw-appdot{position:absolute;top:-5px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#f43530;color:#fff;font-size:10px;box-sizing:border-box;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;line-height:1}',
     '.lzw-conv:hover{background:#f7f7f9}',
     '.lzw-ava{width:34px;height:34px;border-radius:9px;flex:none;object-fit:cover;background:#c9cfd6;',
@@ -2581,6 +2590,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     forumName: '',        // fboard/fthread 当前论坛名
     fThread: -1,          // fthread 当前帖子下标
     fConfirmDel: '',      // 待确认删除的论坛名（''=无）
+    sConfirmDel: '',      // 待确认删除的陌生人会话 key（''=无）
     fBusy: false,         // 论坛生成中
     tTarget: '',          // 群聊转账选中的接收方（确定发出后清空）
     _placed: false,
@@ -2717,6 +2727,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         })() : '') +
         (this.pConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除预设「' + esc(this.pConfirmDel) + '」？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="pdelno">取消</button><button class="lzw-cbtn yes" data-cact="pdelok">删除</button></div></div></div>' : '') +
         (this.fConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除论坛「' + esc(this.fConfirmDel) + '」及全部帖子？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="fdelno">取消</button><button class="lzw-cbtn yes" data-cact="fdelok">删除</button></div></div></div>' : '') +
+        (this.sConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除与「' + esc(this.sConfirmDel) + '」的会话记录？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="sdelno">取消</button><button class="lzw-cbtn yes" data-cact="sdelok">删除</button></div></div></div>' : '') +
         '</div></div>';
 
       this.bind(ph);
@@ -2814,6 +2825,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             var fn0 = UI.fConfirmDel; UI.fConfirmDel = '';
             try { window.LZWorld.Store.forumDel(UI.forumLineKey(), fn0); } catch (e) {}
             if (UI.forumName === fn0) { UI.forumName = ''; UI.fThread = -1; UI.screen = 'forum'; }
+            UI.render();
+          }
+          else if (a === 'sdelno') { UI.sConfirmDel = ''; UI.render(); }
+          else if (a === 'sdelok') {
+            var sk0 = UI.sConfirmDel; UI.sConfirmDel = '';
+            try { window.LZWorld.Store.dropKey(sk0); } catch (e) {}
+            if (UI.chatKey === sk0) { UI.chatKey = ''; UI.screen = 'list'; }
             UI.render();
           }
           else if (a === 'taccok') { var ti = UI.tConfirm; UI.tConfirm = -1; UI.stageTVerdict('taccept', ti); }
@@ -3149,6 +3167,42 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           (function () { var un = W.Store.meta(cv.key).unread || 0; return un ? '<span class="lzw-unread">' + (un > 99 ? '99+' : un) + '</span>' : ''; })() +
           '</div>';
       }).join('') || '<div class="lzw-sysrow">暂无会话<br>去通讯录找人聊聊吧</div>';
+      // 陌生人：有私聊记录但不在本线通讯录（吃瓜群群友私聊机主/旧线残留）。
+      // 灰底首字头像（无头像资源），可整段删除。call: 是通话字幕键、
+      // momentsKey 是朋友圈，都不属于会话；群聊走 roster 渲染，不在此列。
+      var cSet = {};
+      (sec.contacts || []).forEach(function (c) { cSet[c.name] = 1; });
+      var strs = W.Store.historyKeys().filter(function (k) {
+        if (k.indexOf('group:') === 0 || k.indexOf('call:') === 0 || k === eng.momentsKey) return false;
+        if (cSet[k]) return false;
+        return W.Store.history(k).length > 0;
+      });
+      if (strs.length) {
+        strs.sort(function (a, b) {
+          var ha = W.Store.history(a), hb = W.Store.history(b);
+          var la = ha[ha.length - 1], lb = hb[hb.length - 1];
+          var da2 = dayNum(la && la.day), db2 = dayNum(lb && lb.day);
+          if (da2 !== db2) return db2 - da2;
+          var ta2 = (la && la.time) || '', tb2 = (lb && lb.time) || '';
+          return ta2 === tb2 ? 0 : (ta2 > tb2 ? -1 : 1);
+        });
+        rowsHtml += '<div class="lzw-sechead">陌生人</div>' + strs.map(function (k) {
+          var hs = W.Store.history(k);
+          var lasts = hs[hs.length - 1];
+          var prevs = lasts
+            ? (lasts.kind === 'text' ? lasts.text
+              : lasts.kind === 'calllog' ? '[' + (lasts.mode === 'video' ? '视频通话' : '语音通话') + ']'
+              : '[' + (kindCn[lasts.kind] || lasts.kind) + ']')
+            : '';
+          var uns = W.Store.meta(k).unread || 0;
+          return '<div class="lzw-conv lzw-sconv" data-key="' + C.esc(k) + '" data-group="0">' +
+            '<div class="lzw-ava">' + C.esc(k.slice(0, 1)) + '</div>' +
+            '<div class="lzw-conv-main"><div class="lzw-conv-name">' + C.esc(k) + '</div>' +
+            '<div class="lzw-conv-prev">' + C.esc(prevs) + '</div></div>' +
+            (uns ? '<span class="lzw-unread">' + (uns > 99 ? '99+' : uns) + '</span>' : '') +
+            '<span class="lzw-setdel" data-sdel="' + C.esc(k) + '" title="删除会话">✕</span></div>';
+        }).join('');
+      }
     } else {
       rowsHtml = '<div class="lzw-sysrow">未定位到当前世界线<br>进行一次主对话生成后自动归位</div>';
     }
@@ -3237,6 +3291,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 论坛行（.lzw-frow）也是 .lzw-conv，必须排除——否则点击进空白聊天页
     ph.querySelectorAll('.lzw-conv:not(.lzw-linerow):not([data-cdet]):not(.lzw-frow)').forEach(function (el) {
       el.onclick = function () { UI.openChat(el.dataset.key, el.dataset.group === '1'); };
+    });
+    // 陌生人会话 ✕：删整段记录（确认弹窗在壳上，sdelok/sdelno 统一处置）
+    ph.querySelectorAll('[data-sdel]').forEach(function (el) {
+      el.onclick = function (ev) {
+        if (ev && ev.stopPropagation) ev.stopPropagation();
+        UI.sConfirmDel = el.dataset.sdel;
+        UI.render();
+      };
     });
   });
 })();
@@ -5200,6 +5262,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         });
         (sec.groups || []).forEach(function (g) {
           if (g.name) out['group:' + g.name] = g.name;
+          // 群成员也是合法私聊收件人：吃瓜群群友可借机私聊机主（陌生人分组承接会话）
+          (g.members || []).forEach(function (m) {
+            if (m && m !== myName && !out[m]) out[m] = m;
+          });
         });
       }
       return out;
@@ -5301,8 +5367,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var raw, title, parseGroup = false;
 
       if (!isGroup) {
-        var c = this.findContact(chatKey);
-        if (!c) throw new Error('联系人不在本线通讯录：' + chatKey);
+        // 陌生人（群友等非通讯录私聊）：合成最小档案照样生成——人设空串，
+        // AI 靠聊天记录与群上下文认人；通话仍拒（callInvite/callTurn 保持硬校验）
+        var c = this.findContact(chatKey) || { name: chatKey, avatar: '' };
         var profile = this.profileFor(c.name);
         var snap = W.Status.snapshot(c.name);
         var hist = W.Store.history(chatKey);

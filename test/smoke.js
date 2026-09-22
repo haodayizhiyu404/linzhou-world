@@ -641,10 +641,27 @@ ctx.getWorldbook = async () => [
   eq('白名单·群键累未读', LW.Store.meta('group:霖附吃瓜二手交易市场').unread >= 1, true);
   const gMe = LW.Engine.capturePhoneText('<!--phone\n陈默：你自己加油\n-->');
   eq('白名单·机主本人拒收', gMe.length, 0);
+  // 陌生人会话：群成员进白名单（群友可私聊机主）+ 会话可整段删除
+  eq('陌生人·群成员进白名单', allowMap['陆飞'], '陆飞');
+  eq('陌生人·群成员外校生进白名单', allowMap['外校生'], '外校生');
+  const gLm = LW.Engine.capturePhoneText('<!--phone\n陆飞：兄弟，那批货还要吗\n-->');
+  eq('陌生人·群友私聊路由到人', gLm.indexOf('陆飞') !== -1, true);
+  eq('陌生人·私聊写入历史', LW.Store.history('陆飞').some(function (m) { return m.text.indexOf('那批货') !== -1; }), true);
+  eq('陌生人·私聊未读累计', (LW.Store.meta('陆飞').unread || 0) >= 1, true);
+  LW.Store.dropKey('陆飞');
+  eq('陌生人·删会话清历史', LW.Store.history('陆飞').length, 0);
+  eq('陌生人·删会话拔键', LW.Store.historyKeys().indexOf('陆飞'), -1);
+  eq('陌生人·删会话清未读', LW.Store.meta('陆飞').unread || 0, 0);
+  eq('陌生人·删不存在键不炸', (function () { try { LW.Store.dropKey('查无此人'); return true; } catch (e) { return false; } })(), true);
   // 红点求和兜底静态保险丝：两处求和（桌面角标/微信tab）都必须过 phoneAllow
   const wSrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-home.js'), 'utf8') + fs.readFileSync(path.join(ROOT, 'src/apps/wechat-list.js'), 'utf8');
   eq('兜底·桌面角标过白名单', wSrc.indexOf('allowK && !allowK[k] && k !== eng.momentsKey') !== -1, true);
   eq('兜底·微信tab过白名单', wSrc.indexOf('allowK2 && !allowK2[k]') !== -1, true);
+  // 陌生人分组静态保险丝：会话列表渲染陌生人区块 + 删除载体 + 壳上确认弹窗/处置
+  eq('陌生人·分组渲染保险丝', wSrc.indexOf('lzw-sechead">陌生人') !== -1 && wSrc.indexOf('data-sdel') !== -1, true);
+  const wShell = fs.readFileSync(path.join(ROOT, 'src/apps/wechat.js'), 'utf8');
+  eq('陌生人·壳确认弹窗保险丝', wShell.indexOf('data-cact="sdelok"') !== -1 && wShell.indexOf('sConfirmDel') !== -1, true);
+  eq('陌生人·壳处置保险丝', wShell.indexOf("a === 'sdelok'") !== -1 && wShell.indexOf('dropKey(sk0)') !== -1, true);
   // sys 条目：msgToLine 不带人名前缀（跨场景携带里就是干净的「语音通话 · 03:24」）
   eq('通话·sys行格式', LW.Floor.msgToLine({ who: 'sys', kind: 'sys', text: '语音通话 · 03:24' }, '裴知意'), '语音通话 · 03:24');
   eq('通话·callKey', LW.Engine.callKey('沈锡元'), 'call:沈锡元');

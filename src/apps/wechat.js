@@ -144,6 +144,7 @@
     '.lzw-conv{display:flex;gap:10px;align-items:center;padding:11px 12px;background:#fff;position:relative;',
     'border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer}',
     '.lzw-unread{position:absolute;right:12px;top:50%;transform:translateY(-50%);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#f43530;color:#fff;font-size:11px;line-height:18px;text-align:center;box-sizing:border-box}',
+    '.lzw-sconv .lzw-unread{right:40px}',       // 陌生人行右侧有删除 ✕，红点左移让位
     '.lzw-app-ico .lzw-appdot{position:absolute;top:-5px;right:-7px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;background:#f43530;color:#fff;font-size:10px;box-sizing:border-box;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;line-height:1}',
     '.lzw-conv:hover{background:#f7f7f9}',
     '.lzw-ava{width:34px;height:34px;border-radius:9px;flex:none;object-fit:cover;background:#c9cfd6;',
@@ -803,6 +804,7 @@
     forumName: '',        // fboard/fthread 当前论坛名
     fThread: -1,          // fthread 当前帖子下标
     fConfirmDel: '',      // 待确认删除的论坛名（''=无）
+    sConfirmDel: '',      // 待确认删除的陌生人会话 key（''=无）
     fBusy: false,         // 论坛生成中
     tTarget: '',          // 群聊转账选中的接收方（确定发出后清空）
     _placed: false,
@@ -939,6 +941,7 @@
         })() : '') +
         (this.pConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除预设「' + esc(this.pConfirmDel) + '」？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="pdelno">取消</button><button class="lzw-cbtn yes" data-cact="pdelok">删除</button></div></div></div>' : '') +
         (this.fConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除论坛「' + esc(this.fConfirmDel) + '」及全部帖子？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="fdelno">取消</button><button class="lzw-cbtn yes" data-cact="fdelok">删除</button></div></div></div>' : '') +
+        (this.sConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除与「' + esc(this.sConfirmDel) + '」的会话记录？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="sdelno">取消</button><button class="lzw-cbtn yes" data-cact="sdelok">删除</button></div></div></div>' : '') +
         '</div></div>';
 
       this.bind(ph);
@@ -1036,6 +1039,13 @@
             var fn0 = UI.fConfirmDel; UI.fConfirmDel = '';
             try { window.LZWorld.Store.forumDel(UI.forumLineKey(), fn0); } catch (e) {}
             if (UI.forumName === fn0) { UI.forumName = ''; UI.fThread = -1; UI.screen = 'forum'; }
+            UI.render();
+          }
+          else if (a === 'sdelno') { UI.sConfirmDel = ''; UI.render(); }
+          else if (a === 'sdelok') {
+            var sk0 = UI.sConfirmDel; UI.sConfirmDel = '';
+            try { window.LZWorld.Store.dropKey(sk0); } catch (e) {}
+            if (UI.chatKey === sk0) { UI.chatKey = ''; UI.screen = 'list'; }
             UI.render();
           }
           else if (a === 'taccok') { var ti = UI.tConfirm; UI.tConfirm = -1; UI.stageTVerdict('taccept', ti); }

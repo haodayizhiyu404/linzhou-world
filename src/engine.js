@@ -634,6 +634,10 @@
         });
         (sec.groups || []).forEach(function (g) {
           if (g.name) out['group:' + g.name] = g.name;
+          // 群成员也是合法私聊收件人：吃瓜群群友可借机私聊机主（陌生人分组承接会话）
+          (g.members || []).forEach(function (m) {
+            if (m && m !== myName && !out[m]) out[m] = m;
+          });
         });
       }
       return out;
@@ -735,8 +739,9 @@
       var raw, title, parseGroup = false;
 
       if (!isGroup) {
-        var c = this.findContact(chatKey);
-        if (!c) throw new Error('联系人不在本线通讯录：' + chatKey);
+        // 陌生人（群友等非通讯录私聊）：合成最小档案照样生成——人设空串，
+        // AI 靠聊天记录与群上下文认人；通话仍拒（callInvite/callTurn 保持硬校验）
+        var c = this.findContact(chatKey) || { name: chatKey, avatar: '' };
         var profile = this.profileFor(c.name);
         var snap = W.Status.snapshot(c.name);
         var hist = W.Store.history(chatKey);

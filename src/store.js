@@ -82,6 +82,14 @@
       return true;
     },
 
+    // 整段会话删除（陌生人分组用）：历史与元信息一起清，键位彻底拔除
+    dropKey: function (chatKey) {
+      var r = readRoot();
+      if (r.history) delete r.history[chatKey];
+      if (r.meta) delete r.meta[chatKey];
+      writeRoot(r);
+    },
+
     // 从末尾弹出 n 条（重roll用）
     popLast: function (chatKey, n) {
       var r = readRoot();
