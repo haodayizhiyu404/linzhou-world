@@ -203,7 +203,7 @@ ctx.getCharLorebooks = () => ({ primary: '测试书' });
 ctx.getWorldbook = async () => [
   { comment: '霖州手机::通讯录', enabled: true, content: JSON.stringify({
     'IF线': {
-      contacts: [{ name: '周言', avatar: 'a.png' }, { name: '张裕民', avatar: 'z.png' }],
+      contacts: [{ name: '周言', avatar: 'a.png' }, { name: '张裕民', avatar: 'z.png' }, { name: '许嘉文', avatar: 'x.png' }, { name: '陈默', avatar: 'c.png' }, { name: '沈锡元', avatar: 's.png' }],
       groups: [{
         name: '霖附吃瓜二手交易市场', open: true, avatar: 'g.png',
         style: '节奏快', crowd: '超百人，多为陌生人',
@@ -626,6 +626,25 @@ ctx.getWorldbook = async () => [
   const sideNames = LW.Engine.capturePhoneText('陆飞：哈哈<!--phone\n许嘉文：我有，直接送你\n-->还有');
   eq('群夹带·路由到人', sideNames.indexOf('许嘉文') !== -1, true);
   eq('群夹带·写入私聊', LW.Store.history('许嘉文').some(function (m) { return m.text.indexOf('直接送你') !== -1; }), true);
+  // 主动消息收件人白名单（蒋默卡幽灵红点同款修复）：未知收件人整组丢弃、
+  // 群名路由进群会话、机主本人拒收、红点求和只数白名单键
+  const allowMap = LW.Engine.phoneAllow();
+  eq('白名单·联系人在列', allowMap['周言'], '周言');
+  eq('白名单·群键在列', allowMap['group:霖附吃瓜二手交易市场'], '霖附吃瓜二手交易市场');
+  eq('白名单·机主本人剔除', allowMap['陈默'], undefined);
+  const gDrop = LW.Engine.capturePhoneText('<!--phone\n宋雨琦：在吗\n宋雨琦：看到回我\n-->');
+  eq('白名单·未知收件人整组丢弃', gDrop.length, 0);
+  eq('白名单·丢弃不建会话', LW.Store.historyKeys().indexOf('宋雨琦'), -1);
+  const gGrp = LW.Engine.capturePhoneText('<!--phone\n霖附吃瓜二手交易市场：毕业聚照片在这\n-->');
+  eq('白名单·群名返回群名', gGrp.indexOf('霖附吃瓜二手交易市场') !== -1, true);
+  eq('白名单·群消息入群键', LW.Store.history('group:霖附吃瓜二手交易市场').some(function (m) { return m.text.indexOf('毕业聚照片') !== -1; }), true);
+  eq('白名单·群键累未读', LW.Store.meta('group:霖附吃瓜二手交易市场').unread >= 1, true);
+  const gMe = LW.Engine.capturePhoneText('<!--phone\n陈默：你自己加油\n-->');
+  eq('白名单·机主本人拒收', gMe.length, 0);
+  // 红点求和兜底静态保险丝：两处求和（桌面角标/微信tab）都必须过 phoneAllow
+  const wSrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat.js'), 'utf8');
+  eq('兜底·桌面角标过白名单', wSrc.indexOf('allowK && !allowK[k] && k !== eng.momentsKey') !== -1, true);
+  eq('兜底·微信tab过白名单', wSrc.indexOf('allowK2 && !allowK2[k]') !== -1, true);
   // sys 条目：msgToLine 不带人名前缀（跨场景携带里就是干净的「语音通话 · 03:24」）
   eq('通话·sys行格式', LW.Floor.msgToLine({ who: 'sys', kind: 'sys', text: '语音通话 · 03:24' }, '裴知意'), '语音通话 · 03:24');
   eq('通话·callKey', LW.Engine.callKey('沈锡元'), 'call:沈锡元');

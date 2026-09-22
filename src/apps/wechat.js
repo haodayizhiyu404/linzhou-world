@@ -977,7 +977,12 @@
         try {
           // 桌面图标是 app 级角标：会话未读 + 朋友圈动态未读（朋友对机主动态的赞/评论）都上角标，
           // 与发现 tab 红点是同一份计数（Store.meta(momentsKey).unread）
-          W.Store.historyKeys().forEach(function (k) { totalUn += W.Store.meta(k).unread || 0; });
+          // 存量兜底：历史遗留的幽灵会话键（错收件人）不过白名单，永不上桌面角标
+          var allowK = eng.phoneAllow ? eng.phoneAllow() : null;
+          W.Store.historyKeys().forEach(function (k) {
+            if (allowK && !allowK[k] && k !== eng.momentsKey) return;
+            totalUn += W.Store.meta(k).unread || 0;
+          });
         } catch (e0) {}
         // 论坛 app 角标：当前线所有论坛的（总条目 - 已读标记）之和
         var funTotal = 0;
@@ -1090,7 +1095,13 @@
         var totalUn2 = 0;
         try {
           // 只算会话未读；朋友圈的未读挂发现 tab（mUn2），别混进微信 tab
-          W.Store.historyKeys().forEach(function (k) { if (k !== eng.momentsKey) totalUn2 += W.Store.meta(k).unread || 0; });
+          // 存量兜底：幽灵会话键不过白名单，微信 tab 红点只数真会话
+          var allowK2 = eng.phoneAllow ? eng.phoneAllow() : null;
+          W.Store.historyKeys().forEach(function (k) {
+            if (k === eng.momentsKey) return;
+            if (allowK2 && !allowK2[k]) return;
+            totalUn2 += W.Store.meta(k).unread || 0;
+          });
         } catch (e0) {}
         var mUn2 = 0;
         try { mUn2 = W.Store.meta(eng.momentsKey).unread || 0; } catch (e0) {}

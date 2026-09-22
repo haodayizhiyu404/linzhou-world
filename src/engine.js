@@ -621,6 +621,24 @@
     },
     // 从任意文本里抠 <!--phone--> 主动块并按人路由进私聊（带未读/近况元信息）。
     // 正文末位捕捉与手机群聊生成夹带私聊，两条管道共用此函数。
+    // 主动消息收件人白名单：当前线的联系人（机主本人除外——他不可能给自己发主动消息）
+    // + 群名（群键 'group:'+群名）。返回 {会话键: 显示名} 映射；
+    // 主动消息路由（capturePhoneText）与红点求和（wechat 两处角标）共用，
+    // 保证 AI 写错收件人建出的幽灵会话永不上点。定位不到当前线时返回空表——宁可全丢。
+    phoneAllow: function () {
+      var sec = this.section(), out = {}, myName = '';
+      try { myName = this.userName(); } catch (e0) {}
+      if (sec) {
+        (sec.contacts || []).forEach(function (c) {
+          if (c.name && c.name !== myName) out[c.name] = c.name;
+        });
+        (sec.groups || []).forEach(function (g) {
+          if (g.name) out['group:' + g.name] = g.name;
+        });
+      }
+      return out;
+    },
+
     capturePhoneText: function (text) {
       var W = window.LZWorld;
       var re = /<!--\s*phone\s*([\s\S]*?)-->/gi;
@@ -634,19 +652,36 @@
       parsed.forEach(function (p) { (byWho[p.who] = byWho[p.who] || []).push(p); });
       var names = Object.keys(byWho);
       var UI = W.Apps && W.Apps.wechat;
+      var allow = this.phoneAllow();
+      var myName = '';
+      try { myName = this.userName(); } catch (e0) {}
+      var routed = [];
       names.forEach(function (n) {
-        W.Store.push(n, byWho[n], 100);
+        // 收件人解析（私聊优先于群）：机主本人永不合法；联系人名→私聊键；
+        // 群名→群会话键（以前会被错建成「以群名为名的私聊」幽灵，红点永不消）；
+        // 都不中→整组丢弃（不按行拆）并告警——只拦手机侧，正文与上下文不受影响。
+        var key = null;
+        if (n !== myName) {
+          if (allow[n]) key = n;
+          else if (allow['group:' + n]) key = 'group:' + n;
+        }
+        if (!key) {
+          console.warn('[霖州引擎] 主动消息丢弃：收件人「' + n + '」不在当前线通讯录/群列表（' + byWho[n].length + ' 条）');
+          return;
+        }
+        routed.push(n);
+        W.Store.push(key, byWho[n], 100);
         // 未读：正开着该对话框看 = 已读；否则累加红点（打开即清零，见 wechat.openChat）
-        var viewing = UI && UI.screen === 'chat' && UI.chatKey === n;
-        if (!viewing) W.Store.bumpUnread(n, byWho[n].length);
+        var viewing = UI && UI.screen === 'chat' && UI.chatKey === key;
+        if (!viewing) W.Store.bumpUnread(key, byWho[n].length);
         var arr = byWho[n];
         var last = arr[arr.length - 1];
         var headText = last.kind === 'text' ? last.text
           : last.kind === 'calllog' ? '[' + (last.mode === 'video' ? '视频通话' : '语音通话') + ']'
           : '[' + ({ sticker: '表情', voice: '语音', image: '图片', poke: '戳一戳', location: '定位', transfer: '转账', taccept: '转账', tdecline: '转账' }[last.kind] || '消息') + ']';
-        W.Store.setMeta(n, { headline: String(headText).slice(0, 40), atMainCount: Engine.mainCount() });
+        W.Store.setMeta(key, { headline: String(headText).slice(0, 40), atMainCount: Engine.mainCount() });
       });
-      return names;
+      return routed;
     },
     // 扫最近的 assistant 消息（默认 5 条，仅即时事件后调用），抓未处理键里的注释块。
     // 防重键 = 楼层id + swipe序号 + 块内容哈希：重 roll 同层新 swipe 会换新键正常
