@@ -753,11 +753,12 @@ ctx.getWorldbook = async () => [
   // 热度格式化：千→k，万→w
   eq('论坛·热度格式化', [LW.Engine.forumHeat(342), LW.Engine.forumHeat(1234), LW.Engine.forumHeat(23000), LW.Engine.forumHeat(999)], ['342', '1.2k', '2.3w', '999']);
   // 帖子契约解析：正文=首个标记行前；[回复] 只挂最近一条 [热评]（楼中楼）
-  const th = LW.Engine.parseForumThread('正文第一段。\n正文第二段。\n[热评:快乐风男:4521:前排，说得好]\n[回复:杠精本精:@快乐风男:不同意]\n[回复:路人甲:@杠精本精:楼上急了]\n[评论:网友丁:马克]\n[评论:网友戊:顶]');
+  const th = LW.Engine.parseForumThread('正文第一段。\n正文第二段。\n[热评:快乐风男:4521:前排，说得好]\n[回复:杠精本精:@快乐风男:不同意]\n[回复:路人甲:@杠精本精:楼上急了]\n[评论:网友丁:3:马克]\n[评论:网友戊:顶]');
   eq('论坛·帖子正文', th.body, '正文第一段。\n正文第二段。');
   eq('论坛·热评解析', th.hot.length === 1 && th.hot[0].likes === 4521, true);
   eq('论坛·楼中楼挂热评', th.hot[0].nest.length === 2 && th.hot[0].nest[0].to === '快乐风男', true);
   eq('论坛·最新评论', th.latest.length === 2 && th.latest[1].author === '网友戊', true);
+  eq('论坛·新评带赞数', th.latest[0].likes === 3 && th.latest[1].likes === 0, true);
   // 时间归一化：缺年补快照年，整年时间保留
   eq('论坛·时间补年', LW.Engine.normForumTime('8月26日 9:05', { dateText: '2034年8月26日 星期五' }), '2034年8月26日 09:05');
   eq('论坛·整年时间保留', LW.Engine.normForumTime('2031年10月2日 21:30', { dateText: '2034年8月26日 星期五' }), '2031年10月2日 21:30');
@@ -778,7 +779,7 @@ ctx.getWorldbook = async () => [
   const ftTxt = ft.ordered_prompts[0].content;
   eq('论坛·帖子契约·热评', ftTxt.indexOf('[热评:网名:赞数:内容]') !== -1, true);
   eq('论坛·帖子契约·楼中楼', ftTxt.indexOf('[回复:网名:@被回复者:内容]') !== -1, true);
-  eq('论坛·帖子契约·最新', ftTxt.indexOf('[评论:网名:内容]') !== -1, true);
+  eq('论坛·帖子契约·新评', ftTxt.indexOf('[评论:网名:赞数:内容]') !== -1, true);
   eq('论坛·预览一致约束', ftTxt.indexOf('如题今天出分') !== -1, true);
   // 思维链剔除补漏：未闭合 think（部分前端不补闭标签，开口之后全文皆思考）+ 带属性 cot，内容一律不进提示词
   global.__msgs = [

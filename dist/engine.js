@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-23T18:16:54.410Z
+//  构建时间：2026-09-23T18:52:45.534Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-23 18:16';
+var __LZW_BUILD__ = '2026-09-23 18:52';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1260,10 +1260,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '',
       '## 输出要求（严格遵守）',
       '- 输出 6~8 条帖子，按发布时间从新到旧排列（最新的最先输出）',
-      '- 格式严格单行：[帖:网名:标题:预览:赞:评]（标题 ≤20 字；预览 15~40 字的一句话，勾人点进去；赞/评为纯整数）',
+      '- 格式严格单行：[帖:网名:标题:预览:赞:评]（标题 ≤20 字；预览 15~40 字，必须是帖子正文的开头一两句话——原样截取的感觉，不许概括或另写，点进帖子看到的正文就从这句开始；赞/评为纯整数）',
       '- 热度由你拿捏：社会热点、公告、超级大瓜自然高（几万到几十万）；日常灌水几十到几百。分布要真实，别条条都高',
       '- 可选：每条帖子后紧跟一行 [时间:M月D日 HH:MM]（24 小时制；不晚于当前时刻；彼此拉开，今天昨天为主，个别可早到几天前）',
       '- 帖子要有真实论坛感：问事求助、分享、吐槽、炫耀、吃瓜搬运、灌水……标题党可以有但别每条都党',
+'- 题材必须错开：一屏里求助/吃瓜/吐槽/分享/炫耀/避雷/情感/校园八卦/吃喝玩乐/emo 闲扯等各占一两席，不许两条同类；标题句式也错开（问句、陈述、标题党、废话文学都有）',
       '- 网名要像真人注册的：字母缩写、中二名、随手起名、带数字都行；不要一水儿文艺名',
       '- 内容与口吻贴合「' + name + '」这个论坛名该有的画风；楼主们各有各的声口，不要同一副腔调',
       '- 不要点名单「' + myName + '」，不要写需要机主回应的内容（机主只是路过看看）',
@@ -1293,7 +1294,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '',
       '## 这条帖子',
       '- 标题：「' + post.title + '」（楼主：' + post.author + (post.time ? '，' + post.time : '') + '，目录标注 赞' + (post.likes || 0) + ' · 评' + (post.cmts || 0) + '）',
-      '- 目录预览（正文必须与之一致）：' + (post.preview || ''),
+      '- 目录预览（正文必须原样以它开头，一字不改）：' + (post.preview || ''),
       '',
       charDesc ? '## 故事主线背景\n' + charDesc : '',
       '',
@@ -1306,10 +1307,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       forumPeopleBlock(people, profiles),
       '',
       '## 输出要求（严格遵守）',
-      '- 先写正文：100~400 字，可多段，楼主本人的口吻与处境；必须与标题、目录预览相符，可展开细节但不能是两个故事',
+      '- 先写正文：100~400 字，可多段，楼主本人的口吻与处境；正文必须原样以目录预览那句话开头（一字不改），再往后展开——预览与正文是同一个故事，不许另起炉灶',
       '- 然后 2~4 条热评，格式 [热评:网名:赞数:内容]（赞数为整数；抖机灵、共鸣、补充、抬杠、歪楼都行，像真实高赞）',
       '- 每条热评可紧跟 0~2 条楼中楼，格式 [回复:网名:@被回复者:内容]（只挂最近一条热评；互怼、补刀、劝架都可以）',
-      '- 然后 3~6 条普通评论，格式 [评论:网名:内容]（按发布时间新→旧；真实水友口气，越普通越好）',
+      '- 然后 3~6 条新评，格式 [评论:网名:赞数:内容]（按发布时间新→旧；赞数为整数——多数 0 或个位数，内容炸裂有笑点的可小爆到几十几百）',
+'- 评论区要真实网友生态：有共鸣也有抬杠，有抖机灵也有泼冷水，有质疑真实性也有现身说法，偶尔歪楼互怼；不要清一色捧场——那是水军味',
       '- 评论区可出现上方名单里的人（用网名/缩写/外号，熟人能认出），也可全用陌生网友；不要点名机主、不要写需要机主回应的内容',
       '- 除正文与标记行外不要输出任何其他内容'
     ].filter(function (s) { return s !== ''; }).join('\n');
@@ -2404,6 +2406,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-ftitle{font-size:14px;font-weight:600;color:#111;line-height:1.4;word-break:break-word}',
     '.lzw-fsub{font-size:11px;color:#9aa0a8;margin-top:3px}',
     '.lzw-fmeta{display:flex;align-items:baseline;gap:6px;margin-top:1px}',
+    '.lzw-fmain .lzw-fmeta{margin-top:6px}',
+    '.lzw-fbot{display:flex;justify-content:space-between;align-items:center;margin-top:4px}',
+    '.lzw-fbot .lzw-fstat{margin-top:0}',
+    '.lzw-fstat-r{justify-content:flex-end;margin-top:10px}',
+    '.lzw-frep-ops{display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:5px}',
+    '.lzw-fop{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:#9aa0a8}',
     '.lzw-fauthor{color:#576b95;font-weight:600;font-size:12.5px}',
     '.lzw-ftime{color:#c0c4cc;font-size:11px}',
     '.lzw-ftime::before{content:"·";margin-right:6px}',
@@ -2427,8 +2435,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-fsec{margin:14px 12px 6px;font-size:12px;color:#9aa0a8;font-weight:600}',
     '.lzw-fhot{padding:9px 0;border-bottom:1px solid rgba(0,0,0,.05)}',
     '.lzw-fhot:last-child{border-bottom:none}',
-    '.lzw-fhot-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#e8912d;background:#fdf3e7;border-radius:8px;padding:2px 7px;margin-bottom:4px}',
-    '.lzw-fhot-badge svg{flex:none}',
+
     '.lzw-fnest{margin:6px 0 2px 14px;padding:8px 10px;background:#f7f7f9;border-radius:10px;font-size:12.5px;line-height:1.5;color:#444;word-break:break-word}',
     // ── 备忘录（lzw-memo-*）：选人 chips / 存档列表 / 阅读页 ──
     '.lzw-memo-chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 8px;flex:none;background:#f7f7f9;border-bottom:1px solid rgba(0,0,0,.06)}',
@@ -4285,6 +4292,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       : "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='none' stroke='" + (color || '#b6bac2') + "' stroke-width='2' stroke-linejoin='round'><path d='" + p + "'/></svg>";
   }
 
+  // 评论条右下角操作区：点赞数（0 不显示数字）+ 评论符号（预留位，以后给机主回评论用）
+  function fRepOps(likes) {
+    return "<div class='lzw-frep-ops'><span class='lzw-fop'>" + fLike('#9aa0a8', 11) + (likes > 0 ? W.Engine.forumHeat(likes) : '') + "</span>" +
+      "<span class='lzw-fop'>" + fCmt('#9aa0a8', 11) + "</span></div>";
+  }
+
   function forumListHtml() {
     var line = forumLineKey();
     var names = [];
@@ -4339,10 +4352,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var badges = (p.fav ? "<span class='lzw-fstar'>" + fStar(true, 12) + "</span>" : '') + (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '');
       return "<div class='lzw-conv lzw-frow' data-fthr='" + C.esc(postId(p)) + "'>" +
         "<div class='lzw-conv-main'>" +
-        "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</span></div>" +
         "<div class='lzw-ftitle'>" + C.esc(p.title) + badges + "</div>" +
         "<div class='lzw-fprev'>" + C.esc(p.preview || String(p.text || '').slice(0, 40)) + "</div>" +
-        "<div class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
+        "<div class='lzw-fbot'><span><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</span></span>" +
+        "<span class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></span></div>" +
         "</div></div>";
     }).join('');
     return '<div class="lzw-body">' + rows + '</div>';
@@ -4353,9 +4366,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var p = found.post;
     if (!p) return '<div class="lzw-body"><div class="lzw-fempty">帖子不存在</div></div>';
     var head = "<div class='lzw-fmain'>" +
-      "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
       "<div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
-      "<div class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
+      "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
+      "<div class='lzw-fmain-b'>" + C.esc(postBody(p)).replace(/\n/g, '<br>') + "</div>" +
+      "<div class='lzw-fstat lzw-fstat-r'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
       "</div>";
     if (!postReady(p)) {
       return '<div class="lzw-body">' + head +
@@ -4365,16 +4379,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var nest = (h.nest || []).map(function (r) {
         return "<div class='lzw-fnest'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span> 回复 <span class='lzw-frep-a'>" + C.esc(r.to) + "</span>：" + C.esc(r.text) + "</div>";
       }).join('');
-      return "<div class='lzw-fhot'><span class='lzw-fhot-badge'>热评 " + fLike('#e8912d', 10) + " " + W.Engine.forumHeat(h.likes) + "</span>" +
-        "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(h.author) + "</span>：" + C.esc(h.text) + "</div>" + nest + "</div>";
+      return "<div class='lzw-fhot'>" +
+        "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(h.author) + "</span>：" + C.esc(h.text) + fRepOps(h.likes) + "</div>" + nest + "</div>";
     }).join('');
     var latest = postLatest(p).map(function (r) {
-      return "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + "</div>";
+      return "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + fRepOps(r.likes || 0) + "</div>";
     }).join('');
     return '<div class="lzw-body">' + head +
-      "<div class='lzw-fmain-b'>" + C.esc(postBody(p)).replace(/\n/g, '<br>') + "</div>" +
-      (hot ? "<div class='lzw-fsec'>热门评论</div><div class='lzw-freps'>" + hot + "</div>" : '') +
-      (latest ? "<div class='lzw-fsec'>最新评论</div><div class='lzw-freps'>" + latest + "</div>" : '') +
+      (hot ? "<div class='lzw-fsec'>热评</div><div class='lzw-freps'>" + hot + "</div>" : '') +
+      (latest ? "<div class='lzw-fsec'>新评</div><div class='lzw-freps'>" + latest + "</div>" : '') +
       (hot || latest ? '' : "<div class='lzw-fempty'>还没有评论</div>") +
       '</div>';
   }
@@ -5101,7 +5114,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-24a';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-24b';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -5959,7 +5972,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 两阶段：【生成一版】只出目录（标题/预览/热度，懒加载）；点进帖子才生成正文+评论区，结果缓存。
     // 列表契约：[帖:网名:标题:预览:赞:评]（赞/评为纯整数，AI 按瓜大小自己拿捏）；可紧跟 [时间:M月D日 HH:MM]
     // 帖子契约：正文自由段落（时间行之前的非标记行），其后 [热评:网名:赞数:内容]（可紧跟
-    //           [回复:网名:@谁:内容] 楼中楼，挂最近一条热评）、[评论:网名:内容]（最新区，新→旧）
+    //           [回复:网名:@谁:内容] 楼中楼，挂最近一条热评）、[评论:网名:赞数:内容]（新评区，新→旧；旧版无赞数格式兼容为 0）
     parseForumList: function (text) {
       var posts = [];
       String(text || '').split('\n').forEach(function (line) {
@@ -5994,8 +6007,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           if (tg.nest.length < 3) tg.nest.push({ author: rm[1].trim(), to: rm[2].trim(), text: rm[3].trim() });
           return;
         }
-        var cm = line.match(/^\[评论[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
-        if (cm) { latest.push({ author: cm[1].trim(), text: cm[2].trim() }); stage = 2; return; }
+        var cm = line.match(/^\[评论[:：]([^:：\]]{1,16})[:：](\d{1,6})[:：]([\s\S]+)\]$/);
+        if (cm) { latest.push({ author: cm[1].trim(), likes: +cm[2], text: cm[3].trim() }); stage = 2; return; }
+        var cm2 = line.match(/^\[评论[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
+        if (cm2) { latest.push({ author: cm2[1].trim(), likes: 0, text: cm2[2].trim() }); stage = 2; return; }
         if (stage === 0) body.push(line);
       });
       return { body: body.join('\n').trim(), hot: hot, latest: latest };

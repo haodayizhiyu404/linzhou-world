@@ -70,6 +70,12 @@
       : "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='none' stroke='" + (color || '#b6bac2') + "' stroke-width='2' stroke-linejoin='round'><path d='" + p + "'/></svg>";
   }
 
+  // 评论条右下角操作区：点赞数（0 不显示数字）+ 评论符号（预留位，以后给机主回评论用）
+  function fRepOps(likes) {
+    return "<div class='lzw-frep-ops'><span class='lzw-fop'>" + fLike('#9aa0a8', 11) + (likes > 0 ? W.Engine.forumHeat(likes) : '') + "</span>" +
+      "<span class='lzw-fop'>" + fCmt('#9aa0a8', 11) + "</span></div>";
+  }
+
   function forumListHtml() {
     var line = forumLineKey();
     var names = [];
@@ -124,10 +130,10 @@
       var badges = (p.fav ? "<span class='lzw-fstar'>" + fStar(true, 12) + "</span>" : '') + (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '');
       return "<div class='lzw-conv lzw-frow' data-fthr='" + C.esc(postId(p)) + "'>" +
         "<div class='lzw-conv-main'>" +
-        "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</span></div>" +
         "<div class='lzw-ftitle'>" + C.esc(p.title) + badges + "</div>" +
         "<div class='lzw-fprev'>" + C.esc(p.preview || String(p.text || '').slice(0, 40)) + "</div>" +
-        "<div class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
+        "<div class='lzw-fbot'><span><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</span></span>" +
+        "<span class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></span></div>" +
         "</div></div>";
     }).join('');
     return '<div class="lzw-body">' + rows + '</div>';
@@ -138,9 +144,10 @@
     var p = found.post;
     if (!p) return '<div class="lzw-body"><div class="lzw-fempty">帖子不存在</div></div>';
     var head = "<div class='lzw-fmain'>" +
-      "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
       "<div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
-      "<div class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
+      "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
+      "<div class='lzw-fmain-b'>" + C.esc(postBody(p)).replace(/\n/g, '<br>') + "</div>" +
+      "<div class='lzw-fstat lzw-fstat-r'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
       "</div>";
     if (!postReady(p)) {
       return '<div class="lzw-body">' + head +
@@ -150,16 +157,15 @@
       var nest = (h.nest || []).map(function (r) {
         return "<div class='lzw-fnest'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span> 回复 <span class='lzw-frep-a'>" + C.esc(r.to) + "</span>：" + C.esc(r.text) + "</div>";
       }).join('');
-      return "<div class='lzw-fhot'><span class='lzw-fhot-badge'>热评 " + fLike('#e8912d', 10) + " " + W.Engine.forumHeat(h.likes) + "</span>" +
-        "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(h.author) + "</span>：" + C.esc(h.text) + "</div>" + nest + "</div>";
+      return "<div class='lzw-fhot'>" +
+        "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(h.author) + "</span>：" + C.esc(h.text) + fRepOps(h.likes) + "</div>" + nest + "</div>";
     }).join('');
     var latest = postLatest(p).map(function (r) {
-      return "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + "</div>";
+      return "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + fRepOps(r.likes || 0) + "</div>";
     }).join('');
     return '<div class="lzw-body">' + head +
-      "<div class='lzw-fmain-b'>" + C.esc(postBody(p)).replace(/\n/g, '<br>') + "</div>" +
-      (hot ? "<div class='lzw-fsec'>热门评论</div><div class='lzw-freps'>" + hot + "</div>" : '') +
-      (latest ? "<div class='lzw-fsec'>最新评论</div><div class='lzw-freps'>" + latest + "</div>" : '') +
+      (hot ? "<div class='lzw-fsec'>热评</div><div class='lzw-freps'>" + hot + "</div>" : '') +
+      (latest ? "<div class='lzw-fsec'>新评</div><div class='lzw-freps'>" + latest + "</div>" : '') +
       (hot || latest ? '' : "<div class='lzw-fempty'>还没有评论</div>") +
       '</div>';
   }

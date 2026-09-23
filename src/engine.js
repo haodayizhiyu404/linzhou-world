@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-24a';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-24b';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -865,7 +865,7 @@
     // 两阶段：【生成一版】只出目录（标题/预览/热度，懒加载）；点进帖子才生成正文+评论区，结果缓存。
     // 列表契约：[帖:网名:标题:预览:赞:评]（赞/评为纯整数，AI 按瓜大小自己拿捏）；可紧跟 [时间:M月D日 HH:MM]
     // 帖子契约：正文自由段落（时间行之前的非标记行），其后 [热评:网名:赞数:内容]（可紧跟
-    //           [回复:网名:@谁:内容] 楼中楼，挂最近一条热评）、[评论:网名:内容]（最新区，新→旧）
+    //           [回复:网名:@谁:内容] 楼中楼，挂最近一条热评）、[评论:网名:赞数:内容]（新评区，新→旧；旧版无赞数格式兼容为 0）
     parseForumList: function (text) {
       var posts = [];
       String(text || '').split('\n').forEach(function (line) {
@@ -900,8 +900,10 @@
           if (tg.nest.length < 3) tg.nest.push({ author: rm[1].trim(), to: rm[2].trim(), text: rm[3].trim() });
           return;
         }
-        var cm = line.match(/^\[评论[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
-        if (cm) { latest.push({ author: cm[1].trim(), text: cm[2].trim() }); stage = 2; return; }
+        var cm = line.match(/^\[评论[:：]([^:：\]]{1,16})[:：](\d{1,6})[:：]([\s\S]+)\]$/);
+        if (cm) { latest.push({ author: cm[1].trim(), likes: +cm[2], text: cm[3].trim() }); stage = 2; return; }
+        var cm2 = line.match(/^\[评论[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
+        if (cm2) { latest.push({ author: cm2[1].trim(), likes: 0, text: cm2[2].trim() }); stage = 2; return; }
         if (stage === 0) body.push(line);
       });
       return { body: body.join('\n').trim(), hot: hot, latest: latest };

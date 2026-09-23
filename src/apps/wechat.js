@@ -474,6 +474,12 @@
     '.lzw-ftitle{font-size:14px;font-weight:600;color:#111;line-height:1.4;word-break:break-word}',
     '.lzw-fsub{font-size:11px;color:#9aa0a8;margin-top:3px}',
     '.lzw-fmeta{display:flex;align-items:baseline;gap:6px;margin-top:1px}',
+    '.lzw-fmain .lzw-fmeta{margin-top:6px}',
+    '.lzw-fbot{display:flex;justify-content:space-between;align-items:center;margin-top:4px}',
+    '.lzw-fbot .lzw-fstat{margin-top:0}',
+    '.lzw-fstat-r{justify-content:flex-end;margin-top:10px}',
+    '.lzw-frep-ops{display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:5px}',
+    '.lzw-fop{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:#9aa0a8}',
     '.lzw-fauthor{color:#576b95;font-weight:600;font-size:12.5px}',
     '.lzw-ftime{color:#c0c4cc;font-size:11px}',
     '.lzw-ftime::before{content:"·";margin-right:6px}',
@@ -497,8 +503,7 @@
     '.lzw-fsec{margin:14px 12px 6px;font-size:12px;color:#9aa0a8;font-weight:600}',
     '.lzw-fhot{padding:9px 0;border-bottom:1px solid rgba(0,0,0,.05)}',
     '.lzw-fhot:last-child{border-bottom:none}',
-    '.lzw-fhot-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#e8912d;background:#fdf3e7;border-radius:8px;padding:2px 7px;margin-bottom:4px}',
-    '.lzw-fhot-badge svg{flex:none}',
+
     '.lzw-fnest{margin:6px 0 2px 14px;padding:8px 10px;background:#f7f7f9;border-radius:10px;font-size:12.5px;line-height:1.5;color:#444;word-break:break-word}',
     // ── 备忘录（lzw-memo-*）：选人 chips / 存档列表 / 阅读页 ──
     '.lzw-memo-chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 8px;flex:none;background:#f7f7f9;border-bottom:1px solid rgba(0,0,0,.06)}',
