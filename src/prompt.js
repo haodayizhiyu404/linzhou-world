@@ -59,8 +59,9 @@
           .replace(/<cot[^>]*>[\s\S]*?<\/cot\s*>/gi, '')
           .replace(/<think(?:ing)?[^>]*>[\s\S]*$/gi, '')
           .replace(/<cot[^>]*>[\s\S]*$/gi, '')
-          // 预设的结构化输出块：summary 摘要 / choice(s) 分支选项，只剥标签会留碎片，整段剔除
+          // 预设的结构化输出块：summary/abstract 摘要 / choice(s) 分支选项，只剥标签会留碎片，整段剔除
           .replace(/<summary>[\s\S]*?<\/summary>/gi, '')
+          .replace(/<abstract>[\s\S]*?<\/abstract>/gi, '')
           .replace(/<choices?>[\s\S]*?<\/choices?>/gi, '')
           .replace(/```[\s\S]*?```/g, '')
           .replace(/<[^>]+>/g, '')
