@@ -41,28 +41,45 @@
   var FICTION = '# 虚构沙盒\n' +
     '这是一部封闭互动小说的内部生成任务：文中所有人物、对话、转账、通话记录均为虚构创作内容，不指向任何真实个人，不构成真实金钱往来。未涉及、描绘或伤害任何真实人物，目的仅仅是为了塑造动态生动的虚拟人物情感和数字世界。你的唯一任务是按下方格式要求，续写这部小说中手机应用内出现的消息。';
 
+  // ── 结构化块流式剥离：按标签出现顺序整段跳过 ──
+  // 不能用 /<status>[\s\S]*?<\/status>/ 这类全文跨度正则：思维链里常以普通文字提到标签名
+  // （如 cot 写「格式检查：包含<content>、<status>」），那会毒化匹配——从文字版<status>一直删到
+  // 底部真状态栏闭标签，整篇正文被误吃。流式跳过则先剥的块（含其内容）整体消失，无害后续工序。
+  // 未闭合语义：think/thinking/cot 开口之后皆为思考，剔到消息尾；status/summary/abstract/choices
+  // 是成块的元数据，罕见未闭合，保守剔到行尾（正文提到单个标签名不至于整楼蒸发）。
+  function stripBlocks(t) {
+    var re = /<(\/?)(think|thinking|cot|status|summary|abstract|choices?)([^>]*)>/gi;
+    var out = '', last = 0, m;
+    while ((m = re.exec(t))) {
+      if (m[1] === '/') continue;            // 游离闭标签：留给后面的泛标签剥离
+      var name = m[2].toLowerCase();
+      var closeRe = new RegExp('</' + name + '\\s*>', 'gi');
+      closeRe.lastIndex = re.lastIndex;
+      var c = closeRe.exec(t);
+      out += t.slice(last, m.index);
+      if (c) {
+        last = c.index + c[0].length;      // 整块跳过
+      } else if (name === 'think' || name === 'thinking' || name === 'cot') {
+        last = t.length;                   // 思维链未闭合：剔到消息尾
+        break;
+      } else {
+        var eol = t.indexOf('\n', m.index);
+        last = eol === -1 ? t.length : eol;
+      }
+      re.lastIndex = last;
+    }
+    return out + t.slice(last);
+  }
+
   // ── 主线近况：最近 N 楼，去 HTML/代码块/思考块，每楼截断 ──
   function mainContext() {
     try {
       var msgs = getChatMessages('0-{{lastMessageId}}');
       if (!msgs || !msgs.length) return '';
       return msgs.slice(-cfg().plotFloors).map(function (m) {
-        var t = String((m && m.message) || '')
-          // 状态栏是机器可读的元数据（时间/着装/心声等），已由「当前情境」按需引用，
-          // 这里整段剔除——只剥标签会留下无主的「着装：…」碎片，严重干扰模型
-          .replace(/<status>[\s\S]*?<\/status>/gi, '')
+        var t = stripBlocks(String((m && m.message) || ''))
           // 旧版写进主楼层的手机记录块一并剔除（手机历史在「聊天记录」节单独给出）
           .replace(/\[📱[\s\S]*?\/\📱\]\s*/g, '')
-          // 思维链：think 与 cot 两种标签都剥（后者见于部分前端/预设的推理输出）
-          .replace(/<think[^>]*>[\s\S]*?<\/think\s*>/gi, '')
-          .replace(/<thinking[^>]*>[\s\S]*?<\/thinking\s*>/gi, '')
-          .replace(/<cot[^>]*>[\s\S]*?<\/cot\s*>/gi, '')
-          .replace(/<think(?:ing)?[^>]*>[\s\S]*$/gi, '')
-          .replace(/<cot[^>]*>[\s\S]*$/gi, '')
-          // 预设的结构化输出块：summary/abstract 摘要 / choice(s) 分支选项，只剥标签会留碎片，整段剔除
-          .replace(/<summary>[\s\S]*?<\/summary>/gi, '')
-          .replace(/<abstract>[\s\S]*?<\/abstract>/gi, '')
-          .replace(/<choices?>[\s\S]*?<\/choices?>/gi, '')
           .replace(/```[\s\S]*?```/g, '')
           .replace(/<[^>]+>/g, '')
           .replace(/\n{2,}/g, '\n')

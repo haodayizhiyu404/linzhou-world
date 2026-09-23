@@ -785,6 +785,7 @@ ctx.getWorldbook = async () => [
     { role: 'user', message: '今晚老地方见' },
     { role: 'assistant', message: '好，我准时到。\n<think>让我规划下路线——走南门更快' },
     { role: 'assistant', message: '<cot engine="reasoning">权重计算过程blah</cot>周言把手机扣在桌上。' },
+    { role: 'assistant', message: '<cot>\nStep.4：格式检查：包含<content>、<status>、<abstract>、<choices>。\n</cot>\n\n<content>\n毒化用正文ZZMARK。\n</content>\n\n<status>\n<环境>ZZENV</环境>\n</status>\n\n<abstract>ZZABS</abstract>\n\n<choices>【1】ZZCHOICE</choices>' },
   ];
   let capPrompt = null;
   ctx.generateRaw = async (req) => { capPrompt = req; return '[帖:夜行人:测试帖:测试预览:3:1]'; };
@@ -794,6 +795,9 @@ ctx.getWorldbook = async () => [
   eq('思维链·未闭合think正文保留', capTxt.indexOf('我准时到') !== -1, true);
   eq('思维链·带属性cot剥净', capTxt.indexOf('权重计算') === -1, true);
   eq('思维链·cot后正文保留', capTxt.indexOf('把手机扣在桌上') !== -1, true);
+  eq('思维链·标签名文字不毒化·正文保留', capTxt.indexOf('毒化用正文ZZMARK') !== -1, true);
+  eq('思维链·标签名文字不毒化·链剔除', capTxt.indexOf('Step.4') === -1, true);
+  eq('思维链·标签名文字不毒化·元数据剔除', capTxt.indexOf('ZZENV') === -1 && capTxt.indexOf('ZZABS') === -1 && capTxt.indexOf('ZZCHOICE') === -1, true);
   // 论坛人物档案：剥 /* */ 注释与 [MAIN·] 段标记；完整人设不截断；当前线演化层必须叠加（profileFor 打底）
   LW.Engine.profiles()['周言'] = '/* 这是作者注释不该进提示词 */\n[MAIN·周言]\n- name: 周言\n性别: 男。\n身份: 班长，外冷内热。' + '细节条目。'.repeat(30);
   const fpp = LW.Engine.forumPeopleProfiles(['周言', '不存在的人']);
