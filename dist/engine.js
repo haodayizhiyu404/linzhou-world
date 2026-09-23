@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-23T15:31:52.411Z
+//  构建时间：2026-09-23T18:16:54.410Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-23 15:31';
+var __LZW_BUILD__ = '2026-09-23 18:16';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2403,6 +2403,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-fdot{position:static;display:inline-block;vertical-align:1px;margin-left:6px;border:none}',
     '.lzw-ftitle{font-size:14px;font-weight:600;color:#111;line-height:1.4;word-break:break-word}',
     '.lzw-fsub{font-size:11px;color:#9aa0a8;margin-top:3px}',
+    '.lzw-fmeta{display:flex;align-items:baseline;gap:6px;margin-top:1px}',
+    '.lzw-fauthor{color:#576b95;font-weight:600;font-size:12.5px}',
+    '.lzw-ftime{color:#c0c4cc;font-size:11px}',
+    '.lzw-ftime::before{content:"·";margin-right:6px}',
+    '.lzw-fstat{display:flex;gap:12px;align-items:center;margin-top:4px;font-size:11px;color:#8a8f99}',
+    '.lzw-fstat svg{vertical-align:-1.5px;margin-right:3px}',
     '.lzw-fcarried{font-size:10px;font-weight:400;background:#f0eafa;color:#8a7fc0;border-radius:8px;padding:2px 6px;margin-left:5px;vertical-align:1px}',
     '.lzw-fmain{margin:12px;padding:14px;background:#fff;border-radius:12px}',
     '.lzw-fmain-t{font-size:16px}',
@@ -2414,14 +2420,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // ── 论坛 2.0：预览/热度/收藏/热评楼中楼 ──
     '.lzw-fprev{font-size:12px;color:#666;margin-top:3px;line-height:1.45;word-break:break-word}',
     '.lzw-fsubdim{color:#c0c4cc}',
-    '.lzw-fstar{color:#e8912d;margin-left:5px;font-size:13px}',
+    '.lzw-fstar{display:inline-flex;margin-left:5px;vertical-align:-1px}',
     '.lzw-fdim{opacity:.55}',
     '.lzw-fico-star{background:linear-gradient(135deg,#f7d06a,#e8a02d)}',
-    '.lzw-ffav{font-size:19px;line-height:1;color:#e8912d}',
+    '.lzw-ffav{display:inline-flex;line-height:1}',
     '.lzw-fsec{margin:14px 12px 6px;font-size:12px;color:#9aa0a8;font-weight:600}',
     '.lzw-fhot{padding:9px 0;border-bottom:1px solid rgba(0,0,0,.05)}',
     '.lzw-fhot:last-child{border-bottom:none}',
-    '.lzw-fhot-badge{display:inline-block;font-size:10px;color:#e8912d;background:#fdf3e7;border-radius:8px;padding:2px 7px;margin-bottom:4px}',
+    '.lzw-fhot-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#e8912d;background:#fdf3e7;border-radius:8px;padding:2px 7px;margin-bottom:4px}',
+    '.lzw-fhot-badge svg{flex:none}',
     '.lzw-fnest{margin:6px 0 2px 14px;padding:8px 10px;background:#f7f7f9;border-radius:10px;font-size:12.5px;line-height:1.5;color:#444;word-break:break-word}',
     // ── 备忘录（lzw-memo-*）：选人 chips / 存档列表 / 阅读页 ──
     '.lzw-memo-chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 8px;flex:none;background:#f7f7f9;border-bottom:1px solid rgba(0,0,0,.06)}',
@@ -2666,7 +2673,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     if (screen === 'mread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="memo">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fav') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">我的收藏</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？换一版（收藏的帖子保留）">' + ICON_REROLL + '</span>') + '</span></div>';
-    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"><span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.forumFavNow && UI.forumFavNow() ? '★' : '☆') + '</span></span></div>';
+    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"><span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.ffavIcon ? UI.ffavIcon() : '☆') + '</span></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
@@ -4264,6 +4271,20 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     return p(DICE_A) + p(DICE_B) + p(DICE_C);
   }
 
+  // ── 论坛小图标：线性描边风，与壳 ICO 一致 ──
+  function fLike(color, size) {
+    return "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='none' stroke='" + color + "' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'><path d='M6.6 19.4v-8.8'/><path d='M6.6 10.6 11.9 4.4a1.5 1.5 0 0 1 2.6 1.1V9h4a2 2 0 0 1 2 2.5l-1.2 6.2a2 2 0 0 1-2 1.7H6.6'/><path d='M4 11h2.6v8.4H4a1 1 0 0 1-1-1v-6.4a1 1 0 0 1 1-1z'/></svg>";
+  }
+  function fCmt(color, size) {
+    return "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='none' stroke='" + color + "' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'><path d='M20.6 11.7a8.4 8.4 0 0 1-8.4 8.4H7.2L3.4 22.5V11.7a8.4 8.4 0 0 1 8.4-8.4h.4a8.4 8.4 0 0 1 8.4 8.4z'/></svg>";
+  }
+  function fStar(filled, size, color) {
+    var p = 'M12 3.8l2.5 5.2 5.7.8-4.1 4 .9 5.7-5-2.7-5 2.7.9-5.7-4.1-4 5.7-.8z';
+    return filled
+      ? "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='" + (color || '#e8912d') + "'><path d='" + p + "'/></svg>"
+      : "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='none' stroke='" + (color || '#b6bac2') + "' stroke-width='2' stroke-linejoin='round'><path d='" + p + "'/></svg>";
+  }
+
   function forumListHtml() {
     var line = forumLineKey();
     var names = [];
@@ -4302,7 +4323,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var p = fv.post;
       return "<div class='lzw-conv lzw-frow' data-favthr='" + C.esc(fv.forum) + '|' + C.esc(postId(p)) + "'>" +
         "<div class='lzw-conv-main'><div class='lzw-ftitle'>" + C.esc(p.title) + "</div>" +
-        "<div class='lzw-fsub'>" + C.esc(fv.forum) + ' · ' + C.esc(p.author) + ' · ' + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</div></div></div>";
+        "<div class='lzw-fsub'>" + C.esc(fv.forum) + ' · <span class="lzw-fauthor">' + C.esc(p.author) + '</span> · ' + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</div></div></div>";
     }).join('');
     return '<div class="lzw-body">' + rows + '</div>';
   }
@@ -4315,13 +4336,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '</div></div>';
     }
     var rows = (f.posts || []).map(function (p) {
-      var badges = (p.fav ? "<span class='lzw-fstar'>★</span>" : '') + (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '');
-      var heat = "👍 " + W.Engine.forumHeat(p.likes) + "　💬 " + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length);
+      var badges = (p.fav ? "<span class='lzw-fstar'>" + fStar(true, 12) + "</span>" : '') + (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '');
       return "<div class='lzw-conv lzw-frow' data-fthr='" + C.esc(postId(p)) + "'>" +
-        "<div class='lzw-conv-main'><div class='lzw-ftitle'>" + C.esc(p.title) + badges + "</div>" +
+        "<div class='lzw-conv-main'>" +
+        "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</span></div>" +
+        "<div class='lzw-ftitle'>" + C.esc(p.title) + badges + "</div>" +
         "<div class='lzw-fprev'>" + C.esc(p.preview || String(p.text || '').slice(0, 40)) + "</div>" +
-        "<div class='lzw-fsub'>" + C.esc(p.author) + ' · ' + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + ' · ' + heat +
-        (postReady(p) ? '' : ' · <span class="lzw-fsubdim">未点开</span>') + "</div></div></div>";
+        "<div class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
+        "</div></div>";
     }).join('');
     return '<div class="lzw-body">' + rows + '</div>';
   }
@@ -4330,9 +4352,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var found = W.Engine.forumFindPost(forumLineKey(), name, id);
     var p = found.post;
     if (!p) return '<div class="lzw-body"><div class="lzw-fempty">帖子不存在</div></div>';
-    var head = "<div class='lzw-fmain'><div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
-      "<div class='lzw-fsub'>" + C.esc(p.author) + ' · ' + (p.time ? C.esc(p.time) : '很久以前') +
-      ' · 👍 ' + W.Engine.forumHeat(p.likes) + "</div></div>";
+    var head = "<div class='lzw-fmain'>" +
+      "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
+      "<div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
+      "<div class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
+      "</div>";
     if (!postReady(p)) {
       return '<div class="lzw-body">' + head +
         "<div class='lzw-fempty'>" + (UI.fTBusy ? '生成中…' : "正文尚未生成<br><button class='lzw-fretry' data-fgen>生成正文与评论</button>") + "</div></div>";
@@ -4341,14 +4365,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var nest = (h.nest || []).map(function (r) {
         return "<div class='lzw-fnest'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span> 回复 <span class='lzw-frep-a'>" + C.esc(r.to) + "</span>：" + C.esc(r.text) + "</div>";
       }).join('');
-      return "<div class='lzw-fhot'><span class='lzw-fhot-badge'>热评 👍" + W.Engine.forumHeat(h.likes) + "</span>" +
+      return "<div class='lzw-fhot'><span class='lzw-fhot-badge'>热评 " + fLike('#e8912d', 10) + " " + W.Engine.forumHeat(h.likes) + "</span>" +
         "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(h.author) + "</span>：" + C.esc(h.text) + "</div>" + nest + "</div>";
     }).join('');
     var latest = postLatest(p).map(function (r) {
       return "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + "</div>";
     }).join('');
     return '<div class="lzw-body">' + head +
-      "<div class='lzw-fmain-b'>" + C.esc(postBody(p)).replace(/\n/g, '<br>') + "</div></div>" +
+      "<div class='lzw-fmain-b'>" + C.esc(postBody(p)).replace(/\n/g, '<br>') + "</div>" +
       (hot ? "<div class='lzw-fsec'>热门评论</div><div class='lzw-freps'>" + hot + "</div>" : '') +
       (latest ? "<div class='lzw-fsec'>最新评论</div><div class='lzw-freps'>" + latest + "</div>" : '') +
       (hot || latest ? '' : "<div class='lzw-fempty'>还没有评论</div>") +
@@ -4356,6 +4380,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   }
 
   UI.forumLineKey = forumLineKey;
+  // appbar 收藏星（壳渲染 appbar 时调用；实心=已收藏）
+  UI.ffavIcon = function () { return fStar(!!(UI.forumFavNow && UI.forumFavNow()), 19); };
 
   Object.assign(UI, {
     openForum: function (name) {
@@ -5075,7 +5101,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-23e';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-24a';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
