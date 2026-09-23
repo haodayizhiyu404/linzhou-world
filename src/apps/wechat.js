@@ -473,6 +473,12 @@
     '.lzw-fdot{position:static;display:inline-block;vertical-align:1px;margin-left:6px;border:none}',
     '.lzw-ftitle{font-size:14px;font-weight:600;color:#111;line-height:1.4;word-break:break-word}',
     '.lzw-fsub{font-size:11px;color:#9aa0a8;margin-top:3px}',
+    '.lzw-fmeta{display:flex;align-items:baseline;gap:6px;margin-top:1px}',
+    '.lzw-fauthor{color:#576b95;font-weight:600;font-size:12.5px}',
+    '.lzw-ftime{color:#c0c4cc;font-size:11px}',
+    '.lzw-ftime::before{content:"·";margin-right:6px}',
+    '.lzw-fstat{display:flex;gap:12px;align-items:center;margin-top:4px;font-size:11px;color:#8a8f99}',
+    '.lzw-fstat svg{vertical-align:-1.5px;margin-right:3px}',
     '.lzw-fcarried{font-size:10px;font-weight:400;background:#f0eafa;color:#8a7fc0;border-radius:8px;padding:2px 6px;margin-left:5px;vertical-align:1px}',
     '.lzw-fmain{margin:12px;padding:14px;background:#fff;border-radius:12px}',
     '.lzw-fmain-t{font-size:16px}',
@@ -484,14 +490,15 @@
     // ── 论坛 2.0：预览/热度/收藏/热评楼中楼 ──
     '.lzw-fprev{font-size:12px;color:#666;margin-top:3px;line-height:1.45;word-break:break-word}',
     '.lzw-fsubdim{color:#c0c4cc}',
-    '.lzw-fstar{color:#e8912d;margin-left:5px;font-size:13px}',
+    '.lzw-fstar{display:inline-flex;margin-left:5px;vertical-align:-1px}',
     '.lzw-fdim{opacity:.55}',
     '.lzw-fico-star{background:linear-gradient(135deg,#f7d06a,#e8a02d)}',
-    '.lzw-ffav{font-size:19px;line-height:1;color:#e8912d}',
+    '.lzw-ffav{display:inline-flex;line-height:1}',
     '.lzw-fsec{margin:14px 12px 6px;font-size:12px;color:#9aa0a8;font-weight:600}',
     '.lzw-fhot{padding:9px 0;border-bottom:1px solid rgba(0,0,0,.05)}',
     '.lzw-fhot:last-child{border-bottom:none}',
-    '.lzw-fhot-badge{display:inline-block;font-size:10px;color:#e8912d;background:#fdf3e7;border-radius:8px;padding:2px 7px;margin-bottom:4px}',
+    '.lzw-fhot-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;color:#e8912d;background:#fdf3e7;border-radius:8px;padding:2px 7px;margin-bottom:4px}',
+    '.lzw-fhot-badge svg{flex:none}',
     '.lzw-fnest{margin:6px 0 2px 14px;padding:8px 10px;background:#f7f7f9;border-radius:10px;font-size:12.5px;line-height:1.5;color:#444;word-break:break-word}',
     // ── 备忘录（lzw-memo-*）：选人 chips / 存档列表 / 阅读页 ──
     '.lzw-memo-chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 8px;flex:none;background:#f7f7f9;border-bottom:1px solid rgba(0,0,0,.06)}',
@@ -736,7 +743,7 @@
     if (screen === 'mread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="memo">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fav') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">我的收藏</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？换一版（收藏的帖子保留）">' + ICON_REROLL + '</span>') + '</span></div>';
-    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"><span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.forumFavNow && UI.forumFavNow() ? '★' : '☆') + '</span></span></div>';
+    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"><span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.ffavIcon ? UI.ffavIcon() : '☆') + '</span></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';

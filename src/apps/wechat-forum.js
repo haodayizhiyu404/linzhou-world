@@ -56,6 +56,20 @@
     return p(DICE_A) + p(DICE_B) + p(DICE_C);
   }
 
+  // ── 论坛小图标：线性描边风，与壳 ICO 一致 ──
+  function fLike(color, size) {
+    return "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='none' stroke='" + color + "' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'><path d='M6.6 19.4v-8.8'/><path d='M6.6 10.6 11.9 4.4a1.5 1.5 0 0 1 2.6 1.1V9h4a2 2 0 0 1 2 2.5l-1.2 6.2a2 2 0 0 1-2 1.7H6.6'/><path d='M4 11h2.6v8.4H4a1 1 0 0 1-1-1v-6.4a1 1 0 0 1 1-1z'/></svg>";
+  }
+  function fCmt(color, size) {
+    return "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='none' stroke='" + color + "' stroke-width='2.1' stroke-linecap='round' stroke-linejoin='round'><path d='M20.6 11.7a8.4 8.4 0 0 1-8.4 8.4H7.2L3.4 22.5V11.7a8.4 8.4 0 0 1 8.4-8.4h.4a8.4 8.4 0 0 1 8.4 8.4z'/></svg>";
+  }
+  function fStar(filled, size, color) {
+    var p = 'M12 3.8l2.5 5.2 5.7.8-4.1 4 .9 5.7-5-2.7-5 2.7.9-5.7-4.1-4 5.7-.8z';
+    return filled
+      ? "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='" + (color || '#e8912d') + "'><path d='" + p + "'/></svg>"
+      : "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='none' stroke='" + (color || '#b6bac2') + "' stroke-width='2' stroke-linejoin='round'><path d='" + p + "'/></svg>";
+  }
+
   function forumListHtml() {
     var line = forumLineKey();
     var names = [];
@@ -94,7 +108,7 @@
       var p = fv.post;
       return "<div class='lzw-conv lzw-frow' data-favthr='" + C.esc(fv.forum) + '|' + C.esc(postId(p)) + "'>" +
         "<div class='lzw-conv-main'><div class='lzw-ftitle'>" + C.esc(p.title) + "</div>" +
-        "<div class='lzw-fsub'>" + C.esc(fv.forum) + ' · ' + C.esc(p.author) + ' · ' + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</div></div></div>";
+        "<div class='lzw-fsub'>" + C.esc(fv.forum) + ' · <span class="lzw-fauthor">' + C.esc(p.author) + '</span> · ' + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</div></div></div>";
     }).join('');
     return '<div class="lzw-body">' + rows + '</div>';
   }
@@ -107,13 +121,14 @@
         '</div></div>';
     }
     var rows = (f.posts || []).map(function (p) {
-      var badges = (p.fav ? "<span class='lzw-fstar'>★</span>" : '') + (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '');
-      var heat = "👍 " + W.Engine.forumHeat(p.likes) + "　💬 " + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length);
+      var badges = (p.fav ? "<span class='lzw-fstar'>" + fStar(true, 12) + "</span>" : '') + (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '');
       return "<div class='lzw-conv lzw-frow' data-fthr='" + C.esc(postId(p)) + "'>" +
-        "<div class='lzw-conv-main'><div class='lzw-ftitle'>" + C.esc(p.title) + badges + "</div>" +
+        "<div class='lzw-conv-main'>" +
+        "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</span></div>" +
+        "<div class='lzw-ftitle'>" + C.esc(p.title) + badges + "</div>" +
         "<div class='lzw-fprev'>" + C.esc(p.preview || String(p.text || '').slice(0, 40)) + "</div>" +
-        "<div class='lzw-fsub'>" + C.esc(p.author) + ' · ' + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + ' · ' + heat +
-        (postReady(p) ? '' : ' · <span class="lzw-fsubdim">未点开</span>') + "</div></div></div>";
+        "<div class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
+        "</div></div>";
     }).join('');
     return '<div class="lzw-body">' + rows + '</div>';
   }
@@ -122,9 +137,11 @@
     var found = W.Engine.forumFindPost(forumLineKey(), name, id);
     var p = found.post;
     if (!p) return '<div class="lzw-body"><div class="lzw-fempty">帖子不存在</div></div>';
-    var head = "<div class='lzw-fmain'><div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
-      "<div class='lzw-fsub'>" + C.esc(p.author) + ' · ' + (p.time ? C.esc(p.time) : '很久以前') +
-      ' · 👍 ' + W.Engine.forumHeat(p.likes) + "</div></div>";
+    var head = "<div class='lzw-fmain'>" +
+      "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
+      "<div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
+      "<div class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
+      "</div>";
     if (!postReady(p)) {
       return '<div class="lzw-body">' + head +
         "<div class='lzw-fempty'>" + (UI.fTBusy ? '生成中…' : "正文尚未生成<br><button class='lzw-fretry' data-fgen>生成正文与评论</button>") + "</div></div>";
@@ -133,14 +150,14 @@
       var nest = (h.nest || []).map(function (r) {
         return "<div class='lzw-fnest'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span> 回复 <span class='lzw-frep-a'>" + C.esc(r.to) + "</span>：" + C.esc(r.text) + "</div>";
       }).join('');
-      return "<div class='lzw-fhot'><span class='lzw-fhot-badge'>热评 👍" + W.Engine.forumHeat(h.likes) + "</span>" +
+      return "<div class='lzw-fhot'><span class='lzw-fhot-badge'>热评 " + fLike('#e8912d', 10) + " " + W.Engine.forumHeat(h.likes) + "</span>" +
         "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(h.author) + "</span>：" + C.esc(h.text) + "</div>" + nest + "</div>";
     }).join('');
     var latest = postLatest(p).map(function (r) {
       return "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + "</div>";
     }).join('');
     return '<div class="lzw-body">' + head +
-      "<div class='lzw-fmain-b'>" + C.esc(postBody(p)).replace(/\n/g, '<br>') + "</div></div>" +
+      "<div class='lzw-fmain-b'>" + C.esc(postBody(p)).replace(/\n/g, '<br>') + "</div>" +
       (hot ? "<div class='lzw-fsec'>热门评论</div><div class='lzw-freps'>" + hot + "</div>" : '') +
       (latest ? "<div class='lzw-fsec'>最新评论</div><div class='lzw-freps'>" + latest + "</div>" : '') +
       (hot || latest ? '' : "<div class='lzw-fempty'>还没有评论</div>") +
@@ -148,6 +165,8 @@
   }
 
   UI.forumLineKey = forumLineKey;
+  // appbar 收藏星（壳渲染 appbar 时调用；实心=已收藏）
+  UI.ffavIcon = function () { return fStar(!!(UI.forumFavNow && UI.forumFavNow()), 19); };
 
   Object.assign(UI, {
     openForum: function (name) {
