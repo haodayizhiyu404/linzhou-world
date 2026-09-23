@@ -218,6 +218,7 @@ ctx.getWorldbook = async () => [
   { comment: '世界设定杂项', enabled: true, content: '[NPC·外校生]\n性别: 女。\n身份: 来打友谊赛的。' },
   { comment: 'NPC（成人-破镜重圆）', enabled: true, content: '# I. 核心配角独立档案\n林溪、陆飞从高中时代起，与周言、沈锡元、{{user}}成为好友，关系密切，共同构筑了一个五人的核心小团体。\n\n[NPC·林溪]\n性别: 女。\n身份: 设计师（破镜重圆线）。\n\n[NPC·陆飞]\n性别: 男。\n身份: 运动康复师（破镜重圆线）。\n\n# II. 其他NPC档案\n\n[NPC·许嘉文]\n性别: 男。\n身份: 双面人（破镜重圆线）。' },
   { comment: '主角人设（成人-同路而行）', enabled: true, content: '# II. 角色演化档案\n\n[MAIN·周言·演化后]\n- 已婚设定（同路线）。\n\n[MAIN·{{user}}·演化后]\n- 与周言同居（同路线）。' },
+  { comment: '主角人设（成人-破镜重圆）', enabled: true, content: '# II. 角色演化档案\n\n[MAIN·周言·演化后]\n- 十年后成了建筑师，回霖州主持旧城改造。\n\n[MAIN·{{user}}·演化后]\n- 与周言重逢后合伙开了间书店。' },
   { comment: '霖州手机::人设::林溪', enabled: true, content: '林溪的手机专用档案' }
 ];
 (async () => {
@@ -793,12 +794,14 @@ ctx.getWorldbook = async () => [
   eq('思维链·未闭合think正文保留', capTxt.indexOf('我准时到') !== -1, true);
   eq('思维链·带属性cot剥净', capTxt.indexOf('权重计算') === -1, true);
   eq('思维链·cot后正文保留', capTxt.indexOf('把手机扣在桌上') !== -1, true);
-  // 论坛人物档案清洗：剥 /* */ 注释与 [MAIN·] 段标记（profileFor 打底，与私聊/朋友圈同一取法）
-  LW.Engine.profiles()['周言'] = '/* 这是作者注释不该进提示词 */\n[MAIN·周言]\n性别: 男。\n身份: 班长，外冷内热。';
+  // 论坛人物档案：剥 /* */ 注释与 [MAIN·] 段标记；完整人设不截断；当前线演化层必须叠加（profileFor 打底）
+  LW.Engine.profiles()['周言'] = '/* 这是作者注释不该进提示词 */\n[MAIN·周言]\n- name: 周言\n性别: 男。\n身份: 班长，外冷内热。' + '细节条目。'.repeat(30);
   const fpp = LW.Engine.forumPeopleProfiles(['周言', '不存在的人']);
   eq('论坛·档案剥注释', fpp['周言'].indexOf('作者注释') === -1 && fpp['周言'].indexOf('/*') === -1, true);
   eq('论坛·档案剥MAIN前缀', fpp['周言'].indexOf('[MAIN') === -1, true);
-  eq('论坛·档案正文保留', fpp['周言'].indexOf('班长') !== -1, true);
+  eq('论坛·档案不截断', fpp['周言'].indexOf('细节条目。'.repeat(30)) !== -1, true);
+  eq('论坛·档案无省略号', fpp['周言'].indexOf('……') === -1, true);
+  eq('论坛·档案演化叠加', fpp['周言'].indexOf('建筑师') !== -1 && fpp['周言'].indexOf('成人时代-破镜重圆') !== -1, true);
   eq('论坛·空档案不出键', '不存在的人' in fpp, false);
   // 懒加载：点进才生成正文+评论，只生成一次
   ctx.generateRaw = async (req) => '正文来了。\n[热评:网友:100:沙发]\n[评论:水友:顶顶]';

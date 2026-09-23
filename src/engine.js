@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-23b';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-23c';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -193,8 +193,8 @@
       return this.deref(base);
     },
 
-    // 论坛用人物档案：profileFor（线特异+演化层）打底，剥 /* */ 注释、[MAIN·] 段标记、
-    // 收空白，再按句界截到 ~160 字。与私聊/朋友圈/备忘录同一取法，只是多一层论坛专属的清洗。
+    // 论坛用人物档案：profileFor（线特异+演化层叠加）打底，剥 /* */ 注释、[MAIN·] 段标记。
+    // 不截断——完整人设+当前线演化全量进提示词（与私聊/朋友圈/备忘录同一取法，多一层论坛专属清洗）。
     forumPeopleProfiles: function (pool) {
       var out = {}, self = this;
       (pool || []).forEach(function (n) {
@@ -202,13 +202,7 @@
         var p = String(self.profileFor(n) || '')
           .replace(/\/\*[\s\S]*?\*\//g, ' ')
           .replace(/^\s*\[[^\]]*MAIN[^\]]*\]\s*/i, '')
-          .replace(/\s+/g, ' ').trim();
-        if (p.length > 160) {
-          var cut = p.lastIndexOf('。', 160);
-          if (cut < 80) cut = p.lastIndexOf('，', 160);
-          if (cut < 80) cut = 160;
-          p = p.slice(0, cut + 1) + '……';
-        }
+          .replace(/\n{3,}/g, '\n\n').trim();
         if (p) out[n] = p;
       });
       return out;
