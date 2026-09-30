@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-30T14:14:44.934Z
+//  构建时间：2026-09-30T14:57:05.844Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-30 14:14';
+var __LZW_BUILD__ = '2026-09-30 14:57';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -184,14 +184,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     //    cfg() = 设置项 + 默认值兜底，prompt.js / engine.js 共用。
     DEFAULTS: {
       plotFloors: 8,   // 手机提示词带几楼正文
-      plotCap: 900,    // 每楼正文上限字数
+      plotCap: 1000,   // 每楼正文上限字数
       histPriv: 50,    // 私聊带回几条
       histGroup: 50,   // 群聊带回几条
-      crossMax: 3,     // 跨会话最多带几个（对方在的群 / 成员当天私聊）
-      crossLines: 18,  // 每个跨会话带几条
+      crossMax: 4,     // 跨会话最多带几个（对方在的群 / 成员当天私聊）
+      crossLines: 20,  // 每个跨会话带几条
       injRecent: 8,    // 正文注入：会话在主线最近 N 楼内聊过 → 带
-      injMention: 4,   // 正文注入：名字出现在主线最近 N 楼 → 带（哪怕聊得早）
-      injMax: 3,       // 正文注入：一次最多带几个会话
+      injMention: 2,   // 正文注入：名字出现在主线最近 N 楼 → 带（哪怕聊得早）
+      injMax: 4,       // 正文注入：一次最多带几个会话
       injRounds: 20    // 正文注入：每会话带最近几条（约 10 轮）
     },
 
@@ -775,7 +775,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // 携带量配置：曾经写死的常量，现由设置 app 可调（Store.cfg()，默认值在 store.js）
   function cfg() {
     try { return window.LZWorld.Store.cfg(); } catch (e) {}
-    return { plotFloors: 8, plotCap: 900, histPriv: 50, histGroup: 50, crossMax: 3, crossLines: 18, injRecent: 8, injMention: 4, injMax: 3, injRounds: 20 };
+    return { plotFloors: 8, plotCap: 1000, histPriv: 50, histGroup: 50, crossMax: 4, crossLines: 20, injRecent: 8, injMention: 2, injMax: 4, injRounds: 20 };
   }
 
   // ── persona 真名。generateRaw 不做宏替换，{{user}} 会原文进提示词，
@@ -2370,7 +2370,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-post-main{flex:1;min-width:0}',
     '.lzw-post-name{font-size:14px;font-weight:600;color:#576b95;cursor:pointer}',
     '.lzw-post-text{font-size:14px;line-height:1.55;color:#111;margin-top:2px;word-break:break-word}',
-    '.lzw-post-img{margin-top:5px;background:#f2f3f5;border:1px solid rgba(0,0,0,.04);border-radius:7px;padding:7px 9px;font-size:12px;color:#5a6577;line-height:1.5;word-break:break-word}',
+    '.lzw-post-img{margin:8px 0 10px;background:#f2f3f5;border:1px solid rgba(0,0,0,.04);border-radius:7px;padding:7px 9px;font-size:12px;color:#5a6577;line-height:1.5;word-break:break-word}',
     '.lzw-fimg{display:none}',
     '.lzw-post-meta{position:relative;display:flex;align-items:center;margin-top:6px;font-size:12px;color:#999;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-post-meta .sp{flex:1}',
@@ -2505,7 +2505,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   var ICON_POWEROFF = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><path d="M12 3v8"/><path d="M6.3 6.5a8 8 0 1 0 11.4 0"/></svg>';
   // 底栏两个 tab：对话 / 发现（指南针）
   var ICON_GEAR = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2.1" fill="#fff" stroke="none"/><circle cx="9" cy="12" r="2.1" fill="#fff" stroke="none"/><circle cx="17" cy="17" r="2.1" fill="#fff" stroke="none"/></svg>';
-  var ICON_FORUM = '<svg width="24" height="24" viewBox="0 0 1024 1024" fill="#fff"><path d="M844.2 395.8m-20.6 0a20.6 20.6 0 1 0 41.2 0 20.6 20.6 0 1 0-41.2 0Z"/><path d="M264.9 390.5c-33.2 0-60.1 27-60.1 60.1s27 60.1 60.1 60.1 60.1-27 60.1-60.1-26.9-60.1-60.1-60.1z m0 78.7c-10.2 0-18.6-8.3-18.6-18.6s8.3-18.6 18.6-18.6 18.6 8.3 18.6 18.6-8.3 18.6-18.6 18.6zM540 249.2c-55.5 0-100.7 45.2-100.7 100.7S484.5 450.6 540 450.6s100.7-45.2 100.7-100.7S595.5 249.2 540 249.2z m0 159.9c-32.6 0-59.2-26.5-59.2-59.2s26.5-59.2 59.2-59.2c32.6 0 59.2 26.5 59.2 59.2s-26.6 59.2-59.2 59.2z"/><path d="M976.9 320.6c-9.4-22.1-20.2-43.4-32.5-63.8 12.3-30.8 20.6-59.3 24.9-85.5 4.3-25.9 4.4-49.3 0.4-69.4-4.4-22.2-13.9-40.7-28.1-55-19.9-19.9-57.8-27.8-112.4-23.3-40 3.3-87 13.5-127.4 27.4C643 27.8 581.1 16 517.3 16 450 16 384.7 29.2 323.2 55.2c-59.4 25.1-112.7 61.1-158.5 106.9-45.8 45.8-81.8 99.1-106.9 158.5-26 61.5-39.2 126.8-39.2 194.1s13.2 132.6 39.2 194.1c25.1 59.4 61.1 112.7 106.9 158.5 16.5 16.5 33.9 31.7 52.3 45.6-23.1 7.7-44.4 12.6-63.1 14.5-34.3 3.5-59.4-2.5-74.8-17.9-24.1-24.1-25.1-74-2.6-140.3 3.7-10.9-2.2-22.7-13-26.3-10.9-3.7-22.7 2.2-26.3 13-35.6 105.2-12.8 157.6 12.6 183 20.6 20.6 49.5 31 86.1 31 7.1 0 14.6-0.4 22.3-1.2 30.1-3.1 64-12.2 101.3-27.1 20.4 12.3 41.7 23.2 63.8 32.6 61.5 26 126.8 39.2 194.1 39.2s132.6-13.2 194.1-39.2c59.4-25.1 112.7-61.1 158.5-106.9 45.8-45.8 81.8-99.1 106.9-158.5 26-61.5 39.2-126.8 39.2-194.1s-13.2-132.6-39.2-194.1zM832.5 65.2c46.6-3.8 71.7 3.3 79.6 11.2 21.7 21.7 20.7 59.9 16.1 88.2-2.5 15.3-6.8 32-12.7 49.8-13.9-18.4-29.1-35.8-45.6-52.3-33.5-33.5-71-61.7-111.9-84.2 25.4-6.4 51.2-10.8 74.5-12.7zM517.3 971.9c-75.9 0-147.5-18.6-210.5-51.4 111-54.6 235.8-148.4 351.9-264.4 44.6-44.6 86.3-90.9 124-137.7 7.2-8.9 5.8-22-3.2-29.2-8.9-7.2-22-5.8-29.2 3.2-36.7 45.6-77.4 90.8-121 134.4-113.6 113.5-235.4 204.9-342.9 257.4-7.7 3.8-15.4 7.3-22.9 10.6C141 812.7 60.1 673 60.1 514.7c0-252.1 205.1-457.2 457.2-457.2 158.3 0 298 80.8 380.1 203.4-8.6 19.4-18.7 39.7-30.3 60.5-5.6 10-2 22.7 8.1 28.3 3.2 1.8 6.7 2.6 10.1 2.6 7.3 0 14.4-3.9 18.2-10.7 7.1-12.7 13.6-25.2 19.6-37.4 32.8 63 51.4 134.6 51.4 210.5 0 252.1-205.1 457.2-457.2 457.2z"/></svg>';
+  var ICON_FORUM = '<svg width="26" height="26" viewBox="0 0 1024 1024" fill="#fff"><path d="M272 232h480a120 120 0 0 1 120 120v240a120 120 0 0 1-120 120H400l-128 116c-24 22-60 8-60-24V352a120 120 0 0 1 120-120z"/><circle cx="392" cy="472" r="54" fill="#e8912d"/><circle cx="632" cy="472" r="54" fill="#e8912d"/></svg>';
   var ICON_MEMO = '<svg width="24" height="24" viewBox="0 0 1024 1024" fill="#fff"><path d="M1021.290408 7.451378C992.839691-17.838148 675.591621 17.16075 404.406615 311.828886c-144.059978 156.478942-191.929438 221.96075-317.699669 513.241897-25.063727 58.03043-50.127453 95.51312-85.577949 197.574421 8.354576 0 46.514664 0.225799 46.514663 0.225799s28.676516-25.063727 92.803529-93.029327C231.218523 834.102756 422.922161 619.819184 455.437266 587.07828c32.515105-32.740904 168.446307-155.124146 226.702536-199.606615 58.256229-44.48247 3.38699 20.32194 3.38699 20.32194L324.022051 784.201103c76.094377 31.611907 268.249614 34.547299 332.376626-55.998236-61.643219-9.709372-97.093716-46.288864-97.093716-46.288865 67.739802 0.903197 235.057111 36.579493 322.893054-174.542888-140.447189 32.515105-151.962955 7.225579-151.962954 7.225578 183.574862-51.482249 172.059096-112.448071 196.219625-148.575964 10.16097-15.128556 24.160529-46.966262 37.708489-79.029769C1014.968026 143.608379 1029.419184 31.160309 1021.290408 7.451378z m-138.640794 921.7129h-602.884234c-25.966924 0-46.966262 20.999338-46.966262 46.966262s20.999338 46.966262 46.966262 46.966263h602.884234c25.966924 0 46.966262-20.999338 46.966263-46.966263s-20.999338-46.966262-46.966263-46.966262z"/></svg>';
   var ICON_TRASH = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 7h15M9.5 7V5.2A1.2 1.2 0 0 1 10.7 4h2.6a1.2 1.2 0 0 1 1.2 1.2V7M6.8 7l.9 12.2a1.2 1.2 0 0 0 1.2 1.1h6.2a1.2 1.2 0 0 0 1.2-1.1L17.2 7"/><path d="M10 11v6.5M14 11v6.5"/></svg>';
   var ICON_TAB_CHAT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.34-4.1-1L3 20l1.1-4.9A8.5 8.5 0 1 1 21 11.5z"/></svg>';
@@ -2773,7 +2773,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var h = Math.max(420, Math.min(680, vh - 20));
     ph.style.width = w + 'px';
     ph.style.height = h + 'px';
-    var left = savedPos ? savedPos.left : (vp ? vp.offsetLeft : 0) + vw - w - 8;
+    var left = savedPos ? savedPos.left : (vp ? vp.offsetLeft : 0) + 8;   // 默认左下
     var top = savedPos ? savedPos.top : (vp ? vp.offsetTop : 0) + vh - h - 8;
     ph.style.left = Math.max(4, Math.min(left, vw - w - 4)) + 'px';
     ph.style.top = Math.max(4, Math.min(top, vh - h - 4)) + 'px';
@@ -5171,7 +5171,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30i';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30j';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
