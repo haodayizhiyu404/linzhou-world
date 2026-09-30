@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-30T13:49:39.599Z
+//  构建时间：2026-09-30T14:14:44.934Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-30 13:49';
+var __LZW_BUILD__ = '2026-09-30 14:14';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2050,7 +2050,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 应用栏
     '.lzw-appbar{flex:none;position:relative;min-height:40px;display:flex;align-items:center;gap:6px;padding:2px 10px 8px;',
     'background:rgba(247,247,249,.92);border-bottom:1px solid rgba(0,0,0,.06)}',
-    '.lzw-appbar-t{position:absolute;left:50%;top:0;bottom:0;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;max-width:52%;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden}',
+    '.lzw-appbar-t{position:absolute;left:50%;top:2px;bottom:8px;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;max-width:52%;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden}',
     '.lzw-back{display:inline-flex;align-items:center;color:#111;cursor:pointer;padding:4px;border-radius:8px;margin-left:-4px}',
     '.lzw-back:hover{background:rgba(0,0,0,.05)}',
     '.lzw-appbar-r{width:24px;margin-left:auto}',
@@ -2402,7 +2402,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-mpimg::placeholder{color:#b3b8bf}',
     '.lzw-mpimg:focus,.lzw-mpimg:focus-visible{outline:none !important;box-shadow:none !important;border:none !important;border-top:1px solid rgba(0,0,0,.08) !important;border-radius:0 !important;background:transparent}',
     '.lzw-postsend{background:#22c05e;color:#fff;border-radius:5px;font-size:14px;padding:5px 14px;cursor:pointer;font-family:inherit;border:none;white-space:nowrap}',
-    '.lzw-appbar-rw{width:auto;flex:none}',
+    '.lzw-appbar-rw{width:auto;flex:none;display:inline-flex;align-items:center;gap:2px}',
     '.lzw-mptip{padding:12px 14px;font-size:12px;color:#9aa0a8}',
     // ── 论坛 ──
     '.lzw-fnew{display:flex;gap:6px;padding:10px 12px;background:#fff;border-bottom:1px solid rgba(0,0,0,.06);flex:none}',
@@ -5171,7 +5171,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30h';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30i';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -5687,6 +5687,19 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (a) req = Object.assign({}, req, { custom_api: a });
       return generateRaw(req);
     },
+    // 生成超时兜底：API 卡死超过时限按失败处理，避免界面永远停在「生成中」
+    GEN_TIMEOUT: 120000,
+    genT: function (req, ms) {
+      var to = ms || this.GEN_TIMEOUT;
+      var gp = this.gen(req);
+      if (gp && typeof gp.catch === 'function') gp.catch(function () {});
+      var st = (typeof setTimeout === 'function') ? setTimeout : (typeof window !== 'undefined' && window && typeof window.setTimeout === 'function' ? window.setTimeout.bind(window) : null);
+      if (!st) return gp;   // 宿主连定时器都没有：退化为原样生成（不失效）
+      return Promise.race([
+        gp,
+        new Promise(function (_, rej) { st(function () { rej(new Error('生成超时（' + Math.round(to / 1000) + ' 秒无响应），请检查 API 后重试')); }, to); })
+      ]);
+    },
     // ── 聊天压缩：某会话未折叠的条数超阈值时，把窗口外的旧消息折成提要 ──
     // 提要留在 Store 里，手机提示词用它接续话题；正文注入用 headline 一行近况。
     COMPRESS_AT: 60,      // 未折叠超过 60 条触发（窗口 50 + 10 条缓冲）
@@ -5703,7 +5716,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var lines = fold.map(function (m) {
         return W.Floor.msgToLine(m, this.userName());
       }, this);
-      var raw = await this.gen({
+      var raw = await this.genT({
         ordered_prompts: [
           { role: 'system', content: '把以下微信聊天记录折叠成不超过150字的中文提要。保留：约定/计划、冲突与误会、关系进展、未了的情绪；丢弃：寒暄、重复内容。只输出提要本身。' },
           { role: 'user', content: lines.join('\n') }
@@ -5971,7 +5984,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         try { myNote = this.myMomentsNote(snap); } catch (e) { myNote = ''; }
         var req = W.Prompt.private({ name: c.name, profile: profile }, rest, snap, stickerNames, tail, digest, userInfo,
           this.crossGroups(c.name, snap && snap.dateText), callLog, momentsNote, myNote);
-        raw = await this.gen(req);
+        raw = await this.genT(req);
         title = '与' + c.name + '的私聊';
       } else {
         var gname = chatKey.replace(/^group:/, '');
@@ -5988,7 +6001,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var rest2 = hist2.slice(0, hist2.length - tail2.length);
         var req2 = W.Prompt.group({ name: g.name, open: g.open, style: g.style, crowd: g.crowd }, members, rest2, snap2, stickerNames, tail2, digest, userInfo,
           this.crossPrivates(g.members, snap2 && snap2.dateText));
-        raw = await this.gen(req2);
+        raw = await this.genT(req2);
         title = g.name + ' 群聊';
         parseGroup = true;
       }
@@ -6180,7 +6193,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
       });
       var req = W.Prompt.forumList(name, line, kept || [], pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc());
-      var raw = await this.gen(req);
+      var raw = await this.genT(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var fresh = this.parseForumList(text);
       if (!fresh.length && !(kept || []).length) throw new Error('论坛生成结果为空');
@@ -6216,7 +6229,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
       });
       var req = W.Prompt.forumThread(p, name, pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc(), opts && opts.reroll);
-      var raw = await this.gen(req);
+      var raw = await this.genT(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var th = this.parseForumThread(text);
       if (!th.body) throw new Error('帖子生成结果为空');
@@ -6231,15 +6244,29 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return true;
     },
 
-    // 帖子级重roll：清掉正文与评论重新生成（标题/作者/热度/收藏不动）
+    // 帖子级重roll：清掉正文与评论重新生成（标题/作者/热度/收藏不动）；失败/跳过自动还原旧版
     forumThreadReroll: async function (line, name, id) {
       var St = window.LZWorld.Store;
+      var self2 = this;
       var found = this.forumFindPost(line, name, id);
       if (!found.forum || !found.post) throw new Error('帖子不存在');
-      found.post.body = ''; found.post.hot = []; found.post.latest = [];
-      found.post.text = ''; found.post.generated = false;
+      var p = found.post;
+      var old = { body: p.body, hot: p.hot, latest: p.latest, text: p.text, generated: p.generated };
+      p.body = ''; p.hot = []; p.latest = [];
+      p.text = ''; p.generated = false;
       St.forumPut(line, name, found.forum);
-      return this.forumThreadGenerate(line, name, id, { reroll: true });
+      var restore = function () {
+        var cur = self2.forumFindPost(line, name, id);
+        if (!cur.post) return;
+        cur.post.body = old.body; cur.post.hot = old.hot; cur.post.latest = old.latest;
+        cur.post.text = old.text; cur.post.generated = old.generated;
+        St.forumPut(line, name, cur.forum);
+      };
+      try {
+        var ok = await this.forumThreadGenerate(line, name, id, { reroll: true });
+        if (!ok) restore();
+        return ok;
+      } catch (e) { restore(); throw e; }
     },
 
     // 首次【生成一版】：空论坛 → 出目录（6~8 条）。跨时代挖坟：别的线同名论坛挑旧帖带过来。
@@ -6470,7 +6497,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!picks.length) return false;
       var people = picks.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
       var req = W.Prompt.momentsFill(people, snap, this.userBlock());
-      var raw = await this.gen(req);
+      var raw = await this.genT(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var posts = this.parseMoments(text);
       if (!posts.length) throw new Error('朋友圈生成结果为空');
@@ -6528,7 +6555,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         var snap; try { snap = W.Status.snapshot(null); } catch (e) {}
         var people = involved.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
         var req = W.Prompt.momentsReply({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, comments, userSays, people, snap, this.userBlock());
-        var raw = await this.gen(req);
+        var raw = await this.genT(req);
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         replies = this.parseMomentsReplies(text);
       } catch (e) { console.warn('[霖州引擎] 朋友圈接话生成失败', e); }
@@ -6706,7 +6733,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       try {
         var people = pool.map(function (n) { return { name: n, profile: this.profileFor(n) }; }, this);
         var req = W.Prompt.momentsReact({ who: entry.who, text: entry.text, img: entry.img, when: this.ptShort(entry.pt) }, people, snap, this.userBlock(), recentPriv, recentGrp);
-        var raw = await this.gen(req);
+        var raw = await this.genT(req);
         var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
         var parsed = this.parseMomentReacts(text, myName);
         likes = parsed.likes; comments = parsed.comments;
@@ -6835,7 +6862,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var userInfo = this.userBlock();
       var req = W.Prompt.callInvite({ name: c.name, profile: profile }, W.Store.history(name).slice(-30), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText));
-      var raw = await this.gen(req);
+      var raw = await this.genT(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       return text.trim();
     },
@@ -6886,7 +6913,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var lines = tail.map(function (m2) { return W.Floor.msgToLine(m2, this.userName()); }, this);
       var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), W.Store.history(name).slice(-20), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText), userSays || '');
-      var raw = await this.gen(req);
+      var raw = await this.genT(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       // 剥注释块防污染（极端情况：AI 在通话里输出主动块）
       text = text.replace(/<!--" + BS + "s*phone" + BS + "s*([" + BS + "s" + BS + "S]*?)-->/gi, '');

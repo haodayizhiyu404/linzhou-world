@@ -8,6 +8,8 @@ const ROOT = path.resolve(__dirname, '..');
 const __vars = {};
 const ctx = {
   window: {},
+  setTimeout,
+  clearTimeout,
   console,
   getChatMessages: (range) => { global.__lastRange = range; return global.__msgs || []; },
   getVariables: () => __vars,
@@ -838,6 +840,18 @@ ctx.getWorldbook = async () => [
   eq('论坛·内联回复挂楼', fR.latest[0].author === '甲' && fR.latest[0].nest.length === 1 && fR.latest[0].nest[0].author === '乙' && fR.latest[0].nest[0].to === '甲' && fR.latest[0].nest[0].text === '沙发', true);
   eq('论坛·回复标记挂楼', fR.latest[1].author === '丙' && fR.latest[1].nest.length === 1 && fR.latest[1].nest[0].author === '丁', true);
   eq('论坛·无对象保持平铺', fR.latest[2].author === '戊' && !fR.latest[2].nest && fR.latest[2].text.indexOf('回复 @查无此人') === 0, true);
+  // 重roll失败还原：生成抛错时旧正文与评论原样恢复，不丢数据
+  const keepBody = fR.body;
+  ctx.generateRaw = async (req) => { throw new Error('api down'); };
+  var rethrew = false;
+  try { await LW.Engine.forumThreadReroll('成人时代-破镜重圆', '霖州一中树洞墙', fOld.id); } catch (e) { rethrew = true; }
+  const fK2 = LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙').posts.filter(function (p) { return p.title === '出分了吗'; })[0];
+  eq('论坛·重roll失败还原', rethrew && fK2.body === keepBody && fK2.generated === true, true);
+  // 生成超时兜底：超过时限按失败处理（20ms 时限 + 80ms 才返回的慢 API）
+  ctx.generateRaw = async (req) => { await new Promise(function (r) { setTimeout(r, 80); }); return 'x'; };
+  var toOk = false;
+  try { await LW.Engine.genT(null, 20); } catch (e) { toOk = /超时/.test(e.message); }
+  eq('生成·超时兜底', toOk, true);
   // 长描述图卡（AI 实测描述可超 80 字）
   eq('论坛·长描述图卡', LW.Engine.forumBodyHtml('[图片:' + '长'.repeat(150) + ']').indexOf('lzw-post-img') !== -1, true);
   // 删除：数据与未读标记一起清
