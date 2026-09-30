@@ -481,6 +481,7 @@
     '.lzw-frowstar~.lzw-conv-main{padding-right:28px}',
     '.lzw-fbot .lzw-fstat{margin-top:0}',
     '.lzw-fstat-r{justify-content:flex-end;margin-top:10px}',
+    '.lzw-fmore{margin:2px 0 0;padding:9px 0 6px;text-align:center;font-size:12px;color:#8a8f99;cursor:pointer;border-top:1px solid rgba(0,0,0,.05)}',
     '.lzw-frep-ops{display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:5px}',
     '.lzw-fop{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:#9aa0a8}',
     '.lzw-fauthor{color:#576b95;font-weight:600;font-size:12.5px}',
@@ -502,7 +503,7 @@
     '.lzw-fstar{display:inline-flex;margin-left:5px;vertical-align:-1px}',
     '.lzw-fdim{opacity:.55}',
     '.lzw-fico-star{background:linear-gradient(135deg,#f7d06a,#e8a02d)}',
-    '.lzw-ffav{display:inline-flex;line-height:1}',
+    '.lzw-ffav{display:inline-flex;line-height:1;width:30px;height:30px;padding:0;flex:none;align-items:center;justify-content:center}',
     '.lzw-fsec{margin:14px 12px 6px;font-size:12px;color:#9aa0a8;font-weight:600}',
     '.lzw-fhot{padding:9px 0;border-bottom:1px solid rgba(0,0,0,.05)}',
     '.lzw-fhot:last-child{border-bottom:none}',
@@ -751,7 +752,7 @@
     if (screen === 'mread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="memo">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fav') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">我的收藏</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？换一版（收藏的帖子保留）">' + ICON_REROLL + '</span>') + '</span></div>';
-    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"><span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.ffavIcon ? UI.ffavIcon() : '☆') + '</span></span></div>';
+    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="' + (UI.fBackFav ? 'fav' : 'fboard') + '">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"><span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.ffavIcon ? UI.ffavIcon() : '☆') + '</span></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
@@ -860,6 +861,7 @@
     fThreadId: '',        // fthread 当前帖子 id（作者|标题，换一版后下标变 id 不变）
     fTBusy: false,        // 帖子正文生成中
     fConfirmDel: '',      // 待确认删除的论坛名（''=无）
+    fBackFav: false,      // 从收藏夹点进的帖子：返回键回收藏夹而非版面
     sConfirmDel: '',      // 待确认删除的陌生人会话 key（''=无）
     memoNpc: null,        // 备忘录当前选中的人（默认通讯录第一位）
     memoBusy: false,      // 备忘录生成中（写一篇/重roll 共用一把锁）
@@ -1068,7 +1070,8 @@
         el.onclick = function () {
           // mprofile 的返回看来源：详细资料进来回详细资料，朋友圈进来回朋友圈
           var act = el.dataset.act === 'mback' ? (UI.mFrom === 'cdetail' ? 'cdetail' : 'moments') : el.dataset.act;
-          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fboard' ? 'fboard' : act === 'memo' ? 'memo' : 'list';
+          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fav' ? 'fav' : act === 'fboard' ? 'fboard' : act === 'memo' ? 'memo' : 'list';
+          UI.fBackFav = false;   // 离开帖子页即失效（收藏夹点帖时会重新置位）
           UI.panel = null;
           UI.render();
         };

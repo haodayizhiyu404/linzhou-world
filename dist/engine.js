@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-30T09:18:43.609Z
+//  构建时间：2026-09-30T12:04:26.313Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-30 09:18';
+var __LZW_BUILD__ = '2026-09-30 12:04';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -250,6 +250,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       writeRoot(r);
     },
 
+    // 收藏归档：删论坛时收藏帖的挪入处。名带 \u0000 前缀——用户输入打不出来，forumNames 也不列出它
+    FAV_ARCHIVE: '\u0000fav-archive',
+
     // ── 论坛（按线隔离）：r.forums = { 线名: { 论坛名: {name, createdAt, posts:[…]} } } ──
     // 未读借用 meta，key = 'forum:'+线名+':'+论坛名，记 {seen:N}（N=上次看到时的总条目数）
     forumAll: function () {
@@ -259,7 +262,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     forumNames: function (line) {
       var r = readRoot();
       var f = (r.forums || {})[line || ''] || {};
-      return Object.keys(f);
+      // 收藏归档（\u0000 前缀）不算论坛，不进列表
+      return Object.keys(f).filter(function (n) { return n.charCodeAt(0) !== 0; });
     },
     forumGet: function (line, name) {
       var r = readRoot();
@@ -279,6 +283,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var r = readRoot();
       var slot = (r.forums || {})[line || ''];
       if (!slot || !slot[name]) return false;
+      // 收藏帖不随论坛陪葬：挪进收藏归档（标注原论坛名），收藏夹永久可见
+      var favs = (slot[name].posts || []).filter(function (p) { return p.fav; });
+      if (favs.length) {
+        var arch = slot[Store.FAV_ARCHIVE] || { posts: [] };
+        favs.forEach(function (p) { if (!p.fromForum) p.fromForum = name; arch.posts.push(p); });
+        slot[Store.FAV_ARCHIVE] = arch;
+      }
       delete slot[name];
       if (r.meta) delete r.meta['forum:' + (line || '') + ':' + name];
       writeRoot(r);
@@ -2413,6 +2424,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-frowstar~.lzw-conv-main{padding-right:28px}',
     '.lzw-fbot .lzw-fstat{margin-top:0}',
     '.lzw-fstat-r{justify-content:flex-end;margin-top:10px}',
+    '.lzw-fmore{margin:2px 0 0;padding:9px 0 6px;text-align:center;font-size:12px;color:#8a8f99;cursor:pointer;border-top:1px solid rgba(0,0,0,.05)}',
     '.lzw-frep-ops{display:flex;justify-content:flex-end;align-items:center;gap:16px;margin-top:5px}',
     '.lzw-fop{display:inline-flex;align-items:center;gap:3px;font-size:11px;color:#9aa0a8}',
     '.lzw-fauthor{color:#576b95;font-weight:600;font-size:12.5px}',
@@ -2434,7 +2446,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-fstar{display:inline-flex;margin-left:5px;vertical-align:-1px}',
     '.lzw-fdim{opacity:.55}',
     '.lzw-fico-star{background:linear-gradient(135deg,#f7d06a,#e8a02d)}',
-    '.lzw-ffav{display:inline-flex;line-height:1}',
+    '.lzw-ffav{display:inline-flex;line-height:1;width:30px;height:30px;padding:0;flex:none;align-items:center;justify-content:center}',
     '.lzw-fsec{margin:14px 12px 6px;font-size:12px;color:#9aa0a8;font-weight:600}',
     '.lzw-fhot{padding:9px 0;border-bottom:1px solid rgba(0,0,0,.05)}',
     '.lzw-fhot:last-child{border-bottom:none}',
@@ -2683,7 +2695,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     if (screen === 'mread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="memo">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fav') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">我的收藏</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？换一版（收藏的帖子保留）">' + ICON_REROLL + '</span>') + '</span></div>';
-    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="fboard">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"><span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.ffavIcon ? UI.ffavIcon() : '☆') + '</span></span></div>';
+    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="' + (UI.fBackFav ? 'fav' : 'fboard') + '">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"><span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.ffavIcon ? UI.ffavIcon() : '☆') + '</span></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
@@ -2792,6 +2804,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     fThreadId: '',        // fthread 当前帖子 id（作者|标题，换一版后下标变 id 不变）
     fTBusy: false,        // 帖子正文生成中
     fConfirmDel: '',      // 待确认删除的论坛名（''=无）
+    fBackFav: false,      // 从收藏夹点进的帖子：返回键回收藏夹而非版面
     sConfirmDel: '',      // 待确认删除的陌生人会话 key（''=无）
     memoNpc: null,        // 备忘录当前选中的人（默认通讯录第一位）
     memoBusy: false,      // 备忘录生成中（写一篇/重roll 共用一把锁）
@@ -3000,7 +3013,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         el.onclick = function () {
           // mprofile 的返回看来源：详细资料进来回详细资料，朋友圈进来回朋友圈
           var act = el.dataset.act === 'mback' ? (UI.mFrom === 'cdetail' ? 'cdetail' : 'moments') : el.dataset.act;
-          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fboard' ? 'fboard' : act === 'memo' ? 'memo' : 'list';
+          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fav' ? 'fav' : act === 'fboard' ? 'fboard' : act === 'memo' ? 'memo' : 'list';
+          UI.fBackFav = false;   // 离开帖子页即失效（收藏夹点帖时会重新置位）
           UI.panel = null;
           UI.render();
         };
@@ -4339,7 +4353,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var p = fv.post;
       return "<div class='lzw-conv lzw-frow' data-favthr='" + C.esc(fv.forum) + '|' + C.esc(postId(p)) + "'>" +
         "<div class='lzw-conv-main'><div class='lzw-ftitle'>" + C.esc(p.title) + "</div>" +
-        "<div class='lzw-fsub'>" + C.esc(fv.forum) + ' · <span class="lzw-fauthor">' + C.esc(p.author) + '</span> · ' + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</div></div></div>";
+        "<div class='lzw-fsub'>" + C.esc(p.fromForum ? '来自已删论坛「' + p.fromForum + '」' : fv.forum) + ' · <span class="lzw-fauthor">' + C.esc(p.author) + '</span> · ' + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</div></div></div>";
     }).join('');
     return '<div class="lzw-body">' + rows + '</div>';
   }
@@ -4352,7 +4366,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         (UI.fBusy ? '论坛加载中…' : '这里还没有帖子<br><button class="lzw-fretry" data-fretry="' + C.esc(name) + '">生成一版</button>') +
         '</div></div>';
     }
-    var rows = (f.posts || []).map(function (p) {
+    var view = W.Engine.forumBoardView(f);   // 收藏/考古沉底最多露 3 条，多余只留收藏夹
+    var rows = view.posts.map(function (p) {
       var badges = (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '');
       var starEl = p.fav ? "<span class='lzw-frowstar' title='已收藏'>" + fStar(true, 14) + "</span>" : '';
       return "<div class='lzw-conv lzw-frow' data-fthr='" + C.esc(postId(p)) + "'>" + starEl +
@@ -4363,7 +4378,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         "<span class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></span></div>" +
         "</div></div>";
     }).join('');
-    return '<div class="lzw-body">' + rows + '</div>';
+    var moreRow = view.moreKept > 0 ? "<div class='lzw-fmore' data-favopen title='去收藏夹'>还有 " + view.moreKept + " 条收藏的帖子在「我的收藏」</div>" : '';
+    return '<div class="lzw-body">' + rows + moreRow + '</div>';
   }
 
   function forumThreadHtml(name, id) {
@@ -4551,6 +4567,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         // id = 作者|标题，论坛名在更前段：按最后一个 '|' 前切开论坛名不可靠——存的是 论坛|作者|标题
         var title = parts.pop(), author = parts.pop(), forum = parts.join('|');
         UI.forumName = forum;
+        UI.fBackFav = true;   // 从收藏夹进帖：返回键回收藏夹而非版面
         UI.fThreadId = author + '|' + title;
         UI.screen = 'fthread';
         UI.render();
@@ -5122,7 +5139,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30b';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30c';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -6052,6 +6069,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!p) return false;
       if (!p.id) p.id = p.author + '|' + p.title;
       p.fav = !p.fav;
+      if (p.fav) p.favAt = Date.now();   // 收藏时间：列表沉底时「最近收藏优先」露前 3 条
       St.forumPut(line, name, f);
       return p.fav;
     },
@@ -6066,6 +6084,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         });
       }
       return out;
+    },
+
+    // 列表展示视图：新帖在前；收藏/考古沉底但最多露 3 条（最近收藏优先），多余的只留在收藏夹
+    forumBoardView: function (f) {
+      var fresh = [], kept = [];
+      (f.posts || []).forEach(function (p) { if (p.fav || p.carried) kept.push(p); else fresh.push(p); });
+      kept.sort(function (a, b) { return (b.favAt || 0) - (a.favAt || 0); });
+      return { posts: fresh.concat(kept.slice(0, 3)), moreKept: Math.max(0, kept.length - 3) };
     },
 
     // 帖子 id → 帖子（fthread 用 id 寻址，换一版后下标变了也不怕）

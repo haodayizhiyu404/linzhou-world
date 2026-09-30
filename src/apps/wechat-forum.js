@@ -114,7 +114,7 @@
       var p = fv.post;
       return "<div class='lzw-conv lzw-frow' data-favthr='" + C.esc(fv.forum) + '|' + C.esc(postId(p)) + "'>" +
         "<div class='lzw-conv-main'><div class='lzw-ftitle'>" + C.esc(p.title) + "</div>" +
-        "<div class='lzw-fsub'>" + C.esc(fv.forum) + ' · <span class="lzw-fauthor">' + C.esc(p.author) + '</span> · ' + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</div></div></div>";
+        "<div class='lzw-fsub'>" + C.esc(p.fromForum ? '来自已删论坛「' + p.fromForum + '」' : fv.forum) + ' · <span class="lzw-fauthor">' + C.esc(p.author) + '</span> · ' + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</div></div></div>";
     }).join('');
     return '<div class="lzw-body">' + rows + '</div>';
   }
@@ -127,7 +127,8 @@
         (UI.fBusy ? '论坛加载中…' : '这里还没有帖子<br><button class="lzw-fretry" data-fretry="' + C.esc(name) + '">生成一版</button>') +
         '</div></div>';
     }
-    var rows = (f.posts || []).map(function (p) {
+    var view = W.Engine.forumBoardView(f);   // 收藏/考古沉底最多露 3 条，多余只留收藏夹
+    var rows = view.posts.map(function (p) {
       var badges = (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '');
       var starEl = p.fav ? "<span class='lzw-frowstar' title='已收藏'>" + fStar(true, 14) + "</span>" : '';
       return "<div class='lzw-conv lzw-frow' data-fthr='" + C.esc(postId(p)) + "'>" + starEl +
@@ -138,7 +139,8 @@
         "<span class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></span></div>" +
         "</div></div>";
     }).join('');
-    return '<div class="lzw-body">' + rows + '</div>';
+    var moreRow = view.moreKept > 0 ? "<div class='lzw-fmore' data-favopen title='去收藏夹'>还有 " + view.moreKept + " 条收藏的帖子在「我的收藏」</div>" : '';
+    return '<div class="lzw-body">' + rows + moreRow + '</div>';
   }
 
   function forumThreadHtml(name, id) {
@@ -326,6 +328,7 @@
         // id = 作者|标题，论坛名在更前段：按最后一个 '|' 前切开论坛名不可靠——存的是 论坛|作者|标题
         var title = parts.pop(), author = parts.pop(), forum = parts.join('|');
         UI.forumName = forum;
+        UI.fBackFav = true;   // 从收藏夹进帖：返回键回收藏夹而非版面
         UI.fThreadId = author + '|' + title;
         UI.screen = 'fthread';
         UI.render();

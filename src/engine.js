@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30b';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30c';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -937,6 +937,7 @@
       if (!p) return false;
       if (!p.id) p.id = p.author + '|' + p.title;
       p.fav = !p.fav;
+      if (p.fav) p.favAt = Date.now();   // 收藏时间：列表沉底时「最近收藏优先」露前 3 条
       St.forumPut(line, name, f);
       return p.fav;
     },
@@ -951,6 +952,14 @@
         });
       }
       return out;
+    },
+
+    // 列表展示视图：新帖在前；收藏/考古沉底但最多露 3 条（最近收藏优先），多余的只留在收藏夹
+    forumBoardView: function (f) {
+      var fresh = [], kept = [];
+      (f.posts || []).forEach(function (p) { if (p.fav || p.carried) kept.push(p); else fresh.push(p); });
+      kept.sort(function (a, b) { return (b.favAt || 0) - (a.favAt || 0); });
+      return { posts: fresh.concat(kept.slice(0, 3)), moreKept: Math.max(0, kept.length - 3) };
     },
 
     // 帖子 id → 帖子（fthread 用 id 寻址，换一版后下标变了也不怕）

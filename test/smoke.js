@@ -828,6 +828,28 @@ ctx.getWorldbook = async () => [
   LW.Store.setMeta('forum:成人时代-破镜重圆:霖州一中树洞墙', { seen: 3 });
   eq('论坛·删除', LW.Store.forumDel('成人时代-破镜重圆', '霖州一中树洞墙'), true);
   eq('论坛·删后无残留', LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙') === null && !LW.Store.meta('forum:成人时代-破镜重圆:霖州一中树洞墙').seen, true);
+  // 删论坛时收藏帖挪进收藏归档：收藏夹仍可见、标注原论坛名、归档不进论坛列表、普通帖不归档
+  LW.Store.forumPut('成人时代-破镜重圆', '临时吧', { posts: [
+    { id: 'x|留', author: 'x', title: '留', text: 't', fav: true },
+    { id: 'y|走', author: 'y', title: '走', text: 't' },
+  ] });
+  eq('论坛·删版收藏归档', LW.Store.forumDel('成人时代-破镜重圆', '临时吧'), true);
+  const archFavs = LW.Engine.forumFavorites('成人时代-破镜重圆');
+  eq('论坛·删版收藏仍在', archFavs.some(function (fv) { return fv.post.title === '留' && fv.post.fromForum === '临时吧'; }), true);
+  eq('论坛·删版普通帖不归档', archFavs.some(function (fv) { return fv.post.title === '走'; }), false);
+  eq('论坛·归档不列入论坛名', LW.Store.forumNames('成人时代-破镜重圆').every(function (n) { return n.charCodeAt(0) !== 0 && n !== '临时吧'; }), true);
+  // 列表展示视图：收藏/考古沉底最多露 3 条（最近收藏优先），多余的只留收藏夹
+  const bv = LW.Engine.forumBoardView({ posts: [
+    { title: '新1' }, { title: '新2' },
+    { title: '藏A', fav: true, favAt: 100 },
+    { title: '古1', carried: true },
+    { title: '藏B', fav: true, favAt: 300 },
+    { title: '藏C', fav: true, favAt: 200 },
+    { title: '藏D', fav: true, favAt: 50 },
+  ] });
+  eq('论坛·视图新帖在前', bv.posts[0].title === '新1' && bv.posts[1].title === '新2', true);
+  eq('论坛·视图收藏露三', bv.posts.length === 5 && bv.moreKept === 2, true);
+  eq('论坛·视图最近优先', bv.posts[2].title === '藏B' && bv.posts[3].title === '藏C' && bv.posts[4].title === '藏A', true);
   // ── UI 源码静态检查（回归保险丝）──
   console.log('[UI 源码]');
   const wsrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat.js'), 'utf8');

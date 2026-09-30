@@ -241,6 +241,9 @@
       writeRoot(r);
     },
 
+    // 收藏归档：删论坛时收藏帖的挪入处。名带 \u0000 前缀——用户输入打不出来，forumNames 也不列出它
+    FAV_ARCHIVE: '\u0000fav-archive',
+
     // ── 论坛（按线隔离）：r.forums = { 线名: { 论坛名: {name, createdAt, posts:[…]} } } ──
     // 未读借用 meta，key = 'forum:'+线名+':'+论坛名，记 {seen:N}（N=上次看到时的总条目数）
     forumAll: function () {
@@ -250,7 +253,8 @@
     forumNames: function (line) {
       var r = readRoot();
       var f = (r.forums || {})[line || ''] || {};
-      return Object.keys(f);
+      // 收藏归档（\u0000 前缀）不算论坛，不进列表
+      return Object.keys(f).filter(function (n) { return n.charCodeAt(0) !== 0; });
     },
     forumGet: function (line, name) {
       var r = readRoot();
@@ -270,6 +274,13 @@
       var r = readRoot();
       var slot = (r.forums || {})[line || ''];
       if (!slot || !slot[name]) return false;
+      // 收藏帖不随论坛陪葬：挪进收藏归档（标注原论坛名），收藏夹永久可见
+      var favs = (slot[name].posts || []).filter(function (p) { return p.fav; });
+      if (favs.length) {
+        var arch = slot[Store.FAV_ARCHIVE] || { posts: [] };
+        favs.forEach(function (p) { if (!p.fromForum) p.fromForum = name; arch.posts.push(p); });
+        slot[Store.FAV_ARCHIVE] = arch;
+      }
       delete slot[name];
       if (r.meta) delete r.meta['forum:' + (line || '') + ':' + name];
       writeRoot(r);
