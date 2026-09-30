@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-30T12:04:26.313Z
+//  构建时间：2026-09-30T12:26:34.610Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-30 12:04';
+var __LZW_BUILD__ = '2026-09-30 12:26';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2410,7 +2410,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-fempty{padding:48px 24px;text-align:center;color:#9aa0a8;font-size:13px;line-height:2.1}',
     '.lzw-fretry{margin-top:8px;border:none;border-radius:16px;background:#e8912d;color:#fff;font-size:13px;padding:7px 18px;cursor:pointer;font-family:inherit}',
     '.lzw-frow{display:flex;align-items:center;background:#fff;cursor:pointer;border-bottom:1px solid rgba(0,0,0,.05)}',
-    '.lzw-fico{flex:none;width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#f5b76a,#ee8a3d);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;margin-left:12px}',
+    '.lzw-fico{flex:none;width:40px;height:40px;border-radius:10px;background:#f0f1f3;color:#90959d;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600;margin-left:12px}',
     '.lzw-frow .lzw-conv-main{flex:1;min-width:0;padding:10px 10px 10px 0}',
     '.lzw-frow .lzw-setdel{flex:none;margin-right:10px}',
     '.lzw-fdot{position:static;display:inline-block;vertical-align:1px;margin-left:6px;border:none}',
@@ -2445,8 +2445,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-fsubdim{color:#c0c4cc}',
     '.lzw-fstar{display:inline-flex;margin-left:5px;vertical-align:-1px}',
     '.lzw-fdim{opacity:.55}',
-    '.lzw-fico-star{background:linear-gradient(135deg,#f7d06a,#e8a02d)}',
-    '.lzw-ffav{display:inline-flex;line-height:1;width:30px;height:30px;padding:0;flex:none;align-items:center;justify-content:center}',
+    '.lzw-fico-star{background:#faf3e6;color:#e8912d}',
+    '.lzw-ffav{display:inline-flex;line-height:1;width:30px;height:30px;padding:0;flex:none;align-items:center;justify-content:center;vertical-align:top}',
     '.lzw-fsec{margin:14px 12px 6px;font-size:12px;color:#9aa0a8;font-weight:600}',
     '.lzw-fhot{padding:9px 0;border-bottom:1px solid rgba(0,0,0,.05)}',
     '.lzw-fhot:last-child{border-bottom:none}',
@@ -2455,7 +2455,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // ── 备忘录（lzw-memo-*）：选人 chips / 存档列表 / 阅读页 ──
     '.lzw-memo-chips{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 8px;flex:none;background:#f7f7f9;border-bottom:1px solid rgba(0,0,0,.06)}',
     '.lzw-memo-chip{flex:none;border:1px solid rgba(0,0,0,.12);background:#fff;color:#333;border-radius:14px;padding:4px 12px;font-size:12.5px;cursor:pointer;font-family:inherit}',
-    '.lzw-memo-chip.on{background:#4d7cfe;border-color:#4d7cfe;color:#fff}',
+    '.lzw-memo-chip.on{background:#576b95;border-color:#576b95;color:#fff}',
     '.lzw-memo-list{flex:1;min-height:0;overflow-y:auto;padding:6px 0 12px}',
     '.lzw-memo-row{display:flex;align-items:center;gap:8px;padding:11px 14px;cursor:pointer}',
     '.lzw-memo-row:active{background:rgba(0,0,0,.05)}',
@@ -4305,13 +4305,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   function fStar(filled, size, color) {
     var p = 'M12 3.8l2.5 5.2 5.7.8-4.1 4 .9 5.7-5-2.7-5 2.7.9-5.7-4.1-4 5.7-.8z';
     return filled
-      ? "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='" + (color || '#e8912d') + "'><path d='" + p + "'/></svg>"
+      ? "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='" + (color || '#e8912d') + "' stroke='" + (color || '#e8912d') + "' stroke-width='1.4' stroke-linejoin='round'><path d='" + p + "'/></svg>"
       : "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='none' stroke='" + (color || '#b6bac2') + "' stroke-width='2' stroke-linejoin='round'><path d='" + p + "'/></svg>";
   }
 
   // 评论条右下角操作区：点赞数（0 不显示数字）+ 评论符号（预留位，以后给机主回评论用）
   function fRepOps(likes) {
-    return "<div class='lzw-frep-ops'><span class='lzw-fop'>" + fLike('#9aa0a8', 11) + (likes > 0 ? W.Engine.forumHeat(likes) : '') + "</span>" +
+    return "<div class='lzw-frep-ops'><span class='lzw-fop'>" + fLike('#9aa0a8', 12) + (likes > 0 ? W.Engine.forumHeat(likes) : '') + "</span>" +
       "<span class='lzw-fop'>" + fCmt('#9aa0a8', 11) + "</span></div>";
   }
 
@@ -4375,7 +4375,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         "<div class='lzw-ftitle'>" + C.esc(p.title) + badges + "</div>" +
         "<div class='lzw-fprev'>" + C.esc(p.preview || String(p.text || '').slice(0, 40)) + "</div>" +
         "<div class='lzw-fbot'><span><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</span></span>" +
-        "<span class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></span></div>" +
+        "<span class='lzw-fstat'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></span></div>" +
         "</div></div>";
     }).join('');
     var moreRow = view.moreKept > 0 ? "<div class='lzw-fmore' data-favopen title='去收藏夹'>还有 " + view.moreKept + " 条收藏的帖子在「我的收藏」</div>" : '';
@@ -4390,7 +4390,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       "<div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
       "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
       "<div class='lzw-fmain-b'>" + C.esc(postBody(p)).replace(/\n/g, '<br>') + "</div>" +
-      "<div class='lzw-fstat lzw-fstat-r'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
+      "<div class='lzw-fstat lzw-fstat-r'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
       "</div>";
     if (!postReady(p)) {
       return '<div class="lzw-body">' + head +
@@ -4417,7 +4417,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   // appbar 收藏星（壳渲染 appbar 时调用；实心=已收藏）
   UI.ffavIcon = function () {
     var on = !!(UI.forumFavNow && UI.forumFavNow());
-    return fStar(on, on ? 21 : 19);   // 描边星外扩约1px，实心态加大一号补视觉差
+    return fStar(on, 20);   // 两态同尺寸（实心靠同色描边补视觉差），占位一致防顶栏跳动
   };
 
   Object.assign(UI, {
@@ -5139,7 +5139,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30c';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30d';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 

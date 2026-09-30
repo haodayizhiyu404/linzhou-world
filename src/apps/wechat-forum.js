@@ -66,13 +66,13 @@
   function fStar(filled, size, color) {
     var p = 'M12 3.8l2.5 5.2 5.7.8-4.1 4 .9 5.7-5-2.7-5 2.7.9-5.7-4.1-4 5.7-.8z';
     return filled
-      ? "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='" + (color || '#e8912d') + "'><path d='" + p + "'/></svg>"
+      ? "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='" + (color || '#e8912d') + "' stroke='" + (color || '#e8912d') + "' stroke-width='1.4' stroke-linejoin='round'><path d='" + p + "'/></svg>"
       : "<svg width='" + size + "' height='" + size + "' viewBox='0 0 24 24' fill='none' stroke='" + (color || '#b6bac2') + "' stroke-width='2' stroke-linejoin='round'><path d='" + p + "'/></svg>";
   }
 
   // 评论条右下角操作区：点赞数（0 不显示数字）+ 评论符号（预留位，以后给机主回评论用）
   function fRepOps(likes) {
-    return "<div class='lzw-frep-ops'><span class='lzw-fop'>" + fLike('#9aa0a8', 11) + (likes > 0 ? W.Engine.forumHeat(likes) : '') + "</span>" +
+    return "<div class='lzw-frep-ops'><span class='lzw-fop'>" + fLike('#9aa0a8', 12) + (likes > 0 ? W.Engine.forumHeat(likes) : '') + "</span>" +
       "<span class='lzw-fop'>" + fCmt('#9aa0a8', 11) + "</span></div>";
   }
 
@@ -136,7 +136,7 @@
         "<div class='lzw-ftitle'>" + C.esc(p.title) + badges + "</div>" +
         "<div class='lzw-fprev'>" + C.esc(p.preview || String(p.text || '').slice(0, 40)) + "</div>" +
         "<div class='lzw-fbot'><span><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</span></span>" +
-        "<span class='lzw-fstat'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></span></div>" +
+        "<span class='lzw-fstat'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></span></div>" +
         "</div></div>";
     }).join('');
     var moreRow = view.moreKept > 0 ? "<div class='lzw-fmore' data-favopen title='去收藏夹'>还有 " + view.moreKept + " 条收藏的帖子在「我的收藏」</div>" : '';
@@ -151,7 +151,7 @@
       "<div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
       "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
       "<div class='lzw-fmain-b'>" + C.esc(postBody(p)).replace(/\n/g, '<br>') + "</div>" +
-      "<div class='lzw-fstat lzw-fstat-r'><span>" + fLike('#8a8f99', 12) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
+      "<div class='lzw-fstat lzw-fstat-r'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
       "</div>";
     if (!postReady(p)) {
       return '<div class="lzw-body">' + head +
@@ -178,7 +178,7 @@
   // appbar 收藏星（壳渲染 appbar 时调用；实心=已收藏）
   UI.ffavIcon = function () {
     var on = !!(UI.forumFavNow && UI.forumFavNow());
-    return fStar(on, on ? 21 : 19);   // 描边星外扩约1px，实心态加大一号补视觉差
+    return fStar(on, 20);   // 两态同尺寸（实心靠同色描边补视觉差），占位一致防顶栏跳动
   };
 
   Object.assign(UI, {
