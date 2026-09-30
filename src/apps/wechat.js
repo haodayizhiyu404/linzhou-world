@@ -123,7 +123,7 @@
     '.lzw-scr-moments .lzw-clock{text-shadow:0 0 6px rgba(255,255,255,.95),0 0 12px rgba(255,255,255,.6)}',
     '.lzw-scr-moments .lzw-sig i{box-shadow:0 0 3px rgba(255,255,255,.95),0 0 8px rgba(255,255,255,.55)}',
     // 主体
-    '.lzw-body{flex:1;min-height:0;overflow-y:auto;position:relative;z-index:1}',
+    '.lzw-body{flex:1;min-height:0;overflow-y:auto;scrollbar-gutter:stable;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
     '.lzw-scr-home{background:var(--lzw-wall,none) center/cover no-repeat #f4f6fb}',
     '.lzw-scr-home .lzw-sbar{background:transparent}',
