@@ -120,6 +120,7 @@
   }
 
   function forumBoardHtml(name) {
+    if (UI.fBusy) return '<div class="lzw-body"><div class="lzw-fempty">论坛重置中…<br>稍等片刻，马上回来</div></div>';
     var f = window.LZWorld.Store.forumGet(forumLineKey(), name);
     if (!f || !(f.posts || []).length) {
       return '<div class="lzw-body"><div class="lzw-fempty">' +
@@ -127,8 +128,9 @@
         '</div></div>';
     }
     var rows = (f.posts || []).map(function (p) {
-      var badges = (p.fav ? "<span class='lzw-fstar'>" + fStar(true, 12) + "</span>" : '') + (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '');
-      return "<div class='lzw-conv lzw-frow' data-fthr='" + C.esc(postId(p)) + "'>" +
+      var badges = (p.carried ? "<span class='lzw-fcarried'>考古</span>" : '');
+      var starEl = p.fav ? "<span class='lzw-frowstar' title='已收藏'>" + fStar(true, 14) + "</span>" : '';
+      return "<div class='lzw-conv lzw-frow' data-fthr='" + C.esc(postId(p)) + "'>" + starEl +
         "<div class='lzw-conv-main'>" +
         "<div class='lzw-ftitle'>" + C.esc(p.title) + badges + "</div>" +
         "<div class='lzw-fprev'>" + C.esc(p.preview || String(p.text || '').slice(0, 40)) + "</div>" +
@@ -172,7 +174,10 @@
 
   UI.forumLineKey = forumLineKey;
   // appbar 收藏星（壳渲染 appbar 时调用；实心=已收藏）
-  UI.ffavIcon = function () { return fStar(!!(UI.forumFavNow && UI.forumFavNow()), 19); };
+  UI.ffavIcon = function () {
+    var on = !!(UI.forumFavNow && UI.forumFavNow());
+    return fStar(on, on ? 21 : 19);   // 描边星外扩约1px，实心态加大一号补视觉差
+  };
 
   Object.assign(UI, {
     openForum: function (name) {
@@ -298,7 +303,7 @@
       el.onclick = function () { UI.openForum(el.dataset.fopen); };
     });
     ph.querySelectorAll('[data-fthr]').forEach(function (el) {
-      el.onclick = function () { UI.fThreadId = el.dataset.fthr; UI.screen = 'fthread'; UI.render(); };
+      el.onclick = function () { if (UI.fBusy) return; UI.fThreadId = el.dataset.fthr; UI.screen = 'fthread'; UI.render(); };
     });
     ph.querySelectorAll('[data-fretry]').forEach(function (el) {
       el.onclick = function () { UI.genForum(el.dataset.fretry); };

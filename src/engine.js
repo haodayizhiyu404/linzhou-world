@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30a';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30b';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -993,7 +993,7 @@
         fp.time = cur.getFullYear() + '年' + (cur.getMonth() + 1) + '月' + cur.getDate() + '日 ' +
           ('0' + cur.getHours()).slice(-2) + ':' + ('0' + cur.getMinutes()).slice(-2);
       }
-      St.forumPut(line, name, { posts: (kept || []).concat(fresh) });
+      St.forumPut(line, name, { posts: fresh.concat(kept || []) });
       return true;
     },
 
@@ -1016,11 +1016,14 @@
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var th = this.parseForumThread(text);
       if (!th.body) throw new Error('帖子生成结果为空');
-      p.body = th.body;
-      p.hot = th.hot;
-      p.latest = th.latest;
-      p.generated = true;
-      St.forumPut(line, name, f);
+      // 生成期间论坛可能被【换一版】重置：按 id 重新定位，帖子已不在新列表 → 结果作废（不写脏数据）
+      var fresh = this.forumFindPost(line, name, id);
+      if (!fresh.forum || !fresh.post) return false;
+      fresh.post.body = th.body;
+      fresh.post.hot = th.hot;
+      fresh.post.latest = th.latest;
+      fresh.post.generated = true;
+      St.forumPut(line, name, fresh.forum);
       return true;
     },
 
