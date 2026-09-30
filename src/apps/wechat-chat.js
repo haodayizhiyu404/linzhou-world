@@ -34,6 +34,7 @@
     }, this).join('');
     if (this.failed && this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
     if (this.staged.length) rows += C.stagedHtml(userName);
+    if (this.busy) rows += '<div class="lzw-sysrow">对方正在输入…</div>';
     return '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
       '<div class="lzw-bottom">' +
       panelHtml(this.panel) +
@@ -177,8 +178,9 @@
       if (!this.staged.length) {
         // 没有待发内容时，小飞机充当「重试」：末尾是我方消息且对方没下文（上次失败/回复被删/解析零条），就再生成一次
         var W0 = window.LZWorld;
+        if (this.busy) { try { toastr.info('正在生成中，请稍候…', '📱 霖州引擎'); } catch (e) {} return; }
         var h0 = W0.Store.history(this.chatKey);
-        if (!this.busy && h0.length && h0[h0.length - 1].who === 'user') {
+        if (h0.length && h0[h0.length - 1].who === 'user') {
           this.failed = false;
           this.generate(W0.Engine.userName());
         }
@@ -188,7 +190,8 @@
     },
 
     sendBatch: function () {
-      if (!this.staged.length || this.busy) return;
+      if (!this.staged.length) return;
+      if (this.busy) { try { toastr.info('上一条还在生成中，请稍候…', '📱 霖州引擎'); } catch (e) {} return; }
       var W = window.LZWorld;
       var msgs = this.staged.map(function (m) {
         if (m.kind === 'transfer') {
@@ -252,7 +255,7 @@
     // ↻ 双模式：末尾是对方消息 → 弹出重roll；末尾是我方消息且上次失败 → 直接重试
     reroll: async function () {
       var W = window.LZWorld;
-      if (this.busy) return;
+      if (this.busy) { try { toastr.info('正在生成中，请稍候…', '📱 霖州引擎'); } catch (e) {} return; }
       if (this.canRetry()) {
         this.failed = false;
         try { toastr.info('重试中……', '📱 霖州引擎'); } catch (e) {}
@@ -278,6 +281,9 @@
     generate: async function (userName) {
       if (this.busy) return;
       this.busy = true;
+      // 起飞同帧重绘：失败横幅立即撤下、底部亮起「对方正在输入…」，不再让人以为按钮没反应
+      this.failed = false;
+      this.render();
       var W = window.LZWorld;
       var eng = W.Engine;
       // 生成是异步的，期间用户可能已切到别的会话——key 必须先抓快照，
@@ -296,18 +302,17 @@
           try { eng.markTransfersAccepted(key); } catch (e) {}
           // 生成是异步的：发出后生成了回复、人已经切去别的会话/主页 → 记未读红点
           if (this.screen !== 'chat' || this.chatKey !== key) W.Store.bumpUnread(key, result.msgs.length);
-          // 正在看别的会话时不刷它的屏；列表/主页则刷新让预览跟上
-          if (this.screen !== 'chat' || this.chatKey === key) this.render();
         }
       } catch (e) {
         // API 故障有两类：直接报错、或永远挂起（由 withTimeout 兜底）。两种都要能重试。
         this.failed = true;
         console.warn('[霖州引擎] 生成失败', e);
         try { toastr.error('手机消息生成失败：' + (e && e.message || e), '📱 霖州引擎'); } catch (e2) {}
-        if (this.screen === 'chat') this.render();
-      } finally {
-        this.busy = false;
       }
+      // busy 先复位再收尾重绘：尾帧撤掉「对方正在输入…」、失败则挂上横幅，均不留残影。
+      // 唯一跳过：人已经在看别的会话——重绘会清掉那边正在输入的内容
+      this.busy = false;
+      if (!(this.screen === 'chat' && this.chatKey !== key)) this.render();
     },
   });
 

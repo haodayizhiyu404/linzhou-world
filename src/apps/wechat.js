@@ -991,7 +991,7 @@
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + ((this.screen === 'moments' || this.screen === 'mprofile') ? ' lzw-scr-moments' : '') + (this.call ? ' lzw-scr-call' : '') + (this.call && this.call.mode === 'video' ? ' lzw-scr-video' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + ((this.screen === 'moments' || this.screen === 'mprofile') ? ' lzw-scr-moments' : '') + (this.call ? ' lzw-scr-call' : '') + (this.call && this.call.mode === 'video' ? ' lzw-scr-video' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.busy ? '' : (this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : ''))) + body + '<div class="lzw-homebar"></div>' +
         (this.confirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条消息？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="cancel">取消</button><button class="lzw-cbtn yes" data-cact="del">删除</button></div></div></div>' : '') +
         (this.tConfirm >= 0 ? (function () {
           var tcm = null;

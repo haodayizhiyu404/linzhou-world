@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-30T18:20:01.604Z
+//  构建时间：2026-09-30T18:31:17.384Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-30 18:20';
+var __LZW_BUILD__ = '2026-09-30 18:31';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2936,7 +2936,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + ((this.screen === 'moments' || this.screen === 'mprofile') ? ' lzw-scr-moments' : '') + (this.call ? ' lzw-scr-call' : '') + (this.call && this.call.mode === 'video' ? ' lzw-scr-video' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : '')) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + ((this.screen === 'moments' || this.screen === 'mprofile') ? ' lzw-scr-moments' : '') + (this.call ? ' lzw-scr-call' : '') + (this.call && this.call.mode === 'video' ? ' lzw-scr-video' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.busy ? '' : (this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : ''))) + body + '<div class="lzw-homebar"></div>' +
         (this.confirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条消息？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="cancel">取消</button><button class="lzw-cbtn yes" data-cact="del">删除</button></div></div></div>' : '') +
         (this.tConfirm >= 0 ? (function () {
           var tcm = null;
@@ -3574,6 +3574,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     }, this).join('');
     if (this.failed && this.canRetry()) rows += '<div class="lzw-sysrow">⚠ 对方暂时没有回复（生成失败）<br>点右上角刷新图标，或再点小飞机重试</div>';
     if (this.staged.length) rows += C.stagedHtml(userName);
+    if (this.busy) rows += '<div class="lzw-sysrow">对方正在输入…</div>';
     return '<div class="lzw-body"><div class="lzw-chatbg" id="lzw-chatbody">' + rows + '</div></div>' +
       '<div class="lzw-bottom">' +
       panelHtml(this.panel) +
@@ -3717,8 +3718,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!this.staged.length) {
         // 没有待发内容时，小飞机充当「重试」：末尾是我方消息且对方没下文（上次失败/回复被删/解析零条），就再生成一次
         var W0 = window.LZWorld;
+        if (this.busy) { try { toastr.info('正在生成中，请稍候…', '📱 霖州引擎'); } catch (e) {} return; }
         var h0 = W0.Store.history(this.chatKey);
-        if (!this.busy && h0.length && h0[h0.length - 1].who === 'user') {
+        if (h0.length && h0[h0.length - 1].who === 'user') {
           this.failed = false;
           this.generate(W0.Engine.userName());
         }
@@ -3728,7 +3730,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     },
 
     sendBatch: function () {
-      if (!this.staged.length || this.busy) return;
+      if (!this.staged.length) return;
+      if (this.busy) { try { toastr.info('上一条还在生成中，请稍候…', '📱 霖州引擎'); } catch (e) {} return; }
       var W = window.LZWorld;
       var msgs = this.staged.map(function (m) {
         if (m.kind === 'transfer') {
@@ -3792,7 +3795,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // ↻ 双模式：末尾是对方消息 → 弹出重roll；末尾是我方消息且上次失败 → 直接重试
     reroll: async function () {
       var W = window.LZWorld;
-      if (this.busy) return;
+      if (this.busy) { try { toastr.info('正在生成中，请稍候…', '📱 霖州引擎'); } catch (e) {} return; }
       if (this.canRetry()) {
         this.failed = false;
         try { toastr.info('重试中……', '📱 霖州引擎'); } catch (e) {}
@@ -3818,6 +3821,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     generate: async function (userName) {
       if (this.busy) return;
       this.busy = true;
+      // 起飞同帧重绘：失败横幅立即撤下、底部亮起「对方正在输入…」，不再让人以为按钮没反应
+      this.failed = false;
+      this.render();
       var W = window.LZWorld;
       var eng = W.Engine;
       // 生成是异步的，期间用户可能已切到别的会话——key 必须先抓快照，
@@ -3836,18 +3842,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           try { eng.markTransfersAccepted(key); } catch (e) {}
           // 生成是异步的：发出后生成了回复、人已经切去别的会话/主页 → 记未读红点
           if (this.screen !== 'chat' || this.chatKey !== key) W.Store.bumpUnread(key, result.msgs.length);
-          // 正在看别的会话时不刷它的屏；列表/主页则刷新让预览跟上
-          if (this.screen !== 'chat' || this.chatKey === key) this.render();
         }
       } catch (e) {
         // API 故障有两类：直接报错、或永远挂起（由 withTimeout 兜底）。两种都要能重试。
         this.failed = true;
         console.warn('[霖州引擎] 生成失败', e);
         try { toastr.error('手机消息生成失败：' + (e && e.message || e), '📱 霖州引擎'); } catch (e2) {}
-        if (this.screen === 'chat') this.render();
-      } finally {
-        this.busy = false;
       }
+      // busy 先复位再收尾重绘：尾帧撤掉「对方正在输入…」、失败则挂上横幅，均不留残影。
+      // 唯一跳过：人已经在看别的会话——重绘会清掉那边正在输入的内容
+      this.busy = false;
+      if (!(this.screen === 'chat' && this.chatKey !== key)) this.render();
     },
   });
 
@@ -5171,7 +5176,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30n';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30o';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
