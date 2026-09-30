@@ -93,7 +93,7 @@
         "<div class='lzw-fico'>论</div>" +
         "<div class='lzw-conv-main'><div class='lzw-conv-name'>" + C.esc(n) + (un ? "<span class='lzw-appdot lzw-fdot'>" + (un > 99 ? '99+' : un) + "</span>" : '') + "</div>" +
         "<div class='lzw-conv-prev'>" + (f.posts || []).length + ' 帖 · 创建于 ' + fmtCreated(f.createdAt || Date.now()) + "</div></div>" +
-        "<span class='lzw-setdel' data-fdel='" + C.esc(n) + "' title='删除论坛'>✕</span></div>";
+        "<span class='lzw-setdel' data-fdel='" + C.esc(n) + "' title='删除论坛'>" + C.ICON_TRASH + "</span></div>";
     }).join('');
     return '<div class="lzw-body">' +
       '<div class="lzw-fnew"><input class="lzw-fin" data-fnew maxlength="16" placeholder="输入论坛名，进入即创建">' +
@@ -134,7 +134,7 @@
       return "<div class='lzw-conv lzw-frow' data-fthr='" + C.esc(postId(p)) + "'>" + starEl +
         "<div class='lzw-conv-main'>" +
         "<div class='lzw-ftitle'>" + C.esc(p.title) + badges + "</div>" +
-        "<div class='lzw-fprev'>" + C.esc(p.preview || String(p.text || '').slice(0, 40)) + "</div>" +
+        "<div class='lzw-fprev'>" + C.esc(String(p.preview || String(p.text || '').slice(0, 40)).replace(/\[图片[:：][^\]]*\]/g, '[图片]')) + "</div>" +
         "<div class='lzw-fbot'><span><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</span></span>" +
         "<span class='lzw-fstat'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></span></div>" +
         "</div></div>";
@@ -150,7 +150,7 @@
     var head = "<div class='lzw-fmain'>" +
       "<div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
       "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
-      "<div class='lzw-fmain-b'>" + C.esc(postBody(p)).replace(/\n/g, '<br>') + "</div>" +
+      "<div class='lzw-fmain-b'>" + W.Engine.forumBodyHtml(postBody(p)) + "</div>" +
       "<div class='lzw-fstat lzw-fstat-r'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
       "</div>";
     if (!postReady(p)) {

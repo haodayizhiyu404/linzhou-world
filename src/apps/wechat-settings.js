@@ -57,7 +57,7 @@
         return '<div class="lzw-setrow" data-aapply="' + C.esc(nm) + '">' +
           '<div class="lzw-setmain"><div class="lzw-setname">' + C.esc(nm) + '</div>' +
           '<div class="lzw-setdesc">' + srcName + (p.apiurl ? ' · ' + C.esc(p.apiurl) : '') + (p.cmodel ? ' · ' + C.esc(p.cmodel) : '') + '</div></div>' +
-          '<span class="lzw-setdel" data-apdel="' + C.esc(nm) + '">✕</span></div>';
+          '<span class="lzw-setdel" data-apdel="' + C.esc(nm) + '">' + C.ICON_TRASH + '</span></div>';
       }).join('');
       if (savedRows) {
         detail += '<div class="lzw-setcol"><span class="lzw-setlbl">已存预设（点按即套用；点 ✕ 需确认后删除，密钥随预设各存一份在本机）</span></div>' + savedRows;

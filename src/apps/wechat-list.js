@@ -113,7 +113,7 @@
             '<div class="lzw-conv-main"><div class="lzw-conv-name">' + C.esc(k) + '</div>' +
             '<div class="lzw-conv-prev">' + C.esc(prevs) + '</div></div>' +
             (uns ? '<span class="lzw-unread">' + (uns > 99 ? '99+' : uns) + '</span>' : '') +
-            '<span class="lzw-setdel" data-sdel="' + C.esc(k) + '" title="删除会话">✕</span></div>';
+            '<span class="lzw-setdel" data-sdel="' + C.esc(k) + '" title="删除会话">' + C.ICON_TRASH + '</span></div>';
         }).join('');
       }
     } else {

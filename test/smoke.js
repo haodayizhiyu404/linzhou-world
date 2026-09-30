@@ -850,6 +850,12 @@ ctx.getWorldbook = async () => [
   eq('论坛·视图新帖在前', bv.posts[0].title === '新1' && bv.posts[1].title === '新2', true);
   eq('论坛·视图收藏露三', bv.posts.length === 5 && bv.moreKept === 2, true);
   eq('论坛·视图最近优先', bv.posts[2].title === '藏B' && bv.posts[3].title === '藏C' && bv.posts[4].title === '藏A', true);
+  // 正文图片卡：[图片:描述] → 灰底图卡HTML（转义后替换，描述不再二次转义）
+  const fimgH = LW.Engine.forumBodyHtml('开头一句。\n[图片:一张拍糊的试卷]\n结尾');
+  eq('论坛·图片卡渲染', fimgH.indexOf('lzw-fimg') !== -1 && fimgH.indexOf('一张拍糊的试卷') !== -1 && fimgH.indexOf('<br>') !== -1, true);
+  const fimgX = LW.Engine.forumBodyHtml('a<b>&c[图片:x&y]</b>');
+  eq('论坛·图片卡转义', fimgX.indexOf('&lt;b&gt;') !== -1 && fimgX.indexOf('x&amp;y') !== -1 && fimgX.indexOf('<b>') === -1, true);
+  eq('论坛·裸图片标记不渲染', LW.Engine.forumBodyHtml('见[图片]就知道').indexOf('lzw-fimg') === -1, true);
   // ── UI 源码静态检查（回归保险丝）──
   console.log('[UI 源码]');
   const wsrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat.js'), 'utf8');
