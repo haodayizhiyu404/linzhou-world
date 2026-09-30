@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30e';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30f';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -965,7 +965,7 @@
     // 帖子正文 → HTML：转义 + 换行 + [图片:描述] 渲染成朋友圈同款灰底文字图卡
     forumBodyHtml: function (text) {
       var esc = function (s2) { return String(s2 == null ? '' : s2).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
-      return esc(text).replace(/\n/g, '<br>').replace(/\[图片[:：]([^\]\n]{1,80})\]/g, function (m, d) {
+      return esc(text).replace(/\n/g, '<br>').replace(/\[图片[:：]([^\]\n]{1,300})\]/g, function (m, d) {
         return "<div class='lzw-post-img lzw-fimg'><span class='lzw-fimg-ico'>" +
           "<svg width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='#9aa0a8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4.5' width='18' height='15' rx='2.5'/><circle cx='8.8' cy='9.8' r='1.5'/><path d='M4.5 16.8l4-4a1.4 1.4 0 0 1 2 0l7 7'/></svg>" +
           '</span>' + d + '</div>';
@@ -1017,7 +1017,7 @@
     },
 
     // 点进帖子才生成正文+评论（懒加载，只生成一次）；旧版内联正文帖视为已生成
-    forumThreadGenerate: async function (line, name, id) {
+    forumThreadGenerate: async function (line, name, id, opts) {
       var W = window.LZWorld, St = W.Store;
       var found = this.forumFindPost(line, name, id);
       var f = found.forum, p = found.post;
@@ -1030,7 +1030,7 @@
       (sec.groups || []).forEach(function (g) {
         (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
       });
-      var req = W.Prompt.forumThread(p, name, pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc());
+      var req = W.Prompt.forumThread(p, name, pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc(), opts && opts.reroll);
       var raw = await this.gen(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var th = this.parseForumThread(text);
@@ -1044,6 +1044,17 @@
       fresh.post.generated = true;
       St.forumPut(line, name, fresh.forum);
       return true;
+    },
+
+    // 帖子级重roll：清掉正文与评论重新生成（标题/作者/热度/收藏不动）
+    forumThreadReroll: async function (line, name, id) {
+      var St = window.LZWorld.Store;
+      var found = this.forumFindPost(line, name, id);
+      if (!found.forum || !found.post) throw new Error('帖子不存在');
+      found.post.body = ''; found.post.hot = []; found.post.latest = [];
+      found.post.text = ''; found.post.generated = false;
+      St.forumPut(line, name, found.forum);
+      return this.forumThreadGenerate(line, name, id, { reroll: true });
     },
 
     // 首次【生成一版】：空论坛 → 出目录（6~8 条）。跨时代挖坟：别的线同名论坛挑旧帖带过来。

@@ -824,6 +824,15 @@ ctx.getWorldbook = async () => [
   eq('论坛·换版新帖在前', fAdult3.posts[0].title === '新瓜', true);
   eq('论坛·换版收藏沉底', fAdult3.posts[fAdult3.posts.length - 2].title === '出分了吗', true);
   eq('论坛·取消收藏', LW.Engine.forumFavToggle('成人时代-破镜重圆', '霖州一中树洞墙', fAdult2.posts[0].id), false);
+  // 帖子级重roll：正文+评论清掉重生成，标题/热度/收藏标记不动
+  const fOld = LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙').posts.filter(function (p) { return p.title === '出分了吗'; })[0];
+  ctx.generateRaw = async (req) => '重roll正文来了。\n[热评:网友:7:沙发再来]\n[评论:水友:0:顶顶]';
+  eq('论坛·帖子重roll', await LW.Engine.forumThreadReroll('成人时代-破镜重圆', '霖州一中树洞墙', fOld.id), true);
+  const fNew = LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙').posts.filter(function (p) { return p.title === '出分了吗'; })[0];
+  eq('论坛·重roll内容替换', fNew.body === '重roll正文来了。' && fNew.hot.length === 1 && fNew.latest.length === 1, true);
+  eq('论坛·重roll热度不动', fNew.likes === 342 && fNew.cmts === 89, true);
+  // 长描述图卡（AI 实测描述可超 80 字）
+  eq('论坛·长描述图卡', LW.Engine.forumBodyHtml('[图片:' + '长'.repeat(150) + ']').indexOf('lzw-fimg') !== -1, true);
   // 删除：数据与未读标记一起清
   LW.Store.setMeta('forum:成人时代-破镜重圆:霖州一中树洞墙', { seen: 3 });
   eq('论坛·删除', LW.Store.forumDel('成人时代-破镜重圆', '霖州一中树洞墙'), true);

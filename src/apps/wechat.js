@@ -754,7 +754,7 @@
     if (screen === 'mread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="memo">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fav') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">我的收藏</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？换一版（收藏的帖子保留）">' + ICON_REROLL + '</span>') + '</span></div>';
-    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="' + (UI.fBackFav ? 'fav' : 'fboard') + '">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"><span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.ffavIcon ? UI.ffavIcon() : '☆') + '</span></span></div>';
+    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="' + (UI.fBackFav ? 'fav' : 'fboard') + '">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r lzw-appbar-rw">' + (UI.fTBusy ? '' : '<span class="lzw-reroll" data-fact="ftreroll" title="重新生成正文与评论（标题/热度不变）">' + ICON_REROLL + '</span>') + '<span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.ffavIcon ? UI.ffavIcon() : '☆') + '</span></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
@@ -864,6 +864,7 @@
     fTBusy: false,        // 帖子正文生成中
     fConfirmDel: '',      // 待确认删除的论坛名（''=无）
     fBackFav: false,      // 从收藏夹点进的帖子：返回键回收藏夹而非版面
+    fConfirmTR: false,    // 帖子重roll确认弹窗
     sConfirmDel: '',      // 待确认删除的陌生人会话 key（''=无）
     memoNpc: null,        // 备忘录当前选中的人（默认通讯录第一位）
     memoBusy: false,      // 备忘录生成中（写一篇/重roll 共用一把锁）
@@ -1006,6 +1007,7 @@
         })() : '') +
         (this.pConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除预设「' + esc(this.pConfirmDel) + '」？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="pdelno">取消</button><button class="lzw-cbtn yes" data-cact="pdelok">删除</button></div></div></div>' : '') +
         (this.fConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除论坛「' + esc(this.fConfirmDel) + '」及全部帖子？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="fdelno">取消</button><button class="lzw-cbtn yes" data-cact="fdelok">删除</button></div></div></div>' : '') +
+        (this.fConfirmTR ? '<div class="lzw-scrim"><div class="lzw-confirm">重新生成这条帖子的正文与评论？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="ftrno">取消</button><button class="lzw-cbtn yes" data-cact="ftryes">重新生成</button></div></div></div>' : '') +
         (this.sConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除与「' + esc(this.sConfirmDel) + '」的会话记录？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="sdelno">取消</button><button class="lzw-cbtn yes" data-cact="sdelok">删除</button></div></div></div>' : '') +
         '</div></div>';
 
@@ -1107,6 +1109,8 @@
             if (UI.forumName === fn0) { UI.forumName = ''; UI.fThreadId = ''; UI.screen = 'forum'; }
             UI.render();
           }
+          else if (a === 'ftrno') { UI.fConfirmTR = false; UI.render(); }
+          else if (a === 'ftryes') { UI.fConfirmTR = false; UI.rerollThread(); }
           else if (a === 'sdelno') { UI.sConfirmDel = ''; UI.render(); }
           else if (a === 'sdelok') {
             var sk0 = UI.sConfirmDel; UI.sConfirmDel = '';

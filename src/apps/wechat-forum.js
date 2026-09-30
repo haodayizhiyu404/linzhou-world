@@ -242,6 +242,23 @@
         if (self.screen === 'fboard' || self.screen === 'fthread') self.render();
       });
     },
+    // 帖子级重roll：确认后清掉正文+评论重新生成（标题/作者/热度/收藏不动）
+    rerollThread: function () {
+      var W = window.LZWorld;
+      if (this.fTBusy) return;
+      var self = this, line = forumLineKey(), name = this.forumName, id = this.fThreadId;
+      this.fTBusy = true;
+      this.render();
+      W.Engine.forumThreadReroll(line, name, id).then(function (ok) {
+        try { toastr.info(ok ? '已重新生成' : '已跳过', '霖州手机', { timeOut: 1500 }); } catch (e) {}
+      }).catch(function (e) {
+        console.warn('[霖州引擎] 帖子重roll失败', e);
+        try { toastr.error('重新生成失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
+      }).finally(function () {
+        self.fTBusy = false;
+        if (self.screen === 'fthread') self.render();
+      });
+    },
     // 点进未生成的帖子 → 手动生成正文+评论（只生成一次）
     genThread: function () {
       var W = window.LZWorld;
@@ -318,6 +335,9 @@
     });
     ph.querySelectorAll('[data-fact="ffav"]').forEach(function (el) {
       el.onclick = function () { UI.toggleForumFav(); };
+    });
+    ph.querySelectorAll('[data-fact="ftreroll"]').forEach(function (el) {
+      el.onclick = function () { if (UI.fTBusy) return; UI.fConfirmTR = true; UI.render(); };
     });
     ph.querySelectorAll('[data-favopen]').forEach(function (el) {
       el.onclick = function () { UI.screen = 'fav'; UI.render(); };

@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-30T12:44:04.744Z
+//  构建时间：2026-09-30T13:13:17.066Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-30 12:44';
+var __LZW_BUILD__ = '2026-09-30 13:13';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1292,7 +1292,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   },
 
   // ── 论坛 · 阶段二：点进帖子才生成正文+评论区（结果缓存，只生成一次） ──
-  forumThread: function (post, forumName, people, profiles, snapshot, userInfo, charDesc) {
+  forumThread: function (post, forumName, people, profiles, snapshot, userInfo, charDesc, reroll) {
     var myName = me();
     var p = [
         '# 虚构沙盒',
@@ -1320,6 +1320,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       '## 输出要求（严格遵守）',
       '- 先写正文：100~400 字，可多段，楼主本人的口吻与处境；正文必须原样以目录预览那句话开头（一字不改），再往后展开——预览与正文是同一个故事，不许另起炉灶',
 '- 想插图的位置单独一行写 [图片:画面描述]（如 [图片:一张拍糊的一模成绩单]，要具体到像讲给看不到图的人听）；若目录预览开头有 [图片]，正文开头用 [图片:画面描述] 顶替它，其余文字仍与预览一字不差；禁止输出裸的 [图片]',
+      reroll ? '- 注意：这是一次重生成——目录预览那句话仍必须原样作为正文开头（一字不改），但写法与评论角度要和旧版明显不一样' : '',
       '- 然后 2~4 条热评，格式 [热评:网名:赞数:内容]（赞数为整数；抖机灵、共鸣、补充、抬杠、歪楼都行，像真实高赞）',
       '- 每条热评可紧跟 0~2 条楼中楼，格式 [回复:网名:@被回复者:内容]（只挂最近一条热评；互怼、补刀、劝架都可以）',
       '- 然后 3~6 条新评，格式 [评论:网名:赞数:内容]（按发布时间新→旧；赞数为整数——多数 0 或个位数，内容炸裂有笑点的可小爆到几十几百）',
@@ -2698,7 +2699,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     if (screen === 'mread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="memo">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fav') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">我的收藏</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'fboard') return '<div class="lzw-appbar"><span class="lzw-back" data-act="forum">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(UI.forumName || '') + '</span><span class="lzw-appbar-r">' + (UI.fBusy ? '' : '<span class="lzw-reroll" data-fact="freroll" title="这一版不满意？换一版（收藏的帖子保留）">' + ICON_REROLL + '</span>') + '</span></div>';
-    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="' + (UI.fBackFav ? 'fav' : 'fboard') + '">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r"><span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.ffavIcon ? UI.ffavIcon() : '☆') + '</span></span></div>';
+    if (screen === 'fthread') return '<div class="lzw-appbar"><span class="lzw-back" data-act="' + (UI.fBackFav ? 'fav' : 'fboard') + '">' + ICON_BACK + '</span><span class="lzw-appbar-t">帖子</span><span class="lzw-appbar-r lzw-appbar-rw">' + (UI.fTBusy ? '' : '<span class="lzw-reroll" data-fact="ftreroll" title="重新生成正文与评论（标题/热度不变）">' + ICON_REROLL + '</span>') + '<span class="lzw-reroll lzw-ffav" data-fact="ffav" title="收藏：换一版也不丢">' + (UI.ffavIcon ? UI.ffavIcon() : '☆') + '</span></span></div>';
     if (screen === 'list') return '<div class="lzw-appbar"><span class="lzw-back" data-act="home">' + ICON_BACK + '</span><span class="lzw-appbar-t">微信</span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'moments') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"><span class="lzw-reroll" data-mcam="1" title="相机">' + ICON_CAM + '</span></span></div>';
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
@@ -2808,6 +2809,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     fTBusy: false,        // 帖子正文生成中
     fConfirmDel: '',      // 待确认删除的论坛名（''=无）
     fBackFav: false,      // 从收藏夹点进的帖子：返回键回收藏夹而非版面
+    fConfirmTR: false,    // 帖子重roll确认弹窗
     sConfirmDel: '',      // 待确认删除的陌生人会话 key（''=无）
     memoNpc: null,        // 备忘录当前选中的人（默认通讯录第一位）
     memoBusy: false,      // 备忘录生成中（写一篇/重roll 共用一把锁）
@@ -2950,6 +2952,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         })() : '') +
         (this.pConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除预设「' + esc(this.pConfirmDel) + '」？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="pdelno">取消</button><button class="lzw-cbtn yes" data-cact="pdelok">删除</button></div></div></div>' : '') +
         (this.fConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除论坛「' + esc(this.fConfirmDel) + '」及全部帖子？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="fdelno">取消</button><button class="lzw-cbtn yes" data-cact="fdelok">删除</button></div></div></div>' : '') +
+        (this.fConfirmTR ? '<div class="lzw-scrim"><div class="lzw-confirm">重新生成这条帖子的正文与评论？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="ftrno">取消</button><button class="lzw-cbtn yes" data-cact="ftryes">重新生成</button></div></div></div>' : '') +
         (this.sConfirmDel ? '<div class="lzw-scrim"><div class="lzw-confirm">删除与「' + esc(this.sConfirmDel) + '」的会话记录？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="sdelno">取消</button><button class="lzw-cbtn yes" data-cact="sdelok">删除</button></div></div></div>' : '') +
         '</div></div>';
 
@@ -3051,6 +3054,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
             if (UI.forumName === fn0) { UI.forumName = ''; UI.fThreadId = ''; UI.screen = 'forum'; }
             UI.render();
           }
+          else if (a === 'ftrno') { UI.fConfirmTR = false; UI.render(); }
+          else if (a === 'ftryes') { UI.fConfirmTR = false; UI.rerollThread(); }
           else if (a === 'sdelno') { UI.sConfirmDel = ''; UI.render(); }
           else if (a === 'sdelok') {
             var sk0 = UI.sConfirmDel; UI.sConfirmDel = '';
@@ -4484,6 +4489,23 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         if (self.screen === 'fboard' || self.screen === 'fthread') self.render();
       });
     },
+    // 帖子级重roll：确认后清掉正文+评论重新生成（标题/作者/热度/收藏不动）
+    rerollThread: function () {
+      var W = window.LZWorld;
+      if (this.fTBusy) return;
+      var self = this, line = forumLineKey(), name = this.forumName, id = this.fThreadId;
+      this.fTBusy = true;
+      this.render();
+      W.Engine.forumThreadReroll(line, name, id).then(function (ok) {
+        try { toastr.info(ok ? '已重新生成' : '已跳过', '霖州手机', { timeOut: 1500 }); } catch (e) {}
+      }).catch(function (e) {
+        console.warn('[霖州引擎] 帖子重roll失败', e);
+        try { toastr.error('重新生成失败：' + (e && e.message || e), '霖州手机'); } catch (e2) {}
+      }).finally(function () {
+        self.fTBusy = false;
+        if (self.screen === 'fthread') self.render();
+      });
+    },
     // 点进未生成的帖子 → 手动生成正文+评论（只生成一次）
     genThread: function () {
       var W = window.LZWorld;
@@ -4560,6 +4582,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     });
     ph.querySelectorAll('[data-fact="ffav"]').forEach(function (el) {
       el.onclick = function () { UI.toggleForumFav(); };
+    });
+    ph.querySelectorAll('[data-fact="ftreroll"]').forEach(function (el) {
+      el.onclick = function () { if (UI.fTBusy) return; UI.fConfirmTR = true; UI.render(); };
     });
     ph.querySelectorAll('[data-favopen]').forEach(function (el) {
       el.onclick = function () { UI.screen = 'fav'; UI.render(); };
@@ -5142,7 +5167,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30e';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30f';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -6100,7 +6125,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 帖子正文 → HTML：转义 + 换行 + [图片:描述] 渲染成朋友圈同款灰底文字图卡
     forumBodyHtml: function (text) {
       var esc = function (s2) { return String(s2 == null ? '' : s2).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
-      return esc(text).replace(/\n/g, '<br>').replace(/\[图片[:：]([^\]\n]{1,80})\]/g, function (m, d) {
+      return esc(text).replace(/\n/g, '<br>').replace(/\[图片[:：]([^\]\n]{1,300})\]/g, function (m, d) {
         return "<div class='lzw-post-img lzw-fimg'><span class='lzw-fimg-ico'>" +
           "<svg width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='#9aa0a8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4.5' width='18' height='15' rx='2.5'/><circle cx='8.8' cy='9.8' r='1.5'/><path d='M4.5 16.8l4-4a1.4 1.4 0 0 1 2 0l7 7'/></svg>" +
           '</span>' + d + '</div>';
@@ -6152,7 +6177,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     },
 
     // 点进帖子才生成正文+评论（懒加载，只生成一次）；旧版内联正文帖视为已生成
-    forumThreadGenerate: async function (line, name, id) {
+    forumThreadGenerate: async function (line, name, id, opts) {
       var W = window.LZWorld, St = W.Store;
       var found = this.forumFindPost(line, name, id);
       var f = found.forum, p = found.post;
@@ -6165,7 +6190,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       (sec.groups || []).forEach(function (g) {
         (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
       });
-      var req = W.Prompt.forumThread(p, name, pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc());
+      var req = W.Prompt.forumThread(p, name, pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc(), opts && opts.reroll);
       var raw = await this.gen(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var th = this.parseForumThread(text);
@@ -6179,6 +6204,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       fresh.post.generated = true;
       St.forumPut(line, name, fresh.forum);
       return true;
+    },
+
+    // 帖子级重roll：清掉正文与评论重新生成（标题/作者/热度/收藏不动）
+    forumThreadReroll: async function (line, name, id) {
+      var St = window.LZWorld.Store;
+      var found = this.forumFindPost(line, name, id);
+      if (!found.forum || !found.post) throw new Error('帖子不存在');
+      found.post.body = ''; found.post.hot = []; found.post.latest = [];
+      found.post.text = ''; found.post.generated = false;
+      St.forumPut(line, name, found.forum);
+      return this.forumThreadGenerate(line, name, id, { reroll: true });
     },
 
     // 首次【生成一版】：空论坛 → 出目录（6~8 条）。跨时代挖坟：别的线同名论坛挑旧帖带过来。
