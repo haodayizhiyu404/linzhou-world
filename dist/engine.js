@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-30T18:13:29.622Z
+//  构建时间：2026-09-30T18:20:01.604Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-30 18:13';
+var __LZW_BUILD__ = '2026-09-30 18:20';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -3825,7 +3825,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var key = this.chatKey;
       var grp = this.isGroup;
       try {
-        var result = await withTimeout(eng.generateFor(key, grp), 90000);
+        var result = await C.withTimeout(eng.generateFor(key, grp), 300000);
         this.failed = false;
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(key, result.msgs, 100);
@@ -4633,7 +4633,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       this.call = { name: name, mode: mode, phase: 'ringing', startAt: Date.now(), busy: false, by: 'user' };
       this.render();
       try {
-        var text = await withTimeout(eng.callInvite(name, mode), 90000);
+        var text = await C.withTimeout(eng.callInvite(name, mode), 300000);
         text = String(text || '').trim();
         if (!text) throw new Error('对方没有响应，请稍后再拨');
         if (!this.call || this.call.name !== name) return; // 等待中被取消
@@ -4683,7 +4683,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       call.busy = true;
       this.render();
       try {
-        var ret = await withTimeout(eng.callTurn(call.name, call.mode, text), 90000);
+        var ret = await C.withTimeout(eng.callTurn(call.name, call.mode, text), 300000);
         var entries = [];
         (ret.entries || []).forEach(function (en) {
           entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
@@ -4709,7 +4709,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       call.busy = true;
       this.render();
       try {
-        var ret = await withTimeout(eng.callTurn(call.name, call.mode, ''), 90000);
+        var ret = await C.withTimeout(eng.callTurn(call.name, call.mode, ''), 300000);
         var entries = [];
         (ret.entries || []).forEach(function (en) {
           entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
@@ -5171,7 +5171,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30m';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30n';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -5688,7 +5688,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return generateRaw(req);
     },
     // 生成超时兜底：API 卡死超过时限按失败处理，避免界面永远停在「生成中」
-    GEN_TIMEOUT: 120000,
+    GEN_TIMEOUT: 300000,
     genT: function (req, ms) {
       var to = ms || this.GEN_TIMEOUT;
       var gp = this.gen(req);

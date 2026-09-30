@@ -21,7 +21,7 @@
       this.call = { name: name, mode: mode, phase: 'ringing', startAt: Date.now(), busy: false, by: 'user' };
       this.render();
       try {
-        var text = await withTimeout(eng.callInvite(name, mode), 90000);
+        var text = await C.withTimeout(eng.callInvite(name, mode), 300000);
         text = String(text || '').trim();
         if (!text) throw new Error('对方没有响应，请稍后再拨');
         if (!this.call || this.call.name !== name) return; // 等待中被取消
@@ -71,7 +71,7 @@
       call.busy = true;
       this.render();
       try {
-        var ret = await withTimeout(eng.callTurn(call.name, call.mode, text), 90000);
+        var ret = await C.withTimeout(eng.callTurn(call.name, call.mode, text), 300000);
         var entries = [];
         (ret.entries || []).forEach(function (en) {
           entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
@@ -97,7 +97,7 @@
       call.busy = true;
       this.render();
       try {
-        var ret = await withTimeout(eng.callTurn(call.name, call.mode, ''), 90000);
+        var ret = await C.withTimeout(eng.callTurn(call.name, call.mode, ''), 300000);
         var entries = [];
         (ret.entries || []).forEach(function (en) {
           entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });

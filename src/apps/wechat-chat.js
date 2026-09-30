@@ -285,7 +285,7 @@
       var key = this.chatKey;
       var grp = this.isGroup;
       try {
-        var result = await withTimeout(eng.generateFor(key, grp), 90000);
+        var result = await C.withTimeout(eng.generateFor(key, grp), 300000);
         this.failed = false;
         if (result && result.msgs && result.msgs.length) {
           W.Store.push(key, result.msgs, 100);
