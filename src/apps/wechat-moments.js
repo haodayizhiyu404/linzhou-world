@@ -212,10 +212,10 @@
     });
     ph.querySelectorAll('[data-mpost-send]').forEach(function (el) {
       el.onclick = function () {
-        var ta = pdoc().getElementById('lzw-mptext');
+        var ta = C.pdoc().getElementById('lzw-mptext');
         var t = ta ? ta.value.trim() : '';
         if (!t) { try { toastr.info('写点什么再发表吧', '霖州手机'); } catch (e) {} return; }
-        var im = pdoc().getElementById('lzw-mpimg');
+        var im = C.pdoc().getElementById('lzw-mpimg');
         var img = im ? im.value.trim().slice(0, 60) : '';
         var W = window.LZWorld, eng = W.Engine;
         var idx = eng.momentsPost(t, img);
@@ -245,11 +245,11 @@
         UI.mCmt = -1;
         UI.render();
         // 点菜单外任意处收起（当前这次点击不生效，所以延迟挂监听）
-        // 注意必须挂在 pdoc()（父页文档）——手机 UI 注入在父页，挂在沙箱自己的
+        // 注意必须挂在 C.pdoc()（父页文档）——手机 UI 注入在父页，挂在沙箱自己的
         // document 上永远收不到点击，「点空白收起」会表现为完全失灵
         if (UI.mMenu !== -1) {
           setTimeout(function () {
-            var doc = pdoc();
+            var doc = C.pdoc();
             doc.addEventListener('click', function onDocTap(ev2) {
               if (ev2.target.closest && (ev2.target.closest('.lzw-pmenu') || ev2.target.closest('[data-mmenu]'))) return;
               doc.removeEventListener('click', onDocTap);

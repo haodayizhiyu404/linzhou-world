@@ -121,7 +121,7 @@
     // ── 朋友圈 ──
     // 回车：攒一条进待发区（[+] 二级模式的输入除外，那仍是即发）
     sendText: function () {
-      var inp = pdoc().getElementById('lzw-input') || pdoc().getElementById('lzw-modeinput');
+      var inp = C.pdoc().getElementById('lzw-input') || C.pdoc().getElementById('lzw-modeinput');
       if (!inp) return;
       var t = inp.value.trim();
       if (this.panel === 'image' || this.panel === 'voice' || this.panel === 'location') {
@@ -136,7 +136,7 @@
       if (!t) return;
       this.staged.push({ kind: 'text', text: t });
       this.render();
-      var inp = pdoc().getElementById('lzw-input');
+      var inp = C.pdoc().getElementById('lzw-input');
       if (inp) inp.focus();
     },
 
@@ -145,7 +145,7 @@
       this.staged.push({ kind: kind, text: text });
       this.panel = null;
       this.render();
-      var inp = pdoc().getElementById('lzw-input');
+      var inp = C.pdoc().getElementById('lzw-input');
       if (inp) inp.focus();
     },
     // 转账字段多（金额/备注/接收方），不走 stageTyped，但同样先进待发区随小飞机一起发
@@ -154,7 +154,7 @@
       this.panel = null;
       this.tTarget = ''; // 发完就忘，下次群聊转账重新选人，防手滑转错人
       this.render();
-      var inp = pdoc().getElementById('lzw-input');
+      var inp = C.pdoc().getElementById('lzw-input');
       if (inp) inp.focus();
     },
     // 对对方待收款转账的处置（收下/退还）：攒进发灾区，小飞机发出即翻卡（发出即生效，不等 AI 回复）
@@ -164,14 +164,14 @@
       if (!m || m.who === 'user' || m.kind !== 'transfer' || m.state !== 'waiting') { this.render(); return; }
       this.staged.push({ kind: kind, amount: m.amount, note: m.note, from: m.who });
       this.render();
-      var inp = pdoc().getElementById('lzw-input');
+      var inp = C.pdoc().getElementById('lzw-input');
       if (inp) inp.focus();
     },
 
     // 小飞机：输入框有字先攒上，然后把待发区一次性全发（AI 只生成一次、只写一楼）
     trySend: function () {
       if (this.panel === 'image' || this.panel === 'voice' || this.panel === 'location') { this.sendText(); return; }
-      var inp = pdoc().getElementById('lzw-input');
+      var inp = C.pdoc().getElementById('lzw-input');
       var t = inp ? inp.value.trim() : '';
       if (t) { inp.value = ''; this.staged.push({ kind: 'text', text: t }); }
       if (!this.staged.length) {

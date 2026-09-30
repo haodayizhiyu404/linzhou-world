@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-30T16:38:37.129Z
+//  构建时间：2026-09-30T18:13:29.622Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-30 16:38';
+var __LZW_BUILD__ = '2026-09-30 18:13';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -3661,7 +3661,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // ── 朋友圈 ──
     // 回车：攒一条进待发区（[+] 二级模式的输入除外，那仍是即发）
     sendText: function () {
-      var inp = pdoc().getElementById('lzw-input') || pdoc().getElementById('lzw-modeinput');
+      var inp = C.pdoc().getElementById('lzw-input') || C.pdoc().getElementById('lzw-modeinput');
       if (!inp) return;
       var t = inp.value.trim();
       if (this.panel === 'image' || this.panel === 'voice' || this.panel === 'location') {
@@ -3676,7 +3676,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!t) return;
       this.staged.push({ kind: 'text', text: t });
       this.render();
-      var inp = pdoc().getElementById('lzw-input');
+      var inp = C.pdoc().getElementById('lzw-input');
       if (inp) inp.focus();
     },
 
@@ -3685,7 +3685,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       this.staged.push({ kind: kind, text: text });
       this.panel = null;
       this.render();
-      var inp = pdoc().getElementById('lzw-input');
+      var inp = C.pdoc().getElementById('lzw-input');
       if (inp) inp.focus();
     },
     // 转账字段多（金额/备注/接收方），不走 stageTyped，但同样先进待发区随小飞机一起发
@@ -3694,7 +3694,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       this.panel = null;
       this.tTarget = ''; // 发完就忘，下次群聊转账重新选人，防手滑转错人
       this.render();
-      var inp = pdoc().getElementById('lzw-input');
+      var inp = C.pdoc().getElementById('lzw-input');
       if (inp) inp.focus();
     },
     // 对对方待收款转账的处置（收下/退还）：攒进发灾区，小飞机发出即翻卡（发出即生效，不等 AI 回复）
@@ -3704,14 +3704,14 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (!m || m.who === 'user' || m.kind !== 'transfer' || m.state !== 'waiting') { this.render(); return; }
       this.staged.push({ kind: kind, amount: m.amount, note: m.note, from: m.who });
       this.render();
-      var inp = pdoc().getElementById('lzw-input');
+      var inp = C.pdoc().getElementById('lzw-input');
       if (inp) inp.focus();
     },
 
     // 小飞机：输入框有字先攒上，然后把待发区一次性全发（AI 只生成一次、只写一楼）
     trySend: function () {
       if (this.panel === 'image' || this.panel === 'voice' || this.panel === 'location') { this.sendText(); return; }
-      var inp = pdoc().getElementById('lzw-input');
+      var inp = C.pdoc().getElementById('lzw-input');
       var t = inp ? inp.value.trim() : '';
       if (t) { inp.value = ''; this.staged.push({ kind: 'text', text: t }); }
       if (!this.staged.length) {
@@ -4163,10 +4163,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     });
     ph.querySelectorAll('[data-mpost-send]').forEach(function (el) {
       el.onclick = function () {
-        var ta = pdoc().getElementById('lzw-mptext');
+        var ta = C.pdoc().getElementById('lzw-mptext');
         var t = ta ? ta.value.trim() : '';
         if (!t) { try { toastr.info('写点什么再发表吧', '霖州手机'); } catch (e) {} return; }
-        var im = pdoc().getElementById('lzw-mpimg');
+        var im = C.pdoc().getElementById('lzw-mpimg');
         var img = im ? im.value.trim().slice(0, 60) : '';
         var W = window.LZWorld, eng = W.Engine;
         var idx = eng.momentsPost(t, img);
@@ -4196,11 +4196,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         UI.mCmt = -1;
         UI.render();
         // 点菜单外任意处收起（当前这次点击不生效，所以延迟挂监听）
-        // 注意必须挂在 pdoc()（父页文档）——手机 UI 注入在父页，挂在沙箱自己的
+        // 注意必须挂在 C.pdoc()（父页文档）——手机 UI 注入在父页，挂在沙箱自己的
         // document 上永远收不到点击，「点空白收起」会表现为完全失灵
         if (UI.mMenu !== -1) {
           setTimeout(function () {
-            var doc = pdoc();
+            var doc = C.pdoc();
             doc.addEventListener('click', function onDocTap(ev2) {
               if (ev2.target.closest && (ev2.target.closest('.lzw-pmenu') || ev2.target.closest('[data-mmenu]'))) return;
               doc.removeEventListener('click', onDocTap);
@@ -5171,7 +5171,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30l';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30m';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
