@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30o';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30p';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -641,6 +641,23 @@
           });
           blocks.push('「' + name + '」' + (cands[ci].isGrp ? '（群聊，仅群成员知情）' : '（私聊，仅对话双方知情）') + when + '：\n' + lines.join('\n'));
         }
+        // 机主的论坛动态：真实留评跨场景知情（主线 NPC 可在对话里自然提起/调侃）
+        try {
+          var fall = root.forumAll ? root.forumAll() : {};
+          var fline = fall[root.line ? (root.line() || '') : ''] || {};
+          var fbl = [];
+          Object.keys(fline).forEach(function (fn) {
+            ((fline[fn] || {}).posts || []).forEach(function (pp) {
+              ((pp && pp.mine) || []).forEach(function (r) {
+                fbl.push({ ts: r.ts || 0, s: '机主在「' + fn + '」帖子《' + String(pp.title || '').slice(0, 24) + '》下评论：「' + String(r.text || '').slice(0, 80) + '」' });
+              });
+            });
+          });
+          if (fbl.length) {
+            fbl.sort(function (a, b) { return b.ts - a.ts; });
+            blocks.push('## 机主的论坛动态（机主真的在论坛上留过这些话，角色们看得到，可在对话中自然提起、回应或调侃）\n' + fbl.slice(0, 5).map(function (x) { return '- ' + x.s; }).join('\n'));
+          }
+        } catch (e0) {}
         if (!blocks.length) return;
         injectPrompts([{
           id: 'lzw-phone-digest',
@@ -1064,7 +1081,7 @@
       (sec.groups || []).forEach(function (g) {
         (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
       });
-      var req = W.Prompt.forumThread(p, name, pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc(), opts && opts.reroll);
+      var req = W.Prompt.forumThread(p, name, pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc(), opts && opts.reroll, p.mine);
       var raw = await this.genT(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       var th = this.parseForumThread(text);

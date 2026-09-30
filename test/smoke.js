@@ -783,6 +783,17 @@ ctx.getWorldbook = async () => [
   eq('论坛·帖子契约·楼中楼', ftTxt.indexOf('[回复:网名:@被回复者:内容]') !== -1, true);
   eq('论坛·帖子契约·新评', ftTxt.indexOf('[评论:网名:赞数:内容]') !== -1, true);
   eq('论坛·预览一致约束', ftTxt.indexOf('如题今天出分') !== -1, true);
+  // 机主回帖：重roll 提示词带机主评论既定事实段，网友可自然回应但不许替机主再发言
+  const ftMine = LW.Prompt.forumThread({ title: '出分了吗', author: '城南老猫', preview: '如题今天出分', likes: 342, cmts: 89 },
+    '霖州一中树洞墙', ['周言'], {}, { dateText: '2034年8月26日 星期五', time: '22:49' }, '机主资料', '卡描述正文', false,
+    [{ author: '机主', text: '蹲一个结果', ts: 1 }]);
+  const ftMineTxt = ftMine.ordered_prompts[0].content;
+  eq('回帖·提示词带机主评论段', ftMineTxt.indexOf('机主在这条帖子下的评论') !== -1 && ftMineTxt.indexOf('蹲一个结果') !== -1, true);
+  eq('回帖·提示词允许自然回应机主', ftMineTxt.indexOf('自然回应、点赞机主') !== -1, true);
+  eq('回帖·提示词禁替机主再发言', ftMineTxt.indexOf('绝不许替机主再发言') !== -1, true);
+  const ftNoMine = LW.Prompt.forumThread({ title: '出分了吗', author: '城南老猫', preview: '如题今天出分', likes: 342, cmts: 89 },
+    '霖州一中树洞墙', ['周言'], {}, null, '', '', false, []);
+  eq('回帖·无评论不掺段', ftNoMine.ordered_prompts[0].content.indexOf('机主在这条帖子下的评论') === -1, true);
   // 思维链剔除补漏：未闭合 think（部分前端不补闭标签，开口之后全文皆思考）+ 带属性 cot，内容一律不进提示词
   global.__msgs = [
     { role: 'user', message: '今晚老地方见' },
@@ -847,6 +858,15 @@ ctx.getWorldbook = async () => [
   try { await LW.Engine.forumThreadReroll('成人时代-破镜重圆', '霖州一中树洞墙', fOld.id); } catch (e) { rethrew = true; }
   const fK2 = LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙').posts.filter(function (p) { return p.title === '出分了吗'; })[0];
   eq('论坛·重roll失败还原', rethrew && fK2.body === keepBody && fK2.generated === true, true);
+  // 机主回帖：post.mine 独立数组——帖子重roll 整组换掉 AI 正文/评论，机主的话原样保留
+  const fMineFound = LW.Engine.forumFindPost('成人时代-破镜重圆', '霖州一中树洞墙', fOld.id);
+  fMineFound.post.mine = [{ author: '机主', text: '楼主稳住，能上的', ts: 1000 }];
+  LW.Store.forumPut('成人时代-破镜重圆', '霖州一中树洞墙', fMineFound.forum);
+  ctx.generateRaw = async (req) => '又roll一版正文。\n[评论:新人:0:新评来了]';
+  eq('回帖·带mine重roll执行', await LW.Engine.forumThreadReroll('成人时代-破镜重圆', '霖州一中树洞墙', fOld.id), true);
+  const fMine2 = LW.Engine.forumFindPost('成人时代-破镜重圆', '霖州一中树洞墙', fOld.id).post;
+  eq('回帖·mine重roll不丢', fMine2.mine.length === 1 && fMine2.mine[0].text === '楼主稳住，能上的', true);
+  eq('回帖·latest照常替换', fMine2.body === '又roll一版正文。' && fMine2.latest.length === 1 && fMine2.latest[0].author === '新人', true);
   // 生成超时兜底：超过时限按失败处理（20ms 时限 + 80ms 才返回的慢 API）
   ctx.generateRaw = async (req) => { await new Promise(function (r) { setTimeout(r, 80); }); return 'x'; };
   var toOk = false;
@@ -901,6 +921,12 @@ ctx.getWorldbook = async () => [
   const injNoCmt = injCut.replace(/\/\/[^\n]*/g, '');
   eq('正文注入·入口先清同名键', injNoCmt.includes("uninjectPrompts(['lzw-phone-digest'])"), true);
   eq('正文注入·清除先于所有return分支', injNoCmt.indexOf('uninjectPrompts') !== -1 && injNoCmt.indexOf('uninjectPrompts') < injNoCmt.search(/return/), true);
+  eq('正文注入·含机主论坛动态块', injNoCmt.includes('机主的论坛动态'), true);
+  const wforum = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-forum.js'), 'utf8');
+  eq('回帖·评论栏常驻帖子页', wforum.includes("data-fact='fsend'") && wforum.includes("id='lzw-finput'"), true);
+  eq('回帖·小飞机与回车双绑定', wforum.split('UI.forumComment').length - 1 >= 2 && wforum.includes('data-fact="fsend"') && wforum.includes('data-finput'), true);
+  eq('回帖·写入独立mine数组', wforum.includes('forumComment: function') && wforum.includes('found.post.mine'), true);
+  eq('回帖·引擎把mine传给提示词', esrc.includes('opts && opts.reroll, p.mine'), true);
   // 图床双源保险丝：主源 jsdelivr、catbox 兜底、回退监听、壁纸 CSS 变量
   const esrc2 = fs.readFileSync(path.join(ROOT, 'src/engine.js'), 'utf8');
   eq('图床·主源jsdelivr', esrc2.indexOf("var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/'") !== -1, true);

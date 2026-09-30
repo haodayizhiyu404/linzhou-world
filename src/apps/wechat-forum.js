@@ -11,7 +11,13 @@
   UI.bodyForum = function (ctx) { return forumListHtml(); };
   UI.bodyFav = function (ctx) { return forumFavHtml(); };
   UI.bodyFboard = function (ctx) { return forumBoardHtml(this.forumName); };
-  UI.bodyFthread = function (ctx) { return forumThreadHtml(this.forumName, this.fThreadId); };
+  // 帖子页 = 正文评论流 + 底部常驻评论栏（复用聊天输入栏样式）；生成/重roll 期间输入栏禁用
+  UI.bodyFthread = function (ctx) {
+    return forumThreadHtml(this.forumName, this.fThreadId) +
+      "<div class='lzw-bottom'><div class='lzw-inputbar'>" +
+      "<input class='lzw-input' id='lzw-finput' data-finput maxlength='300' placeholder='说点什么…'" + (this.fTBusy ? ' disabled' : '') + ">" +
+      "<button class='lzw-send' data-fact='fsend' title='评论'>" + C.ICON_PLANE + "</button></div></div>";
+  };
 
   // ── 论坛辅助 ──
   function forumLineKey() {
@@ -136,7 +142,7 @@
         "<div class='lzw-ftitle'>" + C.esc(p.title) + badges + "</div>" +
         "<div class='lzw-fprev'>" + C.esc(String(p.preview || String(p.text || '').slice(0, 40)).replace(/\[图片[:：][^\]]*\]/g, '[图片]')) + "</div>" +
         "<div class='lzw-fbot'><span><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(shortTime(p.time)) : '很久以前') + "</span></span>" +
-        "<span class='lzw-fstat'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></span></div>" +
+        "<span class='lzw-fstat'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length + (p.mine || []).length) + "</span></span></div>" +
         "</div></div>";
     }).join('');
     var moreRow = view.moreKept > 0 ? "<div class='lzw-fmore' data-favopen title='去收藏夹'>还有 " + view.moreKept + " 条收藏的帖子在「我的收藏」</div>" : '';
@@ -152,7 +158,7 @@
       "<div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
       "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
       "<div class='lzw-fmain-b'>" + (ready ? W.Engine.forumBodyHtml(postBody(p)) : '') + "</div>" +
-      "<div class='lzw-fstat lzw-fstat-r'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
+      "<div class='lzw-fstat lzw-fstat-r'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length + (p.mine || []).length) + "</span></div>" +
       "</div>";
     if (!ready) {
       return '<div class="lzw-body">' + head +
@@ -172,10 +178,13 @@
       var lrep = "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + fRepOps(r.likes || 0) + "</div>";
       return lnst ? "<div class='lzw-fhot'>" + lrep + lnst + "</div>" : lrep;
     }).join('');
+    var mine = (p.mine || []).map(function (r) {
+      return "<div class='lzw-frep lzw-fmine'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + "</div>";
+    }).join('');
     return '<div class="lzw-body">' + head +
       (hot ? "<div class='lzw-fsec'>热评</div><div class='lzw-freps'>" + hot + "</div>" : '') +
-      (latest ? "<div class='lzw-fsec'>新评</div><div class='lzw-freps'>" + latest + "</div>" : '') +
-      (hot || latest ? '' : "<div class='lzw-fempty'>还没有评论</div>") +
+      (mine || latest ? "<div class='lzw-fsec'>新评</div><div class='lzw-freps'>" + mine + latest + "</div>" : '') +
+      (hot || latest || mine ? '' : "<div class='lzw-fempty'>还没有评论，来抢沙发</div>") +
       '</div>';
   }
 
@@ -282,6 +291,21 @@
         if (self.screen === 'fthread') self.render();
       });
     },
+    // 机主回帖：写入 post.mine（与 AI 的 latest 分库——重roll/换一版整组换 latest，mine 不受影响）
+    forumComment: function (raw) {
+      var W = window.LZWorld;
+      var text = String(raw == null ? '' : raw).trim().slice(0, 300);
+      if (!text) return;
+      if (this.fTBusy) { try { toastr.info('帖子正在生成中，稍后再评', '霖州手机', { timeOut: 1500 }); } catch (e) {} return; }
+      var found = W.Engine.forumFindPost(forumLineKey(), this.forumName, this.fThreadId);
+      if (!found.post) return;
+      found.post.mine = found.post.mine || [];
+      found.post.mine.push({ author: W.Engine.userName(), text: text, ts: Date.now() });
+      W.Store.forumPut(forumLineKey(), this.forumName, found.forum);
+      this.render();
+      var inp = C.pdoc().getElementById('lzw-finput');
+      if (inp) inp.focus();
+    },
     // 帖子页 ☆/★：收藏钉住（换一版豁免）；appbar 用它显示当前状态
     forumFavNow: function () {
       var found = W.Engine.forumFindPost(forumLineKey(), this.forumName, this.fThreadId);
@@ -343,6 +367,16 @@
     });
     ph.querySelectorAll('[data-fact="ftreroll"]').forEach(function (el) {
       el.onclick = function () { if (UI.fTBusy) return; UI.fConfirmTR = true; UI.render(); };
+    });
+    // 机主回帖：点小飞机或输入框回车
+    ph.querySelectorAll('[data-fact="fsend"]').forEach(function (el) {
+      el.onclick = function () {
+        var inp = ph.querySelector('[data-finput]');
+        UI.forumComment(inp ? inp.value : '');
+      };
+    });
+    ph.querySelectorAll('[data-finput]').forEach(function (el) {
+      el.onkeydown = function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); UI.forumComment(el.value); } };
     });
     ph.querySelectorAll('[data-favopen]').forEach(function (el) {
       el.onclick = function () { UI.screen = 'fav'; UI.render(); };

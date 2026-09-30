@@ -496,6 +496,7 @@
     '.lzw-fmain-b{margin-top:10px;font-size:14px;line-height:1.65;color:#222;word-break:break-word}',
     '.lzw-freps{margin:0 12px 12px;background:#fff;border-radius:12px;padding:4px 14px}',
     '.lzw-frep{padding:9px 0;font-size:13px;line-height:1.55;color:#333;border-bottom:1px solid rgba(0,0,0,.05);word-break:break-word}',
+    '.lzw-fmine{background:rgba(232,145,45,.10);border-radius:6px;padding:8px 10px;margin:4px 0;border-bottom:none}',
     '.lzw-frep:last-child{border-bottom:none}',
     '.lzw-frep-a{color:#576b95;font-weight:600}',
     // ── 论坛 2.0：预览/热度/收藏/热评楼中楼 ──
