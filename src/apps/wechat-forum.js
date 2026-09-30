@@ -48,7 +48,7 @@
     var d = new Date(ms);
     return (d.getMonth() + 1) + '月' + d.getDate() + '日';
   }
-  var DICE_A = ['霖州', '霖州城南', '霖州城西', '老城区', '大学城', '天禧城'];
+  var DICE_A = ['霖州', '霖州城南', '霖州城西', '老城区', '大学城'];
   var DICE_B = ['生活', '灌水', '花草', '宠物', '吃喝玩乐', '恋爱交友', '二手闲置', '八卦', '学习', '职场', '游戏', '影音', '树洞'];
   var DICE_C = ['墙', '吧', '论坛', '小组', '社区', '圈', '板'];
   function diceName() {
@@ -147,15 +147,16 @@
     var found = W.Engine.forumFindPost(forumLineKey(), name, id);
     var p = found.post;
     if (!p) return '<div class="lzw-body"><div class="lzw-fempty">帖子不存在</div></div>';
+    var ready = postReady(p) && !UI.fTBusy;   // 生成/重roll期间旧正文评论先收起，数据仍在库中
     var head = "<div class='lzw-fmain'>" +
       "<div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
       "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
-      "<div class='lzw-fmain-b'>" + W.Engine.forumBodyHtml(postBody(p)) + "</div>" +
+      "<div class='lzw-fmain-b'>" + (ready ? W.Engine.forumBodyHtml(postBody(p)) : '') + "</div>" +
       "<div class='lzw-fstat lzw-fstat-r'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
       "</div>";
-    if (!postReady(p)) {
+    if (!ready) {
       return '<div class="lzw-body">' + head +
-        "<div class='lzw-fempty'>" + (UI.fTBusy ? '生成中…' : "正文尚未生成<br><button class='lzw-fretry' data-fgen>生成正文与评论</button>") + "</div></div>";
+        "<div class='lzw-fempty'>" + (UI.fTBusy ? (postReady(p) ? '重新生成中…' : '生成中…') : "正文尚未生成<br><button class='lzw-fretry' data-fgen>生成正文与评论</button>") + "</div></div>";
     }
     var hot = postHot(p).map(function (h) {
       var nest = (h.nest || []).map(function (r) {

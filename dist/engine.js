@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-30T13:13:17.066Z
+//  构建时间：2026-09-30T13:24:45.118Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-30 13:13';
+var __LZW_BUILD__ = '2026-09-30 13:24';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2048,12 +2048,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-sig i:nth-child(1){height:4px}.lzw-sig i:nth-child(2){height:6px}',
     '.lzw-sig i:nth-child(3){height:8px}.lzw-sig i:nth-child(4){height:10px;opacity:.35}',
     // 应用栏
-    '.lzw-appbar{flex:none;min-height:40px;display:flex;align-items:center;gap:6px;padding:2px 10px 8px;',
+    '.lzw-appbar{flex:none;position:relative;min-height:40px;display:flex;align-items:center;gap:6px;padding:2px 10px 8px;',
     'background:rgba(247,247,249,.92);border-bottom:1px solid rgba(0,0,0,.06)}',
-    '.lzw-appbar-t{flex:1;text-align:center;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}',
+    '.lzw-appbar-t{position:absolute;left:50%;top:0;bottom:0;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;max-width:52%;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden}',
     '.lzw-back{display:inline-flex;align-items:center;color:#111;cursor:pointer;padding:4px;border-radius:8px;margin-left:-4px}',
     '.lzw-back:hover{background:rgba(0,0,0,.05)}',
-    '.lzw-appbar-r{width:24px}',
+    '.lzw-appbar-r{width:24px;margin-left:auto}',
     '.lzw-reroll{display:inline-flex;color:#666;cursor:pointer;padding:5px;border-radius:8px;align-items:center;justify-content:center}',
     '.lzw-reroll:hover{background:rgba(0,0,0,.06)}',
     // 朋友圈顶栏：透明浮在封面上（无标题，保留返回/相机）。状态栏与本栏都脱离文档流、
@@ -2371,8 +2371,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-post-name{font-size:14px;font-weight:600;color:#576b95;cursor:pointer}',
     '.lzw-post-text{font-size:14px;line-height:1.55;color:#111;margin-top:2px;word-break:break-word}',
     '.lzw-post-img{margin-top:5px;background:#f2f3f5;border:1px solid rgba(0,0,0,.04);border-radius:7px;padding:7px 9px;font-size:12px;color:#5a6577;line-height:1.5;word-break:break-word}',
-    '.lzw-fimg{display:flex;gap:6px;align-items:flex-start;margin:6px 0}',
-    '.lzw-fimg svg{flex:none;margin-top:1.5px}',
+    '.lzw-fimg{display:none}',
     '.lzw-post-meta{position:relative;display:flex;align-items:center;margin-top:6px;font-size:12px;color:#999;font-family:"PingFang SC","Microsoft YaHei",sans-serif}',
     '.lzw-post-meta .sp{flex:1}',
     '.lzw-post-more{width:27px;height:19px;border:none;border-radius:5px;background:#f0f1f3;color:#576b95;font-size:13px;line-height:1;cursor:pointer;padding:0;flex:none}',
@@ -4295,7 +4294,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var d = new Date(ms);
     return (d.getMonth() + 1) + '月' + d.getDate() + '日';
   }
-  var DICE_A = ['霖州', '霖州城南', '霖州城西', '老城区', '大学城', '天禧城'];
+  var DICE_A = ['霖州', '霖州城南', '霖州城西', '老城区', '大学城'];
   var DICE_B = ['生活', '灌水', '花草', '宠物', '吃喝玩乐', '恋爱交友', '二手闲置', '八卦', '学习', '职场', '游戏', '影音', '树洞'];
   var DICE_C = ['墙', '吧', '论坛', '小组', '社区', '圈', '板'];
   function diceName() {
@@ -4394,15 +4393,16 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var found = W.Engine.forumFindPost(forumLineKey(), name, id);
     var p = found.post;
     if (!p) return '<div class="lzw-body"><div class="lzw-fempty">帖子不存在</div></div>';
+    var ready = postReady(p) && !UI.fTBusy;   // 生成/重roll期间旧正文评论先收起，数据仍在库中
     var head = "<div class='lzw-fmain'>" +
       "<div class='lzw-ftitle lzw-fmain-t'>" + C.esc(p.title) + "</div>" +
       "<div class='lzw-fmeta'><span class='lzw-fauthor'>" + C.esc(p.author) + "</span><span class='lzw-ftime'>" + (p.time ? C.esc(p.time) : '很久以前') + "</span></div>" +
-      "<div class='lzw-fmain-b'>" + W.Engine.forumBodyHtml(postBody(p)) + "</div>" +
+      "<div class='lzw-fmain-b'>" + (ready ? W.Engine.forumBodyHtml(postBody(p)) : '') + "</div>" +
       "<div class='lzw-fstat lzw-fstat-r'><span>" + fLike('#8a8f99', 13) + W.Engine.forumHeat(p.likes) + "</span><span>" + fCmt('#8a8f99', 12) + W.Engine.forumHeat(p.cmts != null ? p.cmts : postLatest(p).length) + "</span></div>" +
       "</div>";
-    if (!postReady(p)) {
+    if (!ready) {
       return '<div class="lzw-body">' + head +
-        "<div class='lzw-fempty'>" + (UI.fTBusy ? '生成中…' : "正文尚未生成<br><button class='lzw-fretry' data-fgen>生成正文与评论</button>") + "</div></div>";
+        "<div class='lzw-fempty'>" + (UI.fTBusy ? (postReady(p) ? '重新生成中…' : '生成中…') : "正文尚未生成<br><button class='lzw-fretry' data-fgen>生成正文与评论</button>") + "</div></div>";
     }
     var hot = postHot(p).map(function (h) {
       var nest = (h.nest || []).map(function (r) {
@@ -5167,7 +5167,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30f';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30g';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -6126,9 +6126,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     forumBodyHtml: function (text) {
       var esc = function (s2) { return String(s2 == null ? '' : s2).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
       return esc(text).replace(/\n/g, '<br>').replace(/\[图片[:：]([^\]\n]{1,300})\]/g, function (m, d) {
-        return "<div class='lzw-post-img lzw-fimg'><span class='lzw-fimg-ico'>" +
-          "<svg width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='#9aa0a8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4.5' width='18' height='15' rx='2.5'/><circle cx='8.8' cy='9.8' r='1.5'/><path d='M4.5 16.8l4-4a1.4 1.4 0 0 1 2 0l7 7'/></svg>" +
-          '</span>' + d + '</div>';
+        return "<div class='lzw-post-img'>" + d + '</div>';
       });
     },
 

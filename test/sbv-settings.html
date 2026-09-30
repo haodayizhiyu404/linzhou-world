@@ -21,12 +21,12 @@ background:#0b0d10;border-radius:10px}
 .lzw-sig i{display:block;width:3px;background:#111;border-radius:1px}
 .lzw-sig i:nth-child(1){height:4px}.lzw-sig i:nth-child(2){height:6px}
 .lzw-sig i:nth-child(3){height:8px}.lzw-sig i:nth-child(4){height:10px;opacity:.35}
-.lzw-appbar{flex:none;min-height:40px;display:flex;align-items:center;gap:6px;padding:2px 10px 8px;
+.lzw-appbar{flex:none;position:relative;min-height:40px;display:flex;align-items:center;gap:6px;padding:2px 10px 8px;
 background:rgba(247,247,249,.92);border-bottom:1px solid rgba(0,0,0,.06)}
-.lzw-appbar-t{flex:1;text-align:center;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lzw-appbar-t{position:absolute;left:50%;top:0;bottom:0;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;max-width:52%;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden}
 .lzw-back{display:inline-flex;align-items:center;color:#111;cursor:pointer;padding:4px;border-radius:8px;margin-left:-4px}
 .lzw-back:hover{background:rgba(0,0,0,.05)}
-.lzw-appbar-r{width:24px}
+.lzw-appbar-r{width:24px;margin-left:auto}
 .lzw-reroll{display:inline-flex;color:#666;cursor:pointer;padding:5px;border-radius:8px;align-items:center;justify-content:center}
 .lzw-reroll:hover{background:rgba(0,0,0,.06)}
 .lzw-appbar-ovl{position:absolute;top:0;left:0;right:0;z-index:6;background:transparent;border-bottom:none;padding-top:44px}
@@ -306,8 +306,7 @@ display:flex;align-items:center;justify-content:center;font-size:24px}
 .lzw-post-name{font-size:14px;font-weight:600;color:#576b95;cursor:pointer}
 .lzw-post-text{font-size:14px;line-height:1.55;color:#111;margin-top:2px;word-break:break-word}
 .lzw-post-img{margin-top:5px;background:#f2f3f5;border:1px solid rgba(0,0,0,.04);border-radius:7px;padding:7px 9px;font-size:12px;color:#5a6577;line-height:1.5;word-break:break-word}
-.lzw-fimg{display:flex;gap:6px;align-items:flex-start;margin:6px 0}
-.lzw-fimg svg{flex:none;margin-top:1.5px}
+.lzw-fimg{display:none}
 .lzw-post-meta{position:relative;display:flex;align-items:center;margin-top:6px;font-size:12px;color:#999;font-family:"PingFang SC","Microsoft YaHei",sans-serif}
 .lzw-post-meta .sp{flex:1}
 .lzw-post-more{width:27px;height:19px;border:none;border-radius:5px;background:#f0f1f3;color:#576b95;font-size:13px;line-height:1;cursor:pointer;padding:0;flex:none}
