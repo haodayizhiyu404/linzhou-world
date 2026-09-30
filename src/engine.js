@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30g';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30h';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -886,24 +886,47 @@
       return posts.filter(function (p) { return p.author && p.title && p.preview; }).slice(0, 10);
     },
 
-    // 帖子正文+评论解析：首个标记行之前是正文；[回复] 只挂最近一条 [热评]（楼中楼，封顶3）
+    // 帖子正文+评论解析：首个标记行之前是正文；[回复] 挂最近一条 [热评] 或 [评论]（楼中楼，封顶3）；新评内容以「回复 @X:」开头也收成楼中楼
     parseForumThread: function (text) {
       var body = [], hot = [], latest = [], stage = 0;
+      // 新评入列：内容以「回复 @X:」开头时挂到最近一条作者为 X 的评论下（封顶3），找不到对象保持平铺
+      var pushLatest = function (author, likes, raw) {
+        var text = String(raw || '').trim();
+        var rp = text.match(/^回复\s*@([^:：\s]{1,16})[:：]\s*/);
+        if (rp) {
+          for (var i = latest.length - 1; i >= 0; i--) {
+            if (latest[i].author === rp[1].trim()) {
+              var it = { author: author.trim(), to: rp[1].trim(), text: text.slice(rp[0].length) };
+              (latest[i].nest = latest[i].nest || []);
+              if (latest[i].nest.length < 3) latest[i].nest.push(it);
+              return;
+            }
+          }
+        }
+        latest.push({ author: author.trim(), likes: likes, text: text });
+      };
       String(text || '').split('\n').forEach(function (line) {
         line = line.trim();
         if (!line) return;
         var hm = line.match(/^\[热评[:：]([^:：\]]{1,16})[:：](\d{1,6})[:：]([\s\S]+)\]$/);
         if (hm) { hot.push({ author: hm[1].trim(), likes: +hm[2], text: hm[3].trim(), nest: [] }); stage = 1; return; }
         var rm = line.match(/^\[回复[:：]([^:：\]]{1,16})[:：]\s*@?([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
-        if (rm && stage === 1 && hot.length) {
-          var tg = hot[hot.length - 1];
-          if (tg.nest.length < 3) tg.nest.push({ author: rm[1].trim(), to: rm[2].trim(), text: rm[3].trim() });
+        if (rm) {
+          var rItem = { author: rm[1].trim(), to: rm[2].trim(), text: rm[3].trim() };
+          if (stage === 1 && hot.length) {
+            var tg = hot[hot.length - 1];
+            if (tg.nest.length < 3) tg.nest.push(rItem);
+          } else if (stage === 2 && latest.length) {
+            var tg2 = latest[latest.length - 1];
+            (tg2.nest = tg2.nest || []);
+            if (tg2.nest.length < 3) tg2.nest.push(rItem);
+          }
           return;
         }
         var cm = line.match(/^\[评论[:：]([^:：\]]{1,16})[:：](\d{1,6})[:：]([\s\S]+)\]$/);
-        if (cm) { latest.push({ author: cm[1].trim(), likes: +cm[2], text: cm[3].trim() }); stage = 2; return; }
+        if (cm) { pushLatest(cm[1], +cm[2], cm[3]); stage = 2; return; }
         var cm2 = line.match(/^\[评论[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
-        if (cm2) { latest.push({ author: cm2[1].trim(), likes: 0, text: cm2[2].trim() }); stage = 2; return; }
+        if (cm2) { pushLatest(cm2[1], 0, cm2[2]); stage = 2; return; }
         if (stage === 0) body.push(line);
       });
       return { body: body.join('\n').trim(), hot: hot, latest: latest };

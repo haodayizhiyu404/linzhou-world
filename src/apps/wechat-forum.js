@@ -166,7 +166,11 @@
         "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(h.author) + "</span>：" + C.esc(h.text) + fRepOps(h.likes) + "</div>" + nest + "</div>";
     }).join('');
     var latest = postLatest(p).map(function (r) {
-      return "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + fRepOps(r.likes || 0) + "</div>";
+      var lnst = (r.nest || []).map(function (x) {
+        return "<div class='lzw-fnest'><span class='lzw-frep-a'>" + C.esc(x.author) + "</span> 回复 <span class='lzw-frep-a'>" + C.esc(x.to) + "</span>：" + C.esc(x.text) + "</div>";
+      }).join('');
+      var lrep = "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + fRepOps(r.likes || 0) + "</div>";
+      return lnst ? "<div class='lzw-fhot'>" + lrep + lnst + "</div>" : lrep;
     }).join('');
     return '<div class="lzw-body">' + head +
       (hot ? "<div class='lzw-fsec'>热评</div><div class='lzw-freps'>" + hot + "</div>" : '') +

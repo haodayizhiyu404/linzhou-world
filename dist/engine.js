@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-09-30T13:24:45.118Z
+//  构建时间：2026-09-30T13:49:39.599Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-09-30 13:24';
+var __LZW_BUILD__ = '2026-09-30 13:49';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1323,7 +1323,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       reroll ? '- 注意：这是一次重生成——目录预览那句话仍必须原样作为正文开头（一字不改），但写法与评论角度要和旧版明显不一样' : '',
       '- 然后 2~4 条热评，格式 [热评:网名:赞数:内容]（赞数为整数；抖机灵、共鸣、补充、抬杠、歪楼都行，像真实高赞）',
       '- 每条热评可紧跟 0~2 条楼中楼，格式 [回复:网名:@被回复者:内容]（只挂最近一条热评；互怼、补刀、劝架都可以）',
-      '- 然后 3~6 条新评，格式 [评论:网名:赞数:内容]（按发布时间新→旧；赞数为整数——多数 0 或个位数，内容炸裂有笑点的可小爆到几十几百）',
+      '- 然后 3~6 条新评，格式 [评论:网名:赞数:内容]（按发布时间新→旧；赞数为整数——多数 0 或个位数，内容炸裂有笑点的可小爆到几十几百）；想回复某位网友的，内容以「回复 @其网名:」开头，会自动收成楼中楼',
 '- 评论区要真实网友生态：有共鸣也有抬杠，有抖机灵也有泼冷水，有质疑真实性也有现身说法，偶尔歪楼互怼；不要清一色捧场——那是水军味',
       '- 评论区可出现上方名单里的人（用网名/缩写/外号，熟人能认出），也可全用陌生网友；不要点名机主、不要写需要机主回应的内容',
       '- 除正文与标记行外不要输出任何其他内容'
@@ -2054,7 +2054,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-back{display:inline-flex;align-items:center;color:#111;cursor:pointer;padding:4px;border-radius:8px;margin-left:-4px}',
     '.lzw-back:hover{background:rgba(0,0,0,.05)}',
     '.lzw-appbar-r{width:24px;margin-left:auto}',
-    '.lzw-reroll{display:inline-flex;color:#666;cursor:pointer;padding:5px;border-radius:8px;align-items:center;justify-content:center}',
+    '.lzw-reroll{display:inline-flex;color:#8a8f99;cursor:pointer;padding:5px;border-radius:8px;align-items:center;justify-content:center}',
     '.lzw-reroll:hover{background:rgba(0,0,0,.06)}',
     // 朋友圈顶栏：透明浮在封面上（无标题，保留返回/相机）。状态栏与本栏都脱离文档流、
     // feed 独占整屏——封面顶点恒等于屏幕顶点，不再吃「38+51 算术」的像素误差
@@ -2483,7 +2483,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   var ICON_VOICE = '<svg width="15" height="15" viewBox="0 0 1024 1024"><path fill="#222222" d="M501.269333 517.610667a277.333333 277.333333 0 0 1-81.664 197.546666l-5.12 4.906667-3.306666 2.858667a42.666667 42.666667 0 0 1-58.325334-61.696l3.029334-3.136 6.954666-6.954667a192.042667 192.042667 0 0 0-7.936-273.002667l-3.050666-3.136a42.666667 42.666667 0 0 1 61.248-59.264l5.12 4.906667a277.333333 277.333333 0 0 1 83.050666 196.970667z m187.648 10.197333A418.090667 418.090667 0 0 1 565.845333 814.933333l-7.68 7.466667-3.306666 2.837333a42.666667 42.666667 0 0 1-58.346667-61.674666l3.029333-3.157334 6.101334-5.952a332.928 332.928 0 0 0 97.962666-228.48l0.085334-8.533333a332.821333 332.821333 0 0 0-105.834667-242.24 42.666667 42.666667 0 0 1 58.197333-62.4 418.133333 418.133333 0 0 1 132.970667 304.32l-0.106667 10.709333zM625.877333 137.877333a42.666667 42.666667 0 0 1 58.176-62.421333l-58.176 62.421333z m250.730667 394.026667a606.208 606.208 0 0 1-48.853333 225.365333l-6.293334 14.165334a606.016 606.016 0 0 1-123.2 176.554666l-11.136 10.816-3.306666 2.837334a42.666667 42.666667 0 0 1-58.346667-61.696l3.029333-3.136 9.557334-9.28a520.661333 520.661333 0 0 0 105.856-151.722667l5.397333-12.16a520.853333 520.853333 0 0 0 41.984-193.6l0.128-13.333333a520.341333 520.341333 0 0 0-38.4-194.261334l-5.141333-12.288a520.533333 520.533333 0 0 0-122.026667-172.288l58.197333-62.421333a605.909333 605.909333 0 0 1 142.016 200.533333l6.016 14.293334a605.653333 605.653333 0 0 1 44.672 226.133333l-0.149333 15.509333zM170.666667 518.442667a64 64 0 1 1 128 0 64 64 0 0 1-128 0z"/></svg>';
 
-  var ICON_REROLL = '<svg width="18" height="18" viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 85.333333c102.869333 0 199.509333 36.693333 275.029333 100.437334l93.866667-94.037334a21.333333 21.333333 0 0 1 36.437333 15.061334V384a21.333333 21.333333 0 0 1-21.333333 21.333333h-276.693333a21.333333 21.333333 0 0 1-15.104-36.394666l122.325333-122.496a341.333333 341.333333 0 1 0 118.314667 341.632 42.666667 42.666667 0 1 1 83.2 18.901333A426.794667 426.794667 0 0 1 512 938.666667C276.352 938.666667 85.333333 747.648 85.333333 512S276.352 85.333333 512 85.333333z"/></svg>';
+  var ICON_REROLL = '<svg width="16" height="16" viewBox="0 0 1024 1024"><path fill="currentColor" d="M512 85.333333c102.869333 0 199.509333 36.693333 275.029333 100.437334l93.866667-94.037334a21.333333 21.333333 0 0 1 36.437333 15.061334V384a21.333333 21.333333 0 0 1-21.333333 21.333333h-276.693333a21.333333 21.333333 0 0 1-15.104-36.394666l122.325333-122.496a341.333333 341.333333 0 1 0 118.314667 341.632 42.666667 42.666667 0 1 1 83.2 18.901333A426.794667 426.794667 0 0 1 512 938.666667C276.352 938.666667 85.333333 747.648 85.333333 512S276.352 85.333333 512 85.333333z"/></svg>';
 
   var ICON_CALL = '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#555" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l1.5 4-2.2 1.6a13 13 0 0 0 6.1 6.1L16 13.5l4 1.5v4a1.6 1.6 0 0 1-1.8 1.6C10.4 19.9 4.1 13.6 3.4 5.8A1.6 1.6 0 0 1 5 4z"/></svg>';
   // 待收款徽标（白线圆环内）：双向粗条半箭头，上半朝左、下半朝右
@@ -4412,7 +4412,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(h.author) + "</span>：" + C.esc(h.text) + fRepOps(h.likes) + "</div>" + nest + "</div>";
     }).join('');
     var latest = postLatest(p).map(function (r) {
-      return "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + fRepOps(r.likes || 0) + "</div>";
+      var lnst = (r.nest || []).map(function (x) {
+        return "<div class='lzw-fnest'><span class='lzw-frep-a'>" + C.esc(x.author) + "</span> 回复 <span class='lzw-frep-a'>" + C.esc(x.to) + "</span>：" + C.esc(x.text) + "</div>";
+      }).join('');
+      var lrep = "<div class='lzw-frep'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + fRepOps(r.likes || 0) + "</div>";
+      return lnst ? "<div class='lzw-fhot'>" + lrep + lnst + "</div>" : lrep;
     }).join('');
     return '<div class="lzw-body">' + head +
       (hot ? "<div class='lzw-fsec'>热评</div><div class='lzw-freps'>" + hot + "</div>" : '') +
@@ -5167,7 +5171,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30g';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30h';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -6046,24 +6050,47 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return posts.filter(function (p) { return p.author && p.title && p.preview; }).slice(0, 10);
     },
 
-    // 帖子正文+评论解析：首个标记行之前是正文；[回复] 只挂最近一条 [热评]（楼中楼，封顶3）
+    // 帖子正文+评论解析：首个标记行之前是正文；[回复] 挂最近一条 [热评] 或 [评论]（楼中楼，封顶3）；新评内容以「回复 @X:」开头也收成楼中楼
     parseForumThread: function (text) {
       var body = [], hot = [], latest = [], stage = 0;
+      // 新评入列：内容以「回复 @X:」开头时挂到最近一条作者为 X 的评论下（封顶3），找不到对象保持平铺
+      var pushLatest = function (author, likes, raw) {
+        var text = String(raw || '').trim();
+        var rp = text.match(/^回复\s*@([^:：\s]{1,16})[:：]\s*/);
+        if (rp) {
+          for (var i = latest.length - 1; i >= 0; i--) {
+            if (latest[i].author === rp[1].trim()) {
+              var it = { author: author.trim(), to: rp[1].trim(), text: text.slice(rp[0].length) };
+              (latest[i].nest = latest[i].nest || []);
+              if (latest[i].nest.length < 3) latest[i].nest.push(it);
+              return;
+            }
+          }
+        }
+        latest.push({ author: author.trim(), likes: likes, text: text });
+      };
       String(text || '').split('\n').forEach(function (line) {
         line = line.trim();
         if (!line) return;
         var hm = line.match(/^\[热评[:：]([^:：\]]{1,16})[:：](\d{1,6})[:：]([\s\S]+)\]$/);
         if (hm) { hot.push({ author: hm[1].trim(), likes: +hm[2], text: hm[3].trim(), nest: [] }); stage = 1; return; }
         var rm = line.match(/^\[回复[:：]([^:：\]]{1,16})[:：]\s*@?([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
-        if (rm && stage === 1 && hot.length) {
-          var tg = hot[hot.length - 1];
-          if (tg.nest.length < 3) tg.nest.push({ author: rm[1].trim(), to: rm[2].trim(), text: rm[3].trim() });
+        if (rm) {
+          var rItem = { author: rm[1].trim(), to: rm[2].trim(), text: rm[3].trim() };
+          if (stage === 1 && hot.length) {
+            var tg = hot[hot.length - 1];
+            if (tg.nest.length < 3) tg.nest.push(rItem);
+          } else if (stage === 2 && latest.length) {
+            var tg2 = latest[latest.length - 1];
+            (tg2.nest = tg2.nest || []);
+            if (tg2.nest.length < 3) tg2.nest.push(rItem);
+          }
           return;
         }
         var cm = line.match(/^\[评论[:：]([^:：\]]{1,16})[:：](\d{1,6})[:：]([\s\S]+)\]$/);
-        if (cm) { latest.push({ author: cm[1].trim(), likes: +cm[2], text: cm[3].trim() }); stage = 2; return; }
+        if (cm) { pushLatest(cm[1], +cm[2], cm[3]); stage = 2; return; }
         var cm2 = line.match(/^\[评论[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
-        if (cm2) { latest.push({ author: cm2[1].trim(), likes: 0, text: cm2[2].trim() }); stage = 2; return; }
+        if (cm2) { pushLatest(cm2[1], 0, cm2[2]); stage = 2; return; }
         if (stage === 0) body.push(line);
       });
       return { body: body.join('\n').trim(), hot: hot, latest: latest };

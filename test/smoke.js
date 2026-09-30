@@ -831,6 +831,13 @@ ctx.getWorldbook = async () => [
   const fNew = LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙').posts.filter(function (p) { return p.title === '出分了吗'; })[0];
   eq('论坛·重roll内容替换', fNew.body === '重roll正文来了。' && fNew.hot.length === 1 && fNew.latest.length === 1, true);
   eq('论坛·重roll热度不动', fNew.likes === 342 && fNew.cmts === 89, true);
+  // 新评楼中楼：「回复 @X:」挂到最近同名评论下；[回复] 标记在新评区同样收楼中楼；找不到对象保持平铺
+  ctx.generateRaw = async (req) => '重roll正文来了。\n[评论:甲:0:前排吃瓜]\n[评论:乙:3:回复 @甲:沙发]\n[评论:丙:0:路过]\n[回复:丁:@丙:层主说的对]\n[评论:戊:0:回复 @查无此人:歪楼]';
+  eq('论坛·新评再roll', await LW.Engine.forumThreadReroll('成人时代-破镜重圆', '霖州一中树洞墙', fOld.id), true);
+  const fR = LW.Store.forumGet('成人时代-破镜重圆', '霖州一中树洞墙').posts.filter(function (p) { return p.title === '出分了吗'; })[0];
+  eq('论坛·内联回复挂楼', fR.latest[0].author === '甲' && fR.latest[0].nest.length === 1 && fR.latest[0].nest[0].author === '乙' && fR.latest[0].nest[0].to === '甲' && fR.latest[0].nest[0].text === '沙发', true);
+  eq('论坛·回复标记挂楼', fR.latest[1].author === '丙' && fR.latest[1].nest.length === 1 && fR.latest[1].nest[0].author === '丁', true);
+  eq('论坛·无对象保持平铺', fR.latest[2].author === '戊' && !fR.latest[2].nest && fR.latest[2].text.indexOf('回复 @查无此人') === 0, true);
   // 长描述图卡（AI 实测描述可超 80 字）
   eq('论坛·长描述图卡', LW.Engine.forumBodyHtml('[图片:' + '长'.repeat(150) + ']').indexOf('lzw-post-img') !== -1, true);
   // 删除：数据与未读标记一起清
