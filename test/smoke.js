@@ -376,6 +376,15 @@ ctx.getWorldbook = async () => [
   const turnBig = LW.Prompt.callTurn({ name: '沈锡元', profile: '' }, '沈锡元：喂', bigHist, { dateText: '2034年8月26日 星期五' }, '', 'audio', [], '');
   const turnBigTxt = turnBig.ordered_prompts[0].content;
   eq('通话·轮私聊跟histPriv', turnBigTxt.indexOf('消息59') !== -1 && turnBigTxt.indexOf('消息49') !== -1 && turnBigTxt.indexOf('消息9') === -1, true);
+  // P3a：单轮上限放宽（16/12→40/30，超限 warn 留痕）+ 换行纪律 + 三分支任务描述
+  eq('通话·单轮上限视频', LW.Engine.callCap('video'), 40);
+  eq('通话·单轮上限语音', LW.Engine.callCap('audio'), 30);
+  eq('通话·换行纪律·邀请', invTxt.indexOf('换行以完整句子为单位') !== -1, true);
+  eq('通话·换行纪律·轮', turnTxt.indexOf('换行以完整句子为单位') !== -1, true);
+  const turnEmpty = LW.Prompt.callTurn({ name: '沈锡元', profile: '测试档案' }, '', invHist, { dateText: '2034年8月26日 星期五' }, '机主资料', 'video', [], '');
+  eq('通话·三分支·刚接通', turnEmpty.ordered_prompts[1].content.indexOf('刚刚拨通了') !== -1, true);
+  const turnRerollB = LW.Prompt.callTurn({ name: '沈锡元', profile: '测试档案' }, '沈锡元：喂', invHist, { dateText: '2034年8月26日 星期五' }, '机主资料', 'video', [], '');
+  eq('通话·三分支·重说不提重新', turnRerollB.ordered_prompts[1].content.indexOf('刚在视频通话里说了上面记录中最后的话') !== -1 && turnRerollB.ordered_prompts[1].content.indexOf('重新') === -1, true);
   // 视频轮次同样要 [画面] 行且要求穿插；splitCallOutput 保序拆分画面与台词
   eq('通话·视频轮画面约定', turnTxt.indexOf('[画面]') !== -1, true);
   eq('通话·视频轮画面穿插', turnTxt.indexOf('穿插') !== -1, true);
@@ -1054,6 +1063,8 @@ ctx.getWorldbook = async () => [
   eq('通话·最小化按钮', wcall.includes('data-cact="callmin"') && wsrc.includes('C.ICON_MIN'), true);
   eq('通话·callview通话氛围屏', wsrc.indexOf("screen === 'callview'") !== -1 && wsrc.indexOf('lzw-scr-chv') !== -1, true);
   eq('聊天·头像开名片', wsrc.indexOf('class="lzw-ava" data-cdet=') !== -1, true);
+  eq('通话·自动定位标记', wcall.split('_callNew = true').length - 1 >= 3 && wsrc.includes('meRow.offsetTop'), true);
+  eq('通话·callCap放宽40/30', esrc.includes("? 40 : 30"), true);
   // 图床双源保险丝：主源 jsdelivr、catbox 兜底、回退监听、壁纸 CSS 变量
   const esrc2 = fs.readFileSync(path.join(ROOT, 'src/engine.js'), 'utf8');
   eq('图床·主源jsdelivr', esrc2.indexOf("var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/'") !== -1, true);

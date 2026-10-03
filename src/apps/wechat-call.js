@@ -45,15 +45,20 @@
         // （视频 = [画面] 行与台词行交织；splitCallOutput 兼容旧式 --- 块）
         text = text.replace(/^\[接听\]\s*/, '').replace(/^接听[：:]\s*/, '').trim();
         var entries = [];
+        var cap0 = eng.callCap(mode);
         if (mode === 'video') {
-          eng.splitCallOutput(text).slice(0, 12).forEach(function (en) {
+          var sp0 = eng.splitCallOutput(text);
+          if (sp0.length > cap0) console.warn('[霖州引擎] 开场输出 ' + sp0.length + ' 条，超上限截为 ' + cap0 + ' 条');
+          sp0.slice(0, cap0).forEach(function (en) {
             entries.push({ who: name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
           });
         } else {
-          text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 8)
-            .forEach(function (l) { entries.push({ who: name, kind: 'text', text: l }); });
+          var vl0 = text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+          if (vl0.length > cap0) console.warn('[霖州引擎] 开场输出 ' + vl0.length + ' 条，超上限截为 ' + cap0 + ' 条');
+          vl0.slice(0, cap0).forEach(function (l) { entries.push({ who: name, kind: 'text', text: l }); });
         }
         if (entries.length) W.Store.push(eng.callKey(name), entries, 200);
+        this._callNew = true; // 开场内容到达，自动定位
         this.call.phase = 'active';
         this.call.startAt = Date.now();
         this.render();
@@ -84,7 +89,7 @@
       } catch (e) {
         try { toastr.error('对方信号不好，再试一次', '📱 霖州引擎'); } catch (e2) {}
       }
-      if (this.call === call) { call.busy = false; this.render(); }
+      if (this.call === call) { this._callNew = true; call.busy = false; this.render(); } // 机主的话上屏/对方回复上屏，自动定位
     },
 
     // 重说：弹掉对方最近一段台词，原地重生（带着机主最后一句的语境）
@@ -112,7 +117,7 @@
       } catch (e) {
         try { toastr.error('重说失败，再试一次', '📱 霖州引擎'); } catch (e2) {}
       }
-      if (this.call === call) { call.busy = false; this.render(); }
+      if (this.call === call) { this._callNew = true; call.busy = false; this.render(); } // 重说结果上屏，自动定位
     },
 
     // 挂断：transcript 末尾写时长；私聊里由发起方留一条通话记录灰泡（微信真实样式：

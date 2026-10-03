@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-10-03T14:24:14.926Z
+//  构建时间：2026-10-03T21:24:55.303Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-10-03 14:24';
+var __LZW_BUILD__ = '2026-10-03 21:24';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -1076,6 +1076,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '- 拒绝：第一行以 [拒绝] 开头，其后可附一句简短说明（如「在忙，晚点回」），也可不附',
         '- [接听]/[拒绝]/[画面] 是程序解析用的标记，只输出标记本身，不要给标记加引号或其他说明',
         '- 台词口语化：短句、停顿感、可有语气词；不要引号、动作描写、心理括号、时间戳（动作只写进 [画面] 行）',
+        '- 换行以完整句子为单位：一句话说完才换行，省略号与紧随的短句并入同一句（「……清楚。」占一行）；不要为营造停顿感把一句话砍成多行',
         '- 决定须符合上方「关系」阶段与当前情境（深夜/工作时间/在群里刚聊过等）'
       ].join('\n') : [
         '## 输出要求（严格遵守，二选一）',
@@ -1083,6 +1084,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '- 拒绝：第一行以 [拒绝] 开头，其后可附一句简短说明（如「在忙，晚点回」），也可不附',
         '- [接听]/[拒绝] 是程序解析用的标记，只输出标记本身，不要给标记加引号或其他说明',
         '- 不得输出引号、动作描写、心理括号、时间戳',
+        '- 换行以完整句子为单位：一句话说完才换行，省略号与紧随的短句并入同一句；不要为营造停顿感把一句话砍成多行',
         '- 决定须符合上方「关系」阶段与当前情境（深夜/工作时间/在群里刚聊过等）'
       ].join('\n');
       var p = [
@@ -1142,6 +1144,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '- [画面] 行穿插在台词中间、写在该动作发生的时刻——他一边说一边做的事（吃了片薯片、抬头看镜头、擦了把汗）就插在对应台词旁边，不要全堆在开头或结尾',
         '- 台词行数随情境自然决定（聊得热络可以多说，无事可说就少），口语化：短句、停顿感、可有语气词，不要书面腔',
         '- 每行独立，不要引号、动作描写、心理括号、时间戳（动作只写进 [画面] 行）',
+        '- 换行以完整句子为单位：一句话说完才换行——省略号与紧随的短句并入同一句（「……清楚。」「名字，你存心的。」各占一行），只有话题转换或动作切换才新起一行；不要为营造停顿感把一句话砍成多行',
         '- 情感与态度符合上方「关系」阶段；吵架、撒娇、汇报都按当前关系该有度',
         '- 不要复述机主刚说的话'
       ].join('\n') : [
@@ -1149,6 +1152,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '- 只输出「' + contact.name + '」的台词，1~5 行，按情绪与话题自然增减（激动时可更多）',
         '- 口语化，像真人打电话：短句、停顿感、可有语气词；不要书面腔',
         '- 每行独立，不要引号、动作描写、心理括号、时间戳',
+        '- 换行以完整句子为单位：一句话说完才换行，省略号与紧随的短句并入同一句；不要为营造停顿感把一句话砍成多行',
         '- 情感与态度符合上方「关系」阶段；吵架、撒娇、汇报都按当前关系该有度',
         '- 不要复述机主刚说的话'
       ].join('\n');
@@ -1195,7 +1199,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           { role: 'system', content: p },
           { role: 'user', content: userSays
               ? '（' + myName + '在' + kind + '里说：「' + userSays + '」。请生成「' + contact.name + '」的台词。）'
-              : '（' + kind + '沉默了几秒。请生成「' + contact.name + '」接下来的台词。）' }
+              : (transcript
+                  // 重说轮：旧回复在请求前已弹栈，模型从未见过它——这就是全新生成任务，
+                  // 与正常回应同义描述（机主的话在 transcript 末行），不提"重新/旧话"
+                  ? '（' + myName + '刚在' + kind + '里说了上面记录中最后的话。请生成「' + contact.name + '」的台词。）'
+                  : '（' + myName + '刚刚拨通了「' + contact.name + '」的' + kind + '，对方已接听。请生成「' + contact.name + '」接通后的开场' + (mode === 'video' ? '画面与台词' : '台词') + '。）') }
         ],
         should_silence: true,
         max_chat_history: 0
@@ -3031,10 +3039,23 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           if (t) UI.momentsSendComment(UI.mCmt, t);
         }
       });
-      // 通话字幕区：首次渲染滚到底（看最新），重渲染尽量保住原滚动位置
+      // 通话字幕区：有新内容到达（机主发送/对方回复/开场）自动定位——锚定机主最后一条，
+      // 把它顶到可视区顶部，对方的整轮回复从开头顺读；不回到底（底 anchoring 只露长回复的
+      // 末尾，被迫上滑再下滑）；无新内容（如仅计时刷新）保持原滚动位置，翻历史不被打断
       if (this.call) {
         var cs = ph.querySelector('.lzw-callsubs');
-        if (cs) cs.scrollTop = (prevSubs < 0) ? cs.scrollHeight : Math.min(prevSubs, cs.scrollHeight);
+        if (cs) {
+          if (this._callNew) {
+            this._callNew = false;
+            var meRow = null;
+            for (var ri = cs.children.length - 1; ri >= 0; ri--) {
+              var el2 = cs.children[ri];
+              if (el2.classList && el2.classList.contains('me')) { meRow = el2; break; }
+            }
+            cs.scrollTop = meRow ? Math.max(0, meRow.offsetTop - 10) : cs.scrollHeight;
+          }
+          else cs.scrollTop = (prevSubs < 0) ? cs.scrollHeight : Math.min(prevSubs, cs.scrollHeight);
+        }
       }
       // 通话：每秒刷时长；通话输入框回车即发
       if (this._ct) { clearInterval(this._ct); this._ct = null; }
@@ -4751,15 +4772,20 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         // （视频 = [画面] 行与台词行交织；splitCallOutput 兼容旧式 --- 块）
         text = text.replace(/^\[接听\]\s*/, '').replace(/^接听[：:]\s*/, '').trim();
         var entries = [];
+        var cap0 = eng.callCap(mode);
         if (mode === 'video') {
-          eng.splitCallOutput(text).slice(0, 12).forEach(function (en) {
+          var sp0 = eng.splitCallOutput(text);
+          if (sp0.length > cap0) console.warn('[霖州引擎] 开场输出 ' + sp0.length + ' 条，超上限截为 ' + cap0 + ' 条');
+          sp0.slice(0, cap0).forEach(function (en) {
             entries.push({ who: name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
           });
         } else {
-          text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 8)
-            .forEach(function (l) { entries.push({ who: name, kind: 'text', text: l }); });
+          var vl0 = text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+          if (vl0.length > cap0) console.warn('[霖州引擎] 开场输出 ' + vl0.length + ' 条，超上限截为 ' + cap0 + ' 条');
+          vl0.slice(0, cap0).forEach(function (l) { entries.push({ who: name, kind: 'text', text: l }); });
         }
         if (entries.length) W.Store.push(eng.callKey(name), entries, 200);
+        this._callNew = true; // 开场内容到达，自动定位
         this.call.phase = 'active';
         this.call.startAt = Date.now();
         this.render();
@@ -4790,7 +4816,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       } catch (e) {
         try { toastr.error('对方信号不好，再试一次', '📱 霖州引擎'); } catch (e2) {}
       }
-      if (this.call === call) { call.busy = false; this.render(); }
+      if (this.call === call) { this._callNew = true; call.busy = false; this.render(); } // 机主的话上屏/对方回复上屏，自动定位
     },
 
     // 重说：弹掉对方最近一段台词，原地重生（带着机主最后一句的语境）
@@ -4818,7 +4844,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       } catch (e) {
         try { toastr.error('重说失败，再试一次', '📱 霖州引擎'); } catch (e2) {}
       }
-      if (this.call === call) { call.busy = false; this.render(); }
+      if (this.call === call) { this._callNew = true; call.busy = false; this.render(); } // 重说结果上屏，自动定位
     },
 
     // 挂断：transcript 末尾写时长；私聊里由发起方留一条通话记录灰泡（微信真实样式：
@@ -5372,7 +5398,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30s';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30t';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -7288,6 +7314,10 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return entries;
     },
 
+    // 单轮通话输出的条目上限：只防模型失控刷几百行，正常戏剧化输出到不了这个数。
+    // 超出即截断并 console.warn 留痕——用户能分清是模型超量还是程序丢条。
+    callCap: function (mode) { return mode === 'video' ? 40 : 30; },
+
     callTurn: async function (name, mode, userSays) {
       var W = window.LZWorld, self = this;
       var c = this.findContact(name);
@@ -7324,11 +7354,15 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       text = text.replace(/<!--" + BS + "s*phone" + BS + "s*([" + BS + "s" + BS + "S]*?)-->/gi, '');
       // 视频通话拆成保序条目流：[画面] 行与台词行按出现顺序交织（音频永远无画面）
       var entries = [];
+      var cap = this.callCap(mode);
       if (mode === 'video') {
-        this.splitCallOutput(text).slice(0, 16).forEach(function (en) { entries.push(en); });
+        var sp = this.splitCallOutput(text);
+        if (sp.length > cap) console.warn('[霖州引擎] 通话单轮输出 ' + sp.length + ' 条，超上限截为 ' + cap + ' 条');
+        sp.slice(0, cap).forEach(function (en) { entries.push(en); });
       } else {
-        text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 12)
-          .forEach(function (l) { entries.push({ kind: 'line', text: l }); });
+        var vl = text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+        if (vl.length > cap) console.warn('[霖州引擎] 通话单轮输出 ' + vl.length + ' 条，超上限截为 ' + cap + ' 条');
+        vl.slice(0, cap).forEach(function (l) { entries.push({ kind: 'line', text: l }); });
       }
       return { entries: entries };
     },

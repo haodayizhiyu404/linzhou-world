@@ -1070,10 +1070,23 @@
           if (t) UI.momentsSendComment(UI.mCmt, t);
         }
       });
-      // 通话字幕区：首次渲染滚到底（看最新），重渲染尽量保住原滚动位置
+      // 通话字幕区：有新内容到达（机主发送/对方回复/开场）自动定位——锚定机主最后一条，
+      // 把它顶到可视区顶部，对方的整轮回复从开头顺读；不回到底（底 anchoring 只露长回复的
+      // 末尾，被迫上滑再下滑）；无新内容（如仅计时刷新）保持原滚动位置，翻历史不被打断
       if (this.call) {
         var cs = ph.querySelector('.lzw-callsubs');
-        if (cs) cs.scrollTop = (prevSubs < 0) ? cs.scrollHeight : Math.min(prevSubs, cs.scrollHeight);
+        if (cs) {
+          if (this._callNew) {
+            this._callNew = false;
+            var meRow = null;
+            for (var ri = cs.children.length - 1; ri >= 0; ri--) {
+              var el2 = cs.children[ri];
+              if (el2.classList && el2.classList.contains('me')) { meRow = el2; break; }
+            }
+            cs.scrollTop = meRow ? Math.max(0, meRow.offsetTop - 10) : cs.scrollHeight;
+          }
+          else cs.scrollTop = (prevSubs < 0) ? cs.scrollHeight : Math.min(prevSubs, cs.scrollHeight);
+        }
       }
       // 通话：每秒刷时长；通话输入框回车即发
       if (this._ct) { clearInterval(this._ct); this._ct = null; }

@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30s';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30t';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -1923,6 +1923,10 @@
       return entries;
     },
 
+    // 单轮通话输出的条目上限：只防模型失控刷几百行，正常戏剧化输出到不了这个数。
+    // 超出即截断并 console.warn 留痕——用户能分清是模型超量还是程序丢条。
+    callCap: function (mode) { return mode === 'video' ? 40 : 30; },
+
     callTurn: async function (name, mode, userSays) {
       var W = window.LZWorld, self = this;
       var c = this.findContact(name);
@@ -1959,11 +1963,15 @@
       text = text.replace(/<!--" + BS + "s*phone" + BS + "s*([" + BS + "s" + BS + "S]*?)-->/gi, '');
       // 视频通话拆成保序条目流：[画面] 行与台词行按出现顺序交织（音频永远无画面）
       var entries = [];
+      var cap = this.callCap(mode);
       if (mode === 'video') {
-        this.splitCallOutput(text).slice(0, 16).forEach(function (en) { entries.push(en); });
+        var sp = this.splitCallOutput(text);
+        if (sp.length > cap) console.warn('[霖州引擎] 通话单轮输出 ' + sp.length + ' 条，超上限截为 ' + cap + ' 条');
+        sp.slice(0, cap).forEach(function (en) { entries.push(en); });
       } else {
-        text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean).slice(0, 12)
-          .forEach(function (l) { entries.push({ kind: 'line', text: l }); });
+        var vl = text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+        if (vl.length > cap) console.warn('[霖州引擎] 通话单轮输出 ' + vl.length + ' 条，超上限截为 ' + cap + ' 条');
+        vl.slice(0, cap).forEach(function (l) { entries.push({ kind: 'line', text: l }); });
       }
       return { entries: entries };
     },
