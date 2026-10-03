@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30u';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30v';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -125,6 +125,12 @@
     },
 
     // ── 人物档案取用（线感知 + 宏替换）──
+    // 卡的亲密文风条目（世界书「霖州手机::NSFW」）：口味层由卡维护，引擎只负责注入。
+    // 全文原样（{{user}} 宏在注入时 deref）。
+    nsfwText: function () {
+      return this.deref(state.nsfwRaw || '');
+    },
+
     // 世界书原文里的 {{user}} 一律换成 persona 真名——generateRaw 不做宏替换，
     // 原文直发会让 NPC 对着「{{user}}」三个字聊天。
     deref: function (t) {
@@ -310,6 +316,7 @@
       state.stickers = data.stickers;
       state.profiles = data.profiles;
       state.entryStates = data.states || {};
+      state.nsfwRaw = data.nsfwRaw || '';
       // 线作用域档案归线：NPC（…）/ 主角人设（…）里的块按括号里的线名分派，
       // 各线各读各的，根治「同一个人两条线共用一版档案」的串线
       state.npcLine = {}; state.evolLine = {}; state.userEvol = {};

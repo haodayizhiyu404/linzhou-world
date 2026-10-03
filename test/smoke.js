@@ -221,7 +221,8 @@ ctx.getWorldbook = async () => [
   { comment: 'NPC（成人-破镜重圆）', enabled: true, content: '# I. 核心配角独立档案\n林溪、陆飞从高中时代起，与周言、沈锡元、{{user}}成为好友，关系密切，共同构筑了一个五人的核心小团体。\n\n[NPC·林溪]\n性别: 女。\n身份: 设计师（破镜重圆线）。\n\n[NPC·陆飞]\n性别: 男。\n身份: 运动康复师（破镜重圆线）。\n\n# II. 其他NPC档案\n\n[NPC·许嘉文]\n性别: 男。\n身份: 双面人（破镜重圆线）。' },
   { comment: '主角人设（成人-同路而行）', enabled: true, content: '# II. 角色演化档案\n\n[MAIN·周言·演化后]\n- 已婚设定（同路线）。\n\n[MAIN·{{user}}·演化后]\n- 与周言同居（同路线）。' },
   { comment: '主角人设（成人-破镜重圆）', enabled: true, content: '# II. 角色演化档案\n\n[MAIN·周言·演化后]\n- 十年后成了建筑师，回霖州主持旧城改造。\n\n[MAIN·{{user}}·演化后]\n- 与周言重逢后合伙开了间书店。' },
-  { comment: '霖州手机::人设::林溪', enabled: true, content: '林溪的手机专用档案' }
+  { comment: '霖州手机::人设::林溪', enabled: true, content: '林溪的手机专用档案' },
+  { comment: '霖州手机::NSFW', enabled: true, content: '亲密文风指引：{{user}}专属口味' }
 ];
 (async () => {
   const wb = await LW.Worldbook.load();
@@ -418,6 +419,22 @@ ctx.getWorldbook = async () => [
   const exB = await LW.Engine._callExtras('许嘉文', LW.Status.snapshot(null));
   eq('通话·otherCalls排除本会话', exB.otherCalls.length === 1 && exB.otherCalls[0].head.indexOf('09:00') !== -1, true);
   eq('通话·otherCalls无纪要带原文', exB.otherCalls[0].text.indexOf('算数') !== -1, true);
+  // P3c：FICTION 换装 + NSFW 条目注入（口味层卡维护，引擎只注入，全文唯一）+ 反色情腔
+  const prvN = LW.Prompt.private({ name: '周言', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null, [], '', '');
+  const prvNTxt = prvN.ordered_prompts[0].content;
+  eq('P3c·FICTION换装', prvNTxt.indexOf('# Narrative Sandbox') !== -1 && prvNTxt.indexOf('## Execution Rules') !== -1, true);
+  eq('P3c·NSFW注入·私聊唯一', prvNTxt.split('## 亲密场合叙事风格').length - 1 === 1 && prvNTxt.indexOf('专属口味') !== -1, true);
+  eq('P3c·NSFW宏已deref', prvNTxt.indexOf('{{user}}') === -1, true);
+  eq('P3c·NSFW注入·邀请唯一', invTxt.split('## 亲密场合叙事风格').length - 1, 1);
+  eq('P3c·NSFW注入·轮唯一', turnTxt.split('## 亲密场合叙事风格').length - 1, 1);
+  const memoN = LW.Prompt.memo({ name: '沈锡元', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, '', [], false);
+  eq('P3c·NSFW注入·备忘唯一', memoN.ordered_prompts.map(function (x) { return typeof x === 'string' ? '' : x.content; }).join('\n').split('## 亲密场合叙事风格').length - 1, 1);
+  eq('P3c·反色情腔·邀请语音', invTxt.indexOf('情欲场景不套用通用色情腔') !== -1, true);
+  eq('P3c·反色情腔·轮语音', turnTxt.indexOf('情欲场景不套用通用色情腔') !== -1, true);
+  const invVN = LW.Prompt.callInvite({ name: '沈锡元', profile: '' }, invHist, { dateText: '2034年8月26日 星期五' }, '', 'video', []);
+  eq('P3c·反色情腔·邀请视频', invVN.ordered_prompts[0].content.indexOf('情欲场景不套用通用色情腔') !== -1, true);
+  const turnVN = LW.Prompt.callTurn({ name: '沈锡元', profile: '' }, '沈锡元：喂', invHist, { dateText: '2034年8月26日 星期五' }, '', 'video', [], '');
+  eq('P3c·反色情腔·轮视频画面文学性', turnVN.ordered_prompts[0].content.indexOf('行不限于功能性速写') !== -1, true);
   // 视频轮次同样要 [画面] 行且要求穿插；splitCallOutput 保序拆分画面与台词
   eq('通话·视频轮画面约定', turnTxt.indexOf('[画面]') !== -1, true);
   eq('通话·视频轮画面穿插', turnTxt.indexOf('穿插') !== -1, true);
@@ -1098,6 +1115,11 @@ ctx.getWorldbook = async () => [
   eq('聊天·头像开名片', wsrc.indexOf('class="lzw-ava" data-cdet=') !== -1, true);
   eq('通话·自动定位标记', wcall.split('_callNew = true').length - 1 >= 3 && wsrc.includes('meRow.offsetTop'), true);
   eq('通话·callCap放宽40/30', esrc.includes("? 40 : 30"), true);
+  const psrc = fs.readFileSync(path.join(ROOT, 'src/prompt.js'), 'utf8');
+  eq('P3c·NSFW注入点8处', (psrc.match(/nsfwBlock\(\),/g) || []).length, 8);
+  eq('P3c·FICTION换装源码', psrc.indexOf('# Narrative Sandbox') !== -1 && psrc.indexOf('内部生成任务') === -1 && psrc.indexOf('consenting adult constructs') !== -1, true);
+  eq('P3c·worldbook认NSFW', fs.readFileSync(path.join(ROOT, 'src/worldbook.js'), 'utf8').indexOf('霖州手机::NSFW') !== -1, true);
+  eq('P3c·引擎nsfwText', esrc.includes('nsfwText: function'), true);
   // 图床双源保险丝：主源 jsdelivr、catbox 兜底、回退监听、壁纸 CSS 变量
   const esrc2 = fs.readFileSync(path.join(ROOT, 'src/engine.js'), 'utf8');
   eq('图床·主源jsdelivr', esrc2.indexOf("var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/'") !== -1, true);
