@@ -186,6 +186,9 @@
     var roll = (call.phase === 'active' && !call.busy)
       ? '<span class="lzw-callroll" data-cact="callreroll" title="重说对方上一段">' + C.ICON_REROLL + '</span>'
       : '';
+    // 最小化：收起手机外壳，通话状态原样保留（等 API 回复时可以翻主线/调设置）；
+    // 重新打开手机（QR 按钮）即回到本通话界面
+    var min = '<button class="lzw-callmin" data-cact="callmin" title="收起手机，通话继续">' + C.ICON_MIN + '</button>';
     var btns;
     if (call.phase === 'ringing') {
       btns = '<div class="lzw-callmid" style="justify-content:center"><button class="lzw-callbtn hang" data-cact="cancelcall"><i>' + C.ICON_HANG + '</i><span>取消</span></button></div>';
@@ -202,7 +205,7 @@
       ? '<div class="lzw-scrim"><div class="lzw-confirm lzw-callpop"><textarea class="lzw-callta" id="lzw-calltext" rows="4" maxlength="500" placeholder="想说什么…（可换行）"></textarea>' +
         '<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="popcancel">取消</button><button class="lzw-cbtn yes" data-cact="popok">发送</button></div></div></div>'
       : '';
-    return '<div class="lzw-callbody">' + roll + pip +
+    return '<div class="lzw-callbody">' + roll + min + pip +
       '<div class="lzw-calltop"><div class="lzw-callava">' + av + '</div>' +
       '<div class="lzw-callname">' + C.esc(call.name) + '</div>' +
       '<div class="lzw-callstatus" id="lzw-callstatus">' + C.esc(status) + '</div></div>' +

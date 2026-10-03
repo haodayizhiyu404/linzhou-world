@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-10-03T14:14:25.104Z
+//  构建时间：2026-10-03T14:24:14.926Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-10-03 14:14';
+var __LZW_BUILD__ = '2026-10-03 14:24';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2301,6 +2301,18 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-callbtn i{width:54px;height:54px;font-size:22px}',
     '.lzw-callbtn.hang i{width:54px;height:54px}',
     '.lzw-callroll{position:absolute;top:10px;right:12px;z-index:5;color:#fff;opacity:.85;cursor:pointer;padding:4px;line-height:0}',
+    '.lzw-callmin{position:absolute;top:10px;right:40px;z-index:5;width:26px;height:26px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:0}',
+    '.lzw-scr-chv .lzw-calltop{margin-top:8px}',
+    '.lzw-scr-chv .lzw-appbar{background:transparent;position:relative;z-index:6}',
+    '.lzw-scr-chv .lzw-appbar .lzw-back,.lzw-scr-chv .lzw-appbar-t{color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.55)}',
+    '.lzw-scr-chv .lzw-appbar .lzw-back path{stroke:#fff}',
+    '.lzw-scr-chv .lzw-appbar .lzw-back{filter:drop-shadow(0 1px 3px rgba(0,0,0,.55))}',
+    '.lzw-chistrow{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fff;border-bottom:1px solid #f0f0f2;cursor:pointer}',
+    '.lzw-chistrow:active{background:#f2f2f4}',
+    '.lzw-chist-ico{width:34px;height:34px;border-radius:9px;background:#f2f3f5;display:flex;align-items:center;justify-content:center;color:#555;flex:none}',
+    '.lzw-chist-main{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}',
+    '.lzw-chist-main b{font-size:13.5px;color:#111;font-weight:500}',
+    '.lzw-chist-main i{font-size:11.5px;color:#9aa0a8;font-style:normal}',
     // 说话弹窗 + 删除确认：灰黑半透明面板，贴合通话暗色场景；输入区聚焦保持暗色不刺眼
     '.lzw-callta{width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#fff;caret-color:#fff;padding:9px 11px;font-size:13.5px;line-height:1.55;resize:none;outline:none !important;margin-bottom:2px;font-family:inherit}',
     '.lzw-callta::placeholder{color:rgba(255,255,255,.55) !important}', // 个别前端主题会给 placeholder 上奇色，强制柔和白
@@ -2529,6 +2541,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   var ICON_TAB_CONT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 4.2a3.3 3.3 0 1 1 0 6.6 3.3 3.3 0 0 1 0-6.6z"/><path d="M3.8 19.4c.5-2.9 2.8-4.6 5.8-4.6s5.3 1.7 5.8 4.6"/><path d="M15.6 5.2a3 3 0 0 1 0 5.6M17.4 14.9c1.9.5 3.3 1.9 3.7 3.9"/></svg>';
   // 发现页里的朋友圈入口（彩色圆标）
   var ICON_MOMENTS = '<svg viewBox="0 0 1024 1024"><path fill="#fff" d="M512 954.24A442.24 442.24 0 1 0 69.76 512 442.08 442.08 0 0 0 512 954.24z m0-30.88a401.12 401.12 0 0 1-137.12-21.92V621.6l274.24 276.64A356 356 0 0 1 512 923.36z m285.28-119.68a400 400 0 0 1-112 81.28L487.2 687.04l389.44 1.92a359.52 359.52 0 0 1-79.2 114.72z m118.24-289.28a400 400 0 0 1-21.92 136.96H613.76l276.8-273.92a355.04 355.04 0 0 1 25.12 136.96z m-232.8-368a355.68 355.68 0 0 1 114.56 79.04 402.88 402.88 0 0 1 81.44 112L680.96 535.52zM512 653.6A141.6 141.6 0 1 1 653.6 512 141.6 141.6 0 0 1 512 653.6z m0-548.32A400 400 0 0 1 649.12 128v280L375.04 130.4A356.32 356.32 0 0 1 512 105.28z m-285.28 119.84a405.44 405.44 0 0 1 112-81.44l198.4 198.08-389.44-2.08a355.68 355.68 0 0 1 79.04-114.56zM108.64 514.4a400 400 0 0 1 21.92-136.96h279.84L133.6 651.36a357.92 357.92 0 0 1-24.96-136.96z m234.72-21.12l-1.92 389.44a357.12 357.12 0 0 1-114.72-79.04 401.76 401.76 0 0 1-81.28-112z"/><path fill="#FC6B4F" d="M649.12 128A400 400 0 0 0 512 105.28a356.32 356.32 0 0 0-137.12 25.12l274.08 276.8z"/><path fill="#7838F2" d="M797.44 225.12a355.68 355.68 0 0 0-114.56-79.04l-1.92 389.44 197.92-198.08a402.88 402.88 0 0 0-81.44-112.32z"/><path fill="#5698F3" d="M893.76 651.36a400 400 0 0 0 21.92-136.96 355.04 355.04 0 0 0-25.12-136.96l-276.8 273.92z"/><path fill="#20E9F4" d="M685.12 884.96a400 400 0 0 0 112-81.28 359.52 359.52 0 0 0 79.2-114.72l-389.44-1.92z"/><path fill="#00FD60" d="M375.04 901.44A401.12 401.12 0 0 0 512 923.36a356 356 0 0 0 136.96-25.12L375.04 621.6z"/><path fill="#ABFB5B" d="M341.44 882.72l1.92-389.44L145.44 691.2a401.76 401.76 0 0 0 81.28 112 357.12 357.12 0 0 0 114.72 79.52z"/><path fill="#F0E254" d="M130.56 377.44a400 400 0 0 0-21.92 136.96 357.92 357.92 0 0 0 24.96 136.96l276.8-273.92z"/><path fill="#F6B351" d="M339.04 144a405.44 405.44 0 0 0-112 81.44 355.68 355.68 0 0 0-79.04 114.56l389.44 2.08z"/></svg>';
+  var ICON_MIN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 9l7 7 7-7" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_CHEV = '<svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c3c7cd" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5L6.5 7l-5 5.5"/></svg>';
   var ICON_CAM = '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#454545" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h2.2l1.6-2.4A1.5 1.5 0 0 1 9 5h6a1.5 1.5 0 0 1 1.2.6L17.8 8H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="12.5" r="3.2"/></svg>';
   // ⋯菜单里的爱心/对话线条图标（仿微信，深底上用白色描边）
@@ -2599,8 +2612,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     } else {
       var c = contactMap && contactMap[m.who];
       avatar = (c && c.avatar)
-        ? '<img class="lzw-ava" src="' + esc(window.LZWorld.Worldbook.imgUrl(c.avatar)) + '">'
-        : '<div class="lzw-ava">' + esc(who.slice(0, 1)) + '</div>';
+        ? '<img class="lzw-ava" data-cdet="' + esc(m.who) + '" src="' + esc(window.LZWorld.Worldbook.imgUrl(c.avatar)) + '">'
+        : '<div class="lzw-ava" data-cdet="' + esc(m.who) + '">' + esc(who.slice(0, 1)) + '</div>';
     }
     var bub;
     if (m.kind === 'sticker') {
@@ -2720,6 +2733,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'mpost') return '<div class="lzw-appbar"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r lzw-appbar-rw"><button class="lzw-postsend" data-mpost-send="1">发表</button></span></div>';
     if (screen === 'cdetail') return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'callhist') return '<div class="lzw-appbar"><span class="lzw-back" data-act="cdetail">' + ICON_BACK + '</span><span class="lzw-appbar-t">通话记录</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'callview') return '<div class="lzw-appbar"><span class="lzw-back" data-act="callhist">' + ICON_BACK + '</span><span class="lzw-appbar-t">通话详情</span><span class="lzw-appbar-r"></span></div>';
     return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
       (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
       '</span></div>';
@@ -2803,7 +2818,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     tab: 'chats',        // list 页底栏：chats | contacts | discover
     mProfile: null,      // mprofile 页看的对象名
     mFrom: 'moments',    // mprofile 的返回来源：moments | cdetail
-    cdetName: null,      // cdetail 页看的对象名
+      cdetName: null,      // cdetail 页看的对象名
+      histName: null,        // callhist/callview 页看的对象名
+      histIdx: 0,            // callview 看的通话段下标（Engine.callSessions 返回数组下标）
     feedScr: null,       // 当前 DOM 里 .lzw-mfeed 属于哪个屏（跨屏不还原滚动）
     mMenu: -1,           // 展开「赞/评论」小菜单的动态下标
     mCmt: -1,            // 展开评论输入框的动态下标
@@ -2905,9 +2922,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         ICON_BATT + '</span></div>';
 
       var callBg = '';
-      if (this.call) {
+      // 通话回看（callview）复刻通话屏氛围：视频段铺模糊头像底，暗色气泡同款
+      var cvSess = null;
+      if (!this.call && this.screen === 'callview') {
         try {
-          var cc = eng.findContact(this.call.name) || {};
+          var vs0 = eng.callSessions(this.histName);
+          cvSess = vs0[this.histIdx] || null;
+        } catch (e) {}
+      }
+      if (this.call || cvSess) {
+        try {
+          var cc = eng.findContact(this.call ? this.call.name : this.histName) || {};
           var cimg = cc.avatar ? esc(W.Worldbook.imgUrl(cc.avatar)) : '';
           callBg = (cimg ? '<img class="lzw-callfeed" src="' + cimg + '">' : '') + '<div class="lzw-callshade"></div>';
         } catch (e) { callBg = '<div class="lzw-callshade"></div>'; }
@@ -2952,7 +2977,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + ((this.screen === 'moments' || this.screen === 'mprofile') ? ' lzw-scr-moments' : '') + (this.call ? ' lzw-scr-call' : '') + (this.call && this.call.mode === 'video' ? ' lzw-scr-video' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.busy ? '' : (this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : ''))) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + ((this.screen === 'moments' || this.screen === 'mprofile') ? ' lzw-scr-moments' : '') + ((this.call || this.screen === 'callview') ? ' lzw-scr-call' : '') + (((this.call && this.call.mode === 'video') || (cvSess && cvSess.mode === 'video')) ? ' lzw-scr-video' : '') + (this.screen === 'callview' ? ' lzw-scr-chv' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.busy ? '' : (this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : ''))) + body + '<div class="lzw-homebar"></div>' +
         (this.confirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条消息？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="cancel">取消</button><button class="lzw-cbtn yes" data-cact="del">删除</button></div></div></div>' : '') +
         (this.tConfirm >= 0 ? (function () {
           var tcm = null;
@@ -3034,7 +3059,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         el.onclick = function () {
           // mprofile 的返回看来源：详细资料进来回详细资料，朋友圈进来回朋友圈
           var act = el.dataset.act === 'mback' ? (UI.mFrom === 'cdetail' ? 'cdetail' : 'moments') : el.dataset.act;
-          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fav' ? 'fav' : act === 'fboard' ? 'fboard' : act === 'memo' ? 'memo' : 'list';
+          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fav' ? 'fav' : act === 'fboard' ? 'fboard' : act === 'memo' ? 'memo' : act === 'callhist' ? 'callhist' : 'list';
           UI.fBackFav = false;   // 离开帖子页即失效（收藏夹点帖时会重新置位）
           UI.panel = null;
           UI.render();
@@ -3083,6 +3108,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           else if (a === 'hangup') UI.hangup(false);
           else if (a === 'cancelcall') UI.hangup(true);
           else if (a === 'callreroll') UI.callReroll();
+          else if (a === 'callmin') UI.toggle(); // 最小化手机外壳，通话状态保留
           else if (a === 'micpop') { UI.callPop = true; UI.render(); }
           else if (a === 'popok') {
             var ta = ph.querySelector('#lzw-calltext');
@@ -3249,7 +3275,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   C.ICON_VOICE = ICON_VOICE; C.ICON_REROLL = ICON_REROLL; C.ICON_CALL = ICON_CALL; C.ICON_TWAIT = ICON_TWAIT;
   C.ICON_TOK = ICON_TOK; C.ICON_TNO = ICON_TNO; C.ICON_VCALL = ICON_VCALL; C.ICON_MIC = ICON_MIC;
   C.ICON_HANG = ICON_HANG; C.ICON_BACK = ICON_BACK; C.ICON_WIFI = ICON_WIFI; C.ICON_BATT = ICON_BATT;
-  C.ICON_PLANE = ICON_PLANE; C.ICON_PLUS = ICON_PLUS; C.ICON_POWEROFF = ICON_POWEROFF; C.ICON_GEAR = ICON_GEAR;
+  C.ICON_PLANE = ICON_PLANE; C.ICON_PLUS = ICON_PLUS; C.ICON_POWEROFF = ICON_POWEROFF; C.ICON_GEAR = ICON_GEAR; C.ICON_MIN = ICON_MIN;
   C.ICON_FORUM = ICON_FORUM; C.ICON_TAB_CHAT = ICON_TAB_CHAT; C.ICON_TAB_DISC = ICON_TAB_DISC;
   C.ICON_TAB_CONT = ICON_TAB_CONT; C.ICON_MOMENTS = ICON_MOMENTS; C.ICON_CHEV = ICON_CHEV; C.ICON_CAM = ICON_CAM;
   C.ICON_HEART = ICON_HEART; C.ICON_HEART_F = ICON_HEART_F; C.ICON_BUBBLE = ICON_BUBBLE; C.ICON_WECHAT = ICON_WECHAT;
@@ -3492,11 +3518,24 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var dav = dc.avatar
       ? '<img class="lzw-cava" src="' + C.esc(W.Worldbook.imgUrl(dc.avatar)) + '">'
       : '<div class="lzw-cava">' + C.esc(dn.slice(0, 1)) + '</div>';
+    var dSess = [];
+    try { dSess = eng.callSessions(dn); } catch (e0) {}
+    var dLastCall = '';
+    if (dSess.length) {
+      var lsv = dSess[dSess.length - 1];
+      // 列表永远不在通话中被看到（通话锁导航），无结束标记只意味着记录不全
+      // （刷新丢通话/老数据）——已闭合的中断段标「中断」，其余标「已接通」
+      dLastCall = (lsv.mode === 'video' ? '视频' : '语音') + ' · ' + (lsv.dur || (lsv.interrupted ? '中断' : '已接通'));
+    }
     return '<div class="lzw-body">' +
       '<div class="lzw-cdetcard">' + dav + '<div class="lzw-cdetnm">' + C.esc(dn) + '</div></div>' +
       '<div class="lzw-cdetrow" data-mpf="' + C.esc(dn) + '" data-mfrom="cdetail">' +
       '<span class="l">朋友圈</span>' +
       '<span class="lzw-cdetpv">' + C.esc(dLast || '还没发动态') + '</span>' +
+      '<span class="lzw-cdetcv">' + C.ICON_CHEV + '</span></div>' +
+      '<div class="lzw-cdetrow" data-chist="' + C.esc(dn) + '">' +
+      '<span class="l">通话记录</span>' +
+      '<span class="lzw-cdetpv">' + C.esc(dLastCall || '还没有通话') + '</span>' +
       '<span class="lzw-cdetcv">' + C.ICON_CHEV + '</span></div>' +
       '<div class="lzw-cdetmsg" data-cmsg="' + C.esc(dn) + '">发消息</div>' +
       '<div class="lzw-cdetcalls">' +
@@ -4853,6 +4892,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var roll = (call.phase === 'active' && !call.busy)
       ? '<span class="lzw-callroll" data-cact="callreroll" title="重说对方上一段">' + C.ICON_REROLL + '</span>'
       : '';
+    // 最小化：收起手机外壳，通话状态原样保留（等 API 回复时可以翻主线/调设置）；
+    // 重新打开手机（QR 按钮）即回到本通话界面
+    var min = '<button class="lzw-callmin" data-cact="callmin" title="收起手机，通话继续">' + C.ICON_MIN + '</button>';
     var btns;
     if (call.phase === 'ringing') {
       btns = '<div class="lzw-callmid" style="justify-content:center"><button class="lzw-callbtn hang" data-cact="cancelcall"><i>' + C.ICON_HANG + '</i><span>取消</span></button></div>';
@@ -4869,7 +4911,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       ? '<div class="lzw-scrim"><div class="lzw-confirm lzw-callpop"><textarea class="lzw-callta" id="lzw-calltext" rows="4" maxlength="500" placeholder="想说什么…（可换行）"></textarea>' +
         '<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="popcancel">取消</button><button class="lzw-cbtn yes" data-cact="popok">发送</button></div></div></div>'
       : '';
-    return '<div class="lzw-callbody">' + roll + pip +
+    return '<div class="lzw-callbody">' + roll + min + pip +
       '<div class="lzw-calltop"><div class="lzw-callava">' + av + '</div>' +
       '<div class="lzw-callname">' + C.esc(call.name) + '</div>' +
       '<div class="lzw-callstatus" id="lzw-callstatus">' + C.esc(status) + '</div></div>' +
@@ -4886,6 +4928,99 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     // 通话：拨打入口 + 通话屏按钮组
     ph.querySelectorAll('[data-act="dial"]').forEach(function (el) {
       el.onclick = function () { UI.dial(el.dataset.dial); };
+    });
+  });
+})();
+
+
+// ── src/apps/wechat-callhist.js ──
+// ═══════════════════════════════════════════════════════════
+//  apps/wechat-callhist.js —— 通话记录回看：分节列表 + 只读 transcript（零生成）
+//  由 wechat.js（壳）经 window.LZWorld.Apps.wechat / WechatCore 挂接
+// ═══════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+  var W = window.LZWorld, UI = W.Apps.wechat, C = W.WechatCore;
+
+
+  // 通话记录列表：视频/语音各一节，按时间倒序；点行进只读 transcript（无任何生成）
+  UI.bodyCallhist = function (ctx) {
+    var W2 = window.LZWorld, eng = W2.Engine;
+    var hn = this.histName || '';
+    var hSess = [];
+    try { hSess = eng.callSessions(hn); } catch (e0) {}
+    var hCurDay = '';
+    try { hCurDay = W2.Status.snapshot(null).dateText; } catch (e0) {}
+    var histRows = function (mode) {
+      return hSess.map(function (s, idx) { return { s: s, idx: idx }; })
+        .filter(function (x) { return x.s.mode === mode; })
+        .map(function (x) {
+          var when = (x.s.day ? C.relDay(x.s.day, hCurDay) : '') + (x.s.time ? ' ' + x.s.time : '');
+          var meta = (mode === 'video' ? '视频通话' : '语音通话') + ' · ' +
+            (x.s.dur || (x.s.interrupted ? '中断' : '已接通')) + ' · ' + x.s.count + '条';
+          return '<div class="lzw-chistrow" data-chv="' + x.idx + '">' +
+            '<span class="lzw-chist-ico">' + (mode === 'video' ? C.ICON_VCALL : C.ICON_CALL) + '</span>' +
+            '<span class="lzw-chist-main"><b>' + C.esc(when || '时间未知') + '</b><i>' + C.esc(meta) + '</i></span>' +
+            '<span class="lzw-cdetcv">' + C.ICON_CHEV + '</span></div>';
+        }).join('');
+    };
+    var vRows = histRows('video'), aRows = histRows('audio');
+    return '<div class="lzw-body">' +
+      (vRows ? "<div class='lzw-sechead'>视频通话</div>" + vRows : '') +
+      (aRows ? "<div class='lzw-sechead'>语音通话</div>" + aRows : '') +
+      ((!vRows && !aRows) ? '<div class="lzw-sysrow">还没有通话记录</div>' : '') +
+      '</div>';
+  };
+
+  // 只读 transcript：整屏复刻通话氛围（暗底/头像顶栏/气泡/画面行与通话屏同款），零生成零请求
+  UI.bodyCallview = function (ctx) {
+    var W2 = window.LZWorld, eng = W2.Engine;
+    var vn = this.histName || '';
+    var vSess = [];
+    try { vSess = eng.callSessions(vn); } catch (e0) {}
+    var sv = vSess[this.histIdx] || null;
+    if (!sv) return '<div class="lzw-body"><div class="lzw-sysrow">记录不存在</div></div>';
+    var seg = W2.Store.history(eng.callKey(vn)).slice(sv.start, sv.end)
+      .filter(function (m) { return m.who !== 'sys'; });
+    var vav = '';
+    try {
+      var vc = eng.findContact(vn) || {};
+      vav = vc.avatar ? '<img src="' + C.esc(W2.Worldbook.imgUrl(vc.avatar)) + '">' : C.esc(vn.slice(0, 1));
+    } catch (e0) { vav = C.esc(vn.slice(0, 1)); }
+    var vStatus = (sv.mode === 'video' ? '视频通话' : '语音通话') + (sv.dur ? ' · ' + sv.dur : '') +
+      (sv.interrupted ? ' · 中断' : '');
+    var bub = seg.map(function (m) {
+      if (m.kind === 'scene') return '<div class="lzw-callscene">' + C.esc(m.text || '').replace(/\n/g, '<br>') + '</div>';
+      return '<div class="lzw-sub' + (m.who === 'user' ? ' me' : '') + '">' + C.esc(m.text || '') + '</div>';
+    }).join('');
+    // 与通话界面同构：音频=头像即身份；视频=头像化作背景大图，保留名字
+    return '<div class="lzw-callbody">' +
+      '<div class="lzw-calltop">' +
+      (sv.mode === 'video'
+        ? '<div class="lzw-callname">' + C.esc(vn) + '</div>'
+        : '<div class="lzw-callava">' + vav + '</div>') +
+      '<div class="lzw-callstatus">' + C.esc(vStatus) + '</div></div>' +
+      '<div class="lzw-callsubs">' + bub + '</div></div>';
+  };
+
+
+  UI._binders.push(function (ph) {
+    // 详细资料页：通话记录入口 → 列表 → 只读 transcript
+    ph.querySelectorAll('[data-chist]').forEach(function (el) {
+      el.onclick = function () {
+        UI.histName = el.dataset.chist;
+        UI.screen = 'callhist';
+        UI.panel = null;
+        UI.render();
+      };
+    });
+    ph.querySelectorAll('[data-chv]').forEach(function (el) {
+      el.onclick = function () {
+        UI.histIdx = parseInt(el.dataset.chv, 10) || 0;
+        UI.screen = 'callview';
+        UI.panel = null;
+        UI.render();
+      };
     });
   });
 })();
@@ -5237,7 +5372,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30r';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30s';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 

@@ -340,6 +340,18 @@
     '.lzw-callbtn i{width:54px;height:54px;font-size:22px}',
     '.lzw-callbtn.hang i{width:54px;height:54px}',
     '.lzw-callroll{position:absolute;top:10px;right:12px;z-index:5;color:#fff;opacity:.85;cursor:pointer;padding:4px;line-height:0}',
+    '.lzw-callmin{position:absolute;top:10px;right:40px;z-index:5;width:26px;height:26px;border-radius:50%;border:none;background:rgba(255,255,255,.16);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:0}',
+    '.lzw-scr-chv .lzw-calltop{margin-top:8px}',
+    '.lzw-scr-chv .lzw-appbar{background:transparent;position:relative;z-index:6}',
+    '.lzw-scr-chv .lzw-appbar .lzw-back,.lzw-scr-chv .lzw-appbar-t{color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.55)}',
+    '.lzw-scr-chv .lzw-appbar .lzw-back path{stroke:#fff}',
+    '.lzw-scr-chv .lzw-appbar .lzw-back{filter:drop-shadow(0 1px 3px rgba(0,0,0,.55))}',
+    '.lzw-chistrow{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fff;border-bottom:1px solid #f0f0f2;cursor:pointer}',
+    '.lzw-chistrow:active{background:#f2f2f4}',
+    '.lzw-chist-ico{width:34px;height:34px;border-radius:9px;background:#f2f3f5;display:flex;align-items:center;justify-content:center;color:#555;flex:none}',
+    '.lzw-chist-main{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}',
+    '.lzw-chist-main b{font-size:13.5px;color:#111;font-weight:500}',
+    '.lzw-chist-main i{font-size:11.5px;color:#9aa0a8;font-style:normal}',
     // 说话弹窗 + 删除确认：灰黑半透明面板，贴合通话暗色场景；输入区聚焦保持暗色不刺眼
     '.lzw-callta{width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#fff;caret-color:#fff;padding:9px 11px;font-size:13.5px;line-height:1.55;resize:none;outline:none !important;margin-bottom:2px;font-family:inherit}',
     '.lzw-callta::placeholder{color:rgba(255,255,255,.55) !important}', // 个别前端主题会给 placeholder 上奇色，强制柔和白
@@ -568,6 +580,7 @@
   var ICON_TAB_CONT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9.6 4.2a3.3 3.3 0 1 1 0 6.6 3.3 3.3 0 0 1 0-6.6z"/><path d="M3.8 19.4c.5-2.9 2.8-4.6 5.8-4.6s5.3 1.7 5.8 4.6"/><path d="M15.6 5.2a3 3 0 0 1 0 5.6M17.4 14.9c1.9.5 3.3 1.9 3.7 3.9"/></svg>';
   // 发现页里的朋友圈入口（彩色圆标）
   var ICON_MOMENTS = '<svg viewBox="0 0 1024 1024"><path fill="#fff" d="M512 954.24A442.24 442.24 0 1 0 69.76 512 442.08 442.08 0 0 0 512 954.24z m0-30.88a401.12 401.12 0 0 1-137.12-21.92V621.6l274.24 276.64A356 356 0 0 1 512 923.36z m285.28-119.68a400 400 0 0 1-112 81.28L487.2 687.04l389.44 1.92a359.52 359.52 0 0 1-79.2 114.72z m118.24-289.28a400 400 0 0 1-21.92 136.96H613.76l276.8-273.92a355.04 355.04 0 0 1 25.12 136.96z m-232.8-368a355.68 355.68 0 0 1 114.56 79.04 402.88 402.88 0 0 1 81.44 112L680.96 535.52zM512 653.6A141.6 141.6 0 1 1 653.6 512 141.6 141.6 0 0 1 512 653.6z m0-548.32A400 400 0 0 1 649.12 128v280L375.04 130.4A356.32 356.32 0 0 1 512 105.28z m-285.28 119.84a405.44 405.44 0 0 1 112-81.44l198.4 198.08-389.44-2.08a355.68 355.68 0 0 1 79.04-114.56zM108.64 514.4a400 400 0 0 1 21.92-136.96h279.84L133.6 651.36a357.92 357.92 0 0 1-24.96-136.96z m234.72-21.12l-1.92 389.44a357.12 357.12 0 0 1-114.72-79.04 401.76 401.76 0 0 1-81.28-112z"/><path fill="#FC6B4F" d="M649.12 128A400 400 0 0 0 512 105.28a356.32 356.32 0 0 0-137.12 25.12l274.08 276.8z"/><path fill="#7838F2" d="M797.44 225.12a355.68 355.68 0 0 0-114.56-79.04l-1.92 389.44 197.92-198.08a402.88 402.88 0 0 0-81.44-112.32z"/><path fill="#5698F3" d="M893.76 651.36a400 400 0 0 0 21.92-136.96 355.04 355.04 0 0 0-25.12-136.96l-276.8 273.92z"/><path fill="#20E9F4" d="M685.12 884.96a400 400 0 0 0 112-81.28 359.52 359.52 0 0 0 79.2-114.72l-389.44-1.92z"/><path fill="#00FD60" d="M375.04 901.44A401.12 401.12 0 0 0 512 923.36a356 356 0 0 0 136.96-25.12L375.04 621.6z"/><path fill="#ABFB5B" d="M341.44 882.72l1.92-389.44L145.44 691.2a401.76 401.76 0 0 0 81.28 112 357.12 357.12 0 0 0 114.72 79.52z"/><path fill="#F0E254" d="M130.56 377.44a400 400 0 0 0-21.92 136.96 357.92 357.92 0 0 0 24.96 136.96l276.8-273.92z"/><path fill="#F6B351" d="M339.04 144a405.44 405.44 0 0 0-112 81.44 355.68 355.68 0 0 0-79.04 114.56l389.44 2.08z"/></svg>';
+  var ICON_MIN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 9l7 7 7-7" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var ICON_CHEV = '<svg width="8" height="14" viewBox="0 0 8 14" fill="none" stroke="#c3c7cd" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 1.5L6.5 7l-5 5.5"/></svg>';
   var ICON_CAM = '<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#454545" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h2.2l1.6-2.4A1.5 1.5 0 0 1 9 5h6a1.5 1.5 0 0 1 1.2.6L17.8 8H20a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="12.5" r="3.2"/></svg>';
   // ⋯菜单里的爱心/对话线条图标（仿微信，深底上用白色描边）
@@ -638,8 +651,8 @@
     } else {
       var c = contactMap && contactMap[m.who];
       avatar = (c && c.avatar)
-        ? '<img class="lzw-ava" src="' + esc(window.LZWorld.Worldbook.imgUrl(c.avatar)) + '">'
-        : '<div class="lzw-ava">' + esc(who.slice(0, 1)) + '</div>';
+        ? '<img class="lzw-ava" data-cdet="' + esc(m.who) + '" src="' + esc(window.LZWorld.Worldbook.imgUrl(c.avatar)) + '">'
+        : '<div class="lzw-ava" data-cdet="' + esc(m.who) + '">' + esc(who.slice(0, 1)) + '</div>';
     }
     var bub;
     if (m.kind === 'sticker') {
@@ -759,6 +772,8 @@
     if (screen === 'mprofile') return '<div class="lzw-appbar lzw-appbar-ovl"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
     if (screen === 'mpost') return '<div class="lzw-appbar"><span class="lzw-back" data-act="mback">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r lzw-appbar-rw"><button class="lzw-postsend" data-mpost-send="1">发表</button></span></div>';
     if (screen === 'cdetail') return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t"></span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'callhist') return '<div class="lzw-appbar"><span class="lzw-back" data-act="cdetail">' + ICON_BACK + '</span><span class="lzw-appbar-t">通话记录</span><span class="lzw-appbar-r"></span></div>';
+    if (screen === 'callview') return '<div class="lzw-appbar"><span class="lzw-back" data-act="callhist">' + ICON_BACK + '</span><span class="lzw-appbar-t">通话详情</span><span class="lzw-appbar-r"></span></div>';
     return '<div class="lzw-appbar"><span class="lzw-back" data-act="list">' + ICON_BACK + '</span><span class="lzw-appbar-t">' + esc(disp || '') + '</span><span class="lzw-appbar-r">' +
       (act ? '<span class="lzw-reroll" data-act="reroll" title="' + (act === 'retry' ? '上一条消息发送失败，点击重新获取回复' : '重新生成对方的上一条回复') + '">' + ICON_REROLL + '</span>' : '') +
       '</span></div>';
@@ -842,7 +857,9 @@
     tab: 'chats',        // list 页底栏：chats | contacts | discover
     mProfile: null,      // mprofile 页看的对象名
     mFrom: 'moments',    // mprofile 的返回来源：moments | cdetail
-    cdetName: null,      // cdetail 页看的对象名
+      cdetName: null,      // cdetail 页看的对象名
+      histName: null,        // callhist/callview 页看的对象名
+      histIdx: 0,            // callview 看的通话段下标（Engine.callSessions 返回数组下标）
     feedScr: null,       // 当前 DOM 里 .lzw-mfeed 属于哪个屏（跨屏不还原滚动）
     mMenu: -1,           // 展开「赞/评论」小菜单的动态下标
     mCmt: -1,            // 展开评论输入框的动态下标
@@ -944,9 +961,17 @@
         ICON_BATT + '</span></div>';
 
       var callBg = '';
-      if (this.call) {
+      // 通话回看（callview）复刻通话屏氛围：视频段铺模糊头像底，暗色气泡同款
+      var cvSess = null;
+      if (!this.call && this.screen === 'callview') {
         try {
-          var cc = eng.findContact(this.call.name) || {};
+          var vs0 = eng.callSessions(this.histName);
+          cvSess = vs0[this.histIdx] || null;
+        } catch (e) {}
+      }
+      if (this.call || cvSess) {
+        try {
+          var cc = eng.findContact(this.call ? this.call.name : this.histName) || {};
           var cimg = cc.avatar ? esc(W.Worldbook.imgUrl(cc.avatar)) : '';
           callBg = (cimg ? '<img class="lzw-callfeed" src="' + cimg + '">' : '') + '<div class="lzw-callshade"></div>';
         } catch (e) { callBg = '<div class="lzw-callshade"></div>'; }
@@ -991,7 +1016,7 @@
       ph.innerHTML =
         '<div class="lzw-bezel"><span class="lzw-btn-side lzw-btn-vol1"></span><span class="lzw-btn-side lzw-btn-vol2"></span>' +
         '<span class="lzw-btn-side lzw-btn-act"></span><span class="lzw-btn-side lzw-btn-pow"></span>' +
-        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + ((this.screen === 'moments' || this.screen === 'mprofile') ? ' lzw-scr-moments' : '') + (this.call ? ' lzw-scr-call' : '') + (this.call && this.call.mode === 'video' ? ' lzw-scr-video' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.busy ? '' : (this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : ''))) + body + '<div class="lzw-homebar"></div>' +
+        '<div class="lzw-screen' + (this.screen === 'home' ? ' lzw-scr-home' : '') + ((this.screen === 'moments' || this.screen === 'mprofile') ? ' lzw-scr-moments' : '') + ((this.call || this.screen === 'callview') ? ' lzw-scr-call' : '') + (((this.call && this.call.mode === 'video') || (cvSess && cvSess.mode === 'video')) ? ' lzw-scr-video' : '') + (this.screen === 'callview' ? ' lzw-scr-chv' : '') + '">' + callBg + sbar + appbarHtml(this.screen, disp, this.busy ? '' : (this.canReroll() ? 'reroll' : (this.canRetry() ? 'retry' : ''))) + body + '<div class="lzw-homebar"></div>' +
         (this.confirmDel >= 0 ? '<div class="lzw-scrim"><div class="lzw-confirm">删除这条消息？<div class="lzw-cbtns"><button class="lzw-cbtn no" data-cact="cancel">取消</button><button class="lzw-cbtn yes" data-cact="del">删除</button></div></div></div>' : '') +
         (this.tConfirm >= 0 ? (function () {
           var tcm = null;
@@ -1073,7 +1098,7 @@
         el.onclick = function () {
           // mprofile 的返回看来源：详细资料进来回详细资料，朋友圈进来回朋友圈
           var act = el.dataset.act === 'mback' ? (UI.mFrom === 'cdetail' ? 'cdetail' : 'moments') : el.dataset.act;
-          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fav' ? 'fav' : act === 'fboard' ? 'fboard' : act === 'memo' ? 'memo' : 'list';
+          UI.screen = act === 'home' ? 'home' : act === 'moments' ? 'moments' : act === 'cdetail' ? 'cdetail' : act === 'forum' ? 'forum' : act === 'fav' ? 'fav' : act === 'fboard' ? 'fboard' : act === 'memo' ? 'memo' : act === 'callhist' ? 'callhist' : 'list';
           UI.fBackFav = false;   // 离开帖子页即失效（收藏夹点帖时会重新置位）
           UI.panel = null;
           UI.render();
@@ -1122,6 +1147,7 @@
           else if (a === 'hangup') UI.hangup(false);
           else if (a === 'cancelcall') UI.hangup(true);
           else if (a === 'callreroll') UI.callReroll();
+          else if (a === 'callmin') UI.toggle(); // 最小化手机外壳，通话状态保留
           else if (a === 'micpop') { UI.callPop = true; UI.render(); }
           else if (a === 'popok') {
             var ta = ph.querySelector('#lzw-calltext');
@@ -1288,7 +1314,7 @@
   C.ICON_VOICE = ICON_VOICE; C.ICON_REROLL = ICON_REROLL; C.ICON_CALL = ICON_CALL; C.ICON_TWAIT = ICON_TWAIT;
   C.ICON_TOK = ICON_TOK; C.ICON_TNO = ICON_TNO; C.ICON_VCALL = ICON_VCALL; C.ICON_MIC = ICON_MIC;
   C.ICON_HANG = ICON_HANG; C.ICON_BACK = ICON_BACK; C.ICON_WIFI = ICON_WIFI; C.ICON_BATT = ICON_BATT;
-  C.ICON_PLANE = ICON_PLANE; C.ICON_PLUS = ICON_PLUS; C.ICON_POWEROFF = ICON_POWEROFF; C.ICON_GEAR = ICON_GEAR;
+  C.ICON_PLANE = ICON_PLANE; C.ICON_PLUS = ICON_PLUS; C.ICON_POWEROFF = ICON_POWEROFF; C.ICON_GEAR = ICON_GEAR; C.ICON_MIN = ICON_MIN;
   C.ICON_FORUM = ICON_FORUM; C.ICON_TAB_CHAT = ICON_TAB_CHAT; C.ICON_TAB_DISC = ICON_TAB_DISC;
   C.ICON_TAB_CONT = ICON_TAB_CONT; C.ICON_MOMENTS = ICON_MOMENTS; C.ICON_CHEV = ICON_CHEV; C.ICON_CAM = ICON_CAM;
   C.ICON_HEART = ICON_HEART; C.ICON_HEART_F = ICON_HEART_F; C.ICON_BUBBLE = ICON_BUBBLE; C.ICON_WECHAT = ICON_WECHAT;

@@ -156,11 +156,24 @@
     var dav = dc.avatar
       ? '<img class="lzw-cava" src="' + C.esc(W.Worldbook.imgUrl(dc.avatar)) + '">'
       : '<div class="lzw-cava">' + C.esc(dn.slice(0, 1)) + '</div>';
+    var dSess = [];
+    try { dSess = eng.callSessions(dn); } catch (e0) {}
+    var dLastCall = '';
+    if (dSess.length) {
+      var lsv = dSess[dSess.length - 1];
+      // 列表永远不在通话中被看到（通话锁导航），无结束标记只意味着记录不全
+      // （刷新丢通话/老数据）——已闭合的中断段标「中断」，其余标「已接通」
+      dLastCall = (lsv.mode === 'video' ? '视频' : '语音') + ' · ' + (lsv.dur || (lsv.interrupted ? '中断' : '已接通'));
+    }
     return '<div class="lzw-body">' +
       '<div class="lzw-cdetcard">' + dav + '<div class="lzw-cdetnm">' + C.esc(dn) + '</div></div>' +
       '<div class="lzw-cdetrow" data-mpf="' + C.esc(dn) + '" data-mfrom="cdetail">' +
       '<span class="l">朋友圈</span>' +
       '<span class="lzw-cdetpv">' + C.esc(dLast || '还没发动态') + '</span>' +
+      '<span class="lzw-cdetcv">' + C.ICON_CHEV + '</span></div>' +
+      '<div class="lzw-cdetrow" data-chist="' + C.esc(dn) + '">' +
+      '<span class="l">通话记录</span>' +
+      '<span class="lzw-cdetpv">' + C.esc(dLastCall || '还没有通话') + '</span>' +
       '<span class="lzw-cdetcv">' + C.ICON_CHEV + '</span></div>' +
       '<div class="lzw-cdetmsg" data-cmsg="' + C.esc(dn) + '">发消息</div>' +
       '<div class="lzw-cdetcalls">' +

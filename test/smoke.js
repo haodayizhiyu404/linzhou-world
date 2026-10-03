@@ -1048,6 +1048,12 @@ ctx.getWorldbook = async () => [
   eq('通话·视频重说按钮回右边', wsrc.indexOf('lzw-scr-video .lzw-callroll{right:auto') === -1, true);
   eq('通话·挂断触发纪要', wcall.includes('eng.summarizeCall(call.name)'), true);
   eq('通话·init挂孤儿扫描', esrc.includes('this.closeOrphanCalls()'), true);
+  const wcallh = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-callhist.js'), 'utf8');
+  const wlistsrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-list.js'), 'utf8');
+  eq('通话·记录回看入口', wlistsrc.includes('data-chist') && wcallh.includes('bodyCallhist') && wcallh.includes('bodyCallview') && wcallh.indexOf('callSessions') !== -1, true);
+  eq('通话·最小化按钮', wcall.includes('data-cact="callmin"') && wsrc.includes('C.ICON_MIN'), true);
+  eq('通话·callview通话氛围屏', wsrc.indexOf("screen === 'callview'") !== -1 && wsrc.indexOf('lzw-scr-chv') !== -1, true);
+  eq('聊天·头像开名片', wsrc.indexOf('class="lzw-ava" data-cdet=') !== -1, true);
   // 图床双源保险丝：主源 jsdelivr、catbox 兜底、回退监听、壁纸 CSS 变量
   const esrc2 = fs.readFileSync(path.join(ROOT, 'src/engine.js'), 'utf8');
   eq('图床·主源jsdelivr', esrc2.indexOf("var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/'") !== -1, true);
@@ -1065,13 +1071,13 @@ ctx.getWorldbook = async () => [
   wc.window = wc;
   wc.parent = { document: { getElementById: function () { return null; }, createElement: function () { return { style: {}, setAttribute: function () {} }; }, head: { appendChild: function () {} } } };
   vm.createContext(wc);
-  for (const f of ['wechat.js', 'wechat-home.js', 'wechat-list.js', 'wechat-chat.js', 'wechat-moments.js', 'wechat-forum.js', 'wechat-call.js', 'wechat-settings.js', 'wechat-memo.js']) {
+  for (const f of ['wechat.js', 'wechat-home.js', 'wechat-list.js', 'wechat-chat.js', 'wechat-moments.js', 'wechat-forum.js', 'wechat-call.js', 'wechat-callhist.js', 'wechat-settings.js', 'wechat-memo.js']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'src/apps', f), 'utf8'), wc, { filename: f });
   }
   const W2 = wc.window.LZWorld, UI2 = W2 && W2.Apps && W2.Apps.wechat, C2 = W2 && W2.WechatCore;
   eq('装载·宿主对象', typeof UI2, 'object');
   eq('装载·共享内核', typeof C2, 'object');
-  eq('装载·各屏body挂齐', ['bodyHome', 'bodyList', 'bodyCdetail', 'bodyChat', 'bodyMoments', 'bodyMprofile', 'bodyMpost', 'bodyForum', 'bodyFav', 'bodyFboard', 'bodyFthread', 'bodySettings'].every(function (k) { return typeof UI2[k] === 'function'; }), true);
+  eq('装载·各屏body挂齐', ['bodyHome', 'bodyList', 'bodyCdetail', 'bodyChat', 'bodyMoments', 'bodyMprofile', 'bodyMpost', 'bodyForum', 'bodyFav', 'bodyFboard', 'bodyFthread', 'bodySettings', 'bodyCallhist', 'bodyCallview'].every(function (k) { return typeof UI2[k] === 'function'; }), true);
   eq('装载·各屏方法挂齐', ['openChat', 'openMoments', 'openForum', 'sendText', 'generate', 'dial', 'callSend', 'callReroll', 'hangup', 'syncMomentBar', 'forumLineKey', 'render', 'bind', 'switchLine', 'showLines'].every(function (k) { return typeof UI2[k] === 'function'; }), true);
   eq('装载·屏绑定器≥7', UI2._binders.length >= 7, true);
   eq('装载·内核通话导出', typeof C2.callHtml === 'function' && typeof C2.fmtDur === 'function', true);
@@ -1089,7 +1095,8 @@ ctx.getWorldbook = async () => [
     momentsFeed: function () { return []; },
     userAvatar: function () { return ''; },
     memoEntries: function () { return []; },
-    forumNames: function () { return []; }
+    forumNames: function () { return []; },
+    callSessions: function () { return []; }
   };
   const ctx2 = { W: W2, eng: engStub, userName: '裴', snap: { dateText: '' }, clock: '15:47', dateShort: '', disp: '' };
   const renderOk = function (fn, needle) { try { var h = fn.call(UI2, ctx2); return typeof h === 'string' && h.indexOf(needle) !== -1; } catch (e) { return false; } };
@@ -1098,6 +1105,8 @@ ctx.getWorldbook = async () => [
   eq('装载·chat屏真实渲染', (UI2.chatKey = '周言', renderOk(UI2.bodyChat, 'lzw-chatbg')), true);
   eq('装载·moments屏真实渲染', renderOk(UI2.bodyMoments, 'lzw-mfeed'), true);
   eq('装载·memo屏真实渲染', renderOk(UI2.bodyMemo, 'lzw-memo-chips'), true);
+  eq('装载·通话记录列表屏', (UI2.histName = '周言', renderOk(UI2.bodyCallhist, 'lzw-body')), true);
+  eq('装载·通话详情屏·无段兜底', renderOk(UI2.bodyCallview, '记录不存在'), true);
   // 重说弹栈不设上限：视频一轮最多 16 条，旧上限 10 弹不干净、旧旁白漏进重生请求
   var callSeed = [{ who: 'user', kind: 'text', text: '机主的话' }];
   for (var ci2 = 0; ci2 < 12; ci2++) callSeed.push({ who: '周言', kind: 'text', text: '旁白' + ci2 });
