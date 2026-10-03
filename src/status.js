@@ -27,6 +27,7 @@
       time: '',                          // 22:49
       userPlace: envParts[2] || '',      // user 所在地点（不可用于 NPC）
       characters: {},                    // 角色小块：{ 位置, 姿态, 着装, 关系 }
+      relations: {},                     // <关系总览> 逐行解析：{ 名字: 关系 }
       overview: ''                       // <关系总览> 整块原文
     };
     var tm = (envParts[1] || '').match(/(\d{1,2}:\d{2})/);
@@ -39,7 +40,15 @@
       var name = block[1].trim();
       if (name === '环境' || name === 'status') continue;
       var body = block[2];
-      if (name === '关系总览') { result.overview = body.trim(); continue; }
+      if (name === '关系总览') {
+        result.overview = body.trim();
+        // 逐行「名字：关系」解析成映射，供角色块回填与不在场角色取用（关系跟人走）
+        body.split(/\r?\n/).forEach(function (line) {
+          var rm = line.match(/^\s*([^\s:：]+)\s*[:：]\s*(.+)$/);
+          if (rm) result.relations[rm[1].trim()] = rm[2].trim();
+        });
+        continue;
+      }
       var grab = function (label) {
         var r = body.match(new RegExp(label + '\\s*[:：]\\s*([^\\n]+)'));
         return r ? r[1].trim() : '';
@@ -51,6 +60,13 @@
         relation: grab('关系')
         // 心声刻意不解析
       };
+    }
+    // 关系回填：角色块里没写内联「关系：」的，从关系总览映射补（该角色在场才补得到）。
+    // 关系总览常排在角色块之后，所以必须在整块扫完之后做第二遍。
+    for (var cn in result.characters) {
+      if (!result.characters[cn].relation && result.relations[cn]) {
+        result.relations[cn] && (result.characters[cn].relation = result.relations[cn]);
+      }
     }
     return result;
   }
@@ -89,6 +105,10 @@
       if (npcName && p.characters[npcName]) {
         npc = p.characters[npcName];
         npc.name = npcName;
+      } else if (npcName && p.relations[npcName]) {
+        // 角色不在场、没有自己的小块时（通话对象最常见），关系只存在于关系总览——
+        // 退回总览取关系，情境字段留空。否则「关系基调」等依赖 relation 的注入全静默失效
+        npc = { name: npcName, outfit: '', posture: '', place: '', relation: p.relations[npcName] };
       }
       return {
         time: p.time,

@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30t';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30u';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -1820,6 +1820,28 @@
       } catch (e) {}
     },
 
+    // 通话的记忆对齐：与私聊同配置——压缩提要 / 朋友圈互动（对方+机主）/ 近三天其他通话
+    // （排除本会话，本会话由 transcript 全量携带）。私聊里有的记忆通话不该缺席，
+    // 否则电话那头的他总是"不认识你"——冷漠感不是错觉，是这套配置差异的直接结果。
+    _callExtras: async function (name, snap) {
+      var self = this;
+      var out = { digest: '', momentsNote: '', myNote: '', otherCalls: [] };
+      try { out.digest = await this.compress(name); } catch (e) {}
+      try { out.momentsNote = this.momentsNoteFor(name, snap); } catch (e) {}
+      try { out.myNote = this.myMomentsNote(snap); } catch (e) {}
+      try {
+        var curDay = snap && snap.dateText;
+        var curStart = this.callSessionStart(window.LZWorld.Store.history(this.callKey(name)));
+        out.otherCalls = this.callSessions(name).filter(function (s) {
+          if (s.start === curStart) return false;
+          if (!s.day || !curDay) return false;
+          var dd = dayDiffE(s.day, curDay);
+          return dd != null && dd >= 0 && dd <= 3;
+        }).map(function (s) { return self._memoryItem(name, s, dayDiffE(s.day, curDay)); });
+      } catch (e) {}
+      return out;
+    },
+
     // 近 N 故事日内的通话记忆（私聊注入用）：已完成的带纪要（无纪要兜底原文），中断的带完整原文。
     callMemory: function (name, days) {
       var W = window.LZWorld;
@@ -1890,8 +1912,13 @@
         var dd = (s.day && cur0) ? dayDiffE(s.day, cur0) : null;
         return self._memoryItem(c.name, s, dd);
       });
+      // 记忆对齐：私聊有的（提要/朋友圈/近三天其他通话）通话也要有；按段头去重
+      var ex1 = await this._callExtras(c.name, snap);
+      var seen1 = {};
+      refs.forEach(function (r) { seen1[r.head] = 1; });
+      ex1.otherCalls.forEach(function (r) { if (!seen1[r.head]) { seen1[r.head] = 1; refs.push(r); } });
       var req = W.Prompt.callInvite({ name: c.name, profile: profile }, priv, snap, userInfo, mode,
-        this.crossGroups(c.name, snap && snap.dateText), refs);
+        this.crossGroups(c.name, snap && snap.dateText), refs, ex1.digest, ex1.momentsNote, ex1.myNote);
       var raw = await this.genT(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       return text.trim();
@@ -1955,8 +1982,12 @@
         var dd = (s.day && cur2) ? dayDiffE(s.day, cur2) : null;
         return self._memoryItem(c.name, s, dd);
       });
+      var ex2 = await this._callExtras(c.name, snap);
+      var seen2 = {};
+      refs2.forEach(function (r) { seen2[r.head] = 1; });
+      ex2.otherCalls.forEach(function (r) { if (!seen2[r.head]) { seen2[r.head] = 1; refs2.push(r); } });
       var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), priv2, snap, userInfo, mode,
-        this.crossGroups(c.name, snap && snap.dateText), userSays || '', refs2);
+        this.crossGroups(c.name, snap && snap.dateText), userSays || '', refs2, ex2.digest, ex2.momentsNote, ex2.myNote);
       var raw = await this.genT(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
       // 剥注释块防污染（极端情况：AI 在通话里输出主动块）

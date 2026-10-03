@@ -385,6 +385,39 @@ ctx.getWorldbook = async () => [
   eq('通话·三分支·刚接通', turnEmpty.ordered_prompts[1].content.indexOf('刚刚拨通了') !== -1, true);
   const turnRerollB = LW.Prompt.callTurn({ name: '沈锡元', profile: '测试档案' }, '沈锡元：喂', invHist, { dateText: '2034年8月26日 星期五' }, '机主资料', 'video', [], '');
   eq('通话·三分支·重说不提重新', turnRerollB.ordered_prompts[1].content.indexOf('刚在视频通话里说了上面记录中最后的话') !== -1 && turnRerollB.ordered_prompts[1].content.indexOf('重新') === -1, true);
+  // P3b：关系基调后置（工程教训：注入点全文唯一）
+  const invTone = LW.Prompt.callInvite({ name: '沈锡元', profile: '' }, invHist, { dateText: '2034年8月26日 星期五', npc: { relation: '克制的青梅竹马' } }, '', 'audio', []);
+  const invToneTxt = invTone.ordered_prompts[0].content;
+  eq('通话·基调后置·邀请唯一', invToneTxt.split('## 本次语音通话基调').length - 1 === 1 && invToneTxt.indexOf('【克制的青梅竹马】') !== -1, true);
+  const turnTone = LW.Prompt.callTurn({ name: '沈锡元', profile: '' }, '沈锡元：喂', invHist, { dateText: '2034年8月26日 星期五', npc: { relation: '克制的青梅竹马' } }, '', 'audio', [], '');
+  eq('通话·基调后置·轮唯一', turnTone.ordered_prompts[0].content.split('## 本次语音通话基调').length - 1, 1);
+  const memoTone = LW.Prompt.memo({ name: '沈锡元', profile: '' }, [], { dateText: '2034年8月26日 星期五', npc: { relation: '克制的青梅竹马' } }, '', [], false);
+  eq('备忘·关系基调行唯一', memoTone.ordered_prompts.map(function (x) { return typeof x === 'string' ? '' : x.content; }).join('\n').split('关系基调：机主与').length - 1, 1);
+  // 记忆对齐：通话提示词带提要/朋友圈双方
+  const invEx = LW.Prompt.callInvite({ name: '沈锡元', profile: '' }, invHist, { dateText: '2034年8月26日 星期五' }, '', 'audio', [], [], '提要内容', '对方动态摘要', '机主动态摘要');
+  const invExTxt = invEx.ordered_prompts[0].content;
+  eq('通话·记忆对齐·提要', invExTxt.indexOf('提要内容') !== -1, true);
+  eq('通话·记忆对齐·朋友圈双方', invExTxt.indexOf('对方动态摘要') !== -1 && invExTxt.indexOf('机主动态摘要') !== -1, true);
+  // 状态栏关系盲区：角色不在场退回关系总览；在场块缺行也从总览补
+  const stRel = LW._parseStatusBlock('<status>\n<环境>\n2034年8月26日 星期五|22:49|家|阴\n</环境>\n<沈锡元>\n着装：T恤\n</沈锡元>\n<关系总览>\n沈锡元：克制的青梅竹马，尚未告白\n周言：损友\n</关系总览>\n</status>');
+  eq('状态·总览关系解析', stRel.relations['周言'] === '损友', true);
+  eq('状态·在场块总览回填', stRel.characters['沈锡元'].relation === '克制的青梅竹马，尚未告白', true);
+  global.__msgs = [{ role: 'assistant', message: '<status>\n<环境>\n2034年8月26日 星期五|22:49|家|阴\n</环境>\n<关系总览>\n周言：损友\n</关系总览>\n</status>' }];
+  eq('状态·不在场关系兜底', LW.Status.snapshot('周言').npc.relation === '损友', true);
+  // _callExtras.otherCalls：排除本会话（最近边界之后），收近三天其他通话（完成带纪要）
+  // 自含种子：一通已完成 + 一通进行中的新会话（排除对象）
+  const bk3 = LW.Engine.callKey('许嘉文');
+  LW.Store.push(bk3, [
+    { who: 'sys', kind: 'sys', text: '—— 通话开始 ——', mode: 'audio', day: '2034年8月26日 星期五', time: '20:00' },
+    { who: 'user', kind: 'text', text: '昨天的话还算数吗', day: '2034年8月26日 星期五', time: '20:01' },
+    { who: '许嘉文', kind: 'text', text: '算数', day: '2034年8月26日 星期五', time: '20:02' },
+    { who: 'sys', kind: 'sys', text: '通话结束 · 09:00', day: '2034年8月26日 星期五', time: '20:40' },
+    { who: 'sys', kind: 'sys', text: '—— 通话开始 ——', mode: 'audio', day: '2034年8月26日 星期五', time: '23:00' },
+  ], 200);
+  ctx.generateRaw = async (req) => '提要';
+  const exB = await LW.Engine._callExtras('许嘉文', LW.Status.snapshot(null));
+  eq('通话·otherCalls排除本会话', exB.otherCalls.length === 1 && exB.otherCalls[0].head.indexOf('09:00') !== -1, true);
+  eq('通话·otherCalls无纪要带原文', exB.otherCalls[0].text.indexOf('算数') !== -1, true);
   // 视频轮次同样要 [画面] 行且要求穿插；splitCallOutput 保序拆分画面与台词
   eq('通话·视频轮画面约定', turnTxt.indexOf('[画面]') !== -1, true);
   eq('通话·视频轮画面穿插', turnTxt.indexOf('穿插') !== -1, true);
