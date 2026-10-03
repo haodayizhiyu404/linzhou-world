@@ -180,13 +180,13 @@ eq('私聊记录带对方名', spN.indexOf('周言：嗯') !== -1, true);
 eq('私聊记录带user名', spN.indexOf('陈默：早') !== -1, true);
 eq('跨天时间标·昨天', spN.indexOf('[昨天 22:00]') !== -1, true);
 eq('跨天时间标·今天', spN.indexOf('[今天 08:00]') !== -1, true);
-// 今日通话尾巴：同故事日的通话记录带进私聊提示词
+// 近期通话：近三天通话记忆带进私聊提示词（正常带纪要，中断带原文）
 const reqCall = LW.Prompt.private({ name: '周言', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, [], null, null, null, null,
-  { kind: '视频通话', dur: '03:24', video: true, lines: ['周言：你那边风好大', '（画面：把镜头对准了江面）', '陈默：看到了'] });
+  [{ head: '视频通话 · 03:24（今天）', text: '两人谈到毕业旅行……（纪要）' }, { head: '语音通话 · 中断（昨天）', text: '周言：你那边风好大\n（画面：把镜头对准了江面）\n陈默：看到了' }]);
 const spCall = reqCall.ordered_prompts[0].content;
-eq('今日通话段头', spCall.indexOf('## 今日通话（视频通话 · 03:24') !== -1, true);
-eq('通话对白进提示词', spCall.indexOf('你那边风好大') !== -1, true);
-eq('通话画面进提示词', spCall.indexOf('把镜头对准了江面') !== -1, true);
+eq('近期通话段头', spCall.indexOf('## 近期通话（近三天内两人通过电话') !== -1, true);
+eq('通话纪要进提示词', spCall.indexOf('两人谈到毕业旅行') !== -1, true);
+eq('中断通话原文进提示词', spCall.indexOf('把镜头对准了江面') !== -1, true);
 const greq2 = LW.Prompt.group({ name: '高三（2）班', open: false, style: '有班主任在，发言收敛' }, [{ name: '林溪', profile: '闺蜜' }], [], null);
 eq('群氛围字段', greq2.ordered_prompts[0].content.indexOf('有班主任在，发言收敛') !== -1, true);
 const greq3 = LW.Prompt.group({ name: '霖附吃瓜二手交易市场', open: true, crowd: '类型：校园公共群，超百人。\n风格：信息量大、节奏快。\n特殊规则：可同时存在多个话题，成员不一定会直接回应。' }, [], [], null);
@@ -440,6 +440,65 @@ ctx.getWorldbook = async () => [
   })(), 2);
   eq('通话·无记录返回空', LW.Engine.callSessions('查无此人').length, 0);
   LW.Engine.applyLine('IF线', '测试');
+  // 孤儿通话收尾：残卷补「通话中断」（详单标记+聊天灰泡），幂等
+  const wk = LW.Engine.callKey('周言');
+  LW.Store.push(wk, [
+    { who: 'sys', kind: 'sys', text: '—— 通话开始 ——', mode: 'video', day: '2034年8月26日 星期五', time: '22:00' },
+    { who: 'user', kind: 'text', text: '喂', day: '2034年8月26日 星期五', time: '22:01' },
+  ], 200);
+  var orphanChatBefore = LW.Store.history('周言').length;
+  LW.Engine.closeOrphanCalls();
+  const wSess = LW.Engine.callSessions('周言');
+  eq('通话·孤儿补中断标记', wSess[wSess.length - 1].interrupted === true && wSess[wSess.length - 1].ongoing === false, true);
+  eq('通话·孤儿补聊天灰泡', (function () { var h = LW.Store.history('周言'); return h.length === orphanChatBefore + 1 && h[h.length - 1].kind === 'calllog' && h[h.length - 1].text === '通话中断'; })(), true);
+  var wHistLen = LW.Store.history(wk).length;
+  LW.Engine.closeOrphanCalls();
+  eq('通话·孤儿扫描幂等', LW.Store.history(wk).length === wHistLen, true);
+  // 通话纪要：正常挂断静默生成，落在「通话结束」标记上；只补一通、不重复
+  const mk = LW.Engine.callKey('陈默');
+  LW.Store.push(mk, [
+    { who: 'sys', kind: 'sys', text: '—— 通话开始 ——', mode: 'audio', day: '2034年8月26日 星期五', time: '21:00' },
+    { who: 'user', kind: 'text', text: '周末去划船吗', day: '2034年8月26日 星期五', time: '21:01' },
+    { who: '陈默', kind: 'text', text: '好啊', day: '2034年8月26日 星期五', time: '21:02' },
+    { who: 'sys', kind: 'sys', text: '通话结束 · 02:00', day: '2034年8月26日 星期五', time: '21:30' },
+  ], 200);
+  ctx.generateRaw = async (req) => '两人商定了周末去霖江划船。';
+  LW.Engine.summarizeCall('陈默');
+  await new Promise(function (r) { setTimeout(r, 30); });
+  const mkHist = LW.Store.history(mk);
+  eq('通话·纪要落在结束标记', mkHist[mkHist.length - 1].summary === '两人商定了周末去霖江划船。', true);
+  LW.Engine.summarizeCall('陈默');
+  await new Promise(function (r) { setTimeout(r, 30); });
+  eq('通话·纪要不重复生成', LW.Store.history(mk).filter(function (m) { return m.summary; }).length, 1);
+  // 近期通话：3 故事日窗口；完成带纪要、中断带原文
+  global.__msgs = [{ role: 'assistant', message: statusText }];
+  const memC = LW.Engine.callMemory('陈默', 3);
+  eq('通话·callMemory完成带纪要', memC.length === 1 && memC[0].text.indexOf('霖江划船') !== -1 && memC[0].head.indexOf('今天') !== -1, true);
+  const memW = LW.Engine.callMemory('周言', 3);
+  eq('通话·callMemory中断带原文', memW.length === 1 && memW[0].text.indexOf('喂') !== -1 && memW[0].head.indexOf('中断') !== -1, true);
+  const sk = LW.Engine.callKey('沈锡元');
+  LW.Store.push(sk, [
+    { who: 'sys', kind: 'sys', text: '—— 通话开始 ——', mode: 'audio', day: '2034年8月20日 星期六', time: '20:00' },
+    { who: 'user', kind: 'text', text: '旧话', day: '2034年8月20日 星期六', time: '20:01' },
+    { who: 'sys', kind: 'sys', text: '通话结束 · 01:00', day: '2034年8月20日 星期六', time: '20:30' },
+  ], 200);
+  eq('通话·callMemory三天窗口', LW.Engine.callMemory('沈锡元', 3).length, 0);
+  // 灰泡回溯：私聊记录里的通话灰泡按（故事日+类型）认领通话段
+  const refs = LW.Engine.sessionsForBubbles('陈默', [
+    { who: 'user', kind: 'calllog', mode: 'audio', text: '通话时长 02:00', day: '2034年8月26日 星期五' },
+    { who: 'user', kind: 'text', text: '普通消息', day: '2034年8月26日 星期五' },
+  ]);
+  eq('通话·灰泡认领通话段', refs.length === 1 && refs[0].dur === '02:00', true);
+  // 聊天压缩：跟 histPriv 走（50+10 触发），单段提要 300 字口径，1200 字软上限
+  for (var zi = 0; zi < 70; zi++) LW.Store.push('压测', [{ who: 'user', kind: 'text', text: '压' + zi }], 200);
+  var capPromptZ = null;
+  ctx.generateRaw = async (req) => { capPromptZ = req; return '提要内容'; };
+  const digestR = await LW.Engine.compress('压测');
+  eq('压缩·触发并折叠', digestR === '提要内容', true);
+  eq('压缩·提要300字口径', capPromptZ.ordered_prompts[0].content.indexOf('300 字以内') !== -1, true);
+  eq('压缩·digested计数', LW.Store.meta('压测').digested, 20);
+  eq('压缩·提要软上限1200', LW.Engine._digestCap('a'.repeat(1300)).length, 1200);
+  eq('压缩·短提要不截', LW.Engine._digestCap('短提要'), '短提要');
   // ── 8.9 朋友圈：契约解析 + 提示词装配 + 互动痕迹 ──
   console.log('[朋友圈]');
   const mposts = LW.Engine.parseMoments('[动态:周言:月考成绩出了，还活着]\n[配图:周言:公告栏前挤满人的成绩单]\n[点赞:林溪、陆飞]\n[评论:陆飞@周言:年级第七请客]\n[动态:林溪:救命 数学最后一道大题是什么鬼]\n这是游离行不要');
@@ -987,6 +1046,8 @@ ctx.getWorldbook = async () => [
   eq('通话·重说弹栈无条数上限', wcall.indexOf('n < 10') === -1, true);
   eq('通话·通话屏只渲染本会话', wcall.includes('callSessionStart'), true);
   eq('通话·视频重说按钮回右边', wsrc.indexOf('lzw-scr-video .lzw-callroll{right:auto') === -1, true);
+  eq('通话·挂断触发纪要', wcall.includes('eng.summarizeCall(call.name)'), true);
+  eq('通话·init挂孤儿扫描', esrc.includes('this.closeOrphanCalls()'), true);
   // 图床双源保险丝：主源 jsdelivr、catbox 兜底、回退监听、壁纸 CSS 变量
   const esrc2 = fs.readFileSync(path.join(ROOT, 'src/engine.js'), 'utf8');
   eq('图床·主源jsdelivr', esrc2.indexOf("var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/'") !== -1, true);
