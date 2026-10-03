@@ -367,6 +367,15 @@ ctx.getWorldbook = async () => [
   eq('通话·轮带主线近况', turnTxt.indexOf('## 主线近况') !== -1, true);
   eq('通话·轮带近期私聊', turnTxt.indexOf('## 近期私聊记录') !== -1, true);
   eq('通话·机主话入user轮', turn.ordered_prompts[1].content.indexOf('你睡了吗') !== -1, true);
+  // 私聊条数跟设置 histPriv 走（原写死 30→20 / 20→10 双重截断丢上下文）
+  const bigHist = [];
+  for (var bi = 0; bi < 60; bi++) bigHist.push({ who: 'user', kind: 'text', text: '消息' + bi, day: '2034年8月26日 星期五', time: '22:00' });
+  const invBig = LW.Prompt.callInvite({ name: '沈锡元', profile: '' }, bigHist, { dateText: '2034年8月26日 星期五' }, '', 'audio', []);
+  const invBigTxt = invBig.ordered_prompts[0].content;
+  eq('通话·邀请私聊跟histPriv', invBigTxt.indexOf('消息59') !== -1 && invBigTxt.indexOf('消息39') !== -1 && invBigTxt.indexOf('消息9') === -1, true);
+  const turnBig = LW.Prompt.callTurn({ name: '沈锡元', profile: '' }, '沈锡元：喂', bigHist, { dateText: '2034年8月26日 星期五' }, '', 'audio', [], '');
+  const turnBigTxt = turnBig.ordered_prompts[0].content;
+  eq('通话·轮私聊跟histPriv', turnBigTxt.indexOf('消息59') !== -1 && turnBigTxt.indexOf('消息49') !== -1 && turnBigTxt.indexOf('消息9') === -1, true);
   // 视频轮次同样要 [画面] 行且要求穿插；splitCallOutput 保序拆分画面与台词
   eq('通话·视频轮画面约定', turnTxt.indexOf('[画面]') !== -1, true);
   eq('通话·视频轮画面穿插', turnTxt.indexOf('穿插') !== -1, true);
@@ -385,6 +394,52 @@ ctx.getWorldbook = async () => [
   // 通话记录灰泡：楼层存档与列表页预览统一压成 [语音通话]/[视频通话]
   eq('通话·记录行格式音频', LW.Floor.msgToLine({ who: 'user', kind: 'calllog', mode: 'audio', text: '通话时长 00:09' }, '裴知意'), '裴知意：[语音通话 · 00:09]');
   eq('通话·记录行格式视频', LW.Floor.msgToLine({ who: 'user', kind: 'calllog', mode: 'video', text: '对方已拒绝' }, '裴知意'), '裴知意：[视频通话 · 对方已拒绝]');
+  // 「通话开始」边界体系：新通话的界面/生成/重roll 只认本会话（蒋默同款三bug总根修复）
+  const ck = LW.Engine.callKey('许嘉文');
+  LW.Store.push(ck, [
+    { who: 'sys', kind: 'sys', text: '—— 通话开始 ——', mode: 'audio', day: '2034年8月20日 星期六', time: '20:00' },
+    { who: 'user', kind: 'text', text: '旧话一', day: '2034年8月20日 星期六', time: '20:01' },
+    { who: '许嘉文', kind: 'text', text: '旧回一', day: '2034年8月20日 星期六', time: '20:02' },
+    { who: 'sys', kind: 'sys', text: '通话结束 · 03:24', day: '2034年8月20日 星期六', time: '20:10' },
+  ], 200);
+  for (var ci = 0; ci < 15; ci++) LW.Store.push(ck, [{ who: '许嘉文', kind: 'text', text: '旧旁白' + ci }], 200);
+  LW.Store.push(ck, [{ who: 'sys', kind: 'sys', text: '—— 通话开始 ——', mode: 'video', day: '2034年8月26日 星期五', time: '21:00' }], 200);
+  LW.Store.push(ck, [
+    { who: 'user', kind: 'text', text: '新话', day: '2034年8月26日 星期五', time: '21:01' },
+    { who: '许嘉文', kind: 'text', text: '新回', day: '2034年8月26日 星期五', time: '21:02' },
+  ], 200);
+  const ckHist = LW.Store.history(ck);
+  eq('通话·边界定位在最近标记后', LW.Engine.callSessionStart(ckHist), ckHist.length - 2);
+  eq('通话·无边界旧数据全量', LW.Engine.callSessionStart([{ who: 'user', kind: 'text', text: 'x' }]), 0);
+  // callTurn 只吃本会话：旧段正文/旧旁白不进生成提示词
+  LW.Engine.applyLine('IF线', '测试');
+  var turnPrompt = null;
+  ctx.generateRaw = async (req) => { turnPrompt = req; return '新台词一'; };
+  await LW.Engine.callTurn('许嘉文', 'audio', '在吗');
+  const tt2 = turnPrompt.ordered_prompts[0].content;
+  eq('通话·callTurn只吃本会话', tt2.indexOf('新话') !== -1 && tt2.indexOf('旧话一') === -1 && tt2.indexOf('旧旁白0') === -1, true);
+  // 详单切段（回看/孤儿扫描的基础设施）：标记切段、mode 标记优先画面嗅探兜底、空段跳过
+  const xk = LW.Engine.callKey('张裕民');
+  LW.Store.push(xk, [
+    { who: 'sys', kind: 'sys', text: '—— 通话开始 ——', mode: 'audio', day: '2034年8月26日 星期五', time: '20:00' },
+    { who: 'user', kind: 'text', text: '通了', day: '2034年8月26日 星期五', time: '20:01' },
+    { who: 'sys', kind: 'sys', text: '通话结束 · 01:00', day: '2034年8月26日 星期五', time: '20:30' },
+    { who: 'sys', kind: 'sys', text: '—— 通话开始 ——', day: '2034年8月26日 星期五', time: '21:00' },
+    { who: 'user', kind: 'text', text: '第二通', day: '2034年8月26日 星期五', time: '21:01' },
+    { who: '张裕民', kind: 'scene', text: '凑近屏幕', day: '2034年8月26日 星期五', time: '21:02' },
+  ], 200);
+  const xSess = LW.Engine.callSessions('张裕民');
+  eq('通话·切段两通', xSess.length, 2);
+  eq('通话·段mode标记优先', xSess[0].mode, 'audio');
+  eq('通话·段mode画面嗅探兜底', xSess[1].mode, 'video');
+  eq('通话·段时长取结束标记', xSess[0].dur, '01:00');
+  eq('通话·无结束标记ongoing', xSess[0].ongoing === false && xSess[1].ongoing === true, true);
+  eq('通话·空段跳过', (function () {
+    LW.Store.push(xk, [{ who: 'sys', kind: 'sys', text: '—— 通话开始 ——', day: '2034年8月26日 星期五', time: '22:00' }], 200);
+    return LW.Engine.callSessions('张裕民').length;
+  })(), 2);
+  eq('通话·无记录返回空', LW.Engine.callSessions('查无此人').length, 0);
+  LW.Engine.applyLine('IF线', '测试');
   // ── 8.9 朋友圈：契约解析 + 提示词装配 + 互动痕迹 ──
   console.log('[朋友圈]');
   const mposts = LW.Engine.parseMoments('[动态:周言:月考成绩出了，还活着]\n[配图:周言:公告栏前挤满人的成绩单]\n[点赞:林溪、陆飞]\n[评论:陆飞@周言:年级第七请客]\n[动态:林溪:救命 数学最后一道大题是什么鬼]\n这是游离行不要');
@@ -927,6 +982,11 @@ ctx.getWorldbook = async () => [
   eq('回帖·小飞机与回车双绑定', wforum.split('UI.forumComment').length - 1 >= 2 && wforum.includes('data-fact="fsend"') && wforum.includes('data-finput'), true);
   eq('回帖·写入独立mine数组', wforum.includes('forumComment: function') && wforum.includes('found.post.mine'), true);
   eq('回帖·引擎把mine传给提示词', esrc.includes('opts && opts.reroll, p.mine'), true);
+  const wcall = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-call.js'), 'utf8');
+  eq('通话·边界标记仅拨号打一次', (wcall.match(/—— 通话开始 ——/g) || []).length, 1);
+  eq('通话·重说弹栈无条数上限', wcall.indexOf('n < 10') === -1, true);
+  eq('通话·通话屏只渲染本会话', wcall.includes('callSessionStart'), true);
+  eq('通话·视频重说按钮回右边', wsrc.indexOf('lzw-scr-video .lzw-callroll{right:auto') === -1, true);
   // 图床双源保险丝：主源 jsdelivr、catbox 兜底、回退监听、壁纸 CSS 变量
   const esrc2 = fs.readFileSync(path.join(ROOT, 'src/engine.js'), 'utf8');
   eq('图床·主源jsdelivr', esrc2.indexOf("var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/'") !== -1, true);
@@ -940,7 +1000,7 @@ ctx.getWorldbook = async () => [
   global.__msgs = null;
   // ── 微信拆分·注册装载（壳+7屏按构建序入沙盒，断言各屏往宿主挂接成功）──
   console.log('[微信拆分·注册装载]');
-  const wc = { console, Image: function () { return { set src(v) {} }; } };
+  const wc = { console, Image: function () { return { set src(v) {} }; }, setTimeout: setTimeout, clearTimeout: clearTimeout };
   wc.window = wc;
   wc.parent = { document: { getElementById: function () { return null; }, createElement: function () { return { style: {}, setAttribute: function () {} }; }, head: { appendChild: function () {} } } };
   vm.createContext(wc);
@@ -977,6 +1037,18 @@ ctx.getWorldbook = async () => [
   eq('装载·chat屏真实渲染', (UI2.chatKey = '周言', renderOk(UI2.bodyChat, 'lzw-chatbg')), true);
   eq('装载·moments屏真实渲染', renderOk(UI2.bodyMoments, 'lzw-mfeed'), true);
   eq('装载·memo屏真实渲染', renderOk(UI2.bodyMemo, 'lzw-memo-chips'), true);
+  // 重说弹栈不设上限：视频一轮最多 16 条，旧上限 10 弹不干净、旧旁白漏进重生请求
+  var callSeed = [{ who: 'user', kind: 'text', text: '机主的话' }];
+  for (var ci2 = 0; ci2 < 12; ci2++) callSeed.push({ who: '周言', kind: 'text', text: '旁白' + ci2 });
+  W2.Store.history = function (key) { return key === 'call:周言' ? callSeed : []; };
+  W2.Store.popLast = function (key, n) { callSeed = callSeed.slice(0, callSeed.length - n); };  W2.Store.push = function (key, msgs) { callSeed = callSeed.concat(msgs); };
+  engStub.callKey = function (n) { return 'call:' + n; };
+  engStub.callTurn = async function () { return { entries: [{ kind: 'line', text: '重生台词' }] }; };
+  W2.Engine = engStub;   // 屏函数内部直取 W.Engine（注册沙盒不装真引擎，挂桩）
+  UI2.call = { name: '周言', mode: 'audio', phase: 'active', busy: false };
+  await UI2.callReroll();
+  eq('装载·重说弹净全部对方段', callSeed.length === 2 && callSeed[0].text === '机主的话' && callSeed[1].text === '重生台词', true);
+  UI2.call = null;
 
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');

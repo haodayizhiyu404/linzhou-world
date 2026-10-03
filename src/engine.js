@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30p';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30q';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -1705,6 +1705,61 @@
     // 进 transcript 直接接通。通话轮 = 「机主说一句 → 对方回台词」循环。
     callKey: function (name) { return 'call:' + name; },
 
+    // 通话详单里最近一次「通话开始」边界之后的首个下标。新通话的界面展示与生成提示词
+    // 都只认本会话内容（打标记之前的旧详单只作私聊"今日通话"记忆素材，不进新通话）；
+    // 无边界（旧数据）返回 0 = 全量，兼容老记录。
+    callSessionStart: function (hist) {
+      for (var i = (hist || []).length - 1; i >= 0; i--) {
+        if (hist[i].who === 'sys' && /通话开始/.test(hist[i].text || '')) return i + 1;
+      }
+      return 0;
+    },
+
+    // 通话详单切段：每个「通话开始」边界到下一边界/末尾为一通。
+    // mode 由边界标记判定（画面条目嗅探兜底）；dur 取段尾「通话结束 · X」；
+    // 无内容段（接通即挂断/拒接残留）跳过；无边界的老数据整体算一通。
+    // 拒接/未接不进详单（那些落在聊天记录里），本列表只列接通过的。
+    callSessions: function (name) {
+      var W = window.LZWorld;
+      var hist = W.Store.history(this.callKey(name));
+      var begins = [];
+      for (var i = 0; i < hist.length; i++) {
+        if (hist[i].who === 'sys' && /通话开始/.test(hist[i].text || '')) begins.push(i);
+      }
+      // 段界：首个边界标记之前的头部（无边界老数据）也算一段，之后每标记到下一边界各一段。
+      // 第三元 = 本段的边界标记下标（-1=无标记的老数据段）：mode 落进边界标记，
+      // 而段内容本身不含标记行，须从 hist 里按标记下标读。
+      var bounds = [];
+      if (!begins.length) bounds.push([0, hist.length, -1]);
+      else {
+        if (begins[0] > 0) bounds.push([0, begins[0], -1]);
+        for (var b2 = 0; b2 < begins.length; b2++) {
+          bounds.push([begins[b2] + 1, b2 + 1 < begins.length ? begins[b2 + 1] : hist.length, begins[b2]]);
+        }
+      }
+      var out = [];
+      for (var si = 0; si < bounds.length; si++) {
+        var seg = hist.slice(bounds[si][0], bounds[si][1]);
+        var mode = (bounds[si][2] >= 0 && hist[bounds[si][2]].mode) || '';
+        var dur = '', day = '', time = '', count = 0, ongoing = true, interrupted = false, summary = '';
+        seg.forEach(function (m) {
+          if (m.who === 'sys') {
+            var dm = String(m.text || '').match(/^通话结束 · (.+)$/);
+            if (dm) { dur = dm[1]; ongoing = false; summary = String(m.summary || ''); }
+            else if (/通话中断/.test(String(m.text || ''))) { ongoing = false; interrupted = true; }
+            return;
+          }
+          count++;
+          if (m.kind === 'scene') mode = mode || 'video';   // 老数据无标记可读，退回画面嗅探
+          if (!day && m.day) { day = m.day; time = m.time || ''; }
+        });
+        if (!mode) mode = 'audio';
+        if (!count) continue;
+        out.push({ mode: mode, dur: dur, day: day, time: time, count: count, start: bounds[si][0], end: bounds[si][1], ongoing: ongoing, interrupted: interrupted, summary: summary });
+      }
+      return out;
+    },
+
     // 拨打邀请：AI 决定接/拒
     callInvite: async function (name, mode) {
       var W = window.LZWorld;
@@ -1713,7 +1768,10 @@
       var profile = this.profileFor(name);
       var snap = W.Status.snapshot(name);
       var userInfo = this.userBlock();
-      var req = W.Prompt.callInvite({ name: c.name, profile: profile }, W.Store.history(name).slice(-30), snap, userInfo, mode,
+      // 私聊条数跟设置走（histPriv，默认50）——原写死30又经提示词内二次截断，双重截断丢上下文
+      var privN = 50;
+      try { privN = W.Store.cfg().histPriv || 50; } catch (e) {}
+      var req = W.Prompt.callInvite({ name: c.name, profile: profile }, W.Store.history(name).slice(-privN), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText));
       var raw = await this.genT(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
@@ -1755,7 +1813,9 @@
       var userInfo = this.userBlock();
       var hist = W.Store.history(this.callKey(name));
       var tail = [];
-      for (var i = Math.max(0, hist.length - 30); i < hist.length; i++) {
+      // 携带本会话全部内容（「通话开始」边界之后）——单次通话文本量小（远不及一轮正文），
+      // 截条数只会让模型忘了本次通话开头的目的；旧通话的旁白绝不混入（蒋默旁白泄漏同款修复）
+      for (var i = this.callSessionStart(hist); i < hist.length; i++) {
         var m = hist[i];
         if (m.who === 'sys') continue;
         tail.push(m);
@@ -1764,7 +1824,9 @@
       // 避免同一句在提示词里出现两次（userSays 为空 = 重说轮，机主的话是上下文，必须保留）
       if (userSays) while (tail.length && tail[tail.length - 1].who === 'user') tail.pop();
       var lines = tail.map(function (m2) { return W.Floor.msgToLine(m2, this.userName()); }, this);
-      var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), W.Store.history(name).slice(-20), snap, userInfo, mode,
+      var privN2 = 50;
+      try { privN2 = W.Store.cfg().histPriv || 50; } catch (e) {}
+      var req = W.Prompt.callTurn({ name: c.name, profile: profile }, lines.join('\n'), W.Store.history(name).slice(-privN2), snap, userInfo, mode,
         this.crossGroups(c.name, snap && snap.dateText), userSays || '');
       var raw = await this.genT(req);
       var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');

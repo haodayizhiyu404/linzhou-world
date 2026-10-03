@@ -356,7 +356,6 @@
     '.lzw-scr-video .lzw-callshade{opacity:.42}',
     '.lzw-scr-video .lzw-calltop{margin-top:22px}',
     '.lzw-scr-video .lzw-callava{display:none}',
-    '.lzw-scr-video .lzw-callroll{right:auto;left:12px}', // 右上角让给 PiP
     '.lzw-callpip{position:absolute;top:48px;right:12px;width:62px;height:84px;border-radius:12px;background:rgba(16,20,24,.8);border:1px solid rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;color:#aeb8c2;z-index:4;box-shadow:0 3px 12px rgba(0,0,0,.35);overflow:hidden}',
     '.lzw-callpip img{width:100%;height:100%;object-fit:cover;display:block}',
     // 画面旁白：穿插在气泡流中间（说到哪演到哪），靠左淡字，与台词区分开
