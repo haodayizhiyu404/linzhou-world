@@ -435,6 +435,22 @@ ctx.getWorldbook = async () => [
   eq('P3c·反色情腔·邀请视频', invVN.ordered_prompts[0].content.indexOf('情欲场景不套用通用色情腔') !== -1, true);
   const turnVN = LW.Prompt.callTurn({ name: '沈锡元', profile: '' }, '沈锡元：喂', invHist, { dateText: '2034年8月26日 星期五' }, '', 'video', [], '');
   eq('P3c·反色情腔·轮视频画面文学性', turnVN.ordered_prompts[0].content.indexOf('行不限于功能性速写') !== -1, true);
+  // P4：朋友圈热度体系——解析上限放宽（赞12/评8/接话8）+ 虚构次要人物 + 号召力标度
+  const pm12 = LW.Engine.parseMoments('[动态:周言:夺冠了]\n[点赞:甲、乙、丙、丁、戊、己、庚、辛、壬、癸、子、丑、寅]\n[评论:A:牛]\n[评论:B:酷]\n[评论:C:强]\n[评论:D:燃]\n[评论:E:顶]\n[评论:F:帅]\n[评论:G:好]\n[评论:H:妙]\n[评论:I:绝]');
+  eq('P4·赞解析12', pm12[0].likes.length, 12);
+  eq('P4·评解析8', pm12[0].comments.length, 8);
+  const pr8 = LW.Engine.parseMomentsReplies('[评论:甲:1]\n[评论:乙:2]\n[评论:丙:3]\n[评论:丁:4]\n[评论:戊:5]\n[评论:己:6]\n[评论:庚:7]\n[评论:辛:8]\n[评论:壬:9]');
+  eq('P4·接话解析8', pr8.length, 8);
+  const mfP = LW.Prompt.momentsFill([{ name: '周言', profile: '班长' }], { dateText: '2034年8月26日 星期五', time: '22:49' }, '机主资料');
+  const mfTxtP4 = mfP.ordered_prompts[0].content;
+  eq('P4·填充虚构许可', mfTxtP4.indexOf('虚构次要人物') !== -1 && mfTxtP4.indexOf('至多 12 人') !== -1 && mfTxtP4.indexOf('至多 8 条') !== -1, true);
+  eq('P4·填充号召力标度', mfTxtP4.indexOf('号召力') !== -1, true);
+  const mrP = LW.Prompt.momentsReply({ who: '周言', text: '夺冠', when: '', img: '' }, [], '恭喜', [{ name: '林溪', profile: '' }], { dateText: '2034年8月26日 星期五' }, '机主资料');
+  const mrTxtP4 = mrP.ordered_prompts[0].content;
+  eq('P4·接话虚构+别硬拉', mrTxtP4.indexOf('别硬拉不熟的人互评') !== -1 && mrTxtP4.indexOf('0~8 条') !== -1, true);
+  const mrxP = LW.Prompt.momentsReact({ who: 'user', text: '官宣', when: '', img: '' }, [{ name: '周言', profile: '' }], { dateText: '2034年8月26日 星期五' }, '机主资料', '', '');
+  const mrxTxtP4 = mrxP.ordered_prompts[0].content;
+  eq('P4·反应次要人物段', mrxTxtP4.indexOf('## 次要人物（可虚构') !== -1 && mrxTxtP4.indexOf('热度 = 动态分量 × 号召力') !== -1 && mrxTxtP4.indexOf('1~12 个 [赞:名字]') !== -1, true);
   // 视频轮次同样要 [画面] 行且要求穿插；splitCallOutput 保序拆分画面与台词
   eq('通话·视频轮画面约定', turnTxt.indexOf('[画面]') !== -1, true);
   eq('通话·视频轮画面穿插', turnTxt.indexOf('穿插') !== -1, true);
@@ -592,7 +608,7 @@ ctx.getWorldbook = async () => [
   eq('朋友圈·时间契约', mfTxt.indexOf('[时间:M月D日 HH:MM]') !== -1, true);
   eq('朋友圈·时间不晚于当前', mfTxt.indexOf('不得晚于当前时刻') !== -1, true);
   eq('朋友圈·配图契约', mfTxt.indexOf('[配图:名字:画面描述]') !== -1, true);
-  eq('朋友圈·点赞契约', mfTxt.indexOf('[点赞:点赞者1、点赞者2]') !== -1, true);
+  eq('朋友圈·点赞契约', mfTxt.indexOf('[点赞:点赞者1、点赞者2、点赞者3]') !== -1, true);
   eq('朋友圈·生成期评论契约', mfTxt.indexOf('[评论:评论者@被回复的人:') !== -1, true);
   eq('朋友圈·不刻意emoji', mfTxt.indexOf('不要刻意凑 emoji') !== -1, true);
   eq('朋友圈·不为发动态而发动态', mfTxt.indexOf('为了发动态而发动态') !== -1, true);
@@ -1173,6 +1189,11 @@ ctx.getWorldbook = async () => [
   eq('装载·memo屏真实渲染', renderOk(UI2.bodyMemo, 'lzw-memo-chips'), true);
   eq('装载·通话记录列表屏', (UI2.histName = '周言', renderOk(UI2.bodyCallhist, 'lzw-body')), true);
   eq('装载·通话详情屏·无段兜底', renderOk(UI2.bodyCallview, '记录不存在'), true);
+  // P4：点赞行超 5 人压成「前三 + 等 N 人」（微信真实样式）
+  engStub.momentsFeed = function () { return [{ who: '周言', text: '夺冠', img: '', likes: ['甲', '乙', '丙', '丁', '戊', '己', '庚'], comments: [], pt: '' }]; };
+  eq('装载·赞行压缩7人', renderOk(UI2.bodyMoments, '等 7 人'), true);
+  engStub.momentsFeed = function () { return [{ who: '周言', text: '日常', img: '', likes: ['甲', '乙', '丙'], comments: [], pt: '' }]; };
+  eq('装载·赞行3人全列', renderOk(UI2.bodyMoments, '甲、乙、丙'), true);
   // 重说弹栈不设上限：视频一轮最多 16 条，旧上限 10 弹不干净、旧旁白漏进重生请求
   var callSeed = [{ who: 'user', kind: 'text', text: '机主的话' }];
   for (var ci2 = 0; ci2 < 12; ci2++) callSeed.push({ who: '周言', kind: 'text', text: '旁白' + ci2 });
