@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30w';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-09-30x';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -1661,6 +1661,24 @@
 
     // 生成一篇（手动「写一篇/重roll」，无当日判重）。重roll 的删旧由 UI 先行
     // （见 wechat-memo.js memoReroll），这里只负责写。
+    // 排除清单只留"可选窗口附近"的日期：写作是当天优先、至多回溯 7 天，窗口外的旧日期
+    // 永远不会撞车——全量罗列只会随时间无限膨胀。窗口 = 未来1天 ~ 过去9天（1 天跨午夜容差），封顶 8 条。
+    _diaryWindowDates: function (dates, todayText) {
+      var list = (dates || []).slice();
+      try {
+        var dm = /(\d{4})年(\d{1,2})月(\d{1,2})日/.exec(String(todayText || ''));
+        if (!dm) return list.slice(0, 8);
+        var t0 = new Date(+dm[1], +dm[2] - 1, +dm[3]).getTime();
+        list = list.filter(function (dstr) {
+          var di = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(dstr || ''));
+          if (!di) return false;
+          var dd = Math.round((t0 - new Date(+di[1], +di[2] - 1, +di[3]).getTime()) / 86400000);
+          return dd >= -1 && dd <= 9;
+        });
+      } catch (e) {}
+      return list.slice(0, 8);
+    },
+
     memoWrite: async function (name) {
       var W = window.LZWorld;
       var c = this.findContact(name);
@@ -1668,7 +1686,7 @@
       var key = this.memoKey(name);
       var snap = W.Status.snapshot(name);
       var today = (snap && snap.dateText) || '';
-      var usedDates = W.Store.history(key).map(function (e) { return e.date; }).filter(Boolean);
+      var usedDates = this._diaryWindowDates(W.Store.history(key).map(function (e) { return e.date; }).filter(Boolean), today);
       var hist = W.Store.history(name).slice(-20);
       var profile = this.profileFor(name);
       var self = this;

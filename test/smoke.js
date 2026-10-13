@@ -1194,6 +1194,14 @@ ctx.getWorldbook = async () => [
   eq('装载·赞行压缩7人', renderOk(UI2.bodyMoments, '等 7 人'), true);
   engStub.momentsFeed = function () { return [{ who: '周言', text: '日常', img: '', likes: ['甲', '乙', '丙'], comments: [], pt: '' }]; };
   eq('装载·赞行3人全列', renderOk(UI2.bodyMoments, '甲、乙、丙'), true);
+  // P5：备忘录日期优化——当天优先 + 张冠李戴禁令 + 排除清单窗口过滤
+  const winDates = LW.Engine._diaryWindowDates(['2034-08-27', '2034-08-25', '2034-08-17', '2034-08-16', '2034-08-28', 'bad'], '2034年8月26日 星期五');
+  eq('P5·窗口过滤', winDates.join(','), '2034-08-27,2034-08-25,2034-08-17');
+  eq('P5·无日期兜底封顶8', LW.Engine._diaryWindowDates(['1', '2', '3', '4', '5', '6', '7', '8', '9'], '').length, 8);
+  const memoP5 = LW.Prompt.memo({ name: '沈锡元', profile: '' }, [], { dateText: '2034年8月26日 星期五' }, '', ['2034-08-26'], false);
+  const memoP5Txt = memoP5.ordered_prompts.map(function (x) { return typeof x === 'string' ? '' : x.content; }).join('\n');
+  eq('P5·当天优先+张冠李戴禁令', memoP5Txt.indexOf('优先写当天') !== -1 && memoP5Txt.indexOf('张冠李戴是备忘录的头号事故') !== -1, true);
+  eq('P5·排除清单进提示词', memoP5Txt.indexOf('2034-08-26') !== -1, true);
   // 重说弹栈不设上限：视频一轮最多 16 条，旧上限 10 弹不干净、旧旁白漏进重生请求
   var callSeed = [{ who: 'user', kind: 'text', text: '机主的话' }];
   for (var ci2 = 0; ci2 < 12; ci2++) callSeed.push({ who: '周言', kind: 'text', text: '旁白' + ci2 });
