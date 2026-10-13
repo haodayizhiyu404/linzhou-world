@@ -1135,7 +1135,7 @@ ctx.getWorldbook = async () => [
   eq('P3c·NSFW注入点8处', (psrc.match(/nsfwBlock\(\),/g) || []).length, 8);
   eq('P3c·FICTION换装源码', psrc.indexOf('# Narrative Sandbox') !== -1 && psrc.indexOf('内部生成任务') === -1 && psrc.indexOf('consenting adult constructs') !== -1, true);
   eq('P3c·worldbook认NSFW', fs.readFileSync(path.join(ROOT, 'src/worldbook.js'), 'utf8').indexOf('霖州手机::NSFW') !== -1, true);
-  eq('P3c·引擎nsfwText', esrc.includes('nsfwText: function'), true);
+  eq('P3c·引擎nsfwText', esrc.includes('nsfwText: function'), true);  eq('QR·收纳插件兼容·祖先链可见性', esrc.includes('visOk') && esrc.includes('可见原生按钮数') && esrc.indexOf('b.parentNode === holder && visOk(b)') !== -1, true);
   // 图床双源保险丝：主源 jsdelivr、catbox 兜底、回退监听、壁纸 CSS 变量
   const esrc2 = fs.readFileSync(path.join(ROOT, 'src/engine.js'), 'utf8');
   eq('图床·主源jsdelivr', esrc2.indexOf("var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/'") !== -1, true);
