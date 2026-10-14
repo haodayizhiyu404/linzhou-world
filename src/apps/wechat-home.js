@@ -41,6 +41,7 @@
       '<div class="lzw-app" data-app="memo"><div class="lzw-app-ico" style="background:#e2a600;border:none;color:#fff">' + C.ICON_MEMO + '</div><span>备忘录</span></div>' +
       '<div class="lzw-app" data-app="forum"><div class="lzw-app-ico" style="background:#e8912d;border:none;color:#fff;position:relative">' + C.ICON_FORUM + (funTotal ? '<span class="lzw-appdot">' + (funTotal > 99 ? '99+' : funTotal) + '</span>' : '') + '</div><span>论坛</span></div>' +
       '<div class="lzw-app" data-app="settings"><div class="lzw-app-ico" style="background:#8e97a8;border:none;color:#fff">' + C.ICON_GEAR + '</div><span>设置</span></div>' +
+      '<div class="lzw-app" data-app="tts"><div class="lzw-app-ico" style="background:#5b7bd5;border:none;color:#fff">' + C.ICON_TTSAPP + '</div><span>音色</span></div>' +
       '<div class="lzw-app" data-app="close" title="收起手机"><div class="lzw-app-ico" style="background:#e5484d;border:none;color:#fff">' + C.ICON_POWEROFF + '</div><span>关闭</span></div>' +
       '</div></div></div>';
   };
@@ -58,6 +59,10 @@
     // 设置 app：模式单选 / 数值与文本即时保存 / 拉取模型与预设列表 / 点选回填
     ph.querySelectorAll('[data-app="settings"]').forEach(function (el) {
       el.onclick = function () { UI.screen = 'settings'; UI._setpick = null; UI.render(); };
+    });
+    // 音色 app：进语音设置（总开关/生成源/逐人音色映射/试音）
+    ph.querySelectorAll('[data-app="tts"]').forEach(function (el) {
+      el.onclick = function () { UI.openTts(); };
     });
     // 备忘录 app：进列表（选人 chips + 存档 + 写一篇）
     ph.querySelectorAll('[data-app="memo"]').forEach(function (el) {

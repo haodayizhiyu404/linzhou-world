@@ -8,6 +8,7 @@ const ORDER = [
   'src/store.js',
   'src/status.js',
   'src/worldbook.js',
+  'src/tts.js',
   'src/prompt.js',
   'src/floor.js',
   'src/apps/wechat.js',
@@ -19,6 +20,7 @@ const ORDER = [
   'src/apps/wechat-call.js',
   'src/apps/wechat-callhist.js',
   'src/apps/wechat-settings.js',
+  'src/apps/wechat-tts.js',
   'src/apps/wechat-memo.js',
   'src/engine.js',
 ];

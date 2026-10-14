@@ -236,7 +236,13 @@
 
     removeAt: function (idx) {
       if (this.busy) return;
-      if (window.LZWorld.Store.removeAt(this.chatKey, idx)) this.render();
+      var W2 = window.LZWorld;
+      var m = W2.Store.history(this.chatKey)[idx];
+      if (W2.Store.removeAt(this.chatKey, idx)) {
+        // 语音音频同步清（文本驱动的派生物，删了条目就该删声音）
+        try { if (m && m.text && W2.Tts) W2.Tts.purgeByText(m.text); } catch (e) {}
+        this.render();
+      }
     },
 
     togglePeek: function (idx) {
@@ -269,6 +275,7 @@
       for (var i = h.length - 1; i >= 0 && h[i].who !== 'user' && n < 12; i--) n++;
       var popped = W.Store.popLast(this.chatKey, n);
       if (!popped.length) { this.render(); return; }
+      try { popped.forEach(function (m) { if (m && m.text && W.Tts) W.Tts.purgeByText(m.text); }); } catch (e) {} // 弹栈回复的音频一并清
       // 重roll 回退本轮转账：旧回复作废了，它「收下」的推断也一并作废，
       // 恢复待收款让新回复重新决定（只回退本轮，旧账不动）
       try { W.Engine.rollbackTransfers(this.chatKey); } catch (e) {}
@@ -320,8 +327,25 @@
   UI._binders.push(function (ph) {
     ph.querySelectorAll('[data-act="send"]').forEach(function (el) { el.onclick = function () { UI.trySend(); }; });
     ph.querySelectorAll('[data-act="reroll"]').forEach(function (el) { el.onclick = function () { UI.reroll(); }; });
+    // 语音气泡：点整泡=展开/收起文字；点喇叭图标=朗读（配音色才播，避免展开收起都响）
     ph.querySelectorAll('[data-voice]').forEach(function (el) {
       el.onclick = function () { el.classList.toggle('open'); };
+      var vp = el.querySelector('.lzw-voice-play');
+      if (vp) vp.onclick = function (ev) {
+        try { if (ev && ev.stopPropagation) ev.stopPropagation(); } catch (e) {}
+        try {
+          if (!W.Tts) return;
+          var row = el.closest('.lzw-chatrow');
+          var isMe = !!(row && row.classList.contains('me'));
+          var who = isMe ? W.Engine.userName() : UI.chatKey;
+          var txt = (el.querySelector('.lzw-voicetxt') || {}).textContent || '';
+          W.Tts.ready().then(function (cfg) {
+            // 默认音色只兜 NPC；机主的消息没有显式映射就静默
+            var v = (cfg.voices || {})[who] || (isMe ? '' : cfg.defaultVoice);
+            if (cfg.enabled && v && txt.trim()) W.Tts.play(txt.trim(), v).catch(function (e) { console.warn('[霖州引擎] 语音播放失败', e); });
+          });
+        } catch (e) {}
+      };
     });
     ph.querySelectorAll('[data-poke]').forEach(function (el) {
       el.onclick = function () {

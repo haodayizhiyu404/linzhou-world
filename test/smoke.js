@@ -16,7 +16,7 @@ const ctx = {
   replaceVariables: (v) => { const snap = JSON.parse(JSON.stringify(v)); for (const k of Object.keys(__vars)) delete __vars[k]; Object.assign(__vars, snap); },
 };
 vm.createContext(ctx);
-for (const f of ['src/store.js', 'src/status.js', 'src/worldbook.js', 'src/prompt.js', 'src/floor.js', 'src/engine.js']) {
+for (const f of ['src/store.js', 'src/status.js', 'src/worldbook.js', 'src/tts.js', 'src/prompt.js', 'src/floor.js', 'src/engine.js']) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
 }
 const LW = ctx.window.LZWorld;
@@ -222,7 +222,8 @@ ctx.getWorldbook = async () => [
   { comment: '主角人设（成人-同路而行）', enabled: true, content: '# II. 角色演化档案\n\n[MAIN·周言·演化后]\n- 已婚设定（同路线）。\n\n[MAIN·{{user}}·演化后]\n- 与周言同居（同路线）。' },
   { comment: '主角人设（成人-破镜重圆）', enabled: true, content: '# II. 角色演化档案\n\n[MAIN·周言·演化后]\n- 十年后成了建筑师，回霖州主持旧城改造。\n\n[MAIN·{{user}}·演化后]\n- 与周言重逢后合伙开了间书店。' },
   { comment: '霖州手机::人设::林溪', enabled: true, content: '林溪的手机专用档案' },
-  { comment: '霖州手机::NSFW', enabled: true, content: '亲密文风指引：{{user}}专属口味' }
+  { comment: '霖州手机::NSFW', enabled: true, content: '亲密文风指引：{{user}}专属口味' },
+  { comment: '霖州手机::音色', enabled: true, content: '{"enabled":true,"autoCall":true,"provider":"fish","endpoint":"","model":"","defaultVoice":"dv0","voices":{"周言":"zy-voice"}}' }
 ];
 (async () => {
   const wb = await LW.Worldbook.load();
@@ -1156,7 +1157,7 @@ ctx.getWorldbook = async () => [
   wc.window = wc;
   wc.parent = { document: { getElementById: function () { return null; }, createElement: function () { return { style: {}, setAttribute: function () {} }; }, head: { appendChild: function () {} } } };
   vm.createContext(wc);
-  for (const f of ['wechat.js', 'wechat-home.js', 'wechat-list.js', 'wechat-chat.js', 'wechat-moments.js', 'wechat-forum.js', 'wechat-call.js', 'wechat-callhist.js', 'wechat-settings.js', 'wechat-memo.js']) {
+  for (const f of ['wechat.js', 'wechat-home.js', 'wechat-list.js', 'wechat-chat.js', 'wechat-moments.js', 'wechat-forum.js', 'wechat-call.js', 'wechat-callhist.js', 'wechat-settings.js', 'wechat-tts.js', 'wechat-memo.js']) {
     vm.runInContext(fs.readFileSync(path.join(ROOT, 'src/apps', f), 'utf8'), wc, { filename: f });
   }
   const W2 = wc.window.LZWorld, UI2 = W2 && W2.Apps && W2.Apps.wechat, C2 = W2 && W2.WechatCore;
@@ -1226,7 +1227,43 @@ ctx.getWorldbook = async () => [
   callSeed = [{ who: 'sys', kind: 'sys', text: '—— 通话开始 ——' }];
   await UI2.callReroll();
   eq('装载·末尾系统行不重试', ctCalls === 1 && callSeed.length === 1, true);
-  UI2.call = null;
+  UI2.call = null;
+  // ── TTS 语音体系（10-15a）──
+  const wbTts = await LW.Worldbook.load();
+  eq('TTS·世界书音色条目解析', !!(wbTts.ttsCfg && wbTts.ttsCfg.voices && wbTts.ttsCfg.voices['周言'] === 'zy-voice' && wbTts.ttsCfg.defaultVoice === 'dv0' && wbTts.ttsCfg.autoCall === true), true);
+  eq('TTS·引擎ttsConfig出口', LW.Engine.ttsConfig() && LW.Engine.ttsConfig().voices['周言'], 'zy-voice');
+  let wbWritten = null;
+  ctx.replaceWorldbook = async (name, entries) => { wbWritten = entries; };
+  LW.Tts.cfgCache = null;
+  await LW.Tts.save({ voices: { '林溪': 'lx-voice' } });
+  const wbVoiceRow = (wbWritten || []).filter(function (e) { return e.comment === '霖州手机::音色'; })[0];
+  eq('TTS·save写回世界书条目（合并既有voices）', !!(wbVoiceRow && wbVoiceRow.content.indexOf('lx-voice') !== -1 && wbVoiceRow.content.indexOf('zy-voice') !== -1), true);
+  LW.Tts.cfgCache = { enabled: true, autoCall: true, provider: 'fish', endpoint: '', model: '', defaultVoice: 'dv0', voices: { '周言': 'zy-voice' } };
+  var pumpN = 0; LW.Tts._pump = function () { pumpN++; };
+  await LW.Tts.speakLines('周言', [
+    { who: '周言', kind: 'text', text: '台词一' },
+    { who: '周言', kind: 'scene', text: '[画面] 他笑了' },
+    { who: '周言', kind: 'text', text: '   ' },
+    { who: 'user', kind: 'text', text: '机主话' }
+  ]);
+  eq('TTS·连播入队过滤（画面行/空行跳过）', LW.Tts._q.length === 2 && LW.Tts._q[0].voice === 'zy-voice' && LW.Tts._q[1].voice === 'dv0' && pumpN === 1, true);
+  LW.Tts._q.length = 0;
+  LW.Tts.cfgCache.autoCall = false;
+  await LW.Tts.speakLines('周言', [{ who: '周言', kind: 'text', text: '台词二' }]);
+  eq('TTS·自动连播关闭不入队', LW.Tts._q.length === 0, true);
+  const wttsSrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-tts.js'), 'utf8');
+  const wchatSrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-chat.js'), 'utf8');
+  const bSrc = fs.readFileSync(path.join(ROOT, 'build/build.js'), 'utf8');
+  eq('TTS·构建含tts模块', bSrc.includes("'src/tts.js'") && bSrc.includes("'src/apps/wechat-tts.js'"), true);
+  eq('TTS·音色app入口与路由', whome.includes('data-app="tts"') && wsrc.includes("screen === 'tts'") && wsrc.includes('ICON_TTSAPP'), true);
+  eq('装载·音色屏挂接', typeof UI2.bodyTts === 'function' && typeof UI2.openTts === 'function', true);
+  eq('装载·音色屏渲染', renderOk(UI2.bodyTts, '语音播放总开关'), true);
+  eq('TTS·通话三连播', (wcall.match(/Tts\.speakLines/g) || []).length, 3);
+  eq('TTS·通话四打断', (wcall.match(/Tts\.stopQueue/g) || []).length, 4);
+  eq('TTS·重说弹栈清音频', wcall.includes('Tts.purgeByText'), true);
+  eq('TTS·字幕点按重播', wsrc.indexOf('data-cpx') !== -1 && wcallh.indexOf('data-cpt') !== -1 && wsrc.indexOf('.lzw-callsubs .lzw-sub') !== -1, true);
+  eq('TTS·聊天删除清音频', (wchatSrc.match(/purgeByText/g) || []).length, 2);
+  eq('TTS·语音气泡点喇叭朗读', wchatSrc.includes('lzw-voice-play') && wchatSrc.includes('stopPropagation') && wttsSrc.includes('data-ttest'), true);
 
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');

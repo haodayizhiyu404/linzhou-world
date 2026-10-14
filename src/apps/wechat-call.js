@@ -58,6 +58,7 @@
           vl0.slice(0, cap0).forEach(function (l) { entries.push({ who: name, kind: 'text', text: l }); });
         }
         if (entries.length) W.Store.push(eng.callKey(name), entries, 200);
+        try { if (W.Tts) W.Tts.speakLines(name, entries); } catch (e) {} // 开场白连播
         this._callNew = true; // 开场内容到达，自动定位
         this.call.phase = 'active';
         this.call.startAt = Date.now();
@@ -77,6 +78,7 @@
       if (!lines.length) return;
       var key = eng.callKey(call.name);
       W.Store.push(key, lines.map(function (l) { return { who: 'user', kind: 'text', text: l }; }), 200);
+      try { if (W.Tts) W.Tts.stopQueue(); } catch (e) {} // 机主开口，打断对方朗读
       call.busy = true;
       this.render();
       try {
@@ -86,6 +88,7 @@
           entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
         });
         if (entries.length) W.Store.push(key, entries, 200);
+        try { if (W.Tts) W.Tts.speakLines(call.name, entries); } catch (e) {} // 对方回复连播
       } catch (e) {
         try { toastr.error('对方信号不好，再试一次', '📱 霖州引擎'); } catch (e2) {}
       }
@@ -112,6 +115,7 @@
             entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
           });
           if (entries.length) W.Store.push(key, entries, 200);
+          try { if (W.Tts) W.Tts.speakLines(call.name, entries); } catch (e) {} // 重说结果自动连播
         } catch (e) {
           try { toastr.error('重说失败，再试一次', '📱 霖州引擎'); } catch (e2) {}
         }
@@ -125,10 +129,13 @@
         // 末尾没有可弹的对方段：末句是机主的话 → ↻ 充当重试；空通/末尾系统行 → 无事可做
         var tail = h.length ? h[h.length - 1] : null;
         if (!tail || tail.who !== 'user') return;
+        try { if (W.Tts) W.Tts.stopQueue(); } catch (e) {}
         await regen();
         return;
       }
-      W.Store.popLast(key, n);
+      var popped = W.Store.popLast(key, n);
+      try { if (popped && W.Tts) popped.forEach(function (m) { if (m && m.text) W.Tts.purgeByText(m.text); }); } catch (e) {} // 旧回复作废，音频同步清
+      try { if (W.Tts) W.Tts.stopQueue(); } catch (e) {} // 旧回复作废，朗读一并停
       await regen();
     },
 
@@ -141,6 +148,7 @@
       if (this._ct) { clearInterval(this._ct); this._ct = null; }
       var who = call.by === 'user' ? 'user' : call.name;
       var kindCn2 = call.mode === 'video' ? '视频通话' : '语音通话';
+      try { if (W.Tts) W.Tts.stopQueue(); } catch (e) {} // 挂断即停朗读
       if (call.phase === 'active') {
         var sec = Math.max(1, Math.round((Date.now() - call.startAt) / 1000));
         var dur = fmtDur(sec);

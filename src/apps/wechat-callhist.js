@@ -55,7 +55,8 @@
       (sv.interrupted ? ' · 中断' : '');
     var bub = seg.map(function (m) {
       if (m.kind === 'scene') return '<div class="lzw-callscene">' + C.esc(m.text || '').replace(/\n/g, '<br>') + '</div>';
-      return '<div class="lzw-sub' + (m.who === 'user' ? ' me' : '') + '">' + C.esc(m.text || '') + '</div>';
+      // data-cpt/data-cpx：点按重播的数据源（行内嵌文本，不依赖下标；换音色即用新音色重合成）
+      return '<div class="lzw-sub' + (m.who === 'user' ? ' me' : '') + '" data-cpt="' + C.esc(m.who || '') + '" data-cpx="' + C.esc(m.text || '') + '">' + C.esc(m.text || '') + '</div>';
     }).join('');
     // 与通话界面同构：音频=头像即身份；视频=头像化作背景大图，保留名字
     return '<div class="lzw-callbody">' +

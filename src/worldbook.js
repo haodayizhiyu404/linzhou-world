@@ -17,7 +17,8 @@
   var MARK_STICKER = '霖州手机::表情包';
   var MARK_STICKER_ALIAS = ['媒体与表情包_StickerData'];   // 卡组既有条目，直接兼容
   var MARK_PROFILE = '霖州手机::人设::';
-  var MARK_NSFW = '霖州手机::NSFW';   // 卡的亲密文风指引：口味层由卡维护，引擎只负责注入提示词
+  var MARK_NSFW = '霖州手机::NSFW';
+  var MARK_VOICE = '霖州手机::音色';   // 音色配置（JSON：开关/厂商/地址/模型/defaultVoice/voices映射）——跟世界书走，卡作者可预置默认   // 卡的亲密文风指引：口味层由卡维护，引擎只负责注入提示词
 
   // ── 适配层：世界书列表与条目 ──
   async function bookNames() {
@@ -178,7 +179,7 @@
   var Worldbook = {
     // 返回 { rosters, stickers, profiles, states }
     // states = { 条目标题: 是否勾选开启 }——世界线主条目定位用（enabled 字段读不到时按"开"记）
-    load: async function () {      var result = { rosters: {}, stickers: {}, profiles: {}, states: {}, nsfwRaw: '' };
+    load: async function () {      var result = { rosters: {}, stickers: {}, profiles: {}, states: {}, nsfwRaw: '', ttsCfg: null };
       var names = await bookNames();
       console.log('[霖州引擎] 世界书：' + names.length + ' 本 → ' + names.join(' / '));
       var es = await allEntries();
@@ -235,6 +236,11 @@
           }
         } else if (t === MARK_NSFW) {
           result.nsfwRaw = result.nsfwRaw ? result.nsfwRaw + '\n\n' + contentOf(es[i]) : contentOf(es[i]);
+        } else if (t === MARK_VOICE) {
+          try {
+            var _tj = JSON.parse(contentOf(es[i]));
+            if (_tj && typeof _tj === 'object') result.ttsCfg = _tj;
+          } catch (e) {}
         }
       }
 
@@ -323,6 +329,46 @@
               if (norm(titleOf(es[m])) in want) { hit = true; break; }
             }
             if (hit) await replaceWorldbook(names[k], flip(es), render);
+          } catch (e) {}
+        }
+      }
+    },
+
+    // 音色配置写回：把指定标题条目的内容改为 JSON 字符串。与 setEntriesEnabled 同套双 API：
+    // updateWorldbookWith（回调式原地改）优先，getWorldbook+replaceWorldbook 兜底。
+    setEntryJson: async function (title, obj) {
+      var names = await bookNames();
+      if (!names.length) throw new Error('未找到角色卡世界书');
+      var norm2 = function (s2) { return String(s2 || '').replace(/[【】\s]/g, ''); };
+      var want = norm2(title);
+      var body = JSON.stringify(obj);
+      var render = { render: 'immediate' };
+      var touch = function (entries) {
+        for (var j = 0; j < entries.length; j++) {
+          if (norm2(titleOf(entries[j])) === want) {
+            entries[j].content = body;   // 只改内容；启用状态由用户自管（读取不依赖勾选）
+            entries[j].text = body;
+            break;
+          }
+        }
+        return entries;
+      };
+      if (typeof updateWorldbookWith === 'function') {
+        for (var i = 0; i < names.length; i++) {
+          try { await updateWorldbookWith(names[i], touch, render); } catch (e) {}
+        }
+        return;
+      }
+      if (typeof getWorldbook === 'function' && typeof replaceWorldbook === 'function') {
+        for (var k = 0; k < names.length; k++) {
+          try {
+            var es = await getWorldbook(names[k]);
+            if (!es || !es.length) continue;
+            var hit = false;
+            for (var m = 0; m < es.length; m++) {
+              if (norm2(titleOf(es[m])) === want) { hit = true; break; }
+            }
+            if (hit) await replaceWorldbook(names[k], touch(es), render);
           } catch (e) {}
         }
       }

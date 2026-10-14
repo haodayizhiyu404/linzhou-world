@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-09-30z';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-10-15a';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -129,6 +129,11 @@
     // 全文原样（{{user}} 宏在注入时 deref）。
     nsfwText: function () {
       return this.deref(state.nsfwRaw || '');
+    },
+
+    // 音色配置（世界书「霖州手机::音色」JSON）：跟世界书走，全聊天通用，卡作者可预置
+    ttsConfig: function () {
+      return state.ttsCfg || null;
     },
 
     // 世界书原文里的 {{user}} 一律换成 persona 真名——generateRaw 不做宏替换，
@@ -317,6 +322,7 @@
       state.profiles = data.profiles;
       state.entryStates = data.states || {};
       state.nsfwRaw = data.nsfwRaw || '';
+      state.ttsCfg = data.ttsCfg || null;
       // 线作用域档案归线：NPC（…）/ 主角人设（…）里的块按括号里的线名分派，
       // 各线各读各的，根治「同一个人两条线共用一版档案」的串线
       state.npcLine = {}; state.evolLine = {}; state.userEvol = {};
