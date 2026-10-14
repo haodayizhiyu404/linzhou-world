@@ -1127,6 +1127,9 @@ ctx.getWorldbook = async () => [
   const wlistsrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-list.js'), 'utf8');
   eq('通话·记录回看入口', wlistsrc.includes('data-chist') && wcallh.includes('bodyCallhist') && wcallh.includes('bodyCallview') && wcallh.indexOf('callSessions') !== -1, true);
   eq('通话·最小化按钮', wcall.includes('data-cact="callmin"') && wsrc.includes('C.ICON_MIN'), true);
+  eq('通话·最小化按钮裸图标', wsrc.includes('.lzw-callmin{position:absolute;top:10px;right:40px;z-index:5;background:none') && wsrc.includes('.lzw-callmin:hover{opacity:1}') && wsrc.includes('stroke-width="2.2"'), true);
+  eq('通话·重试双模式挂钩', wcall.includes("tail.who !== 'user'") && wcall.includes('regen()'), true);
+  eq('布局·默认左侧贴边垂直居中', wsrc.includes('+ (vh - h) / 2;') && wsrc.indexOf('默认左下') === -1, true);
   eq('通话·callview通话氛围屏', wsrc.indexOf("screen === 'callview'") !== -1 && wsrc.indexOf('lzw-scr-chv') !== -1, true);
   eq('聊天·头像开名片', wsrc.indexOf('class="lzw-ava" data-cdet=') !== -1, true);
   eq('通话·自动定位标记', wcall.split('_callNew = true').length - 1 >= 3 && wsrc.includes('meRow.offsetTop'), true);
@@ -1213,6 +1216,16 @@ ctx.getWorldbook = async () => [
   UI2.call = { name: '周言', mode: 'audio', phase: 'active', busy: false };
   await UI2.callReroll();
   eq('装载·重说弹净全部对方段', callSeed.length === 2 && callSeed[0].text === '机主的话' && callSeed[1].text === '重生台词', true);
+  // 30z：↻ 重试双模式——末尾是机主的话（上次回复生成失败/被删）时不弹栈、保留末句直接重生
+  var ctCalls = 0;
+  engStub.callTurn = async function () { ctCalls++; return { entries: [{ kind: 'line', text: '重试台词' }] }; };
+  callSeed = [{ who: 'sys', kind: 'sys', text: '—— 通话开始 ——' }, { who: 'user', kind: 'text', text: '机主末句' }];
+  UI2.call = { name: '周言', mode: 'audio', phase: 'active', busy: false };
+  await UI2.callReroll();
+  eq('装载·重试保留机主末句', callSeed.length === 3 && callSeed[1].text === '机主末句' && callSeed[2].text === '重试台词' && ctCalls === 1, true);
+  callSeed = [{ who: 'sys', kind: 'sys', text: '—— 通话开始 ——' }];
+  await UI2.callReroll();
+  eq('装载·末尾系统行不重试', ctCalls === 1 && callSeed.length === 1, true);
   UI2.call = null;
 
   LW.Engine.applyLine(null, '收尾');

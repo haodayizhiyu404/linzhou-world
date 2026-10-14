@@ -92,32 +92,44 @@
       if (this.call === call) { this._callNew = true; call.busy = false; this.render(); } // 机主的话上屏/对方回复上屏，自动定位
     },
 
-    // 重说：弹掉对方最近一段台词，原地重生（带着机主最后一句的语境）
+    // 重说：弹掉对方最近一段台词，原地重生（带着机主最后一句的语境）。
+    // 双模式：末尾没有可弹的对方段、且末句是机主的话（=上次回复生成失败/被删）时，
+    // ↻ 充当重试——机主末句保留作上下文直接再生，与聊天页失败重试同语义。
     callReroll: async function () {
       var W = window.LZWorld, eng = W.Engine;
       var call = this.call;
       if (!call || call.phase !== 'active' || call.busy) return;
       var key = eng.callKey(call.name);
       var h = W.Store.history(key);
+      var self = this;
+      var regen = async function () {
+        call.busy = true;
+        self.render();
+        try {
+          var ret = await C.withTimeout(eng.callTurn(call.name, call.mode, ''), 300000);
+          var entries = [];
+          (ret.entries || []).forEach(function (en) {
+            entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
+          });
+          if (entries.length) W.Store.push(key, entries, 200);
+        } catch (e) {
+          try { toastr.error('重说失败，再试一次', '📱 霖州引擎'); } catch (e2) {}
+        }
+        if (self.call === call) { self._callNew = true; call.busy = false; self.render(); } // 重说结果上屏，自动定位
+      };
       var n = 0;
       // 弹栈不设条数上限——视频一轮最多 16 条，旧上限 10 会把旧回复的前几条留在
       // transcript 里喂给重生请求（旁白泄漏）；遇机主消息/「通话开始」边界即停。
       for (var i = h.length - 1; i >= 0 && h[i].who !== 'user' && h[i].who !== 'sys'; i--) n++;
-      if (!n) return;
-      W.Store.popLast(key, n);
-      call.busy = true;
-      this.render();
-      try {
-        var ret = await C.withTimeout(eng.callTurn(call.name, call.mode, ''), 300000);
-        var entries = [];
-        (ret.entries || []).forEach(function (en) {
-          entries.push({ who: call.name, kind: en.kind === 'scene' ? 'scene' : 'text', text: en.text });
-        });
-        if (entries.length) W.Store.push(key, entries, 200);
-      } catch (e) {
-        try { toastr.error('重说失败，再试一次', '📱 霖州引擎'); } catch (e2) {}
+      if (!n) {
+        // 末尾没有可弹的对方段：末句是机主的话 → ↻ 充当重试；空通/末尾系统行 → 无事可做
+        var tail = h.length ? h[h.length - 1] : null;
+        if (!tail || tail.who !== 'user') return;
+        await regen();
+        return;
       }
-      if (this.call === call) { this._callNew = true; call.busy = false; this.render(); } // 重说结果上屏，自动定位
+      W.Store.popLast(key, n);
+      await regen();
     },
 
     // 挂断：transcript 末尾写时长；私聊里由发起方留一条通话记录灰泡（微信真实样式：
