@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-10-14T18:52:27.736Z
+//  构建时间：2026-10-15T16:51:35.594Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-10-14 18:52';
+var __LZW_BUILD__ = '2026-10-15 16:51';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -939,11 +939,18 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     hash: hash,
     cfgCache: null,
 
+    // 语速：0.5~2.0，1=厂商默认（此时不发 speed 字段）。非法值收敛回 1。
+    _normSpeed: function (cfg) {
+      var s = Number(cfg && cfg.speed);
+      if (!isFinite(s) || s <= 0) return 1;
+      return Math.min(2, Math.max(0.5, Math.round(s * 10) / 10));
+    },
+
     // 配置源 = 世界书条目「霖州手机::音色」（JSON）。跟世界书走：全聊天通用、卡作者可预置，
     // 读写 API 与通讯录/NSFW 同体系。读取不看勾选，条目可永久关闭。
     ready: async function () {
       if (this.cfgCache) return this.cfgCache;
-      var def = { enabled: true, autoCall: true, provider: 'fish', endpoint: '', model: '', defaultVoice: '', voices: {} };
+      var def = { enabled: true, autoCall: true, provider: 'fish', endpoint: '', model: '', defaultVoice: '', speed: 1, voices: {} };
       try {
         var wb = window.LZWorld.Engine.ttsConfig();
         if (wb && typeof wb === 'object') {
@@ -1004,10 +1011,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       if (cfg.model) headers['model'] = cfg.model;
       var csrf = await this._csrf();
       if (csrf) headers['X-CSRF-Token'] = csrf;
+      var body = { text: text, reference_id: voice, format: 'mp3' };
+      var sp = this._normSpeed(cfg);
+      if (sp !== 1) body.speed = sp;
       var r = await this._fetchT('/proxy/https://api.fish.audio/v1/tts', {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({ text: text, reference_id: voice, format: 'mp3' })
+        body: JSON.stringify(body)
       });
       if (!r.ok) throw new Error('Fish TTS HTTP ' + r.status + '：' + String(await r.text()).slice(0, 100));
       return await r.blob();
@@ -1019,10 +1029,13 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key };
       var csrf = await this._csrf();
       if (csrf) headers['X-CSRF-Token'] = csrf;
+      var body = { model: cfg.model || 'tts-1', voice: voice, input: text, response_format: 'mp3' };
+      var sp = this._normSpeed(cfg);
+      if (sp !== 1) body.speed = sp;
       var r = await this._fetchT('/proxy/' + ep + '/v1/audio/speech', {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({ model: cfg.model || 'tts-1', voice: voice, input: text, response_format: 'mp3' })
+        body: JSON.stringify(body)
       });
       if (!r.ok) throw new Error('TTS HTTP ' + r.status + '：' + String(await r.text()).slice(0, 100));
       return await r.blob();
@@ -1037,7 +1050,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var key = this.apiKey();
       if (!key) throw new Error('未配置 API 密钥（手机「音色」里填）');
       if (!voice) throw new Error('该角色未配置音色');
-      var h = hash(cfg.provider + '|' + voice + '|' + text);
+      var h = hash(cfg.provider + '|' + voice + '|' + this._normSpeed(cfg) + '|' + text);
       if (sessionUrls[h]) return sessionUrls[h];
       var rec = await idbGet(h);
       if (rec && rec.blob) {
@@ -2820,6 +2833,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-setlbl{font-size:12px;color:#8a8f99}',
     '.lzw-setrow2{display:flex;align-items:center;gap:8px}',
     '.lzw-setnum{width:58px;padding:5px 6px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:13px;text-align:right;color:#1a1d21;background:#fafafa;outline:none}',
+    '.lzw-speedrg{flex:1;min-width:0;accent-color:#22c05e}',
     '.lzw-settxt{flex:1;min-width:0;padding:7px 8px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:12px;color:#1a1d21;background:#fafafa;outline:none}',
     '.lzw-setbtn{flex:none;padding:6px 10px;border:none;border-radius:6px;background:#22c05e;color:#fff;font-size:12px;cursor:pointer}',
     '.lzw-setpick{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px}',
@@ -5835,7 +5849,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
     bodyTts: function (ctx) {
       var W2 = window.LZWorld;
-      var cfg = (W2.Tts && W2.Tts.cfgCache) || { enabled: true, autoCall: true, provider: 'fish', endpoint: '', model: '', defaultVoice: '', voices: {} };
+      var cfg = (W2.Tts && W2.Tts.cfgCache) || { enabled: true, autoCall: true, provider: 'fish', endpoint: '', model: '', defaultVoice: '', speed: 1, voices: {} };
       var eng = W2.Engine;
       var names = [];
       try {
@@ -5845,6 +5859,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       var meName = '';
       try { meName = eng.userName(); } catch (e0) {}
       var key = W2.Tts ? W2.Tts.apiKey() : '';
+      var spv = (function () { var s = Number(cfg.speed); if (!isFinite(s) || s <= 0) s = 1; return (Math.round(Math.min(2, Math.max(0.5, s)) * 10) / 10).toFixed(1); })();
       function vrow(nm) {
         var v = (cfg.voices || {})[nm] || '';
         var isMe = nm === meName;
@@ -5863,6 +5878,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         '<div class="lzw-setrow"><div class="lzw-setmain"><div class="lzw-setname">通话自动连播</div>' +
         '<div class="lzw-setdesc">语音通话中 AI 的台词逐条朗读；挂断/你说话/重说即打断</div></div>' +
         '<input type="checkbox" data-tgl="autoCall"' + (cfg.autoCall ? ' checked' : '') + '></div>' +
+        '<div class="lzw-setrow"><div class="lzw-setmain"><div class="lzw-setname">语速（全局）</div>' +
+        '<div class="lzw-setdesc">0.5~2.0，1 为厂商默认；克隆音色太快易破音</div>' +
+        '<div class="lzw-setrow2"><input type="range" class="lzw-speedrg" min="0.5" max="2" step="0.1" value="' + spv + '" data-tspeed>' +
+        '<input type="number" class="lzw-setnum" min="0.5" max="2" step="0.1" value="' + spv + '" data-tspeednum>' +
+        '<button class="lzw-setbtn" data-tspeedreset>复位</button></div></div></div>' +
         '</div>' +
         '<div class="lzw-setsec">生成源</div><div class="lzw-setcard">' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">提供商</span><div class="lzw-setrow2"><select class="lzw-settxt" data-tprov>' + srcSel + '</select></div></div>' +
@@ -5889,6 +5909,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     ph.querySelectorAll('[data-tgl]').forEach(function (el) {
       el.onchange = function () { var p2 = {}; p2[el.dataset.tgl] = el.checked; W.Tts.save(p2); };
     });
+    // 语速三件套：滑块拖动实时改数字（不发请求），松手/数字确认才保存；复位一键回 1
+    (function () {
+      var rg = ph.querySelector('[data-tspeed]'), numEl = ph.querySelector('[data-tspeednum]'), rst = ph.querySelector('[data-tspeedreset]');
+      if (!rg || !numEl) return;
+      var norm = function (v) { v = Math.round(Number(v) * 10) / 10; if (!isFinite(v) || v <= 0) v = 1; return Math.min(2, Math.max(0.5, v)); };
+      var apply = function (v, doSave) { v = norm(v); rg.value = v; numEl.value = v.toFixed(1); if (doSave) W.Tts.save({ speed: v }); };
+      rg.oninput = function () { numEl.value = norm(rg.value).toFixed(1); };
+      rg.onchange = function () { apply(rg.value, true); };
+      numEl.onchange = function () { apply(numEl.value, true); };
+      if (rst) rst.onclick = function () { apply(1, true); };
+    })();
     ph.querySelectorAll('[data-tprov]').forEach(function (el) {
       el.onchange = function () { W.Tts.save({ provider: el.value }); };
     });
@@ -6071,7 +6102,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-10-15a';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-10-16a';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 

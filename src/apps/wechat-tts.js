@@ -27,7 +27,7 @@
 
     bodyTts: function (ctx) {
       var W2 = window.LZWorld;
-      var cfg = (W2.Tts && W2.Tts.cfgCache) || { enabled: true, autoCall: true, provider: 'fish', endpoint: '', model: '', defaultVoice: '', voices: {} };
+      var cfg = (W2.Tts && W2.Tts.cfgCache) || { enabled: true, autoCall: true, provider: 'fish', endpoint: '', model: '', defaultVoice: '', speed: 1, voices: {} };
       var eng = W2.Engine;
       var names = [];
       try {
@@ -37,6 +37,7 @@
       var meName = '';
       try { meName = eng.userName(); } catch (e0) {}
       var key = W2.Tts ? W2.Tts.apiKey() : '';
+      var spv = (function () { var s = Number(cfg.speed); if (!isFinite(s) || s <= 0) s = 1; return (Math.round(Math.min(2, Math.max(0.5, s)) * 10) / 10).toFixed(1); })();
       function vrow(nm) {
         var v = (cfg.voices || {})[nm] || '';
         var isMe = nm === meName;
@@ -55,6 +56,11 @@
         '<div class="lzw-setrow"><div class="lzw-setmain"><div class="lzw-setname">通话自动连播</div>' +
         '<div class="lzw-setdesc">语音通话中 AI 的台词逐条朗读；挂断/你说话/重说即打断</div></div>' +
         '<input type="checkbox" data-tgl="autoCall"' + (cfg.autoCall ? ' checked' : '') + '></div>' +
+        '<div class="lzw-setrow"><div class="lzw-setmain"><div class="lzw-setname">语速（全局）</div>' +
+        '<div class="lzw-setdesc">0.5~2.0，1 为厂商默认；克隆音色太快易破音</div>' +
+        '<div class="lzw-setrow2"><input type="range" class="lzw-speedrg" min="0.5" max="2" step="0.1" value="' + spv + '" data-tspeed>' +
+        '<input type="number" class="lzw-setnum" min="0.5" max="2" step="0.1" value="' + spv + '" data-tspeednum>' +
+        '<button class="lzw-setbtn" data-tspeedreset>复位</button></div></div></div>' +
         '</div>' +
         '<div class="lzw-setsec">生成源</div><div class="lzw-setcard">' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">提供商</span><div class="lzw-setrow2"><select class="lzw-settxt" data-tprov>' + srcSel + '</select></div></div>' +
@@ -81,6 +87,17 @@
     ph.querySelectorAll('[data-tgl]').forEach(function (el) {
       el.onchange = function () { var p2 = {}; p2[el.dataset.tgl] = el.checked; W.Tts.save(p2); };
     });
+    // 语速三件套：滑块拖动实时改数字（不发请求），松手/数字确认才保存；复位一键回 1
+    (function () {
+      var rg = ph.querySelector('[data-tspeed]'), numEl = ph.querySelector('[data-tspeednum]'), rst = ph.querySelector('[data-tspeedreset]');
+      if (!rg || !numEl) return;
+      var norm = function (v) { v = Math.round(Number(v) * 10) / 10; if (!isFinite(v) || v <= 0) v = 1; return Math.min(2, Math.max(0.5, v)); };
+      var apply = function (v, doSave) { v = norm(v); rg.value = v; numEl.value = v.toFixed(1); if (doSave) W.Tts.save({ speed: v }); };
+      rg.oninput = function () { numEl.value = norm(rg.value).toFixed(1); };
+      rg.onchange = function () { apply(rg.value, true); };
+      numEl.onchange = function () { apply(numEl.value, true); };
+      if (rst) rst.onclick = function () { apply(1, true); };
+    })();
     ph.querySelectorAll('[data-tprov]').forEach(function (el) {
       el.onchange = function () { W.Tts.save({ provider: el.value }); };
     });

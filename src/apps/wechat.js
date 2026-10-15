@@ -394,6 +394,7 @@
     '.lzw-setlbl{font-size:12px;color:#8a8f99}',
     '.lzw-setrow2{display:flex;align-items:center;gap:8px}',
     '.lzw-setnum{width:58px;padding:5px 6px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:13px;text-align:right;color:#1a1d21;background:#fafafa;outline:none}',
+    '.lzw-speedrg{flex:1;min-width:0;accent-color:#22c05e}',
     '.lzw-settxt{flex:1;min-width:0;padding:7px 8px;border:1px solid rgba(0,0,0,.1);border-radius:6px;font-size:12px;color:#1a1d21;background:#fafafa;outline:none}',
     '.lzw-setbtn{flex:none;padding:6px 10px;border:none;border-radius:6px;background:#22c05e;color:#fff;font-size:12px;cursor:pointer}',
     '.lzw-setpick{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 12px}',

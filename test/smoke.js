@@ -1263,7 +1263,15 @@ ctx.getWorldbook = async () => [
   eq('TTS·重说弹栈清音频', wcall.includes('Tts.purgeByText'), true);
   eq('TTS·字幕点按重播', wsrc.indexOf('data-cpx') !== -1 && wcallh.indexOf('data-cpt') !== -1 && wsrc.indexOf('.lzw-callsubs .lzw-sub') !== -1, true);
   eq('TTS·聊天删除清音频', (wchatSrc.match(/purgeByText/g) || []).length, 2);
-  eq('TTS·语音气泡点喇叭朗读', wchatSrc.includes('lzw-voice-play') && wchatSrc.includes('stopPropagation') && wttsSrc.includes('data-ttest'), true);
+  eq('TTS·语音气泡点喇叭朗读', wchatSrc.includes('lzw-voice-play') && wchatSrc.includes('stopPropagation') && wttsSrc.includes('data-ttest'), true);
+  const ttsSrc = fs.readFileSync(path.join(ROOT, 'src/tts.js'), 'utf8');
+  eq('TTS·语速规范化', LW.Tts._normSpeed({ speed: 0.8 }) === 0.8 && LW.Tts._normSpeed({ speed: 99 }) === 2 && LW.Tts._normSpeed({ speed: 0.1 }) === 0.5 && LW.Tts._normSpeed({ speed: 'x' }) === 1 && LW.Tts._normSpeed({}) === 1, true);
+  eq('TTS·语速双适配器透传', (ttsSrc.match(/body\.speed = sp/g) || []).length === 2 && ttsSrc.indexOf('speed: 1') !== -1, true);
+  eq('TTS·语速进缓存键', ttsSrc.indexOf("this._normSpeed(cfg) + '|' + text") !== -1, true);
+  eq('TTS·语速UI三件套', wttsSrc.includes('data-tspeed') && wttsSrc.includes('data-tspeednum') && wttsSrc.includes('data-tspeedreset') && wsrc.includes('lzw-speedrg'), true);
+  await LW.Tts.save({ speed: 0.8 });
+  eq('TTS·语速保存即生效', LW.Tts.cfgCache.speed === 0.8, true);
+  await LW.Tts.save({ speed: 1 });
 
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
