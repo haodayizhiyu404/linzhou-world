@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-10-18T05:04:15.427Z
+//  构建时间：2026-10-18T06:28:35.908Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-10-18 05:04';
+var __LZW_BUILD__ = '2026-10-18 06:28';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -808,6 +808,213 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       }
     },
 
+    // 按标题读单条（同步系统读版本快照用；跨书只认第一处命中）
+    getEntry: async function (title) {
+      var names = await bookNames();
+      var norm = function (s2) { return String(s2 || '').replace(/[【】\s]/g, ''); };
+      var want = norm(title);
+      for (var i = 0; i < names.length; i++) {
+        var es = await entriesOf(names[i]);
+        for (var j = 0; j < es.length; j++) {
+          if (norm(titleOf(es[j])) === want) return es[j];
+        }
+      }
+      return null;
+    },
+
+    // 托管条目 upsert（设定同步用）：已存在 → 更新 内容/触发键/策略/顺序/位置（enabled 不动，
+    // 开关归用户）；没有 → 主书新建。无差异的书整本不动笔；按书分批写，幂等，重试安全。
+    //
+    // 【字段纪律】酒馆助手条目结构（权威源：JS-Slash-Runner dist/@types.txt 的 WorldbookEntry）：
+    //   标题=name；启用=enabled；触发=strategy{type,keys,keys_secondary{logic,keys}}；
+    //   顺序=position.order（嵌套！顶层没有 order）；位置=position.type（枚举字符串，非数字）。
+    upsertManaged: (function () {
+      // ST 数字 position → 助手 position.type（照抄助手 dist 的转换表）
+      var POS_TYPE = { 0: 'before_character_definition', 1: 'after_character_definition', 5: 'before_example_messages', 6: 'after_example_messages', 2: 'before_author_note', 3: 'after_author_note', 4: 'at_depth', 7: 'outlet' };
+      var ROLE_TYPE = { 0: 'system', 1: 'user', 2: 'assistant' };
+
+      // 清单条目 → 助手 PartialDeep<WorldbookEntry>（创建用；缺的字段酒馆补默认值）
+      function toTh(s2) {
+        return {
+          name: s2.title,
+          enabled: s2.enabled !== false,
+          strategy: {
+            type: s2.constant ? 'constant' : 'selective',
+            keys: (s2.keys || []).slice(),
+            keys_secondary: { logic: 'and_any', keys: (s2.keysSecondary || []).slice() },
+            scan_depth: 'same_as_global'
+          },
+          position: {
+            type: POS_TYPE[s2.position] || 'before_character_definition',
+            role: ROLE_TYPE[s2.role] || 'system',
+            depth: typeof s2.depth === 'number' ? s2.depth : 4,
+            order: typeof s2.order === 'number' ? s2.order : 100
+          },
+          content: String(s2.content || ''),
+          probability: 100
+        };
+      }
+
+      // 原地更新已有条目：内容/触发键/策略/顺序/位置/深度/身份；enabled、uid 不动
+      function touchEntry(en, src) {
+        if (src.content !== undefined) en.content = String(src.content);
+        en.strategy = en.strategy || {};
+        if (src.keys) en.strategy.keys = src.keys.slice();
+        if (src.keysSecondary) {
+          en.strategy.keys_secondary = en.strategy.keys_secondary || { logic: 'and_any', keys: [] };
+          en.strategy.keys_secondary.keys = src.keysSecondary.slice();
+        }
+        if (src.constant !== undefined && en.strategy.type !== 'vectorized') {
+          en.strategy.type = src.constant ? 'constant' : 'selective';   // 向量化🔗条目的策略类型不动
+        }
+        en.position = en.position || {};
+        if (src.order !== undefined) en.position.order = src.order;
+        if (src.position !== undefined && POS_TYPE[src.position]) en.position.type = POS_TYPE[src.position];
+        if (src.depth !== undefined) en.position.depth = src.depth;
+        if (src.role !== undefined && ROLE_TYPE[src.role]) en.position.role = ROLE_TYPE[src.role];
+      }
+
+      // 差异预检：touchEntry 会动的字段里有任何一个真不一样才算「有差异」（只比 src 提供的字段）。
+      // 差异驱动同步每次启动都跑到这里，无差异必须整本书不动笔——不能每次刷新都重写一遍书。
+      function diffEntry(en, src) {
+        if (src.content !== undefined && String(src.content) !== String(en.content == null ? '' : en.content)) return true;
+        var st = en.strategy || {};
+        if (src.keys && JSON.stringify(src.keys) !== JSON.stringify(st.keys || [])) return true;
+        if (src.keysSecondary && JSON.stringify(src.keysSecondary) !== JSON.stringify((st.keys_secondary || {}).keys || [])) return true;
+        if (src.constant !== undefined && st.type !== 'vectorized' && st.type !== (src.constant ? 'constant' : 'selective')) return true;
+        var po = en.position || {};
+        if (src.order !== undefined && po.order !== src.order) return true;
+        if (src.position !== undefined && POS_TYPE[src.position] && po.type !== POS_TYPE[src.position]) return true;
+        if (src.depth !== undefined && po.depth !== src.depth) return true;
+        if (src.role !== undefined && ROLE_TYPE[src.role] && po.role !== ROLE_TYPE[src.role]) return true;
+        return false;
+      }
+
+      return async function (list) {
+        var names = await bookNames();
+        if (!names.length) throw new Error('未找到角色卡世界书');
+        var norm = function (s) { return String(s || '').replace(/[【】\s]/g, ''); };
+        var render = { render: 'immediate' };
+        var res = { updated: 0, created: 0, failed: [] };
+        var todo = {};
+        list.forEach(function (e) { if (e && e.title) todo[norm(e.title)] = e; });
+
+        // 1) 定位：标题 → 所在书序号（跨书只认第一处命中）
+        var loc = {};
+        var booksCache = [];
+        for (var i = 0; i < names.length; i++) {
+          var es0 = await entriesOf(names[i]);
+          booksCache.push(es0);
+          for (var j0 = 0; j0 < es0.length; j0++) {
+            var t0 = norm(titleOf(es0[j0]));
+            if (todo[t0] && loc[t0] === undefined) loc[t0] = i;
+          }
+        }
+        // 2) 分派：已有 → 所在书更新；没有 → 主书（第一本）新建
+        var updWants = {};   // 书序号 → {normTitle: true}
+        var creates = [];
+        for (var k in todo) {
+          if (loc[k] !== undefined) {
+            (updWants[loc[k]] = updWants[loc[k]] || {})[k] = true;
+          } else {
+            creates.push(todo[k]);
+          }
+        }
+
+        // 3) 更新：按书分批（回调式原地改优先，整本替换兜底）；预检无差异的书整本跳过
+        for (var bi in updWants) {
+          var want = updWants[bi];
+          var changed = {};
+          var cached = booksCache[+bi] || [];
+          for (var cj = 0; cj < cached.length; cj++) {
+            var cn = norm(titleOf(cached[cj]));
+            if (want[cn] && diffEntry(cached[cj], todo[cn])) changed[cn] = true;
+          }
+          if (!Object.keys(changed).length) continue;
+          var bag = { updated: 0 };
+          var mkTouch = function (w, bg) {
+            return function (entries) {
+              for (var j = 0; j < entries.length; j++) {
+                var src = todo[norm(titleOf(entries[j]))];
+                if (src && w[norm(titleOf(entries[j]))]) { touchEntry(entries[j], src); bg.updated++; }
+              }
+              return entries;
+            };
+          };
+          try {
+            if (typeof updateWorldbookWith === 'function') {
+              await updateWorldbookWith(names[+bi], mkTouch(changed, bag), render);
+            } else if (typeof getWorldbook === 'function' && typeof replaceWorldbook === 'function') {
+              await replaceWorldbook(names[+bi], mkTouch(changed, bag)(cached), render);
+            } else {
+              throw new Error('无世界书写入 API');
+            }
+            res.updated += bag.updated;
+          } catch (e) {
+            res.failed = res.failed.concat(Object.keys(changed).map(function (n2) { return todo[n2].title; }));
+          }
+        }
+
+        // 4) 新建：专用创建 API 优先（缺省字段由酒馆补默认），否则往主书推半成品
+        if (creates.length) {
+          try {
+            if (typeof createWorldbookEntries === 'function') {
+              await createWorldbookEntries(names[0], creates.map(toTh), render);
+            } else if (typeof updateWorldbookWith === 'function') {
+              await updateWorldbookWith(names[0], function (entries) {
+                creates.forEach(function (s2) { entries.push(toTh(s2)); });
+                return entries;
+              }, render);
+            } else if (typeof getWorldbook === 'function' && typeof replaceWorldbook === 'function') {
+              var es = booksCache[0] || [];
+              creates.forEach(function (s2) { es.push(toTh(s2)); });
+              await replaceWorldbook(names[0], es, render);
+            } else {
+              throw new Error('无世界书写入 API');
+            }
+            res.created += creates.length;
+          } catch (e) {
+            res.failed = res.failed.concat(creates.map(function (c) { return c.title; }));
+          }
+        }
+        return res;
+      };
+    })(),
+
+    // 托管条目删除（设定同步·删除传播用）：按标题逐书过滤，只删命中的；
+    // :: 前缀条目双保险拒删（同步层已拦，这里再拦一次）；哪本失败记哪本，其余照删。
+    deleteManaged: async function (titles) {
+      var res = { deleted: 0, failed: [] };
+      if (!titles || !titles.length) return res;
+      var names = await bookNames();
+      var norm = function (s2) { return String(s2 || '').replace(/[【】\s]/g, ''); };
+      var kill = {};
+      titles.forEach(function (t) {
+        if (String(t).indexOf('::') === -1) kill[norm(t)] = true;
+      });
+      var render = { render: 'immediate' };
+      for (var i = 0; i < names.length; i++) {
+        try {
+          var es = await entriesOf(names[i]);
+          var doomed = es.filter(function (e) { return !!kill[norm(titleOf(e))]; });
+          if (!doomed.length) continue;
+          if (typeof updateWorldbookWith === 'function') {
+            await updateWorldbookWith(names[i], function (entries) {
+              return entries.filter(function (e) { return !kill[norm(titleOf(e))]; });
+            }, render);
+          } else if (typeof getWorldbook === 'function' && typeof replaceWorldbook === 'function') {
+            await replaceWorldbook(names[i], es.filter(function (e) { return !kill[norm(titleOf(e))]; }), render);
+          } else {
+            throw new Error('无世界书写入 API');
+          }
+          res.deleted += doomed.length;
+        } catch (e) {
+          res.failed = res.failed.concat(titles);
+        }
+      }
+      return res;
+    },
+
     // 双源（jsdelivr 主源 / catbox 兜底）都失败的图：渲染不再发请求，给灰块 SVG
     // （与陌生人头像同款 #c9cfd6，视觉无差）。名单会话级，刷新页面即重置重试。
     DEAD_IMG: 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="72" height="72"><rect width="72" height="72" rx="9" fill="#c9cfd6"/></svg>'),
@@ -824,6 +1031,187 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   window.LZWorld = window.LZWorld || {};
   window.LZWorld.Worldbook = Worldbook;
+})();
+
+
+// ── src/sync.js ──
+// ═══════════════════════════════════════════════════════════
+//  sync.js —— 设定自动同步（世界书托管条目）
+//
+//  仓库 content/manifest.json 是「设定清单」。引擎启动后异步拉取，【差异驱动】：
+//  清单值 ≠ 本地值才动笔，全无差异则完全静默——不看清单版本号
+//  （版本号只是诊断记录：用户删改了条目无需等新版本，下次打开即复原）。
+//    · 世界书：已存在条目更新 内容/触发键/策略/顺序；【enabled 不动】——开关是运行时状态，归用户与引擎
+//    · 删除传播：母本删掉的条目（上次清单快照有、这次没有）用户端同步删除——
+//      快照存在本地「霖州手机::版本」条目里（{v, titles}），用户自建条目不在快照中，永不误删
+//    · 标题含「::」的条目（音色/版本/通讯录等用户与运行时数据）一律拒收，清单误带也不收
+//  主权哲学「作者赢」：设定以作者发布为准；用户空间（自建条目/::条目/其他插件数据）永不触碰。
+//  用户出口：设置屏「设定自动更新」可关；「立刻检查更新」手动兜底，关闭状态下也能强制对齐。
+//  minPlugin 是格式门槛：清单要求比本插件新 → 整体拒收，等插件追上
+//  （防 CDN 缓存按文件分别过期造成的「旧插件+新清单」错配；二期卡字段同步上线即靠它守门）。
+//  全程失败静默：拉不到/读不懂/写不进都只记日志，绝不影响本地既有内容。
+// ═══════════════════════════════════════════════════════════
+(function () {
+  'use strict';
+
+  var GH = 'haodayizhiyu404/linzhou-world';
+  var MFILE = 'content/manifest.json';
+  var MARK_VERSION = '霖州手机::版本';   // 本地同步快照落这条（{v, titles}；:: 前缀天然免托管）
+  var MIRRORS = ['cdn.jsdelivr.net', 'fastly.jsdelivr.net', 'testingcf.jsdelivr.net', 'gcore.jsdelivr.net'];
+  var log = function (m) { try { console.log('[霖州引擎·同步] ' + m); } catch (e) {} };
+
+  function timedFetch(url, ms) {
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, ms) : null;
+    return fetch(url, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
+      .finally(function () { if (timer) clearTimeout(timer); });
+  }
+
+  // a ≤ b？三段数字比较（'1.10.0' > '1.9.0'，字符串比大小会翻车）
+  function semverLTE(a, b) {
+    var pa = String(a || '0').split('.'), pb = String(b || '0').split('.');
+    for (var i = 0; i < 3; i++) {
+      var x = parseInt(pa[i], 10) || 0, y = parseInt(pb[i], 10) || 0;
+      if (x !== y) return x < y;
+    }
+    return true;
+  }
+
+  // 与装载器同套：GitHub API 解析 main 最新提交号（绕 jsDelivr 的 @main 缓存），失败退分支名
+  async function resolveRef() {
+    try {
+      var r = await timedFetch('https://api.github.com/repos/' + GH + '/commits/main', 5000);
+      if (r.ok) {
+        var sha = String(((await r.json()) || {}).sha || '').trim();
+        if (/^[0-9a-f]{7,40}$/.test(sha)) return sha;
+      }
+    } catch (e) {}
+    return 'main';
+  }
+
+  async function fetchManifest() {
+    var ref = await resolveRef();
+    var urls = ['https://raw.githubusercontent.com/' + GH + '/' + ref + '/' + MFILE];
+    MIRRORS.forEach(function (h) { urls.push('https://' + h + '/gh/' + GH + '@' + ref + '/' + MFILE); });
+    for (var i = 0; i < urls.length; i++) {
+      try {
+        var r = await timedFetch(urls[i], 8000);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var j = await r.json();
+        if (!j || typeof j.version !== 'number' || !Array.isArray(j.entries)) throw new Error('清单格式不对');
+        return j;
+      } catch (e) { log('源' + (i + 1) + ' 失败：' + (e && e.message || e)); }
+    }
+    return null;
+  }
+
+  // 本地版本条目：{v, titles}。兼容纯整数旧格式（titles 空 = 无快照，首轮不做删除）
+  function parseVersionEntry(content) {
+    var s = String(content || '').trim();
+    try {
+      var j = JSON.parse(s);
+      if (j && typeof j === 'object') {
+        return { v: parseInt(j.v, 10) || 0, titles: Array.isArray(j.titles) ? j.titles : [] };
+      }
+    } catch (e) {}
+    return { v: parseInt(s, 10) || 0, titles: [] };
+  }
+
+  // 应用清单（拉取之外的全部逻辑，测试直调这里）。差异驱动：逐条目比对，有差异才写。
+  // 返回 {applied, updated, created, deleted, from, to} 或 {applied:false, reason}。
+  async function apply(mf) {
+    var W = window.LZWorld;
+    if (!semverLTE(mf.minPlugin || '0.0.0', W.VERSION)) {
+      return { applied: false, reason: '清单要求插件≥' + mf.minPlugin + '（当前 ' + W.VERSION + '），跳过' };
+    }
+
+    // :: 条目是用户/运行时数据，清单误带也一律拒收（双保险，导出工具那头也拦）
+    var clean = mf.entries.filter(function (e) { return e && e.title && String(e.title).indexOf('::') === -1; });
+    var newTitles = clean.map(function (e) { return e.title; });
+
+    // 删除传播：上次快照有、这次清单没有 → 用户端同步删除（先读快照再动笔，失败下轮重试幂等）
+    var prev = { v: 0, titles: [] };
+    try {
+      var cur = await W.Worldbook.getEntry(MARK_VERSION);
+      if (cur) prev = parseVersionEntry(cur.content);
+    } catch (e) {}
+    var newNorm = {};
+    var nz = function (s2) { return String(s2 || '').replace(/[【】\s]/g, ''); };
+    newTitles.forEach(function (t) { newNorm[nz(t)] = true; });
+    var del = prev.titles.filter(function (t) { return String(t).indexOf('::') === -1 && !newNorm[nz(t)]; });
+    var deleted = 0;
+    if (del.length) {
+      try {
+        var dr = await W.Worldbook.deleteManaged(del);
+        deleted = dr.deleted;
+        if (dr.failed.length) log('部分条目删除失败：' + dr.failed.join('、') + '（下次打开重试）');
+      } catch (e) { log('删除传播异常：' + (e && e.message || e)); }
+    }
+
+    var res = await W.Worldbook.upsertManaged(clean);
+    if (res.failed.length) {
+      return { applied: false, reason: '部分条目写入失败：' + res.failed.join('、') + '（下次打开重试）' };
+    }
+
+    // 版本条目 = 清单快照（版本号 + 托管标题清单），供下轮删除传播比对
+    await W.Worldbook.upsertManaged([{
+      title: MARK_VERSION, content: JSON.stringify({ v: mf.version, titles: newTitles }), enabled: false
+    }]);
+    return { applied: (res.updated + res.created + deleted) > 0, updated: res.updated, created: res.created, deleted: deleted, from: prev.v, to: mf.version };
+  }
+
+  var SYNC_KEY = 'lzw-sync';   // 'off' = 用户关了自动更新；缺省/其他 = 开
+  var Sync = {
+    semverLTE: semverLTE,
+    apply: apply,
+    parseVersionEntry: parseVersionEntry,
+    // 自动更新总开关（默认开；设置屏「设定自动更新」写入）
+    syncEnabled: function () {
+      try { return localStorage.getItem(SYNC_KEY) !== 'off'; } catch (e) { return true; }
+    },
+    setSyncEnabled: function (on) {
+      try { if (on === false) localStorage.setItem(SYNC_KEY, 'off'); else localStorage.removeItem(SYNC_KEY); } catch (e) {}
+    },
+    // manual=true：设置屏「立刻检查更新」——强制跑一轮且必有反馈；关闭状态下也可用（兜底恢复通道）
+    run: async function (manual) {
+      try {
+        if (!Sync.syncEnabled() && !manual) { log('自动更新已关，跳过'); return; }
+        var mf = await fetchManifest();
+        if (!mf) {
+          log('清单拉取失败，跳过（本地内容不变）');
+          if (manual) { try { toastr.warning('检查更新失败：网络异常，稍后再试', '📱 霖州引擎'); } catch (e) {} }
+          return;
+        }
+        // minPlugin 门槛不过 = 清单格式可能比本插件新（比如带了二期卡字段），不能碰
+        if (!semverLTE(mf.minPlugin || '0.0.0', window.LZWorld.VERSION)) {
+          log('清单要求插件≥' + mf.minPlugin + '（当前 ' + window.LZWorld.VERSION + '），等插件追上');
+          if (manual) { try { toastr.warning('清单要求更新版本的插件，请先更新插件', '📱 霖州引擎'); } catch (e) {} }
+          return;
+        }
+        var r = await apply(mf);
+        if (r.reason) log(r.reason);
+        // 任何一处有实际变化 → 一条常驻 toast 说完（点按即关）；无变化：自动静默，手动报「已是最新」
+        if (r.applied) {
+          var parts = [];
+          if (r.updated) parts.push('更新' + r.updated + '条');
+          if (r.created) parts.push('新增' + r.created + '条');
+          if (r.deleted) parts.push('清理' + r.deleted + '条');
+          var msg = '设定已同步：' + parts.join('·');
+          log(msg + '（清单 v' + r.from + ' → v' + r.to + '）');
+          try { toastr.success(msg, '📱 霖州引擎', { timeOut: 0, extendedTimeOut: 0, closeButton: false, tapToDismiss: true }); } catch (e) {}
+        } else {
+          log('无差异，无需更新');
+          if (manual) { try { toastr.info('已是最新，无需更新', '📱 霖州引擎'); } catch (e) {} }
+        }
+      } catch (e) {
+        log('同步异常：' + (e && e.message || e));
+        if (manual) { try { toastr.warning('检查更新失败，稍后再试', '📱 霖州引擎'); } catch (e2) {} }
+      }
+    }
+  };
+
+  window.LZWorld = window.LZWorld || {};
+  window.LZWorld.Sync = Sync;
 })();
 
 
@@ -5708,8 +6096,24 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     var numsCross = numrow('crossMax', '顺带带几个相关会话') + numrow('crossLines', '每个相关会话带几条');
     var numsInj = numrow('injRecent', '聊过几楼内就注入') + numrow('injMention', '点名几楼内就注入') +
       numrow('injMax', '一次最多注入几个会话') + numrow('injRounds', '每会话注入最近几条');
+    // 设定自动更新：开/关 + 手动兜底按钮（写 localStorage，Sync 读取；手机端没有控制台，必须给可点入口）
+    var syncOn = true;
+    try { if (W.Sync && W.Sync.syncEnabled) syncOn = W.Sync.syncEnabled(); } catch (e) {}
+    var swModes = [
+      ['1', '开启', '世界书设定有更新时自动同步进卡，toast 告知更新了什么'],
+      ['0', '关闭', '这张卡保持现状，不再接收任何设定更新']
+    ];
+    var csRows = swModes.map(function (m) {
+      return '<div class="lzw-setrow' + (syncOn === (m[0] === '1') ? ' on' : '') + '" data-syncsw="' + m[0] + '">' +
+        '<div class="lzw-setmain"><div class="lzw-setname">' + m[1] + '</div><div class="lzw-setdesc">' + m[2] + '</div></div>' +
+        '<span class="lzw-setck">' + C.ICON_TOK + '</span></div>';
+    }).join('') +
+      '<div class="lzw-setrow" data-syncnow="1"><div class="lzw-setmain"><div class="lzw-setname">立刻检查更新</div>' +
+      '<div class="lzw-setdesc">网络异常或长期未更新时点这里，强制与最新版对齐（关闭状态下也可用）</div></div>' +
+      '<span class="lzw-setck">↻</span></div>';
     return '<div class="lzw-body"><div class="lzw-setwrap">' +
       '<div class="lzw-setsec">生成 API</div><div class="lzw-setcard">' + rows + detail + '</div>' + pick +
+      '<div class="lzw-setsec">设定自动更新</div><div class="lzw-setcard">' + csRows + '</div>' +
       '<div class="lzw-setsec">手机生成 · 主线正文</div><div class="lzw-setcard">' + numsMain + '</div>' +
       '<div class="lzw-setsec">手机生成 · 聊天记录</div><div class="lzw-setcard">' + numsHist + '</div>' +
       '<div class="lzw-setsec">手机生成 · 跨会话</div><div class="lzw-setcard">' + numsCross + '</div>' +
@@ -5734,6 +6138,17 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
           saveApi({ mode: el.dataset.amode });
           UI._setpick = null;
           UI.render();
+        };
+      });
+      ph.querySelectorAll('[data-syncsw]').forEach(function (el) {
+        el.onclick = function () {
+          try { if (window.LZWorld.Sync) window.LZWorld.Sync.setSyncEnabled(el.dataset.syncsw === '1'); } catch (e) {}
+          UI.render();
+        };
+      });
+      ph.querySelectorAll('[data-syncnow]').forEach(function (el) {
+        el.onclick = function () {
+          try { if (window.LZWorld.Sync) window.LZWorld.Sync.run(true); } catch (e) {}
         };
       });
       ph.querySelectorAll('[data-num]').forEach(function (el) {
@@ -6104,7 +6519,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-10-18a';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-10-18b';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -8285,6 +8700,9 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
       await this.load();
 
+      // 设定同步：异步静默跑，失败不影响任何本地功能
+      try { if (W.Sync) W.Sync.run(); } catch (e) {}
+
       this.locateLine();
       // 刷新丢在半路的通话：残卷补「通话中断」收尾（幂等，已闭合的段不碰）
       try { this.closeOrphanCalls(); } catch (e) {}
@@ -8339,6 +8757,8 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   window.LZWorld = window.LZWorld || {};
   window.LZWorld.Engine = Engine;
+  // 语义化版本号：设定同步 minPlugin 门槛用（ENGINE_VER 日期串没法比大小）；升格式才动它
+  window.LZWorld.VERSION = '1.0.0';
 
   // 启动
   Engine.init().catch(function (e) {

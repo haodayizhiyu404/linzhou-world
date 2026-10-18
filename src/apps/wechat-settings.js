@@ -80,8 +80,24 @@
     var numsCross = numrow('crossMax', '顺带带几个相关会话') + numrow('crossLines', '每个相关会话带几条');
     var numsInj = numrow('injRecent', '聊过几楼内就注入') + numrow('injMention', '点名几楼内就注入') +
       numrow('injMax', '一次最多注入几个会话') + numrow('injRounds', '每会话注入最近几条');
+    // 设定自动更新：开/关 + 手动兜底按钮（写 localStorage，Sync 读取；手机端没有控制台，必须给可点入口）
+    var syncOn = true;
+    try { if (W.Sync && W.Sync.syncEnabled) syncOn = W.Sync.syncEnabled(); } catch (e) {}
+    var swModes = [
+      ['1', '开启', '世界书设定有更新时自动同步进卡，toast 告知更新了什么'],
+      ['0', '关闭', '这张卡保持现状，不再接收任何设定更新']
+    ];
+    var csRows = swModes.map(function (m) {
+      return '<div class="lzw-setrow' + (syncOn === (m[0] === '1') ? ' on' : '') + '" data-syncsw="' + m[0] + '">' +
+        '<div class="lzw-setmain"><div class="lzw-setname">' + m[1] + '</div><div class="lzw-setdesc">' + m[2] + '</div></div>' +
+        '<span class="lzw-setck">' + C.ICON_TOK + '</span></div>';
+    }).join('') +
+      '<div class="lzw-setrow" data-syncnow="1"><div class="lzw-setmain"><div class="lzw-setname">立刻检查更新</div>' +
+      '<div class="lzw-setdesc">网络异常或长期未更新时点这里，强制与最新版对齐（关闭状态下也可用）</div></div>' +
+      '<span class="lzw-setck">↻</span></div>';
     return '<div class="lzw-body"><div class="lzw-setwrap">' +
       '<div class="lzw-setsec">生成 API</div><div class="lzw-setcard">' + rows + detail + '</div>' + pick +
+      '<div class="lzw-setsec">设定自动更新</div><div class="lzw-setcard">' + csRows + '</div>' +
       '<div class="lzw-setsec">手机生成 · 主线正文</div><div class="lzw-setcard">' + numsMain + '</div>' +
       '<div class="lzw-setsec">手机生成 · 聊天记录</div><div class="lzw-setcard">' + numsHist + '</div>' +
       '<div class="lzw-setsec">手机生成 · 跨会话</div><div class="lzw-setcard">' + numsCross + '</div>' +
@@ -106,6 +122,17 @@
           saveApi({ mode: el.dataset.amode });
           UI._setpick = null;
           UI.render();
+        };
+      });
+      ph.querySelectorAll('[data-syncsw]').forEach(function (el) {
+        el.onclick = function () {
+          try { if (window.LZWorld.Sync) window.LZWorld.Sync.setSyncEnabled(el.dataset.syncsw === '1'); } catch (e) {}
+          UI.render();
+        };
+      });
+      ph.querySelectorAll('[data-syncnow]').forEach(function (el) {
+        el.onclick = function () {
+          try { if (window.LZWorld.Sync) window.LZWorld.Sync.run(true); } catch (e) {}
         };
       });
       ph.querySelectorAll('[data-num]').forEach(function (el) {

@@ -16,7 +16,7 @@ const ctx = {
   replaceVariables: (v) => { const snap = JSON.parse(JSON.stringify(v)); for (const k of Object.keys(__vars)) delete __vars[k]; Object.assign(__vars, snap); },
 };
 vm.createContext(ctx);
-for (const f of ['src/store.js', 'src/status.js', 'src/worldbook.js', 'src/tts.js', 'src/prompt.js', 'src/floor.js', 'src/engine.js']) {
+for (const f of ['src/store.js', 'src/status.js', 'src/worldbook.js', 'src/sync.js', 'src/tts.js', 'src/prompt.js', 'src/floor.js', 'src/engine.js']) {
   vm.runInContext(fs.readFileSync(path.join(ROOT, f), 'utf8'), ctx, { filename: f });
 }
 const LW = ctx.window.LZWorld;
@@ -1275,6 +1275,49 @@ ctx.getWorldbook = async () => [
   // 主题斜体污染：嘎嘎灰/棉花糖等主题给裸 i/em 套气泡底色，特异性碾压 CSS——结构性小元素禁用 i 标签
   eq('状态栏·信号格用span免疫主题', wsrc.indexOf('lzw-sig"><span></span>') !== -1 && wsrc.indexOf('.lzw-sig i{') === -1 && wsrc.indexOf('.lzw-sig span{') !== -1, true);
   eq('通话记录·meta不用i标签', wsrc.indexOf('.lzw-chist-main i{') === -1 && wcallh.indexOf('<span class="chm">') !== -1, true);
+
+  // ── 设定同步（31d）：差异驱动 / 开关归用户 / 删除传播 / minPlugin 门槛 ──
+  console.log('[设定同步]');
+  eq('同步·模块装载', typeof LW.Sync, 'object');
+  eq('同步·semver数字比较', LW.Sync.semverLTE('1.0.0', '1.1.0') === true && LW.Sync.semverLTE('1.10.0', '1.9.0') === false && LW.Sync.semverLTE('1.0.0', '1.0.0') === true, true);
+  eq('同步·开关默认开', LW.Sync.syncEnabled(), true);
+  eq('同步·引擎语义版本号', /^[0-9]+\.[0-9]+\.[0-9]+$/.test(LW.VERSION || ''), true);
+  eq('同步·引擎挂载同步', esrc2.indexOf('W.Sync.run()') !== -1, true);
+  eq('同步·多源拉取链', fs.readFileSync(path.join(ROOT, 'src/sync.js'), 'utf8').indexOf('raw.githubusercontent.com') !== -1 && fs.readFileSync(path.join(ROOT, 'src/sync.js'), 'utf8').indexOf('gcore.jsdelivr.net') !== -1, true);
+  // 可变 mock 书：同步全程在它身上读写（replaceWorldbook 先快照再换血，防同引用清空）
+  const syncBook = [
+    { name: '设定A', enabled: true, content: '旧内容A', strategy: { type: 'selective', keys: ['旧键'], keys_secondary: { logic: 'and_any', keys: [] } }, position: { type: 'after_character_definition', role: 'system', depth: 4, order: 100 } },
+    { name: '设定B', enabled: true, content: '内容B' },
+    { name: '霖州手机::音色', enabled: true, content: '{"enabled":true}' },
+    { name: '霖州手机::版本', enabled: false, content: '{"v":1,"titles":["设定A","设定B"]}' }
+  ];
+  ctx.getWorldbook = async () => syncBook;
+  ctx.getCharLorebooks = () => ({ primary: '测试书' });
+  ctx.replaceWorldbook = async (name, entries) => { const cp = entries.slice(); syncBook.length = 0; cp.forEach(function (e) { syncBook.push(e); }); return cp; };
+  const syncR = await LW.Sync.apply({ version: 2, minPlugin: '1.0.0', entries: [
+    { title: '设定A', content: '新内容A', keys: ['新键'], keysSecondary: [], constant: false, order: 100, position: 1 },
+    { title: '设定C', content: '全新条目C', keys: ['新条目'], keysSecondary: [], constant: true, order: 50, position: 1 },
+    { title: '霖州手机::音色', content: '恶意覆盖' }
+  ]});
+  eq('同步·apply三计数', syncR.applied === true && syncR.updated === 1 && syncR.created === 1 && syncR.deleted === 1, true);
+  const syncByName = {};
+  syncBook.forEach(function (e) { syncByName[e.name] = e; });
+  eq('同步·改内容生效', syncByName['设定A'].content, '新内容A');
+  eq('同步·删除传播', !syncByName['设定B'], true);
+  eq('同步·新建条目', !!(syncByName['设定C'] && syncByName['设定C'].content === '全新条目C'), true);
+  eq('同步·双冒号条目拒收', syncByName['霖州手机::音色'].content, '{"enabled":true}');
+  eq('同步·版本快照重写', JSON.parse(syncByName['霖州手机::版本'].content).titles.join(','), '设定A,设定C');
+  const syncRej = await LW.Sync.apply({ version: 3, minPlugin: '9.9.9', entries: [{ title: '设定A', content: '破坏' }] });
+  eq('同步·minPlugin门槛拒收', syncRej.applied === false && syncByName['设定A'].content === '新内容A', true);
+  const syncNoop = await LW.Sync.apply({ version: 2, minPlugin: '1.0.0', entries: [
+    { title: '设定A', content: '新内容A', keys: ['新键'], keysSecondary: [], constant: false, order: 100, position: 1 },
+    { title: '设定C', content: '全新条目C', keys: ['新条目'], keysSecondary: [], constant: true, order: 50, position: 1 }
+  ]});
+  eq('同步·无差异静默', syncNoop.applied, false);
+  const wsetSrc = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-settings.js'), 'utf8');
+  eq('同步·设置屏开关与手动', wsetSrc.indexOf('data-syncsw') !== -1 && wsetSrc.indexOf('data-syncnow') !== -1, true);
+  eq('同步·构建含sync模块', bSrc.includes("'src/sync.js'"), true);
+  eq('同步·发版工具在位', fs.existsSync(path.join(ROOT, 'tools/publish.js')) && fs.existsSync(path.join(ROOT, 'tools/push-manifest.js')) && fs.existsSync(path.join(ROOT, '发布设定.bat')), true);
 
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');

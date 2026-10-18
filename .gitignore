@@ -16,3 +16,6 @@ test/bell.html
 
 # 用户素材，不上库
 素材/
+
+# 发版工具的母本路径缓存（本机路径，不进 git）
+tools/st-world.local.txt

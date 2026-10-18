@@ -8,6 +8,7 @@ const ORDER = [
   'src/store.js',
   'src/status.js',
   'src/worldbook.js',
+  'src/sync.js',
   'src/tts.js',
   'src/prompt.js',
   'src/floor.js',
