@@ -1271,7 +1271,10 @@ ctx.getWorldbook = async () => [
   eq('TTS·语速UI三件套', wttsSrc.includes('data-tspeed') && wttsSrc.includes('data-tspeednum') && wttsSrc.includes('data-tspeedreset') && wsrc.includes('lzw-speedrg'), true);
   await LW.Tts.save({ speed: 0.8 });
   eq('TTS·语速保存即生效', LW.Tts.cfgCache.speed === 0.8, true);
-  await LW.Tts.save({ speed: 1 });
+  await LW.Tts.save({ speed: 1 });
+  // 主题斜体污染：嘎嘎灰/棉花糖等主题给裸 i/em 套气泡底色，特异性碾压 CSS——结构性小元素禁用 i 标签
+  eq('状态栏·信号格用span免疫主题', wsrc.indexOf('lzw-sig"><span></span>') !== -1 && wsrc.indexOf('.lzw-sig i{') === -1 && wsrc.indexOf('.lzw-sig span{') !== -1, true);
+  eq('通话记录·meta不用i标签', wsrc.indexOf('.lzw-chist-main i{') === -1 && wcallh.indexOf('<span class="chm">') !== -1, true);
 
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');

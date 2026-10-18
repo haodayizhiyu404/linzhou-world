@@ -24,7 +24,7 @@
             (x.s.dur || (x.s.interrupted ? '中断' : '已接通')) + ' · ' + x.s.count + '条';
           return '<div class="lzw-chistrow" data-chv="' + x.idx + '">' +
             '<span class="lzw-chist-ico">' + (mode === 'video' ? C.ICON_VCALL : C.ICON_CALL) + '</span>' +
-            '<span class="lzw-chist-main"><b>' + C.esc(when || '时间未知') + '</b><i>' + C.esc(meta) + '</i></span>' +
+            '<span class="lzw-chist-main"><b>' + C.esc(when || '时间未知') + '</b><span class="chm">' + C.esc(meta) + '</span></span>' +
             '<span class="lzw-cdetcv">' + C.ICON_CHEV + '</span></div>';
         }).join('');
     };

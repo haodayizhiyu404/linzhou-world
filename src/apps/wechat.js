@@ -98,10 +98,12 @@
     '.lzw-island{position:absolute;left:50%;top:9px;transform:translateX(-50%);width:72px;height:17px;',
     'background:#0b0d10;border-radius:10px}',
     '.lzw-sicons{display:flex;align-items:center;gap:5px}',
+    // 信号格用 span 不用 i/em：酒馆主题普遍给斜体元素套气泡底色（嘎嘎灰/棉花糖等），
+    // i 标签会被主题染成粉块；主题选择器带五层 :not()，特异性碾压，CSS 压不住，只能换标签
     '.lzw-sig{display:inline-flex;align-items:flex-end;gap:1.5px;height:11px}',
-    '.lzw-sig i{display:block;width:3px;background:#111;border-radius:1px}',
-    '.lzw-sig i:nth-child(1){height:4px}.lzw-sig i:nth-child(2){height:6px}',
-    '.lzw-sig i:nth-child(3){height:8px}.lzw-sig i:nth-child(4){height:10px;opacity:.35}',
+    '.lzw-sig span{display:block;width:3px;background:#111;border-radius:1px}',
+    '.lzw-sig span:nth-child(1){height:4px}.lzw-sig span:nth-child(2){height:6px}',
+    '.lzw-sig span:nth-child(3){height:8px}.lzw-sig span:nth-child(4){height:10px;opacity:.35}',
     // 应用栏
     '.lzw-appbar{flex:none;position:relative;min-height:40px;display:flex;align-items:center;gap:6px;padding:2px 10px 8px;',
     'background:rgba(247,247,249,.92);border-bottom:1px solid rgba(0,0,0,.06)}',
@@ -121,7 +123,7 @@
     // 朋友圈屏：状态栏脱离文档流 + 透明，时钟/信号加白色光晕保证暗封面上可读
     '.lzw-scr-moments .lzw-sbar{position:absolute;top:0;left:0;right:0;z-index:7;background:transparent}',
     '.lzw-scr-moments .lzw-clock{text-shadow:0 0 6px rgba(255,255,255,.95),0 0 12px rgba(255,255,255,.6)}',
-    '.lzw-scr-moments .lzw-sig i{box-shadow:0 0 3px rgba(255,255,255,.95),0 0 8px rgba(255,255,255,.55)}',
+    '.lzw-scr-moments .lzw-sig span{box-shadow:0 0 3px rgba(255,255,255,.95),0 0 8px rgba(255,255,255,.55)}',
     // 主体
     '.lzw-body{flex:1;min-height:0;overflow-y:auto;scrollbar-gutter:stable;position:relative;z-index:1}',
     // 首页（壁纸 + 大时钟 + 应用网格）；壁纸铺整个屏幕，浅色系配深色字
@@ -352,7 +354,7 @@
     '.lzw-chist-ico{width:34px;height:34px;border-radius:9px;background:#f2f3f5;display:flex;align-items:center;justify-content:center;color:#555;flex:none}',
     '.lzw-chist-main{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}',
     '.lzw-chist-main b{font-size:13.5px;color:#111;font-weight:500}',
-    '.lzw-chist-main i{font-size:11.5px;color:#9aa0a8;font-style:normal}',
+    '.lzw-chist-main .chm{font-size:11.5px;color:#9aa0a8;font-style:normal}',
     // 说话弹窗 + 删除确认：灰黑半透明面板，贴合通话暗色场景；输入区聚焦保持暗色不刺眼
     '.lzw-callta{width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:10px;color:#fff;caret-color:#fff;padding:9px 11px;font-size:13.5px;line-height:1.55;resize:none;outline:none !important;margin-bottom:2px;font-family:inherit}',
     '.lzw-callta::placeholder{color:rgba(255,255,255,.55) !important}', // 个别前端主题会给 placeholder 上奇色，强制柔和白
@@ -961,7 +963,7 @@
       var sbar =
         '<div class="lzw-sbar"><span class="lzw-clock">' + esc(clock) + '</span>' +
         '<span class="lzw-island"></span>' +
-        '<span class="lzw-sicons"><span class="lzw-sig"><i></i><i></i><i></i><i></i></span>' +
+        '<span class="lzw-sicons"><span class="lzw-sig"><span></span><span></span><span></span><span></span></span>' +
         ICON_WIFI +
         ICON_BATT + '</span></div>';
 
