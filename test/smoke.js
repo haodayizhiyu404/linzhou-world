@@ -1319,6 +1319,36 @@ ctx.getWorldbook = async () => [
   eq('同步·构建含sync模块', bSrc.includes("'src/sync.js'"), true);
   eq('同步·发版工具在位', fs.existsSync(path.join(ROOT, 'tools/publish.js')) && fs.existsSync(path.join(ROOT, 'tools/push-manifest.js')) && fs.existsSync(path.join(ROOT, '发布设定.bat')), true);
 
+  // ── 卡字段同步（二期·31e）：白名单三组 / 稳定哈希 / merge-attributes 全流程 ──
+  eq('卡同步·纯函数导出', typeof LW.Sync.planCardUpdates === 'function' && typeof LW.Sync.stableHash === 'function' && typeof LW.Sync.buildCardUpdate === 'function' && typeof LW.Sync.applyCard === 'function', true);
+  eq('卡同步·稳定哈希键排序与换行归一', LW.Sync.stableHash({ b: 1, a: 'x\r\ny' }) === LW.Sync.stableHash({ a: 'x\ny', b: 1 }) && LW.Sync.stableHash('甲') !== LW.Sync.stableHash('乙'), true);
+  const cardLocal = { first_mes: '旧开场', alternate_greetings: [], creator: '作者X', character_version: '1.0' };
+  const cardGet = function (k) { return k === 'greetings' ? { first_mes: cardLocal.first_mes, alternate_greetings: cardLocal.alternate_greetings } : cardLocal[k]; };
+  const cardPlan = LW.Sync.planCardUpdates({ fields: { first_mes: '新开场', alternate_greetings: ['备1'], creator: '作者X', character_version: '2.0' } }, cardGet);
+  eq('卡同步·差异计划只挑变的', cardPlan.planned.map(function (p2) { return p2.key; }).join(','), 'greetings,character_version');
+  eq('卡同步·白名单不收描述', LW.Sync.planCardUpdates({ fields: { description: '被改掉的描述', creator: '作者X' } }, cardGet).planned.length, 0);
+  const cardUp = LW.Sync.buildCardUpdate('霖州往事.png', cardPlan.planned);
+  eq('卡同步·请求体双层写入', cardUp.avatar === '霖州往事.png' && cardUp.first_mes === '新开场' && cardUp.data.first_mes === '新开场' && cardUp.data.alternate_greetings.length === 1 && cardUp.data.character_version === '2.0' && !cardUp.data.extensions, true);
+  // 全流程：假卡+假 fetch，写 → 重读盘 → 内存整只替换
+  const fakeCh = { avatar: '霖州往事.png', first_mes: '旧开场', data: { alternate_greetings: [], character_version: '1.0' } };
+  const fakeChars = [fakeCh];
+  ctx.window.parent = { SillyTavern: { getContext: () => ({ characters: fakeChars, characterId: 0, selectCharacterById: function () {} }) } };
+  global.__cardUp = null;
+  ctx.fetch = async (url, opts) => {
+    if (url === '/csrf-token') return { ok: true, json: async () => ({ token: 'tk' }) };
+    if (url === '/api/characters/merge-attributes') { global.__cardUp = JSON.parse(opts.body); return { ok: true }; }
+    if (url === '/api/characters/get') return { ok: true, json: async () => ({ avatar: '霖州往事.png', first_mes: '新开场', data: { alternate_greetings: ['备1'], character_version: '2.0' } }) };
+    return { ok: false, status: 404 };
+  };
+  const cardR = await LW.Sync.applyCard({ card: { fields: { first_mes: '新开场', alternate_greetings: ['备1'], character_version: '2.0' } } });
+  eq('卡同步·全流程写入并换内存', cardR.applied === true && cardR.labels.join(',') === '开场白,版本号' && fakeChars[0].first_mes === '新开场' && !!global.__cardUp && global.__cardUp.first_mes === '新开场', true);
+  ctx.window.parent = null;
+  const cardR2 = await LW.Sync.applyCard({ card: { fields: { character_version: '9.9' } } });
+  eq('卡同步·未开卡静默', cardR2.applied, false);
+  const pubSrc = fs.readFileSync(path.join(ROOT, 'tools/publish.js'), 'utf8');
+  eq('卡同步·发布工具抠卡', pubSrc.indexOf('readCardPng') !== -1 && pubSrc.indexOf("'霖州往事'") !== -1 && pubSrc.indexOf('regex_scripts') === -1, true);
+  eq('卡同步·minPlugin门槛1.1.0', pubSrc.indexOf("minPlugin: '1.1.0'") !== -1, true);
+
   LW.Engine.applyLine(null, '收尾');
   console.log('\n结果：' + pass + ' 通过，' + fail + ' 失败');
   process.exit(fail ? 1 : 0);

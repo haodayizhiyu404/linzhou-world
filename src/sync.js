@@ -13,6 +13,11 @@
 //  minPlugin 是格式门槛：清单要求比本插件新 → 整体拒收，等插件追上
 //  （防 CDN 缓存按文件分别过期造成的「旧插件+新清单」错配；二期卡字段同步上线即靠它守门）。
 //  全程失败静默：拉不到/读不懂/写不进都只记日志，绝不影响本地既有内容。
+//
+//  二期（已上线）：角色卡字段同步——白名单只三组：开场白组（first_mes+alternate_greetings
+//  整组比对整组换）/ 作者名 / 版本号。描述、性格、场景等「基础框架」不托管（老卡不会动）；
+//  卡面正则不托管（20+ 条旧体系遗物，不再变动；要加那天往 CARD_GROUPS 补一组即可）。
+//  卡字段与世界书同受 minPlugin 门槛保护：清单要求比本插件新 → 两段整体拒收。
 // ═══════════════════════════════════════════════════════════
 (function () {
   'use strict';
@@ -123,11 +128,197 @@
     return { applied: (res.updated + res.created + deleted) > 0, updated: res.updated, created: res.created, deleted: deleted, from: prev.v, to: mf.version };
   }
 
+  // ─────────────────────────────────────────────
+  // 二期：角色卡字段同步（白名单：开场白组 first_mes+alternate_greetings / 作者名 / 版本号）
+  //
+  // 【纪律】只写白名单字段；其他插件挂在 data.extensions 下的数据永不触碰。
+  // 主权与世界书统一为「作者赢」：清单值 ≠ 本地值就照清单覆盖。
+  // 开场白整组处理（first_mes + alternate_greetings 一起比对一起换）：
+  //   作者增/删/改开场白都只是「新数组≠旧数组」，一次覆盖全部到位。
+  // ─────────────────────────────────────────────
+  var CARD_GROUPS = [
+    { key: 'greetings', label: '开场白', fields: ['first_mes', 'alternate_greetings'] },
+    { key: 'creator', label: '作者名' },
+    { key: 'character_version', label: '版本号' }
+  ];
+
+  // 确定性哈希：键排序的稳定串化 + djb2。字符串统一 \r\n→\n（ST 读写可能归一化换行，
+  // 不归一化会出现「永远有差异」的假象）。
+  function stableStringify(v) {
+    if (typeof v === 'string') return JSON.stringify(v.replace(/\r\n/g, '\n'));
+    if (v === null || typeof v !== 'object') return JSON.stringify(v === undefined ? null : v);
+    if (Array.isArray(v)) return '[' + v.map(stableStringify).join(',') + ']';
+    var keys = Object.keys(v).sort();
+    return '{' + keys.map(function (k) { return JSON.stringify(k) + ':' + stableStringify(v[k]); }).join(',') + '}';
+  }
+  function stableHash(v) {
+    var s = stableStringify(v), h = 5381;
+    for (var i = 0; i < s.length; i++) h = (((h << 5) + h) + s.charCodeAt(i)) >>> 0;
+    return h.toString(16);
+  }
+
+  // 清单里这组的远端值（没带这组返回 undefined = 不管）
+  function groupRemote(card, g) {
+    var f = card.fields || {};
+    if (g.fields) {
+      if (f.first_mes === undefined && f.alternate_greetings === undefined) return undefined;
+      return { first_mes: f.first_mes, alternate_greetings: f.alternate_greetings };
+    }
+    return f[g.key];
+  }
+
+  // 纯函数（测试直调）：比对清单卡字段 vs 本地值，有差异即进计划（作者赢，无基线概念）。
+  // getField(key) 取本地当前值。返回 {planned:[{key,label,value}], unchanged}。
+  function planCardUpdates(card, getField) {
+    var planned = [], unchanged = 0;
+    CARD_GROUPS.forEach(function (g) {
+      var remote = groupRemote(card, g);
+      if (remote === undefined) return;
+      if (stableHash(getField(g.key)) === stableHash(remote)) { unchanged++; return; }
+      planned.push({ key: g.key, label: g.label, value: remote });
+    });
+    return { planned: planned, unchanged: unchanged };
+  }
+
+  // 卡上下文：沙盒原生注入优先，父页 getContext 兜底（与 engine.openingCtx 同套）
+  function cardCtx() {
+    try { if (typeof SillyTavern !== 'undefined' && SillyTavern && SillyTavern.characters) return SillyTavern; } catch (e) {}
+    try {
+      var st = window.parent && window.parent.SillyTavern;
+      var c = st && st.getContext && st.getContext();
+      if (c && c.characters) return c;
+    } catch (e) {}
+    return null;
+  }
+
+  // 本地取值适配器：v2 卡字段可能在顶层也可能在 data 镜像下，两处都读（data 优先）
+  function cardFieldGetter(ch) {
+    var d = ch.data || {};
+    return function (key) {
+      if (key === 'greetings') {
+        return {
+          first_mes: d.first_mes !== undefined ? d.first_mes : ch.first_mes,
+          alternate_greetings: d.alternate_greetings !== undefined ? d.alternate_greetings : ch.alternate_greetings
+        };
+      }
+      return d[key] !== undefined ? d[key] : ch[key];
+    };
+  }
+
+  // 组装 merge-attributes 请求体：顶层+data 镜像都写（ST 两个位置都读），
+  // data 只带白名单字段——deepMerge 递归合对象，extensions 里其他插件的键不受影响。
+  function buildCardUpdate(avatar, planned) {
+    var up = { avatar: avatar, data: {} };
+    planned.forEach(function (p) {
+      if (p.key === 'greetings') {
+        var v = p.value;
+        if (v.first_mes !== undefined) { up.first_mes = v.first_mes; up.data.first_mes = v.first_mes; }
+        if (v.alternate_greetings !== undefined) { up.alternate_greetings = v.alternate_greetings; up.data.alternate_greetings = v.alternate_greetings; }
+      } else {
+        up[p.key] = p.value; up.data[p.key] = p.value;
+      }
+    });
+    return up;
+  }
+
+  // 写成功后让酒馆重读盘并广播（对齐 ST 自己的编辑流程：/edit 后 getOneCharacter 整只替换
+  // + CHARACTER_EDITED 事件。不这么做，内存/磁盘虽对，但角色列表等监听者不知道卡变了）。
+  // 重读失败则退化为手补内存对象。
+  async function reloadCardFromDisk(ctx, ch, planned) {
+    var done = false;
+    try {
+      var r = await postJson('/api/characters/get', { avatar_url: ch.avatar });
+      if (r && r.ok) {
+        var fresh = await r.json();
+        var arr = ctx.characters;
+        for (var i = 0; i < arr.length; i++) {
+          if (arr[i] && arr[i].avatar === ch.avatar) { arr[i] = fresh; done = true; break; }
+        }
+      }
+    } catch (e) {}
+    if (!done) refreshCardMemory(ch, planned);
+    try {
+      var p = window.parent;
+      var es = (typeof eventSource !== 'undefined') ? eventSource : (p && p.eventSource);
+      var et = (typeof event_types !== 'undefined') ? event_types : (p && p.event_types);
+      if (es && et && et.CHARACTER_EDITED) es.emit(et.CHARACTER_EDITED, { detail: { id: ctx.characterId != null ? ctx.characterId : ctx.this_chid } });
+    } catch (e) {}
+    // 面板刷新：角色编辑器是「打开时快照」，CHARACTER_EDITED 只有 PromptManager 在听，
+    // 开着的面板不会自己重填。重选当前角色（switchMenu:false 不弹菜单、不切聊天），
+    // 走 ST 自己的 select_selected_character 从新数据重填全部字段（版本号同理）。
+    try {
+      var stx = (typeof SillyTavern !== 'undefined' && SillyTavern && SillyTavern.getContext) ? SillyTavern.getContext()
+        : (p && p.SillyTavern && p.SillyTavern.getContext && p.SillyTavern.getContext());
+      var cid = ctx.characterId != null ? ctx.characterId : ctx.this_chid;
+      if (stx && stx.selectCharacterById && cid != null) stx.selectCharacterById(String(cid), { switchMenu: false });
+    } catch (e) {}
+  }
+
+  // 兜底：重读盘失败时手补内存里的卡对象
+  function refreshCardMemory(ch, planned) {
+    var d = ch.data = ch.data || {};
+    planned.forEach(function (p) {
+      if (p.key === 'greetings') {
+        if (p.value.first_mes !== undefined) { ch.first_mes = p.value.first_mes; d.first_mes = p.value.first_mes; }
+        if (p.value.alternate_greetings !== undefined) { ch.alternate_greetings = p.value.alternate_greetings; d.alternate_greetings = p.value.alternate_greetings; }
+      } else { ch[p.key] = p.value; d[p.key] = p.value; }
+    });
+  }
+
+  var csrfToken = null;
+  async function postJson(url, body, ms) {
+    if (!csrfToken) {
+      try {
+        var r0 = await timedFetch('/csrf-token', 5000);
+        if (r0.ok) csrfToken = (await r0.json()).token;
+      } catch (e) {}
+    }
+    var headers = { 'Content-Type': 'application/json' };
+    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+    var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { ctrl.abort(); }, ms || 15000) : null;
+    return fetch(url, { method: 'POST', headers: headers, body: JSON.stringify(body), signal: ctrl ? ctrl.signal : undefined })
+      .finally(function () { if (timer) clearTimeout(timer); });
+  }
+
+  // 卡同步主流程：差异驱动（不看清单版本号——版本号归世界书），失败静默。
+  async function applyCard(mf) {
+    var card = mf && mf.card;
+    if (!card || typeof card !== 'object') return { applied: false, reason: '清单无卡字段' };
+
+    var ctx = cardCtx();
+    var ch = ctx && ctx.characters && ctx.characters[ctx.characterId != null ? ctx.characterId : ctx.this_chid];
+    if (!ch || !ch.avatar) return { applied: false, reason: '未打开角色卡' };
+
+    var plan = planCardUpdates(card, cardFieldGetter(ch));
+    var labels = plan.planned.map(function (p) { return p.label; });
+
+    if (!plan.planned.length) return { applied: false, reason: '卡字段无差异' };
+
+    // 静默直写（作者赢，与世界书同待遇）；toast 由 run() 统一发，这里只记日志
+    try {
+      var up = buildCardUpdate(ch.avatar, plan.planned);
+      var r = await postJson('/api/characters/merge-attributes', up);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      await reloadCardFromDisk(ctx, ch, plan.planned);
+      log('角色卡已更新：' + labels.join('、'));
+      return { applied: true, labels: labels };
+    } catch (e) {
+      log('卡字段写入失败：' + (e && e.message || e) + '（本地内容不变，下次打开重试）');
+      return { applied: false, reason: '写入失败' };
+    }
+  }
+
   var SYNC_KEY = 'lzw-sync';   // 'off' = 用户关了自动更新；缺省/其他 = 开
   var Sync = {
     semverLTE: semverLTE,
     apply: apply,
     parseVersionEntry: parseVersionEntry,
+    // 二期卡同步（planCardUpdates/stableHash/buildCardUpdate 是纯函数，测试直调）
+    planCardUpdates: planCardUpdates,
+    stableHash: stableHash,
+    buildCardUpdate: buildCardUpdate,
+    applyCard: applyCard,
     // 自动更新总开关（默认开；设置屏「设定自动更新」写入）
     syncEnabled: function () {
       try { return localStorage.getItem(SYNC_KEY) !== 'off'; } catch (e) { return true; }
@@ -153,14 +344,25 @@
         }
         var r = await apply(mf);
         if (r.reason) log(r.reason);
-        // 任何一处有实际变化 → 一条常驻 toast 说完（点按即关）；无变化：自动静默，手动报「已是最新」
+        var cr = null;
+        if (mf.card) {
+          try { cr = await applyCard(mf); } catch (e) { log('卡同步异常：' + (e && e.message || e)); }
+        }
+        // 统一报告：两端差异驱动，任何一处有实际变化 → 一条常驻 toast 说完，点一下即关（不自动消失）；
+        // 全无变化 → 自动模式完全静默；手动模式报「已是最新」给用户一个交代
+        var parts = [];
         if (r.applied) {
-          var parts = [];
-          if (r.updated) parts.push('更新' + r.updated + '条');
-          if (r.created) parts.push('新增' + r.created + '条');
-          if (r.deleted) parts.push('清理' + r.deleted + '条');
-          var msg = '设定已同步：' + parts.join('·');
-          log(msg + '（清单 v' + r.from + ' → v' + r.to + '）');
+          var wb = [];
+          if (r.updated) wb.push('更新' + r.updated + '条');
+          if (r.created) wb.push('新增' + r.created + '条');
+          if (r.deleted) wb.push('清理' + r.deleted + '条');
+          parts.push('世界书' + wb.join('·'));
+          log('清单 v' + r.from + ' → v' + r.to);
+        }
+        if (cr && cr.applied) parts.push('角色卡：' + cr.labels.join('、'));
+        if (parts.length) {
+          var msg = '设定已同步：' + parts.join('；');
+          log(msg);
           try { toastr.success(msg, '📱 霖州引擎', { timeOut: 0, extendedTimeOut: 0, closeButton: false, tapToDismiss: true }); } catch (e) {}
         } else {
           log('无差异，无需更新');

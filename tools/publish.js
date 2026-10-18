@@ -17,11 +17,12 @@
 // 选项：--detect（只诊断不写盘） / --version N / --minPlugin x.y.z / --from <目录>（换兜底扫描目录）
 // 测试用环境变量：LZW_ROOTS（分号分隔，替代盘符根列表）
 //
-// 二期预留：清单格式支持 card 段（开场白/描述/正则等卡字段同步），本工具暂不含卡字段抠取；
-// 启用那天需同步抬 minPlugin——旧插件遇新格式整体拒收，不会半懂瞎写。
+// 二期（已上线）：清单同时带「角色卡字段」——从酒馆 data/<user>/characters/霖州往事.png
+// 内嵌 JSON 抠白名单字段（开场白组/作者名/版本号）。只读卡，绝不写卡。
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const zlib = require('zlib');
 
 const ROOT = path.resolve(__dirname, '..');
 const OUT = path.join(ROOT, 'content', 'manifest.json');
@@ -30,6 +31,8 @@ const NAMEKEY = '霖大附中';       // 文件名关键字（世界书以书命
 const SIGN = '霖州手机::';        // 内容签名：确认是这张卡的书而非同名备份/杂物
 const EXACT = '【世界书】关于霖大附中不得不说的那些事.json';
 const EXCLUDE = ['媒体与表情包_StickerData'];   // 表情包不托管（用户决定）
+const CARDKEY = '霖州往事';       // 角色卡 PNG 精确文件名（不带扩展名；_本地 等变体不匹配）
+const CARD_FIELDS = ['first_mes', 'alternate_greetings', 'creator', 'character_version'];   // 卡字段白名单（正则不托管，用户拍板 2026-10-18）
 
 const args = process.argv.slice(2);
 function opt(name) { const i = args.indexOf(name); return i !== -1 ? args[i + 1] : null; }
@@ -97,6 +100,52 @@ function findExports(dir) {
     try { hits.push({ path: p, mtime: fs.statSync(p).mtimeMs }); } catch (e) {}
   }
   return hits.sort((a, b) => b.mtime - a.mtime);
+}
+
+// 从角色卡 PNG 抠内嵌 JSON（tEXt/zTXt 的 chara/ccv3 块，base64）
+function readCardPng(p) {
+  let buf;
+  try { buf = fs.readFileSync(p); } catch (e) { return null; }
+  if (buf.length < 8 || buf.readUInt32BE(0) !== 0x89504E47) return null;
+  let off = 8;
+  while (off + 8 <= buf.length) {
+    const len = buf.readUInt32BE(off);
+    const type = buf.toString('ascii', off + 4, off + 8);
+    const data = buf.slice(off + 8, off + 8 + len);
+    if (type === 'tEXt' || type === 'zTXt') {
+      const nul = data.indexOf(0);
+      const kw = data.toString('ascii', 0, nul);
+      if (kw === 'chara' || kw === 'ccv3') {
+        try {
+          const payload = type === 'tEXt' ? data.toString('latin1', nul + 1)
+            : zlib.inflateSync(data.slice(nul + 2)).toString('latin1');   // nul+1 是压缩方式字节
+          return JSON.parse(Buffer.from(payload.trim(), 'base64').toString('utf8'));
+        } catch (e) {}
+      }
+    }
+    off += 8 + len + 4;
+    if (type === 'IEND') break;
+  }
+  return null;
+}
+
+// 找角色卡 PNG：优先世界书母本的兄弟目录（data/<user>/worlds/x → data/<user>/characters/霖州往事.png），
+// 其次扫酒馆数据目录。精确文件名匹配——「霖州往事_本地.png」等变体不认。
+function findCardPng() {
+  for (const s of sources) {
+    const guess = path.join(path.dirname(path.dirname(s.path)), 'characters', CARDKEY + '.png');
+    if (fs.existsSync(guess)) return guess;
+  }
+  for (const r of stRoots()) {
+    const data = path.join(r, 'SillyTavern', 'data');
+    let users = [];
+    try { users = fs.readdirSync(data); } catch (e) { continue; }
+    for (const u of users) {
+      const guess = path.join(data, u, 'characters', CARDKEY + '.png');
+      if (fs.existsSync(guess)) return guess;
+    }
+  }
+  return null;
 }
 
 // ── 数据源解析 ──
@@ -176,14 +225,36 @@ for (const s of sources) {
 }
 const entries = [...byTitle.values()];
 
-let old = { version: 0, minPlugin: '1.0.0' };
+// ── 角色卡字段（二期同步源）：白名单抠取（开场白组/作者名/版本号），其他插件的 data.extensions 数据不碰 ──
+let card = null;
+const cardPng = findCardPng();
+if (cardPng) {
+  const cj = readCardPng(cardPng);
+  const d = (cj && (cj.data || cj)) || {};
+  const fields = {};
+  for (const f of CARD_FIELDS) { if (d[f] !== undefined) fields[f] = d[f]; }
+  if (Object.keys(fields).length) {
+    card = { fields };
+    console.log('角色卡（' + path.basename(cardPng) + '）：' + Object.keys(fields).length + ' 个字段' +
+      '，备选开场白 ' + (Array.isArray(fields.alternate_greetings) ? fields.alternate_greetings.length : 0) + ' 条' +
+      '，版本号 ' + (fields.character_version || '（空）') + '，作者名 ' + (fields.creator || '（空）'));
+  } else {
+    console.log('角色卡（' + path.basename(cardPng) + '）白名单字段全是空的，本次清单不含卡字段');
+    card = null;
+  }
+} else {
+  console.log('未找到角色卡 PNG（' + CARDKEY + '.png），本次清单不含角色卡字段');
+}
+
+let old = { version: 0, minPlugin: '1.1.0' };
 try { old = JSON.parse(fs.readFileSync(OUT, 'utf8')); } catch (e) {}
 const version = opt('--version') ? parseInt(opt('--version'), 10) : (old.version || 0) + 1;
-const minPlugin = opt('--minPlugin') || old.minPlugin || '1.0.0';
+const minPlugin = opt('--minPlugin') || old.minPlugin || '1.1.0';
 if (!Number.isInteger(version) || version < 0) { console.error('version 必须是非负整数'); process.exit(1); }
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 const manifest = { version, minPlugin, entries };
+if (card) manifest.card = card;
 fs.writeFileSync(OUT, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
 console.log('manifest v' + version + '（minPlugin ' + minPlugin + '）：托管 ' + entries.length + ' 条，排除 ' + excluded.length + ' 条');
 if (excluded.length) console.log('  排除：' + excluded.join('、'));
