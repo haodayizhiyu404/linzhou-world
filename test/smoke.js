@@ -1292,6 +1292,11 @@ ctx.getWorldbook = async () => [
   await LW.Tts.save({ speed: 0.8 });
   eq('TTS·语速保存即生效', LW.Tts.cfgCache.speed === 0.8, true);
   await LW.Tts.save({ speed: 1 });
+  // 32b：fish 空模型默认走免费模型 s2.1-pro-free（官方默认付费）；地址栏随提供商切换（fish 内置锁定）
+  eq('TTS·fish空模型默认免费', ttsSrc.indexOf("cfg.model || 's2.1-pro-free'") !== -1, true);
+  eq('TTS·fish地址栏内置锁定', wttsSrc.includes('fish 内置固定') && wttsSrc.includes('https://api.fish.audio/v1/tts') && wttsSrc.includes('isFish'), true);
+  eq('TTS·模型占位提示默认', wttsSrc.includes('默认 s2.1-pro-free') && wttsSrc.includes('默认 tts-1'), true);
+  eq('TTS·切换提供商即重渲染', wttsSrc.includes('W.Tts.save({ provider: el.value })') && wttsSrc.includes("UI.screen === 'tts'") , true);
   // 主题斜体污染：嘎嘎灰/棉花糖等主题给裸 i/em 套气泡底色，特异性碾压 CSS——结构性小元素禁用 i 标签
   eq('状态栏·信号格用span免疫主题', wsrc.indexOf('lzw-sig"><span></span>') !== -1 && wsrc.indexOf('.lzw-sig i{') === -1 && wsrc.indexOf('.lzw-sig span{') !== -1, true);
   eq('通话记录·meta不用i标签', wsrc.indexOf('.lzw-chist-main i{') === -1 && wcallh.indexOf('<span class="chm">') !== -1, true);

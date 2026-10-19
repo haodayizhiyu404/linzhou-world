@@ -46,6 +46,7 @@
           '<button class="lzw-setbtn" data-ttest="' + C.esc(nm) + '">试音</button></div></div></div>';
       }
       var srcOpts = [['fish', 'Fish Audio（reference_id 音色）'], ['openai', 'OpenAI 兼容（公益站/OpenAI 系）']];
+      var isFish = (cfg.provider || 'fish') === 'fish';
       var srcSel = srcOpts.map(function (o) {
         return '<option value="' + o[0] + '"' + ((cfg.provider || 'fish') === o[0] ? ' selected' : '') + '>' + o[1] + '</option>';
       }).join('');
@@ -64,10 +65,12 @@
         '</div>' +
         '<div class="lzw-setsec">生成源</div><div class="lzw-setcard">' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">提供商</span><div class="lzw-setrow2"><select class="lzw-settxt" data-tprov>' + srcSel + '</select></div></div>' +
-        '<div class="lzw-setcol"><span class="lzw-setlbl">接口地址（仅 OpenAI 兼容，含 https://）</span><div class="lzw-setrow2">' +
-        '<input class="lzw-settxt" data-tcfg="endpoint" value="' + C.esc(cfg.endpoint || '') + '" placeholder="https://api.example.com"></div></div>' +
-        '<div class="lzw-setcol"><span class="lzw-setlbl">模型（可空：fish 走默认，OpenAI 兼容默认 tts-1）</span><div class="lzw-setrow2">' +
-        '<input class="lzw-settxt" data-tcfg="model" value="' + C.esc(cfg.model || '') + '" placeholder="模型名"></div></div>' +
+        '<div class="lzw-setcol"><span class="lzw-setlbl">' + (isFish ? '接口地址（fish 内置固定，无需填写）' : '接口地址（含 https://）') + '</span><div class="lzw-setrow2">' +
+        (isFish
+          ? '<input class="lzw-settxt" value="https://api.fish.audio/v1/tts" disabled>'
+          : '<input class="lzw-settxt" data-tcfg="endpoint" value="' + C.esc(cfg.endpoint || '') + '" placeholder="https://api.example.com">') + '</div></div>' +
+        '<div class="lzw-setcol"><span class="lzw-setlbl">模型（可空：fish 默认 s2.1-pro-free 免费模型，OpenAI 兼容默认 tts-1）</span><div class="lzw-setrow2">' +
+        '<input class="lzw-settxt" data-tcfg="model" value="' + C.esc(cfg.model || '') + '" placeholder="' + (isFish ? '默认 s2.1-pro-free' : '默认 tts-1') + '"></div></div>' +
         '<div class="lzw-setcol"><span class="lzw-setlbl">API 密钥（只存本机浏览器）</span><div class="lzw-setrow2">' +
         '<input class="lzw-settxt" data-tkey type="password" value="' + C.esc(key) + '" placeholder="sk-..."></div></div>' +
         '</div>' +
@@ -99,7 +102,10 @@
       if (rst) rst.onclick = function () { apply(1, true); };
     })();
     ph.querySelectorAll('[data-tprov]').forEach(function (el) {
-      el.onchange = function () { W.Tts.save({ provider: el.value }); };
+      el.onchange = function () {
+        W.Tts.save({ provider: el.value });
+        if (UI.screen === 'tts') UI.render();   // 地址栏随提供商切换（fish 内置锁定 / OpenAI 可填）
+      };
     });
     ph.querySelectorAll('[data-tcfg]').forEach(function (el) {
       el.onchange = function () { var p2 = {}; p2[el.dataset.tcfg] = el.value.trim(); W.Tts.save(p2); };

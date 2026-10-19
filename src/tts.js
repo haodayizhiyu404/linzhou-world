@@ -178,7 +178,8 @@
 
     _fish: async function (text, voice, cfg, key) {
       var headers = { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key };
-      if (cfg.model) headers['model'] = cfg.model;
+      // 空模型默认走免费模型 s2.1-pro-free（fish 官方默认是付费模型，空着会烧钱）
+      headers['model'] = cfg.model || 's2.1-pro-free';
       var csrf = await this._csrf();
       if (csrf) headers['X-CSRF-Token'] = csrf;
       var body = { text: text, reference_id: voice, format: 'mp3' };
