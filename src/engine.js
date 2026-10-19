@@ -7,7 +7,7 @@
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-10-18c';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-10-19a';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -1107,6 +1107,67 @@
       fresh.post.generated = true;
       St.forumPut(line, name, fresh.forum);
       return true;
+    },
+
+    // 回帖互动（二期）：机主新发评论后，生成 1~4 条网友反应。
+    // 「回复 @机主名:」开头的收成楼中楼挂到机主最新一条评论下；其余作为新评插到 latest 头部（新→旧）。
+    // 生成期间帖子被换一版 → 作废不写脏数据；返回新增条数（0 = 无有效输出/帖子没了）。
+    forumReact: async function (line, name, id) {
+      var W = window.LZWorld, St = W.Store;
+      var found = this.forumFindPost(line, name, id);
+      var f = found.forum, p = found.post;
+      if (!f || !p) return 0;
+      if (!p.mine || !p.mine.length) return 0;
+      var myName = this.userName();
+      var myComment = String(p.mine[p.mine.length - 1].text || '');
+      var snap; try { snap = W.Status.snapshot(null); } catch (e0) {}
+      var sec = this.section() || {};
+      var pool = [], seen = {};
+      (sec.contacts || []).forEach(function (c) { if (c.name && !seen[c.name]) { seen[c.name] = 1; pool.push(c.name); } });
+      (sec.groups || []).forEach(function (g) {
+        (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
+      });
+      var req = W.Prompt.forumReact(p, name, myComment, pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc());
+      var raw = await this.genT(req);
+      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      // 生成期间论坛可能被【换一版】重置：按 id 重新定位，帖子不在 → 作废
+      var fresh = this.forumFindPost(line, name, id);
+      if (!fresh.forum || !fresh.post) return 0;
+      var fp = fresh.post;
+      fp.latest = fp.latest || [];
+      fp.mine = fp.mine || [];
+      var added = 0;
+      String(text).split('\n').forEach(function (ln) {
+        ln = ln.trim(); if (!ln) return;
+        var cm = ln.match(/^\[评论[:：]([^:：\]]{1,16})[:：](\d{1,6})[:：]([\s\S]+)\]$/) || ln.match(/^\[评论[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
+        if (!cm) return;
+        var author = cm[1].trim();
+        var likes = cm.length === 4 ? +cm[2] : 0;
+        var body = (cm.length === 4 ? cm[3] : cm[2]).trim();
+        if (!author || !body) return;
+        var rp = body.match(/^回复\s*@([^:：\s]{1,16})[:：]\s*/);
+        var target = rp ? rp[1].trim() : '';
+        if (rp && target === myName && fp.mine.length) {
+          var mLast = fp.mine[fp.mine.length - 1];
+          mLast.nest = mLast.nest || [];
+          if (mLast.nest.length < 3) { mLast.nest.push({ author: author, to: target, text: body.slice(rp[0].length) }); added++; }
+          return;
+        }
+        if (rp) {
+          for (var i = 0; i < fp.latest.length; i++) {
+            if (fp.latest[i].author === target) {
+              fp.latest[i].nest = fp.latest[i].nest || [];
+              if (fp.latest[i].nest.length < 3) { fp.latest[i].nest.push({ author: author, to: target, text: body.slice(rp[0].length) }); added++; }
+              return;
+            }
+          }
+        }
+        fp.latest.unshift({ author: author, likes: likes, text: body });
+        added++;
+      });
+      if (!added) return 0;
+      St.forumPut(line, name, fresh.forum);
+      return added;
     },
 
     // 帖子级重roll：清掉正文与评论重新生成（标题/作者/热度/收藏不动）；失败/跳过自动还原旧版

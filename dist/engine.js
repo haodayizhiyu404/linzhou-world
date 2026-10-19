@@ -1,9 +1,9 @@
 // ═══════════════════════════════════════════════════════════
 //  霖州往事 · 数字世界引擎（构建产物，勿手改）
 //  源码见 src/ · 构建：node build/build.js
-//  构建时间：2026-10-18T08:05:54.472Z
+//  构建时间：2026-10-19T12:09:03.978Z
 // ═══════════════════════════════════════════════════════════
-var __LZW_BUILD__ = '2026-10-18 08:05';
+var __LZW_BUILD__ = '2026-10-19 12:09';
 try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } catch (e) {}
 
 // ── src/store.js ──
@@ -2402,6 +2402,56 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     };
   },
 
+  // ── 论坛 · 回帖互动（二期）：机主在帖下新发了评论，生成 1~4 条网友反应 ──
+  // 反应两种：回复机主的（「回复 @机主名:」开头，收楼中楼）+ 纯路人新评，混合着来
+  forumReact: function (post, forumName, myComment, people, profiles, snapshot, userInfo, charDesc) {
+    var myName = me();
+    var hot = (post.hot || []).slice(0, 2).map(function (h) { return '- ' + h.author + '：' + h.text; });
+    var latest = (post.latest || []).slice(0, 4).map(function (r) { return '- ' + r.author + '：' + r.text; });
+    var mine = (post.mine || []).slice(-3).map(function (m) { return '- ' + m.author + '：' + m.text; });
+    var bodyText = String(post.body || post.text || '').replace(/\n+/g, ' ').slice(0, 200);
+    var p = [
+      FICTION,
+      '',
+      '# 数字世界 · 论坛网友反应生成',
+      '',
+      '本次任务：论坛「' + forumName + '」的一条帖子下，机主「' + myName + '」刚刚新发了一条评论——请写 1~4 条网友的反应评论。',
+      '',
+      '## 这条帖子',
+      '- 标题：「' + post.title + '」（楼主：' + post.author + '）',
+      bodyText ? '- 正文梗概：' + bodyText : '',
+      '',
+      (hot.length || latest.length || mine.length) ? '## 现有评论' : '',
+      mine.length ? '机主的评论（新→旧）：\n' + mine.join('\n') : '',
+      latest.length ? '网友新评（新→旧）：\n' + latest.join('\n') : '',
+      hot.length ? '热评：\n' + hot.join('\n') : '',
+      '',
+      '## 机主刚发的这条（本次触发点）',
+      '- ' + myName + '：' + myComment,
+      '',
+      charDesc ? '## 故事主线背景\n' + charDesc : '',
+      situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+      forumPeopleBlock(people, profiles),
+      '',
+      '## 输出要求（严格遵守）',
+      '- 写 1~4 条网友反应，格式 [评论:网名:赞数:内容]（赞数多为 0 或个位数）',
+      '- 反应分两种，混合着来：回复机主的（内容以「回复 @' + myName + ':」开头，会收成楼中楼挂到机主那条评论下）；纯路人新评（各聊各的、顺着帖子话题走）',
+      '- 不要每条都回复机主——多数时候 0~1 条回复就够，真实论坛不是每条留言都有人接',
+      '- 评论区可出现上方名单里的人（用网名/缩写/外号，熟人能认出），也可全用陌生网友',
+      '- 绝不许替机主发言，不许复读机主原句，不要写需要机主必须回应的追问',
+      '- 真实网友生态：有共鸣也有抬杠，有抖机灵也有泼冷水，偶尔歪楼；清一色捧场是水军味',
+      '- 除标记行外不要输出任何内容'
+    ].filter(function (s2) { return s2 !== ''; }).join('\n');
+    return {
+      ordered_prompts: [
+        { role: 'system', content: p },
+        { role: 'user', content: '（请按输出要求写 1~4 条网友反应评论。）' }
+      ],
+      should_silence: true,
+      max_chat_history: 0
+    };
+  },
+
   // ── 朋友圈 · 评论回复：机主评论了某条动态，生成 NPC 们的接话 ──
   // post = 动态条目 {who, text, img?}；comments = 现有平铺评论
   // people = 涉及的人（作者+已有评论者）的 [{name, profile}]
@@ -3540,7 +3590,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
     '.lzw-fmain-b{margin-top:10px;font-size:14px;line-height:1.65;color:#222;word-break:break-word}',
     '.lzw-freps{margin:0 12px 12px;background:#fff;border-radius:12px;padding:4px 14px}',
     '.lzw-frep{padding:9px 0;font-size:13px;line-height:1.55;color:#333;border-bottom:1px solid rgba(0,0,0,.05);word-break:break-word}',
-    '.lzw-fmine{background:rgba(232,145,45,.10);border-radius:6px;padding:8px 10px;margin:4px 0;border-bottom:none}',
+    '.lzw-fmine .lzw-frep-a::after{content:"我";font-size:9px;font-weight:400;color:#fff;background:#576b95;border-radius:3px;padding:0 3px;margin-left:4px;vertical-align:1px}',
     '.lzw-frep:last-child{border-bottom:none}',
     '.lzw-frep-a{color:#576b95;font-weight:600}',
     // ── 论坛 2.0：预览/热度/收藏/热评楼中楼 ──
@@ -5480,11 +5530,12 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
   UI.bodyForum = function (ctx) { return forumListHtml(); };
   UI.bodyFav = function (ctx) { return forumFavHtml(); };
   UI.bodyFboard = function (ctx) { return forumBoardHtml(this.forumName); };
-  // 帖子页 = 正文评论流 + 底部常驻评论栏（复用聊天输入栏样式）；生成/重roll 期间输入栏禁用
+  // 帖子页 = 正文评论流 + 底部常驻评论栏（复用聊天输入栏样式）；生成/重roll/网友反应生成期间输入栏禁用
   UI.bodyFthread = function (ctx) {
+    var busy = this.fTBusy || this.fReact;
     return forumThreadHtml(this.forumName, this.fThreadId) +
       "<div class='lzw-bottom'><div class='lzw-inputbar'>" +
-      "<input class='lzw-input' id='lzw-finput' data-finput maxlength='300' placeholder='说点什么…'" + (this.fTBusy ? ' disabled' : '') + ">" +
+      "<input class='lzw-input' id='lzw-finput' data-finput maxlength='300' placeholder='" + (this.fReact ? '网友赶来中…' : '说点什么…') + "'" + (busy ? ' disabled' : '') + ">" +
       "<button class='lzw-send' data-fact='fsend' title='评论'>" + C.ICON_PLANE + "</button></div></div>";
   };
 
@@ -5648,7 +5699,11 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       return lnst ? "<div class='lzw-fhot'>" + lrep + lnst + "</div>" : lrep;
     }).join('');
     var mine = (p.mine || []).map(function (r) {
-      return "<div class='lzw-frep lzw-fmine'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + "</div>";
+      var mnest = (r.nest || []).map(function (x) {
+        return "<div class='lzw-fnest'><span class='lzw-frep-a'>" + C.esc(x.author) + "</span> 回复 <span class='lzw-frep-a'>" + C.esc(x.to) + "</span>：" + C.esc(x.text) + "</div>";
+      }).join('');
+      var mrep = "<div class='lzw-frep lzw-fmine'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + "</div>";
+      return mnest ? "<div class='lzw-fhot'>" + mrep + mnest + "</div>" : mrep;
     }).join('');
     return '<div class="lzw-body">' + head +
       (hot ? "<div class='lzw-fsec'>热评</div><div class='lzw-freps'>" + hot + "</div>" : '') +
@@ -5760,20 +5815,39 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
         if (self.screen === 'fthread') self.render();
       });
     },
+    // 帖子评论区滚到底（发完评论/网友反应到达后，让最新内容进视野）
+    forumScrollBottom: function () {
+      var ph = C.pdoc().getElementById('lzw-phone');
+      var b = ph ? ph.querySelector('.lzw-body') : null;
+      if (b) b.scrollTop = b.scrollHeight;
+    },
     // 机主回帖：写入 post.mine（与 AI 的 latest 分库——重roll/换一版整组换 latest，mine 不受影响）
+    // 回帖互动（二期）：帖子已生成过正文 → 紧接着生成 1~4 条网友反应（异步，输入栏挂「网友赶来中…」）
     forumComment: function (raw) {
       var W = window.LZWorld;
       var text = String(raw == null ? '' : raw).trim().slice(0, 300);
       if (!text) return;
       if (this.fTBusy) { try { toastr.info('帖子正在生成中，稍后再评', '霖州手机', { timeOut: 1500 }); } catch (e) {} return; }
+      if (this.fReact) return;
       var found = W.Engine.forumFindPost(forumLineKey(), this.forumName, this.fThreadId);
       if (!found.post) return;
       found.post.mine = found.post.mine || [];
       found.post.mine.push({ author: W.Engine.userName(), text: text, ts: Date.now() });
       W.Store.forumPut(forumLineKey(), this.forumName, found.forum);
+      var willReact = postReady(found.post);
+      if (willReact) this.fReact = true;
       this.render();
+      this.forumScrollBottom();
       var inp = C.pdoc().getElementById('lzw-finput');
-      if (inp) inp.focus();
+      if (inp && !willReact) inp.focus();
+      if (!willReact) return;
+      var self = this, line = forumLineKey(), name = this.forumName, id = this.fThreadId;
+      W.Engine.forumReact(line, name, id).catch(function (e) {
+        console.warn('[霖州引擎] 网友反应生成失败', e);
+      }).finally(function () {
+        self.fReact = false;
+        if (self.screen === 'fthread') { self.render(); self.forumScrollBottom(); }
+      });
     },
     // 帖子页 ☆/★：收藏钉住（换一版豁免）；appbar 用它显示当前状态
     forumFavNow: function () {
@@ -6721,7 +6795,7 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
 
   // 图片主源：随仓库走的 jsdelivr（与引擎同域，被浏览器拦截的概率一致）；
   // catbox 原站降级为兜底（init 里的 error 监听自动切换），见 imgUrl/回退监听
-  var ENGINE_VER = '2026-10-18c';      // 发版即改，boot 日志打出，远程对版本用
+  var ENGINE_VER = '2026-10-19a';      // 发版即改，boot 日志打出，远程对版本用
   var IMG_BASE = 'https://cdn.jsdelivr.net/gh/haodayizhiyu404/linzhou-world@main/img/';
   var IMG_BASE_FALLBACK = 'https://files.catbox.moe/';
 
@@ -7821,6 +7895,67 @@ try { console.log('[霖州引擎] 构建 ' + __LZW_BUILD__ + ' · 启动'); } ca
       fresh.post.generated = true;
       St.forumPut(line, name, fresh.forum);
       return true;
+    },
+
+    // 回帖互动（二期）：机主新发评论后，生成 1~4 条网友反应。
+    // 「回复 @机主名:」开头的收成楼中楼挂到机主最新一条评论下；其余作为新评插到 latest 头部（新→旧）。
+    // 生成期间帖子被换一版 → 作废不写脏数据；返回新增条数（0 = 无有效输出/帖子没了）。
+    forumReact: async function (line, name, id) {
+      var W = window.LZWorld, St = W.Store;
+      var found = this.forumFindPost(line, name, id);
+      var f = found.forum, p = found.post;
+      if (!f || !p) return 0;
+      if (!p.mine || !p.mine.length) return 0;
+      var myName = this.userName();
+      var myComment = String(p.mine[p.mine.length - 1].text || '');
+      var snap; try { snap = W.Status.snapshot(null); } catch (e0) {}
+      var sec = this.section() || {};
+      var pool = [], seen = {};
+      (sec.contacts || []).forEach(function (c) { if (c.name && !seen[c.name]) { seen[c.name] = 1; pool.push(c.name); } });
+      (sec.groups || []).forEach(function (g) {
+        (g.members || []).forEach(function (n) { if (n && !seen[n]) { seen[n] = 1; pool.push(n); } });
+      });
+      var req = W.Prompt.forumReact(p, name, myComment, pool, this.forumPeopleProfiles(pool), snap, this.userBlock(), this.charDesc());
+      var raw = await this.genT(req);
+      var text = (typeof raw === 'string') ? raw : String((raw && (raw.text || raw.message)) || '');
+      // 生成期间论坛可能被【换一版】重置：按 id 重新定位，帖子不在 → 作废
+      var fresh = this.forumFindPost(line, name, id);
+      if (!fresh.forum || !fresh.post) return 0;
+      var fp = fresh.post;
+      fp.latest = fp.latest || [];
+      fp.mine = fp.mine || [];
+      var added = 0;
+      String(text).split('\n').forEach(function (ln) {
+        ln = ln.trim(); if (!ln) return;
+        var cm = ln.match(/^\[评论[:：]([^:：\]]{1,16})[:：](\d{1,6})[:：]([\s\S]+)\]$/) || ln.match(/^\[评论[:：]([^:：\]]{1,16})[:：]([\s\S]+)\]$/);
+        if (!cm) return;
+        var author = cm[1].trim();
+        var likes = cm.length === 4 ? +cm[2] : 0;
+        var body = (cm.length === 4 ? cm[3] : cm[2]).trim();
+        if (!author || !body) return;
+        var rp = body.match(/^回复\s*@([^:：\s]{1,16})[:：]\s*/);
+        var target = rp ? rp[1].trim() : '';
+        if (rp && target === myName && fp.mine.length) {
+          var mLast = fp.mine[fp.mine.length - 1];
+          mLast.nest = mLast.nest || [];
+          if (mLast.nest.length < 3) { mLast.nest.push({ author: author, to: target, text: body.slice(rp[0].length) }); added++; }
+          return;
+        }
+        if (rp) {
+          for (var i = 0; i < fp.latest.length; i++) {
+            if (fp.latest[i].author === target) {
+              fp.latest[i].nest = fp.latest[i].nest || [];
+              if (fp.latest[i].nest.length < 3) { fp.latest[i].nest.push({ author: author, to: target, text: body.slice(rp[0].length) }); added++; }
+              return;
+            }
+          }
+        }
+        fp.latest.unshift({ author: author, likes: likes, text: body });
+        added++;
+      });
+      if (!added) return 0;
+      St.forumPut(line, name, fresh.forum);
+      return added;
     },
 
     // 帖子级重roll：清掉正文与评论重新生成（标题/作者/热度/收藏不动）；失败/跳过自动还原旧版

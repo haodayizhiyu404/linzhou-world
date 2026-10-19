@@ -655,6 +655,56 @@
     };
   },
 
+  // ── 论坛 · 回帖互动（二期）：机主在帖下新发了评论，生成 1~4 条网友反应 ──
+  // 反应两种：回复机主的（「回复 @机主名:」开头，收楼中楼）+ 纯路人新评，混合着来
+  forumReact: function (post, forumName, myComment, people, profiles, snapshot, userInfo, charDesc) {
+    var myName = me();
+    var hot = (post.hot || []).slice(0, 2).map(function (h) { return '- ' + h.author + '：' + h.text; });
+    var latest = (post.latest || []).slice(0, 4).map(function (r) { return '- ' + r.author + '：' + r.text; });
+    var mine = (post.mine || []).slice(-3).map(function (m) { return '- ' + m.author + '：' + m.text; });
+    var bodyText = String(post.body || post.text || '').replace(/\n+/g, ' ').slice(0, 200);
+    var p = [
+      FICTION,
+      '',
+      '# 数字世界 · 论坛网友反应生成',
+      '',
+      '本次任务：论坛「' + forumName + '」的一条帖子下，机主「' + myName + '」刚刚新发了一条评论——请写 1~4 条网友的反应评论。',
+      '',
+      '## 这条帖子',
+      '- 标题：「' + post.title + '」（楼主：' + post.author + '）',
+      bodyText ? '- 正文梗概：' + bodyText : '',
+      '',
+      (hot.length || latest.length || mine.length) ? '## 现有评论' : '',
+      mine.length ? '机主的评论（新→旧）：\n' + mine.join('\n') : '',
+      latest.length ? '网友新评（新→旧）：\n' + latest.join('\n') : '',
+      hot.length ? '热评：\n' + hot.join('\n') : '',
+      '',
+      '## 机主刚发的这条（本次触发点）',
+      '- ' + myName + '：' + myComment,
+      '',
+      charDesc ? '## 故事主线背景\n' + charDesc : '',
+      situationBlock(snapshot) ? '## 当前情境\n' + situationBlock(snapshot) : '',
+      forumPeopleBlock(people, profiles),
+      '',
+      '## 输出要求（严格遵守）',
+      '- 写 1~4 条网友反应，格式 [评论:网名:赞数:内容]（赞数多为 0 或个位数）',
+      '- 反应分两种，混合着来：回复机主的（内容以「回复 @' + myName + ':」开头，会收成楼中楼挂到机主那条评论下）；纯路人新评（各聊各的、顺着帖子话题走）',
+      '- 不要每条都回复机主——多数时候 0~1 条回复就够，真实论坛不是每条留言都有人接',
+      '- 评论区可出现上方名单里的人（用网名/缩写/外号，熟人能认出），也可全用陌生网友',
+      '- 绝不许替机主发言，不许复读机主原句，不要写需要机主必须回应的追问',
+      '- 真实网友生态：有共鸣也有抬杠，有抖机灵也有泼冷水，偶尔歪楼；清一色捧场是水军味',
+      '- 除标记行外不要输出任何内容'
+    ].filter(function (s2) { return s2 !== ''; }).join('\n');
+    return {
+      ordered_prompts: [
+        { role: 'system', content: p },
+        { role: 'user', content: '（请按输出要求写 1~4 条网友反应评论。）' }
+      ],
+      should_silence: true,
+      max_chat_history: 0
+    };
+  },
+
   // ── 朋友圈 · 评论回复：机主评论了某条动态，生成 NPC 们的接话 ──
   // post = 动态条目 {who, text, img?}；comments = 现有平铺评论
   // people = 涉及的人（作者+已有评论者）的 [{name, profile}]

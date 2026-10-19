@@ -1057,6 +1057,22 @@ ctx.getWorldbook = async () => [
   const fMine2 = LW.Engine.forumFindPost('成人时代-破镜重圆', '霖州一中树洞墙', fOld.id).post;
   eq('回帖·mine重roll不丢', fMine2.mine.length === 1 && fMine2.mine[0].text === '楼主稳住，能上的', true);
   eq('回帖·latest照常替换', fMine2.body === '又roll一版正文。' && fMine2.latest.length === 1 && fMine2.latest[0].author === '新人', true);
+  // 回帖互动（二期）：机主新发评论 → 生成 1~4 条网友反应；「回复 @机主:」收楼中楼挂机主最新一条下，纯新评插 latest 头部
+  const oldUserName = LW.Engine.userName;
+  LW.Engine.userName = function () { return '机主'; };
+  ctx.generateRaw = async (req) => '[评论:路人A:0:同感，顶一个]\n[评论:熟人乙:0:回复 @机主:说得对]\n[评论:路人C:2:歪楼问一句楼主还在吗]';
+  eq('回帖互动·生成条数', await LW.Engine.forumReact('成人时代-破镜重圆', '霖州一中树洞墙', fOld.id), 3);
+  const fReact2 = LW.Engine.forumFindPost('成人时代-破镜重圆', '霖州一中树洞墙', fOld.id).post;
+  eq('回帖互动·回复挂机主楼下', fReact2.mine[0].nest.length === 1 && fReact2.mine[0].nest[0].author === '熟人乙' && fReact2.mine[0].nest[0].to === '机主' && fReact2.mine[0].nest[0].text === '说得对', true);
+  eq('回帖互动·新评插头部', fReact2.latest.length === 3 && fReact2.latest[0].author === '路人C' && fReact2.latest[1].author === '路人A' && fReact2.latest[2].author === '新人', true);
+  // 无 mine 不触发；空输出不加评不落库
+  ctx.generateRaw = async (req) => '没有标记行';
+  eq('回帖互动·空输出', await LW.Engine.forumReact('成人时代-破镜重圆', '霖州一中树洞墙', fOld.id), 0);
+  LW.Engine.userName = oldUserName;
+  // 提示词契约：1~4 条 + 回复机主的格式 + 不替机主发言
+  const frReq = LW.Prompt.forumReact(fReact2, '霖州一中树洞墙', '楼主稳住', [], {}, null, '', '');
+  eq('回帖互动·提示词条数与格式', frReq.ordered_prompts[0].content.indexOf('1~4 条') !== -1 && frReq.ordered_prompts[0].content.indexOf('回复 @') !== -1, true);
+  eq('回帖互动·提示词禁代发', frReq.ordered_prompts[0].content.indexOf('绝不许替机主发言') !== -1, true);
   // 生成超时兜底：超过时限按失败处理（20ms 时限 + 80ms 才返回的慢 API）
   ctx.generateRaw = async (req) => { await new Promise(function (r) { setTimeout(r, 80); }); return 'x'; };
   var toOk = false;
@@ -1116,6 +1132,10 @@ ctx.getWorldbook = async () => [
   eq('回帖·评论栏常驻帖子页', wforum.includes("data-fact='fsend'") && wforum.includes("id='lzw-finput'"), true);
   eq('回帖·小飞机与回车双绑定', wforum.split('UI.forumComment').length - 1 >= 2 && wforum.includes('data-fact="fsend"') && wforum.includes('data-finput'), true);
   eq('回帖·写入独立mine数组', wforum.includes('forumComment: function') && wforum.includes('found.post.mine'), true);
+  eq('回帖·互动期输入栏禁用', wforum.includes('fReact') && wforum.includes('网友赶来中'), true);
+  eq('回帖·互动触发与滚底', wforum.includes('W.Engine.forumReact') && wforum.includes('forumScrollBottom'), true);
+  eq('回帖·mine楼中楼渲染', wforum.includes('mnest') && wforum.includes('lzw-fmine'), true);
+  eq('回帖·mine橙底已去除', wsrc.indexOf('.lzw-fmine{background:rgba(232,145,45') === -1, true);
   eq('回帖·引擎把mine传给提示词', esrc.includes('opts && opts.reroll, p.mine'), true);
   const wcall = fs.readFileSync(path.join(ROOT, 'src/apps/wechat-call.js'), 'utf8');
   eq('通话·边界标记仅拨号打一次', (wcall.match(/—— 通话开始 ——/g) || []).length, 1);

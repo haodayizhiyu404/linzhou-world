@@ -11,11 +11,12 @@
   UI.bodyForum = function (ctx) { return forumListHtml(); };
   UI.bodyFav = function (ctx) { return forumFavHtml(); };
   UI.bodyFboard = function (ctx) { return forumBoardHtml(this.forumName); };
-  // 帖子页 = 正文评论流 + 底部常驻评论栏（复用聊天输入栏样式）；生成/重roll 期间输入栏禁用
+  // 帖子页 = 正文评论流 + 底部常驻评论栏（复用聊天输入栏样式）；生成/重roll/网友反应生成期间输入栏禁用
   UI.bodyFthread = function (ctx) {
+    var busy = this.fTBusy || this.fReact;
     return forumThreadHtml(this.forumName, this.fThreadId) +
       "<div class='lzw-bottom'><div class='lzw-inputbar'>" +
-      "<input class='lzw-input' id='lzw-finput' data-finput maxlength='300' placeholder='说点什么…'" + (this.fTBusy ? ' disabled' : '') + ">" +
+      "<input class='lzw-input' id='lzw-finput' data-finput maxlength='300' placeholder='" + (this.fReact ? '网友赶来中…' : '说点什么…') + "'" + (busy ? ' disabled' : '') + ">" +
       "<button class='lzw-send' data-fact='fsend' title='评论'>" + C.ICON_PLANE + "</button></div></div>";
   };
 
@@ -179,7 +180,11 @@
       return lnst ? "<div class='lzw-fhot'>" + lrep + lnst + "</div>" : lrep;
     }).join('');
     var mine = (p.mine || []).map(function (r) {
-      return "<div class='lzw-frep lzw-fmine'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + "</div>";
+      var mnest = (r.nest || []).map(function (x) {
+        return "<div class='lzw-fnest'><span class='lzw-frep-a'>" + C.esc(x.author) + "</span> 回复 <span class='lzw-frep-a'>" + C.esc(x.to) + "</span>：" + C.esc(x.text) + "</div>";
+      }).join('');
+      var mrep = "<div class='lzw-frep lzw-fmine'><span class='lzw-frep-a'>" + C.esc(r.author) + "</span>：" + C.esc(r.text) + "</div>";
+      return mnest ? "<div class='lzw-fhot'>" + mrep + mnest + "</div>" : mrep;
     }).join('');
     return '<div class="lzw-body">' + head +
       (hot ? "<div class='lzw-fsec'>热评</div><div class='lzw-freps'>" + hot + "</div>" : '') +
@@ -291,20 +296,39 @@
         if (self.screen === 'fthread') self.render();
       });
     },
+    // 帖子评论区滚到底（发完评论/网友反应到达后，让最新内容进视野）
+    forumScrollBottom: function () {
+      var ph = C.pdoc().getElementById('lzw-phone');
+      var b = ph ? ph.querySelector('.lzw-body') : null;
+      if (b) b.scrollTop = b.scrollHeight;
+    },
     // 机主回帖：写入 post.mine（与 AI 的 latest 分库——重roll/换一版整组换 latest，mine 不受影响）
+    // 回帖互动（二期）：帖子已生成过正文 → 紧接着生成 1~4 条网友反应（异步，输入栏挂「网友赶来中…」）
     forumComment: function (raw) {
       var W = window.LZWorld;
       var text = String(raw == null ? '' : raw).trim().slice(0, 300);
       if (!text) return;
       if (this.fTBusy) { try { toastr.info('帖子正在生成中，稍后再评', '霖州手机', { timeOut: 1500 }); } catch (e) {} return; }
+      if (this.fReact) return;
       var found = W.Engine.forumFindPost(forumLineKey(), this.forumName, this.fThreadId);
       if (!found.post) return;
       found.post.mine = found.post.mine || [];
       found.post.mine.push({ author: W.Engine.userName(), text: text, ts: Date.now() });
       W.Store.forumPut(forumLineKey(), this.forumName, found.forum);
+      var willReact = postReady(found.post);
+      if (willReact) this.fReact = true;
       this.render();
+      this.forumScrollBottom();
       var inp = C.pdoc().getElementById('lzw-finput');
-      if (inp) inp.focus();
+      if (inp && !willReact) inp.focus();
+      if (!willReact) return;
+      var self = this, line = forumLineKey(), name = this.forumName, id = this.fThreadId;
+      W.Engine.forumReact(line, name, id).catch(function (e) {
+        console.warn('[霖州引擎] 网友反应生成失败', e);
+      }).finally(function () {
+        self.fReact = false;
+        if (self.screen === 'fthread') { self.render(); self.forumScrollBottom(); }
+      });
     },
     // 帖子页 ☆/★：收藏钉住（换一版豁免）；appbar 用它显示当前状态
     forumFavNow: function () {
